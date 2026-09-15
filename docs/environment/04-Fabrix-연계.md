@@ -207,6 +207,10 @@ if (!event.content) continue;
 
 ## 7. Browser 호출은 `fetch` + `ReadableStream`
 
+> 📎 **동작이 확인된 전체 구현:** [`examples/fabrixClient.js`](examples/fabrixClient.js)
+> 아래는 핵심만 발췌한 것이다. 실제 연동 시에는 그 파일을 참고하라.
+
+
 `EventSource` 를 쓰지 마라. 요청이 **POST + 커스텀 헤더 + JSON body** 이기 때문에
 `EventSource` 로는 불가능하다.
 
@@ -250,6 +254,36 @@ while (true) {
     const fabrixEvent = JSON.parse(raw);
     // ... 8번으로
   }
+}
+```
+
+### ⚠️ 위 예제와 실제 검증 코드의 차이
+
+위 스니펫은 `\n\n` 로 이벤트를 끊는다. 실제로 WAS에서 동작을 확인한 코드
+([`examples/fabrixClient.js`](examples/fabrixClient.js))는 **줄 단위**로 끊는다.
+
+```javascript
+var lines = buffer.split(/\r?\n/);   // \r\n 도 처리
+buffer = lines.pop() || '';
+
+// data: 로 시작하지 않는 줄은 건너뛴다 (빈 줄 포함)
+if (!line || line.indexOf('data:') !== 0) continue;
+
+// 종료 sentinel
+if (!raw || raw === '[DONE]') continue;
+```
+
+둘 다 `data: {JSON}\n\n` framing에서 동작하지만, 줄 단위 방식이
+`\r\n` 과 `[DONE]` 을 함께 처리해서 더 견고하다. **줄 단위를 권장한다.**
+
+### Gateway 레벨 오류
+
+Fabrix envelope 자체가 실패를 알려주는 경우가 있다. `content` 파싱 전에 본다.
+
+```javascript
+if (fabrixEvent.status && fabrixEvent.status !== 'SUCCESS') {
+  // fabrixEvent.status / fabrixEvent.responseCode / fabrixEvent.content
+  // → Agent 로직 문제가 아니라 Gateway 문제다
 }
 ```
 

@@ -116,6 +116,7 @@ FastAPI Pro Agent (K8s, /custom, uvicorn main:app)
 │   │   ├── 07-requirements-정책.md
 │   │   ├── 08-트러블슈팅.md
 │   │   ├── 09-보안-시크릿.md
+│   │   ├── examples/          # 동작 확인된 참고 구현 (fabrixClient.js)
 │   │   └── sources/           # 원본 근거 문서 (수정 금지)
 │   ├── briefings/ · kb/ · specs/
 └── scripts/
@@ -135,9 +136,9 @@ FastAPI Pro Agent (K8s, /custom, uvicorn main:app)
 | LLM 호출 방식 변경 | 02 §Gemma 규격 | `agent/llm_client.py` |
 | 패키지 추가 | 07 | `agent/requirements.txt` + `Dockerfile` |
 | 배포 | 03 | git tag → GenAI Portal |
-| Fabrix 연동 | 04 | `agent/main.py` (SSE) / 프론트 transport |
+| Fabrix 연동 | 04 + `docs/environment/examples/fabrixClient.js` | `agent/main.py` (SSE) / 프론트 transport |
 | 화면 수정 | 05 | `app/*` |
-| Mock → 실제 Agent 교체 | 04, 05, 06 | `app/pensionAgentDemo.js` |
+| Mock → 실제 Agent 교체 | 04, 05, 06 + `examples/fabrixClient.js` | `app/pensionAgentDemo.js` |
 | 장애 분석 | 08 | — |
 
 ---
