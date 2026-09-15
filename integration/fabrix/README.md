@@ -18,18 +18,18 @@
 ❌ 토큰이 박힌 채로 커밋하지 마라
 ```
 
-→ [`../09-보안-시크릿.md`](../09-보안-시크릿.md)
+→ [`../../docs/platform/06-SECURITY.md`](../../docs/platform/06-SECURITY.md)
 
 ## 연동할 때
 
 ```text
-docs/environment/examples/fabrixClient.js   ← 여기서 transport 로직 참고
+integration/fabrix/fabrixClient.js   ← 여기서 transport 로직 참고
         ↓
-app/pensionAgentDemo.js 의 agSend()          ← 여기에 반영
+frontend/app/pensionAgentDemo.js 의 agSend()          ← 여기에 반영
         ↓
 normalizeAgentAnswer()                       ← 어댑터 추가 (키 변환)
         ↓
 기존 agVals() / renderer 유지
 ```
 
-설계 상세: [`../06-출력계약-Contract.md`](../06-출력계약-Contract.md) §5
+설계 상세: [`../contracts/AGENT_FRONTEND_CONTRACT.md`](../contracts/AGENT_FRONTEND_CONTRACT.md) §5

@@ -1,7 +1,7 @@
 # 05. Starroot 프론트엔드
 
 > 근거: `sources/STARROOT_FRONTEND_CODING_GUIDE.md` 전체
-> 대상 파일: `app/mnPensionAgentDemo.html`, `app/pensionAgentDemo.css`, `app/pensionAgentDemo.js`
+> 대상 파일: `frontend/app/mnPensionAgentDemo.html`, `frontend/app/pensionAgentDemo.css`, `frontend/app/pensionAgentDemo.js`
 
 ---
 
@@ -88,14 +88,14 @@ pensionAgentDemo.css      ← <link> 로 로드
 pensionAgentDemo.js       ← 한 파일 유지
 ```
 
-HTML head (현재 `app/mnPensionAgentDemo.html`):
+HTML head (현재 `frontend/app/mnPensionAgentDemo.html`):
 
 ```html
 <link rel="stylesheet" href="/mnbank/app/css/bfe/pension/pensionAgentDemo.css">
 <script id="PENSION_AGENT_DEMO" src="/mnbank/app/js/bfe/pension/pensionAgentDemo.js"></script>
 ```
 
-> `app/local_preview.html` 은 **로컬 확인 전용**으로 상대경로를 쓴다.
+> `frontend/app/local_preview.html` 은 **로컬 확인 전용**으로 상대경로를 쓴다.
 > `mnPensionAgentDemo.html` 을 로컬에서 그냥 열면 `/mnbank/...` 절대경로 때문에 CSS/JS가 안 뜬다.
 
 ---
@@ -109,7 +109,7 @@ onGoback()
 onBeforeUnload()    ← 정리
 ```
 
-현재 구현 (`app/pensionAgentDemo.js:1694-1705`):
+현재 구현 (`frontend/app/pensionAgentDemo.js:1694-1705`):
 
 ```javascript
 var STARROOT_FILE_CODE = 'REPLACE_WITH_FILE_CODE';   // ← 실제 파일코드로 교체 필요
@@ -166,7 +166,7 @@ button { font-family: ...; }
 #pensionAgentDemo input { ... }
 ```
 
-> 현재 `app/pensionAgentDemo.css` 는 이 원칙을 지키고 있다
+> 현재 `frontend/app/pensionAgentDemo.css` 는 이 원칙을 지키고 있다
 > (전역 selector 0개, `#pensionAgentDemo` 접두 규칙 333개).
 > **CSS를 추가할 때 이 상태를 깨지 마라.**
 
@@ -189,7 +189,7 @@ Starroot 핵심 로더는 `spa_base.js` 쪽이다. 실제로 필요할 때만 im
 
 ## 8. 상태 / 렌더 / 이벤트 구조
 
-현재 `app/pensionAgentDemo.js` 는 경량 `Component` + `renderVals()` + 템플릿 보간 구조다.
+현재 `frontend/app/pensionAgentDemo.js` 는 경량 `Component` + `renderVals()` + 템플릿 보간 구조다.
 
 ```text
 Component (pensionAgentDemo.js:361)
@@ -252,7 +252,7 @@ selectionStart / selectionEnd
 ```
 
 > 현재 코드는 2번 방식을 쓰고 있다.
-> `app/pensionAgentDemo.js` 의 `restoreRenderUiState()` (스크롤/포커스/caret 복원, :164-191)
+> `frontend/app/pensionAgentDemo.js` 의 `restoreRenderUiState()` (스크롤/포커스/caret 복원, :164-191)
 > 와 `suppressReplayEntryAnimations()` (:255) 가 그 역할이다.
 > **렌더 경로를 수정할 때 이 두 함수를 우회하지 마라.**
 
@@ -322,7 +322,7 @@ root.style.setProperty('--starroot-top-offset', overlap + 'px');
 ```
 
 실제 앱에 `.browserHeader.on` 이 없으면 `0px` 로 유지된다.
-(현재 구현: `app/pensionAgentDemo.js:289-300`, 정리는 `:352`)
+(현재 구현: `frontend/app/pensionAgentDemo.js:289-300`, 정리는 `:352`)
 
 높이는 무조건 `100vh` 를 쓰지 말고 shell 영역을 고려한다.
 

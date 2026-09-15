@@ -1,7 +1,7 @@
 # 06. 출력 계약 (Agent ↔ Frontend Contract)
 
 > 근거: `sources/KB_GenAI_ProAgent_SourceOfTruth_v2.md` §10~§13, §35~§38
-> + `app/pensionAgentDemo.js` 실제 구조 분석
+> + `frontend/app/pensionAgentDemo.js` 실제 구조 분석
 > 이 문서는 **Mock → 실제 Agent 교체 작업의 설계도** 다.
 
 ---
@@ -110,7 +110,7 @@ Frontend 객체
 ## 4. ★ 프론트가 실제로 기대하는 형태 (Mock 내부 구조)
 
 여기가 핵심이다. **Agent 출력과 프론트 내부 구조는 키 이름이 다르다.**
-`app/pensionAgentDemo.js` 의 `QA[고객].answers[aid]` 는 이렇게 생겼다:
+`frontend/app/pensionAgentDemo.js` 의 `QA[고객].answers[aid]` 는 이렇게 생겼다:
 
 ```javascript
 {
@@ -297,7 +297,7 @@ else if (agentEvent.event === 'error') { /* 안내 메시지 표시 */ }
 else { /* 알 수 없는 이벤트 → 무시하거나 fallback */ }
 ```
 
-> `event` (Agent 계약) 와 `event_status` (Fabrix envelope) 는 다른 키다. → [04](04-Fabrix-연계.md) §6
+> `event` (Agent 계약) 와 `event_status` (Fabrix envelope) 는 다른 키다. → [Fabrix Guide](../../integration/fabrix/FABRIX_GUIDE.md) §6
 
 ---
 

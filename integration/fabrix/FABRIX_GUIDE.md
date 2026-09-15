@@ -61,7 +61,7 @@ x-openapi-token: Bearer <FABRIX_OPENAPI_TOKEN>
 x-generative-ai-client: <FABRIX_GENERATIVE_AI_CLIENT>
 ```
 
-> 🔒 이 값들은 **Secret** 이다. 정적 소스에 하드코딩하지 마라. → [09-보안-시크릿.md](09-보안-시크릿.md)
+> 🔒 이 값들은 **Secret** 이다. 정적 소스에 하드코딩하지 마라. → [06-SECURITY.md](../../docs/platform/06-SECURITY.md)
 
 ---
 
@@ -100,7 +100,7 @@ const payload = {
 ```
 
 이 `contents[0]` 문자열이 Agent 쪽에서 `FabrixRequest.input_value` 로 도착한다.
-→ [02-에이전트-개발.md](02-에이전트-개발.md) §6
+→ [02-AGENT_DEVELOPMENT.md](../../docs/platform/02-AGENT_DEVELOPMENT.md) §6
 
 ---
 
@@ -207,7 +207,7 @@ if (!event.content) continue;
 
 ## 7. Browser 호출은 `fetch` + `ReadableStream`
 
-> 📎 **동작이 확인된 전체 구현:** [`examples/fabrixClient.js`](examples/fabrixClient.js)
+> 📎 **동작이 확인된 전체 구현:** [`fabrixClient.js`](fabrixClient.js)
 > 아래는 핵심만 발췌한 것이다. 실제 연동 시에는 그 파일을 참고하라.
 
 
@@ -260,7 +260,7 @@ while (true) {
 ### ⚠️ 위 예제와 실제 검증 코드의 차이
 
 위 스니펫은 `\n\n` 로 이벤트를 끊는다. 실제로 WAS에서 동작을 확인한 코드
-([`examples/fabrixClient.js`](examples/fabrixClient.js))는 **줄 단위**로 끊는다.
+([`fabrixClient.js`](fabrixClient.js))는 **줄 단위**로 끊는다.
 
 ```javascript
 var lines = buffer.split(/\r?\n/);   // \r\n 도 처리
