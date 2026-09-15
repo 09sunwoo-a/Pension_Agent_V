@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "customer-briefing-display.v0.1",
+  "briefingMeta": {
+    "caseId": "B01-22",
+    "dataType": "시연용가상고객",
+    "asOfDate": "2026-09-14",
+    "generatedAt": "2026-09-14T07:00:00+09:00",
+    "currency": "KRW"
+  },
+  "customer": {
+    "customerId": "54182-30764",
+    "name": "한지훈",
+    "age": 54,
+    "gender": "남",
+    "starClubGrade": "VIP",
+    "investmentProfile": "안정추구형",
+    "irpOpenedAt": "2021-06-18",
+    "defaultOption": {
+      "registrationStatus": "등록",
+      "designatedProduct": {
+        "productId": "DO-003",
+        "productName": "알파드림II",
+        "riskLevel": "저위험"
+      },
+      "applicationStatus": "미적용"
+    }
+  },
+  "signals": [],
+  "irpAccount": {
+    "valuationAmountKrw": 82300000,
+    "assetAllocation": [
+      {
+        "assetType": "원리금보장형",
+        "amountKrw": 48000000,
+        "weightPct": 58.3
+      },
+      {
+        "assetType": "실적배당형",
+        "amountKrw": 29000000,
+        "weightPct": 35.2
+      },
+      {
+        "assetType": "현금성자산",
+        "amountKrw": 5300000,
+        "weightPct": 6.5
+      }
+    ],
+    "oneYearReturnPct": 2.5,
+    "taxDeductionRemainingKrw": 2600000,
+    "latestProductOpening": {
+      "holdingId": "H002",
+      "productId": "FND-003",
+      "productName": "한국투자크레딧포커스ESG증권자투자신탁1호(채권)C-RE",
+      "openedAt": "2026-02-04",
+      "amountKrw": 29000000
+    }
+  },
+  "holdings": [
+    {
+      "holdingId": "H001",
+      "productId": "SAV-003",
+      "productName": "NH저축은행 퇴직연금 정기예금",
+      "assetType": "원리금보장형",
+      "productCategory": "정기예금",
+      "contractTerm": "1년",
+      "valuationAmountKrw": 48000000,
+      "weightPct": 58.3,
+      "oneYearReturnPct": 3.6,
+      "openedAt": "2025-11-15",
+      "allocationBreakdown": null,
+      "flags": []
+    },
+    {
+      "holdingId": "H002",
+      "productId": "FND-003",
+      "productName": "한국투자크레딧포커스ESG증권자투자신탁1호(채권)C-RE",
+      "assetType": "실적배당형",
+      "productCategory": "채권형펀드",
+      "contractTerm": null,
+      "valuationAmountKrw": 29000000,
+      "weightPct": 35.2,
+      "oneYearReturnPct": 1.26,
+      "openedAt": "2026-02-04",
+      "allocationBreakdown": null,
+      "flags": []
+    },
+    {
+      "holdingId": "H003",
+      "productId": null,
+      "productName": "현금성자산",
+      "assetType": "현금성자산",
+      "productCategory": "현금성자산",
+      "contractTerm": null,
+      "valuationAmountKrw": 5300000,
+      "weightPct": 6.5,
+      "oneYearReturnPct": null,
+      "openedAt": null,
+      "allocationBreakdown": null,
+      "flags": []
+    }
+  ],
+  "에이전트맥락데이터": {
+    "스키마버전": "customer-agent-context.v0.1",
+    "고객계획": {
+      "재직상태": "재직"
+    },
+    "납입및세제": {},
+    "계좌운영": {},
+    "퇴직및인출": {},
+    "최근사건": [],
+    "금융거래": [],
+    "상담이력": [],
+    "외부계좌": [
+      {
+        "외부계좌구분": "ISA",
+        "외부계좌식별자": "EXT001",
+        "금융기관": "타행",
+        "평가금액원": 49680000,
+        "만기일": "2026-10-16",
+        "정보확인일": "2026-09-14",
+        "자금사용계획": null,
+        "개인형퇴직연금전환의향": null,
+        "개인형퇴직연금전환예정금액원": null
+      }
+    ],
+    "투자성향이력": [],
+    "운용정책": {},
+    "상품진단": [],
+    "계산지표": [
+      {
+        "지표식별자": "M001",
+        "지표유형": "파생값",
+        "지표명": "ISA만기까지남은일수",
+        "대상참조": null,
+        "값": 32,
+        "단위": "일",
+        "산출기준일": "2026-09-14"
+      }
+    ],
+    "확인된특이사항": []
+  }
+}

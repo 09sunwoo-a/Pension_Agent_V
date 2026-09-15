@@ -1,0 +1,210 @@
+{
+  "schemaVersion": "customer-briefing-display.v0.1",
+  "briefingMeta": {
+    "caseId": "B10-08",
+    "dataType": "시연용가상고객",
+    "asOfDate": "2026-09-14",
+    "generatedAt": "2026-09-14T07:00:00+09:00",
+    "currency": "KRW"
+  },
+  "customer": {
+    "customerId": "40725-68193",
+    "name": "장현수",
+    "age": 59,
+    "gender": "남",
+    "starClubGrade": "VVIP",
+    "investmentProfile": "적극투자형",
+    "irpOpenedAt": "2017-04-11",
+    "defaultOption": {
+      "registrationStatus": "등록",
+      "designatedProduct": {
+        "productId": "DO-008",
+        "productName": "모두드림",
+        "riskLevel": "고위험"
+      },
+      "applicationStatus": "미적용"
+    }
+  },
+  "signals": [],
+  "irpAccount": {
+    "valuationAmountKrw": 120000000,
+    "assetAllocation": [
+      {
+        "assetType": "원리금보장형",
+        "amountKrw": 18000000,
+        "weightPct": 15
+      },
+      {
+        "assetType": "실적배당형",
+        "amountKrw": 102000000,
+        "weightPct": 85
+      },
+      {
+        "assetType": "현금성자산",
+        "amountKrw": 0,
+        "weightPct": 0
+      }
+    ],
+    "oneYearReturnPct": 16.4,
+    "taxDeductionRemainingKrw": 0,
+    "latestProductOpening": {
+      "holdingId": "H002",
+      "productId": "ETF-010",
+      "productName": "SOL 미국배당다우존스",
+      "openedAt": "2026-08-27",
+      "amountKrw": 30000000
+    }
+  },
+  "holdings": [
+    {
+      "holdingId": "H001",
+      "productId": "MF-001",
+      "productName": "KB 온국민 TDF 시리즈",
+      "assetType": "실적배당형",
+      "productCategory": "TDF",
+      "contractTerm": null,
+      "valuationAmountKrw": 72000000,
+      "weightPct": 60,
+      "oneYearReturnPct": 15.27,
+      "openedAt": "2023-05-18",
+      "allocationBreakdown": null,
+      "flags": []
+    },
+    {
+      "holdingId": "H002",
+      "productId": "ETF-010",
+      "productName": "SOL 미국배당다우존스",
+      "assetType": "실적배당형",
+      "productCategory": "ETF",
+      "contractTerm": null,
+      "valuationAmountKrw": 30000000,
+      "weightPct": 25,
+      "oneYearReturnPct": 26.89,
+      "openedAt": "2026-08-27",
+      "allocationBreakdown": null,
+      "flags": []
+    },
+    {
+      "holdingId": "H003",
+      "productId": "SAV-001",
+      "productName": "KB저축은행 퇴직연금 정기예금",
+      "assetType": "원리금보장형",
+      "productCategory": "정기예금",
+      "contractTerm": "1년",
+      "valuationAmountKrw": 18000000,
+      "weightPct": 15,
+      "oneYearReturnPct": 3.5,
+      "openedAt": "2025-11-02",
+      "allocationBreakdown": null,
+      "flags": []
+    }
+  ],
+  "에이전트맥락데이터": {
+    "스키마버전": "customer-agent-context.v0.1",
+    "고객계획": {
+      "재직상태": null,
+      "은퇴계획": {
+        "등록여부": true,
+        "예상은퇴일": "2029-06-30"
+      },
+      "테마형상장지수펀드투자목적": null,
+      "현재위험수준유지의향": null
+    },
+    "납입및세제": {},
+    "계좌운영": {},
+    "퇴직및인출": {
+      "은퇴초기필요금액원": null
+    },
+    "최근사건": [
+      {
+        "이벤트식별자": "T001",
+        "발생일시": "2026-08-27T13:46:00+09:00",
+        "이벤트유형": "상품매수",
+        "계좌구분": "IRP",
+        "관련보유상품식별자": "H002",
+        "금액원": 30000000,
+        "처리상태": "완료",
+        "채널": "KB스타뱅킹"
+      }
+    ],
+    "금융거래": [],
+    "상담이력": [
+      {
+        "상담식별자": "CRM001",
+        "상담일시": "2026-09-02T11:15:00+09:00",
+        "상담채널": "영업점전화",
+        "상담유형": "퇴직연금사후관리",
+        "상담메모": "고객은 TDF를 보유하고 있으므로 별도로 매수한 ETF를 포함한 IRP 전체 위험도 은퇴시점에 맞춰 자동 조정될 것으로 생각한다고 말함. ETF 유지 의향이나 은퇴 초기 사용금액은 확인하지 않음."
+      }
+    ],
+    "외부계좌": [],
+    "투자성향이력": [],
+    "운용정책": {},
+    "상품진단": [
+      {
+        "진단구분": "자산노출분석",
+        "분석기준일": "2026-09-10",
+        "타깃데이트펀드주식노출확인여부": true,
+        "별도상장지수펀드주식노출확인여부": true,
+        "중복주식노출확인여부": true,
+        "합산주식노출금액원": null,
+        "합산주식노출비중": null,
+        "중복주식노출금액원": null,
+        "중복상세투자대상": null
+      },
+      {
+        "진단구분": "미산출지표",
+        "지표명": "합산주식노출비중",
+        "값": null
+      }
+    ],
+    "계산지표": [
+      {
+        "지표식별자": "M001",
+        "지표유형": "파생값",
+        "지표명": "예상은퇴일까지남은일수",
+        "대상참조": null,
+        "값": 1020,
+        "단위": "일",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M002",
+        "지표유형": "파생값",
+        "지표명": "예상은퇴일까지남은연수",
+        "대상참조": null,
+        "값": 2.8,
+        "단위": "년",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M003",
+        "지표유형": "파생값",
+        "지표명": "TDF비중",
+        "대상참조": null,
+        "값": 60,
+        "단위": "%",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M004",
+        "지표유형": "파생값",
+        "지표명": "테마형ETF비중",
+        "대상참조": null,
+        "값": 25,
+        "단위": "%",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M005",
+        "지표유형": "파생값",
+        "지표명": "ETF추가후경과일수",
+        "대상참조": null,
+        "값": 18,
+        "단위": "일",
+        "산출기준일": "2026-09-14"
+      }
+    ],
+    "확인된특이사항": []
+  }
+}

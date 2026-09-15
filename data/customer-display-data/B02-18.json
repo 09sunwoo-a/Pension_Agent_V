@@ -1,0 +1,202 @@
+{
+  "schemaVersion": "customer-briefing-display.v0.1",
+  "briefingMeta": {
+    "caseId": "B02-18",
+    "dataType": "시연용가상고객",
+    "asOfDate": "2026-09-14",
+    "generatedAt": "2026-09-14T07:00:00+09:00",
+    "currency": "KRW"
+  },
+  "customer": {
+    "customerId": "92641-58307",
+    "name": "오현준",
+    "age": 34,
+    "gender": "남",
+    "starClubGrade": "VIP",
+    "investmentProfile": "안정추구형",
+    "irpOpenedAt": "2022-01-14",
+    "defaultOption": {
+      "registrationStatus": "등록",
+      "designatedProduct": {
+        "productId": "DO-009",
+        "productName": "모두드림II",
+        "riskLevel": "고위험"
+      },
+      "applicationStatus": "실행예정"
+    }
+  },
+  "signals": [],
+  "irpAccount": {
+    "valuationAmountKrw": 55870000,
+    "assetAllocation": [
+      {
+        "assetType": "원리금보장형",
+        "amountKrw": 47630000,
+        "weightPct": 85.3
+      },
+      {
+        "assetType": "실적배당형",
+        "amountKrw": 0,
+        "weightPct": 0
+      },
+      {
+        "assetType": "현금성자산",
+        "amountKrw": 8240000,
+        "weightPct": 14.7
+      }
+    ],
+    "oneYearReturnPct": 3,
+    "taxDeductionRemainingKrw": 1800000,
+    "latestProductOpening": {
+      "holdingId": "H001",
+      "productId": "SAV-001",
+      "productName": "KB저축은행 퇴직연금 정기예금",
+      "openedAt": "2026-01-20",
+      "amountKrw": 47630000
+    }
+  },
+  "holdings": [
+    {
+      "holdingId": "H001",
+      "productId": "SAV-001",
+      "productName": "KB저축은행 퇴직연금 정기예금",
+      "assetType": "원리금보장형",
+      "productCategory": "정기예금",
+      "contractTerm": "1년",
+      "valuationAmountKrw": 47630000,
+      "weightPct": 85.3,
+      "oneYearReturnPct": 3.5,
+      "openedAt": "2026-01-20",
+      "allocationBreakdown": null,
+      "flags": []
+    },
+    {
+      "holdingId": "H002",
+      "productId": null,
+      "productName": "현금성자산",
+      "assetType": "현금성자산",
+      "productCategory": "현금성자산",
+      "contractTerm": null,
+      "valuationAmountKrw": 8240000,
+      "weightPct": 14.7,
+      "oneYearReturnPct": null,
+      "openedAt": null,
+      "allocationBreakdown": null,
+      "flags": []
+    }
+  ],
+  "에이전트맥락데이터": {
+    "스키마버전": "customer-agent-context.v0.1",
+    "고객계획": {
+      "이번자금원금보장우선여부": null,
+      "감수가능변동성": null,
+      "디폴트옵션변경의향": null,
+      "실행예정자금직접운용의향": null,
+      "실행예정자금사용시점": null,
+      "실행예정자금유지가능기간": null
+    },
+    "납입및세제": {},
+    "계좌운영": {
+      "디폴트옵션실행예정": {
+        "실행예정식별자": "DOEXEC001",
+        "예정일": "2026-09-18",
+        "대상금액원": 8240000,
+        "상태": "실행예정",
+        "적용예정상품식별자": "DO-009",
+        "적용예정상품명": "모두드림II",
+        "적용예정위험등급": "고위험",
+        "근거지정일": "2024-11-18"
+      }
+    },
+    "퇴직및인출": {},
+    "최근사건": [
+      {
+        "이벤트식별자": "T001",
+        "발생일시": "2024-11-18T10:05:00+09:00",
+        "이벤트유형": "디폴트옵션등록",
+        "계좌구분": "IRP",
+        "관련보유상품식별자": null,
+        "금액원": null,
+        "처리상태": "완료",
+        "채널": null
+      },
+      {
+        "이벤트식별자": "T002",
+        "발생일시": "2026-09-04T14:20:00+09:00",
+        "이벤트유형": "투자성향변경",
+        "계좌구분": "IRP",
+        "관련보유상품식별자": null,
+        "금액원": null,
+        "처리상태": "완료",
+        "채널": null
+      },
+      {
+        "이벤트식별자": "T003",
+        "발생일시": "2026-09-08T09:00:00+09:00",
+        "이벤트유형": "디폴트옵션실행예정안내",
+        "계좌구분": "IRP",
+        "관련보유상품식별자": "H002",
+        "금액원": 8240000,
+        "처리상태": "실행전",
+        "채널": "시스템"
+      }
+    ],
+    "금융거래": [],
+    "상담이력": [],
+    "외부계좌": [],
+    "투자성향이력": [
+      {
+        "이력식별자": "R001",
+        "분석일": "2024-11-15",
+        "투자성향": "적극투자형",
+        "현재여부": false
+      },
+      {
+        "이력식별자": "R002",
+        "분석일": "2026-09-04",
+        "투자성향": "안정추구형",
+        "현재여부": true
+      }
+    ],
+    "운용정책": {},
+    "상품진단": [],
+    "계산지표": [
+      {
+        "지표식별자": "M001",
+        "지표유형": "기간",
+        "지표명": "투자성향 변경 후 경과일수",
+        "대상참조": "R002",
+        "값": 10,
+        "단위": "일",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M002",
+        "지표유형": "기간",
+        "지표명": "디폴트옵션 실행까지 남은 일수",
+        "대상참조": "DOEXEC001",
+        "값": 4,
+        "단위": "일",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M003",
+        "지표유형": "상태비교",
+        "지표명": "현재 투자성향과 지정 디폴트옵션 위험등급 일치 여부",
+        "대상참조": [
+          "R002",
+          "DO-009"
+        ],
+        "값": false,
+        "단위": null,
+        "산출기준일": "2026-09-14"
+      }
+    ],
+    "확인된특이사항": [
+      {
+        "구분": "설정불일치",
+        "내용": "현재 투자성향은 안정추구형이지만 2024년에 지정한 고위험 디폴트옵션이 실행예정 상태임"
+      }
+    ]
+  }
+}

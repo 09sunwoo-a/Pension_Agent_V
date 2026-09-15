@@ -1,0 +1,156 @@
+{
+  "schemaVersion": "customer-briefing-display.v0.1",
+  "briefingMeta": {
+    "caseId": "B05-09",
+    "dataType": "시연용가상고객",
+    "asOfDate": "2026-09-14",
+    "generatedAt": "2026-09-14T07:00:00+09:00",
+    "currency": "KRW"
+  },
+  "customer": {
+    "customerId": "32064-97815",
+    "name": "배정우",
+    "age": 61,
+    "gender": "남",
+    "starClubGrade": "VVIP",
+    "investmentProfile": "적극투자형",
+    "irpOpenedAt": "2015-04-24",
+    "defaultOption": {
+      "registrationStatus": "등록",
+      "designatedProduct": {
+        "productId": "DO-008",
+        "productName": "모두드림",
+        "riskLevel": "고위험"
+      },
+      "applicationStatus": "미적용"
+    }
+  },
+  "signals": [],
+  "irpAccount": {
+    "valuationAmountKrw": 198600000,
+    "assetAllocation": [
+      {
+        "assetType": "원리금보장형",
+        "amountKrw": 68800000,
+        "weightPct": 34.6
+      },
+      {
+        "assetType": "실적배당형",
+        "amountKrw": 129800000,
+        "weightPct": 65.4
+      },
+      {
+        "assetType": "현금성자산",
+        "amountKrw": 0,
+        "weightPct": 0
+      }
+    ],
+    "oneYearReturnPct": 19.9,
+    "taxDeductionRemainingKrw": 0,
+    "latestProductOpening": {
+      "holdingId": "H002",
+      "productId": "SAV-003",
+      "productName": "NH저축은행 퇴직연금 정기예금",
+      "openedAt": "2026-01-09",
+      "amountKrw": 68800000
+    }
+  },
+  "holdings": [
+    {
+      "holdingId": "H001",
+      "productId": "FND-007",
+      "productName": "신한누버거버먼미국가치주증권투자신탁(H)(주식-재간접형)C-RE",
+      "assetType": "실적배당형",
+      "productCategory": "주식형펀드",
+      "contractTerm": null,
+      "valuationAmountKrw": 129800000,
+      "weightPct": 65.4,
+      "oneYearReturnPct": 28.51,
+      "openedAt": "2022-05-16",
+      "allocationBreakdown": null,
+      "flags": []
+    },
+    {
+      "holdingId": "H002",
+      "productId": "SAV-003",
+      "productName": "NH저축은행 퇴직연금 정기예금",
+      "assetType": "원리금보장형",
+      "productCategory": "정기예금",
+      "contractTerm": "1년",
+      "valuationAmountKrw": 68800000,
+      "weightPct": 34.6,
+      "oneYearReturnPct": 3.6,
+      "openedAt": "2026-01-09",
+      "allocationBreakdown": null,
+      "flags": []
+    }
+  ],
+  "에이전트맥락데이터": {
+    "스키마버전": "customer-agent-context.v0.1",
+    "고객계획": {
+      "재직상태": null
+    },
+    "납입및세제": {},
+    "계좌운영": {},
+    "퇴직및인출": {
+      "연금수령요건충족여부": true,
+      "연금수령한도": null,
+      "예상세후수령액원": null,
+      "전액해지문의": {
+        "문의여부": true,
+        "문의일": "2026-09-09",
+        "처리상태": "상담중"
+      },
+      "확인된자금사용계획": {
+        "사용목적": "주택수리비",
+        "필요금액원": null,
+        "지급시기구분": "몇 주 후",
+        "최종지급일": null,
+        "분할지급여부": null
+      },
+      "수리비필요금액원": null,
+      "수리비지급까지남은일수": null,
+      "연금수령가능액": null,
+      "필요환매금액원": null,
+      "환매대금입금예정일": null
+    },
+    "최근사건": [
+      {
+        "이벤트식별자": "T001",
+        "발생일시": "2026-09-09T13:20:00+09:00",
+        "이벤트유형": "IRP전액해지문의",
+        "계좌구분": "IRP",
+        "관련보유상품식별자": null,
+        "금액원": 198600000,
+        "처리상태": "상담중",
+        "채널": null
+      }
+    ],
+    "금융거래": [],
+    "상담이력": [
+      {
+        "상담식별자": "CRM001",
+        "상담일시": "2026-09-09T13:20:00+09:00",
+        "상담채널": "영업점전화",
+        "상담유형": "IRP해지상담",
+        "상담메모": "고객은 몇 주 후 지급할 주택 수리비 때문에 IRP 전액해지 가능 여부를 문의함. 약 2억원 중 필요한 돈은 일부라고 설명했으나 정확한 수리비·최종 지급일·분할 지급 여부는 아직 확인되지 않음."
+      }
+    ],
+    "외부계좌": [],
+    "투자성향이력": [],
+    "운용정책": {},
+    "상품진단": [],
+    "계산지표": [
+      {
+        "지표식별자": "M001",
+        "지표유형": "파생값",
+        "지표명": "해외형펀드비중",
+        "대상참조": null,
+        "값": 65.4,
+        "단위": "%",
+        "산출기준일": "2026-09-14"
+      }
+    ],
+    "확인된특이사항": []
+  }
+}

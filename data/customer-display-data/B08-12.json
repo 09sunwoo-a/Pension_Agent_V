@@ -1,0 +1,148 @@
+{
+  "schemaVersion": "customer-briefing-display.v0.1",
+  "briefingMeta": {
+    "caseId": "B08-12",
+    "dataType": "시연용가상고객",
+    "asOfDate": "2026-09-14",
+    "generatedAt": "2026-09-14T07:00:00+09:00",
+    "currency": "KRW"
+  },
+  "customer": {
+    "customerId": "41829-76035",
+    "name": "백승우",
+    "age": 42,
+    "gender": "남",
+    "starClubGrade": "그랜드",
+    "investmentProfile": "위험중립형",
+    "irpOpenedAt": "2018-03-12",
+    "defaultOption": {
+      "registrationStatus": "등록",
+      "designatedProduct": {
+        "productId": "DO-006",
+        "productName": "불려드림II",
+        "riskLevel": "중위험"
+      },
+      "applicationStatus": "미적용"
+    }
+  },
+  "signals": [],
+  "irpAccount": {
+    "valuationAmountKrw": 74600000,
+    "assetAllocation": [
+      {
+        "assetType": "원리금보장형",
+        "amountKrw": 74600000,
+        "weightPct": 100
+      },
+      {
+        "assetType": "실적배당형",
+        "amountKrw": 0,
+        "weightPct": 0
+      },
+      {
+        "assetType": "현금성자산",
+        "amountKrw": 0,
+        "weightPct": 0
+      }
+    ],
+    "oneYearReturnPct": 3.4,
+    "taxDeductionRemainingKrw": 3400000,
+    "latestProductOpening": {
+      "holdingId": "H001",
+      "productId": "SAV-001",
+      "productName": "KB저축은행 퇴직연금 정기예금",
+      "openedAt": "2026-01-30",
+      "amountKrw": 46200000
+    }
+  },
+  "holdings": [
+    {
+      "holdingId": "H001",
+      "productId": "SAV-001",
+      "productName": "KB저축은행 퇴직연금 정기예금",
+      "assetType": "원리금보장형",
+      "productCategory": "정기예금",
+      "contractTerm": "1년",
+      "valuationAmountKrw": 46200000,
+      "weightPct": 61.9,
+      "oneYearReturnPct": 3.5,
+      "openedAt": "2026-01-30",
+      "allocationBreakdown": null,
+      "flags": []
+    },
+    {
+      "holdingId": "H002",
+      "productId": "DEP-003",
+      "productName": "우리은행 퇴직연금 정기예금",
+      "assetType": "원리금보장형",
+      "productCategory": "정기예금",
+      "contractTerm": "1년",
+      "valuationAmountKrw": 28400000,
+      "weightPct": 38.1,
+      "oneYearReturnPct": 3.3,
+      "openedAt": "2025-10-18",
+      "allocationBreakdown": null,
+      "flags": []
+    }
+  ],
+  "에이전트맥락데이터": {
+    "스키마버전": "customer-agent-context.v0.1",
+    "고객계획": {
+      "재직상태": "재직",
+      "은퇴계획": {
+        "등록여부": true,
+        "예상은퇴일": "2043-03-31"
+      },
+      "장기운용가능금액원": null,
+      "가격변동감수가능금액원": null
+    },
+    "납입및세제": {},
+    "계좌운영": {},
+    "퇴직및인출": {},
+    "최근사건": [],
+    "금융거래": [],
+    "상담이력": [],
+    "외부계좌": [],
+    "투자성향이력": [],
+    "운용정책": {},
+    "상품진단": [
+      {
+        "진단구분": "상품운용이력요약",
+        "조회시작일": "2018-03-12",
+        "조회종료일": "2026-09-11",
+        "원리금보장상품만운용여부": true,
+        "실적배당상품운용이력건수": 0
+      }
+    ],
+    "계산지표": [
+      {
+        "지표식별자": "M001",
+        "지표유형": "파생값",
+        "지표명": "예상은퇴일까지남은일수",
+        "대상참조": null,
+        "값": 6042,
+        "단위": "일",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M002",
+        "지표유형": "파생값",
+        "지표명": "예상은퇴일까지남은연수",
+        "대상참조": null,
+        "값": 16.6,
+        "단위": "년",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M003",
+        "지표유형": "파생값",
+        "지표명": "원리금보장형비중",
+        "대상참조": null,
+        "값": 100,
+        "단위": "%",
+        "산출기준일": "2026-09-14"
+      }
+    ],
+    "확인된특이사항": []
+  }
+}

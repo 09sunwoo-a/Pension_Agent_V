@@ -1,0 +1,154 @@
+{
+  "schemaVersion": "customer-briefing-display.v0.1",
+  "briefingMeta": {
+    "caseId": "B03-07",
+    "dataType": "시연용가상고객",
+    "asOfDate": "2026-09-14",
+    "generatedAt": "2026-09-14T07:00:00+09:00",
+    "currency": "KRW"
+  },
+  "customer": {
+    "customerId": "38716-52049",
+    "name": "박서진",
+    "age": 35,
+    "gender": "여",
+    "starClubGrade": "그랜드",
+    "investmentProfile": "안정추구형",
+    "irpOpenedAt": "2018-09-21",
+    "defaultOption": {
+      "registrationStatus": "등록",
+      "designatedProduct": {
+        "productId": "DO-003",
+        "productName": "알파드림II",
+        "riskLevel": "저위험"
+      },
+      "applicationStatus": "미적용"
+    }
+  },
+  "signals": [],
+  "irpAccount": {
+    "valuationAmountKrw": 75500000,
+    "assetAllocation": [
+      {
+        "assetType": "원리금보장형",
+        "amountKrw": 72400000,
+        "weightPct": 95.9
+      },
+      {
+        "assetType": "실적배당형",
+        "amountKrw": 0,
+        "weightPct": 0
+      },
+      {
+        "assetType": "현금성자산",
+        "amountKrw": 3100000,
+        "weightPct": 4.1
+      }
+    ],
+    "oneYearReturnPct": 3.2,
+    "taxDeductionRemainingKrw": 2200000,
+    "latestProductOpening": {
+      "holdingId": "H001",
+      "productId": "DEP-003",
+      "productName": "우리은행 퇴직연금 정기예금",
+      "openedAt": "2025-09-30",
+      "amountKrw": 72400000
+    }
+  },
+  "holdings": [
+    {
+      "holdingId": "H001",
+      "productId": "DEP-003",
+      "productName": "우리은행 퇴직연금 정기예금",
+      "assetType": "원리금보장형",
+      "productCategory": "정기예금",
+      "contractTerm": "1년",
+      "valuationAmountKrw": 72400000,
+      "weightPct": 95.9,
+      "oneYearReturnPct": 3.3,
+      "openedAt": "2025-09-30",
+      "allocationBreakdown": null,
+      "flags": []
+    },
+    {
+      "holdingId": "H002",
+      "productId": null,
+      "productName": "현금성자산",
+      "assetType": "현금성자산",
+      "productCategory": "현금성자산",
+      "contractTerm": null,
+      "valuationAmountKrw": 3100000,
+      "weightPct": 4.1,
+      "oneYearReturnPct": null,
+      "openedAt": null,
+      "allocationBreakdown": null,
+      "flags": []
+    }
+  ],
+  "에이전트맥락데이터": {
+    "스키마버전": "customer-agent-context.v0.1",
+    "고객계획": {
+      "즉시이전예상금액원": null,
+      "만기유지예상금액원": null
+    },
+    "납입및세제": {},
+    "계좌운영": {},
+    "퇴직및인출": {},
+    "최근사건": [
+      {
+        "이벤트식별자": "T001",
+        "발생일시": "2026-09-30T00:00:00+09:00",
+        "이벤트유형": "상품만기예정",
+        "계좌구분": "IRP",
+        "관련보유상품식별자": "H001",
+        "금액원": 72400000,
+        "처리상태": "예정",
+        "채널": null
+      }
+    ],
+    "금융거래": [],
+    "상담이력": [
+      {
+        "상담식별자": "CRM001",
+        "상담일시": "2026-09-09T11:25:00+09:00",
+        "상담채널": "영업점전화",
+        "상담유형": "퇴직연금계약이전문의",
+        "상담메모": "고객은 타사에서 더 높은 금리를 제시받았다며 IRP 이전을 문의함. 타사 금융기관·상품기간·적용금리·적용기한 자료는 아직 확인되지 않음."
+      }
+    ],
+    "외부계좌": [],
+    "투자성향이력": [],
+    "운용정책": {},
+    "상품진단": [],
+    "계산지표": [
+      {
+        "지표식별자": "M001",
+        "지표유형": "파생값",
+        "지표명": "정기예금만기까지남은일수",
+        "대상참조": null,
+        "값": 16,
+        "단위": "일",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M002",
+        "지표유형": "파생값",
+        "지표명": "현금화필요금액",
+        "대상참조": null,
+        "값": 72400000,
+        "단위": "원",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M003",
+        "지표유형": "파생값",
+        "지표명": "현금화필요금액비중",
+        "대상참조": null,
+        "값": 95.9,
+        "단위": "%",
+        "산출기준일": "2026-09-14"
+      }
+    ],
+    "확인된특이사항": []
+  }
+}

@@ -1,0 +1,172 @@
+{
+  "schemaVersion": "customer-briefing-display.v0.1",
+  "briefingMeta": {
+    "caseId": "B09-17",
+    "dataType": "시연용가상고객",
+    "asOfDate": "2026-09-14",
+    "generatedAt": "2026-09-14T07:00:00+09:00",
+    "currency": "KRW"
+  },
+  "customer": {
+    "customerId": "72461-90538",
+    "name": "문정희",
+    "age": 58,
+    "gender": "여",
+    "starClubGrade": "VIP",
+    "investmentProfile": "적극투자형",
+    "irpOpenedAt": "2021-11-05",
+    "defaultOption": {
+      "registrationStatus": "등록",
+      "designatedProduct": {
+        "productId": "DO-008",
+        "productName": "모두드림",
+        "riskLevel": "고위험"
+      },
+      "applicationStatus": "미적용"
+    }
+  },
+  "signals": [],
+  "irpAccount": {
+    "valuationAmountKrw": 117200000,
+    "assetAllocation": [
+      {
+        "assetType": "원리금보장형",
+        "amountKrw": 25784000,
+        "weightPct": 22
+      },
+      {
+        "assetType": "실적배당형",
+        "amountKrw": 91416000,
+        "weightPct": 78
+      },
+      {
+        "assetType": "현금성자산",
+        "amountKrw": 0,
+        "weightPct": 0
+      }
+    ],
+    "oneYearReturnPct": 12.7,
+    "taxDeductionRemainingKrw": 700000,
+    "latestProductOpening": {
+      "holdingId": "H002",
+      "productId": "SAV-001",
+      "productName": "KB저축은행 퇴직연금 정기예금",
+      "openedAt": "2025-12-01",
+      "amountKrw": 25784000
+    }
+  },
+  "holdings": [
+    {
+      "holdingId": "H001",
+      "productId": "MF-001",
+      "productName": "KB 온국민 TDF 시리즈",
+      "assetType": "실적배당형",
+      "productCategory": "TDF",
+      "contractTerm": null,
+      "valuationAmountKrw": 91416000,
+      "weightPct": 78,
+      "oneYearReturnPct": 15.27,
+      "openedAt": "2024-02-19",
+      "allocationBreakdown": null,
+      "flags": []
+    },
+    {
+      "holdingId": "H002",
+      "productId": "SAV-001",
+      "productName": "KB저축은행 퇴직연금 정기예금",
+      "assetType": "원리금보장형",
+      "productCategory": "정기예금",
+      "contractTerm": "1년",
+      "valuationAmountKrw": 25784000,
+      "weightPct": 22,
+      "oneYearReturnPct": 3.5,
+      "openedAt": "2025-12-01",
+      "allocationBreakdown": null,
+      "flags": []
+    }
+  ],
+  "에이전트맥락데이터": {
+    "스키마버전": "customer-agent-context.v0.1",
+    "고객계획": {
+      "재직상태": null,
+      "현재타깃데이트펀드위험유지의향": null
+    },
+    "납입및세제": {},
+    "계좌운영": {},
+    "퇴직및인출": {
+      "연금수령계획": {
+        "등록여부": true,
+        "연금개시예정일": "2029-09-11",
+        "초기수령예정금액원": null,
+        "장기잔여예정금액원": null
+      },
+      "연금개시초기수령금액원": null,
+      "연금개시후장기잔여금액원": null
+    },
+    "최근사건": [
+      {
+        "이벤트식별자": "T001",
+        "발생일시": "2024-02-19T10:24:00+09:00",
+        "이벤트유형": "상품매수",
+        "계좌구분": "IRP",
+        "관련보유상품식별자": "H001",
+        "금액원": null,
+        "처리상태": "완료",
+        "채널": null
+      }
+    ],
+    "금융거래": [],
+    "상담이력": [],
+    "외부계좌": [],
+    "투자성향이력": [],
+    "운용정책": {},
+    "상품진단": [
+      {
+        "진단구분": "상품운용이력요약",
+        "기준보유상품식별자": "H001",
+        "기준상품가입일": "2024-02-19",
+        "가입후운용방향변경횟수": 0,
+        "최종확인일": "2026-09-11"
+      }
+    ],
+    "계산지표": [
+      {
+        "지표식별자": "M001",
+        "지표유형": "파생값",
+        "지표명": "연금개시까지남은일수",
+        "대상참조": null,
+        "값": 1093,
+        "단위": "일",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M002",
+        "지표유형": "파생값",
+        "지표명": "연금개시까지남은연수",
+        "대상참조": null,
+        "값": 3,
+        "단위": "년",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M003",
+        "지표유형": "파생값",
+        "지표명": "TDF2055비중",
+        "대상참조": null,
+        "값": 78,
+        "단위": "%",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M004",
+        "지표유형": "파생값",
+        "지표명": "TDF가입후운용방향변경횟수",
+        "대상참조": null,
+        "값": 0,
+        "단위": "회",
+        "산출기준일": "2026-09-14"
+      }
+    ],
+    "확인된특이사항": []
+  }
+}

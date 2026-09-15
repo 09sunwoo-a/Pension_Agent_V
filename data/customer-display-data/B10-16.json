@@ -1,0 +1,173 @@
+{
+  "schemaVersion": "customer-briefing-display.v0.1",
+  "briefingMeta": {
+    "caseId": "B10-16",
+    "dataType": "시연용가상고객",
+    "asOfDate": "2026-09-14",
+    "generatedAt": "2026-09-14T07:00:00+09:00",
+    "currency": "KRW"
+  },
+  "customer": {
+    "customerId": "85136-42907",
+    "name": "류성민",
+    "age": 34,
+    "gender": "남",
+    "starClubGrade": "VIP",
+    "investmentProfile": "안정추구형",
+    "irpOpenedAt": "2018-12-03",
+    "defaultOption": {
+      "registrationStatus": "등록",
+      "designatedProduct": {
+        "productId": "DO-003",
+        "productName": "알파드림II",
+        "riskLevel": "저위험"
+      },
+      "applicationStatus": "미적용"
+    }
+  },
+  "signals": [],
+  "irpAccount": {
+    "valuationAmountKrw": 93800000,
+    "assetAllocation": [
+      {
+        "assetType": "원리금보장형",
+        "amountKrw": 28140000,
+        "weightPct": 30
+      },
+      {
+        "assetType": "실적배당형",
+        "amountKrw": 65660000,
+        "weightPct": 70
+      },
+      {
+        "assetType": "현금성자산",
+        "amountKrw": 0,
+        "weightPct": 0
+      }
+    ],
+    "oneYearReturnPct": -2.8,
+    "taxDeductionRemainingKrw": 1200000,
+    "latestProductOpening": {
+      "holdingId": "H002",
+      "productId": "SAV-001",
+      "productName": "KB저축은행 퇴직연금 정기예금",
+      "openedAt": "2025-10-14",
+      "amountKrw": 28140000
+    }
+  },
+  "holdings": [
+    {
+      "holdingId": "H001",
+      "productId": "MF-017",
+      "productName": "교보악사 Tomorrow 장기우량K-1호 (채권)",
+      "assetType": "실적배당형",
+      "productCategory": "채권형펀드",
+      "contractTerm": null,
+      "valuationAmountKrw": 65660000,
+      "weightPct": 70,
+      "oneYearReturnPct": -5.51,
+      "openedAt": "2019-05-14",
+      "allocationBreakdown": null,
+      "flags": []
+    },
+    {
+      "holdingId": "H002",
+      "productId": "SAV-001",
+      "productName": "KB저축은행 퇴직연금 정기예금",
+      "assetType": "원리금보장형",
+      "productCategory": "정기예금",
+      "contractTerm": "1년",
+      "valuationAmountKrw": 28140000,
+      "weightPct": 30,
+      "oneYearReturnPct": 3.5,
+      "openedAt": "2025-10-14",
+      "allocationBreakdown": null,
+      "flags": []
+    }
+  ],
+  "에이전트맥락데이터": {
+    "스키마버전": "customer-agent-context.v0.1",
+    "고객계획": {
+      "재직상태": null,
+      "보유지속사유": null,
+      "일부교체수용의향": null
+    },
+    "납입및세제": {},
+    "계좌운영": {},
+    "퇴직및인출": {},
+    "최근사건": [
+      {
+        "이벤트식별자": "T001",
+        "발생일시": "2026-01-30T00:00:00+09:00",
+        "이벤트유형": "신규판매중단",
+        "계좌구분": "IRP",
+        "관련보유상품식별자": "H001",
+        "금액원": null,
+        "처리상태": "완료",
+        "채널": null
+      }
+    ],
+    "금융거래": [],
+    "상담이력": [],
+    "외부계좌": [],
+    "투자성향이력": [],
+    "운용정책": {},
+    "상품진단": [
+      {
+        "진단구분": "성과비교",
+        "비교식별자": "PERF001",
+        "관련보유상품식별자": "H001",
+        "비교유형": "상품관리자료상동일유형",
+        "성과기간": "최근6개월",
+        "성과기준일": "2026-08-31",
+        "보유펀드수익률": -4.8,
+        "동일유형비교대상수익률": 1.3,
+        "성과차이퍼센트포인트": -6.1
+      },
+      {
+        "진단구분": "미산출지표",
+        "지표명": "현재평가손익",
+        "값": null
+      }
+    ],
+    "계산지표": [
+      {
+        "지표식별자": "M001",
+        "지표유형": "파생값",
+        "지표명": "주요펀드보유기간일수",
+        "대상참조": null,
+        "값": 2680,
+        "단위": "일",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M002",
+        "지표유형": "파생값",
+        "지표명": "주요펀드보유기간년수",
+        "대상참조": null,
+        "값": 7.3,
+        "단위": "년",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M003",
+        "지표유형": "파생값",
+        "지표명": "주요펀드비중",
+        "대상참조": null,
+        "값": 70,
+        "단위": "%",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M004",
+        "지표유형": "파생값",
+        "지표명": "최근동일유형대비성과차이퍼센트포인트",
+        "대상참조": null,
+        "값": -6.1,
+        "단위": "%p",
+        "산출기준일": "2026-09-14"
+      }
+    ],
+    "확인된특이사항": []
+  }
+}

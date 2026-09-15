@@ -1,0 +1,148 @@
+{
+  "schemaVersion": "customer-briefing-display.v0.1",
+  "briefingMeta": {
+    "caseId": "B06-13",
+    "dataType": "시연용가상고객",
+    "asOfDate": "2026-09-14",
+    "generatedAt": "2026-09-14T07:00:00+09:00",
+    "currency": "KRW"
+  },
+  "customer": {
+    "customerId": "13570-84296",
+    "name": "신경호",
+    "age": 60,
+    "gender": "남",
+    "starClubGrade": "VIP",
+    "investmentProfile": null,
+    "irpOpenedAt": "2026-08-29",
+    "defaultOption": {
+      "registrationStatus": "미확인",
+      "designatedProduct": null,
+      "applicationStatus": null
+    }
+  },
+  "signals": [],
+  "irpAccount": {
+    "valuationAmountKrw": 164700000,
+    "assetAllocation": [
+      {
+        "assetType": "원리금보장형",
+        "amountKrw": 0,
+        "weightPct": 0
+      },
+      {
+        "assetType": "실적배당형",
+        "amountKrw": 0,
+        "weightPct": 0
+      },
+      {
+        "assetType": "현금성자산",
+        "amountKrw": 164700000,
+        "weightPct": 100
+      }
+    ],
+    "oneYearReturnPct": 0,
+    "taxDeductionRemainingKrw": 7000000,
+    "latestProductOpening": null
+  },
+  "holdings": [
+    {
+      "holdingId": "H001",
+      "productId": null,
+      "productName": "현금성자산",
+      "assetType": "현금성자산",
+      "productCategory": "현금성자산",
+      "contractTerm": null,
+      "valuationAmountKrw": 164700000,
+      "weightPct": 100,
+      "oneYearReturnPct": null,
+      "openedAt": null,
+      "allocationBreakdown": null,
+      "flags": []
+    }
+  ],
+  "에이전트맥락데이터": {
+    "스키마버전": "customer-agent-context.v0.1",
+    "고객계획": {
+      "재직상태": "퇴직"
+    },
+    "납입및세제": {
+      "퇴직급여재원금액원": 164700000,
+      "개인부담금재원금액원": 0
+    },
+    "계좌운영": {
+      "상품운용지시": {
+        "지시여부": false,
+        "지정상품": []
+      }
+    },
+    "퇴직및인출": {
+      "연금수령계획": {
+        "설정여부": false,
+        "수령방식": null,
+        "개시일": null,
+        "수령금액원": null
+      },
+      "첫1~2년필요자금": null,
+      "장기잔여자금": null
+    },
+    "최근사건": [
+      {
+        "이벤트식별자": "T001",
+        "발생일시": "2026-09-04T10:20:00+09:00",
+        "이벤트유형": "퇴직급여입금",
+        "계좌구분": "IRP",
+        "관련보유상품식별자": "H001",
+        "금액원": 164700000,
+        "처리상태": "완료",
+        "채널": null
+      },
+      {
+        "이벤트식별자": "T002",
+        "발생일시": "2026-09-04T10:20:01+09:00",
+        "이벤트유형": "현금성자산발생",
+        "계좌구분": "IRP",
+        "관련보유상품식별자": "H001",
+        "금액원": 164700000,
+        "처리상태": "완료",
+        "채널": null
+      }
+    ],
+    "금융거래": [],
+    "상담이력": [],
+    "외부계좌": [],
+    "투자성향이력": [],
+    "운용정책": {},
+    "상품진단": [],
+    "계산지표": [
+      {
+        "지표식별자": "M001",
+        "지표유형": "파생값",
+        "지표명": "퇴직급여입금후경과일수",
+        "대상참조": null,
+        "값": 10,
+        "단위": "일",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M002",
+        "지표유형": "파생값",
+        "지표명": "현금성대기일수",
+        "대상참조": null,
+        "값": 10,
+        "단위": "일",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M003",
+        "지표유형": "파생값",
+        "지표명": "현금성자산비중",
+        "대상참조": null,
+        "값": 100,
+        "단위": "%",
+        "산출기준일": "2026-09-14"
+      }
+    ],
+    "확인된특이사항": []
+  }
+}

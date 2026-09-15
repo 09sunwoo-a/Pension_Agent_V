@@ -1,0 +1,102 @@
+{
+  "schemaVersion": "customer-briefing-display.v0.1",
+  "briefingMeta": {
+    "caseId": "DEMO-01",
+    "dataType": "시연용가상고객",
+    "asOfDate": "2026-09-04",
+    "generatedAt": "2026-09-04T07:00:00+09:00",
+    "currency": "KRW"
+  },
+  "customer": {
+    "customerId": "10274-38562",
+    "name": "김서연",
+    "age": 44,
+    "gender": "여",
+    "starClubGrade": "VIP",
+    "investmentProfile": "위험중립형",
+    "irpOpenedAt": "2019-03-15",
+    "defaultOption": {
+      "registrationStatus": "등록",
+      "designatedProduct": {
+        "productId": "DO-006",
+        "productName": "불려드림II",
+        "riskLevel": "중위험"
+      },
+      "applicationStatus": "미적용"
+    }
+  },
+  "signals": [],
+  "irpAccount": {
+    "valuationAmountKrw": 45000000,
+    "assetAllocation": [
+      {
+        "assetType": "원리금보장형",
+        "amountKrw": 28000000,
+        "weightPct": 62.2
+      },
+      {
+        "assetType": "실적배당형",
+        "amountKrw": 15000000,
+        "weightPct": 33.3
+      },
+      {
+        "assetType": "현금성자산",
+        "amountKrw": 2000000,
+        "weightPct": 4.5
+      }
+    ],
+    "oneYearReturnPct": 3.0,
+    "taxDeductionRemainingKrw": 5000000,
+    "latestProductOpening": {
+      "holdingId": "H002",
+      "productId": "FND-001",
+      "productName": "키움더드림단기채증권투자신탁(채권)C-P2E(퇴직연금)",
+      "openedAt": "2026-06-12",
+      "amountKrw": 15000000
+    }
+  },
+  "holdings": [
+    {
+      "holdingId": "H001",
+      "productId": "SAV-001",
+      "productName": "KB저축은행 퇴직연금 정기예금",
+      "assetType": "원리금보장형",
+      "productCategory": "정기예금",
+      "contractTerm": "1년",
+      "valuationAmountKrw": 28000000,
+      "weightPct": 62.2,
+      "oneYearReturnPct": 3.5,
+      "openedAt": "2026-02-16",
+      "allocationBreakdown": null,
+      "flags": []
+    },
+    {
+      "holdingId": "H002",
+      "productId": "FND-001",
+      "productName": "키움더드림단기채증권투자신탁(채권)C-P2E(퇴직연금)",
+      "assetType": "실적배당형",
+      "productCategory": "채권형펀드",
+      "contractTerm": null,
+      "valuationAmountKrw": 15000000,
+      "weightPct": 33.3,
+      "oneYearReturnPct": 2.52,
+      "openedAt": "2026-06-12",
+      "allocationBreakdown": null,
+      "flags": []
+    },
+    {
+      "holdingId": "H003",
+      "productId": null,
+      "productName": "현금성자산",
+      "assetType": "현금성자산",
+      "productCategory": "현금성자산",
+      "contractTerm": null,
+      "valuationAmountKrw": 2000000,
+      "weightPct": 4.5,
+      "oneYearReturnPct": null,
+      "openedAt": null,
+      "allocationBreakdown": null,
+      "flags": []
+    }
+  ]
+}

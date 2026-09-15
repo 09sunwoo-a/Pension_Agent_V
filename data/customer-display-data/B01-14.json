@@ -1,0 +1,162 @@
+{
+  "schemaVersion": "customer-briefing-display.v0.1",
+  "briefingMeta": {
+    "caseId": "B01-14",
+    "dataType": "시연용가상고객",
+    "asOfDate": "2026-09-14",
+    "generatedAt": "2026-09-14T07:00:00+09:00",
+    "currency": "KRW"
+  },
+  "customer": {
+    "customerId": "43195-68420",
+    "name": "정유진",
+    "age": 43,
+    "gender": "여",
+    "starClubGrade": "그랜드",
+    "investmentProfile": "위험중립형",
+    "irpOpenedAt": "2022-04-15",
+    "defaultOption": {
+      "registrationStatus": "등록",
+      "designatedProduct": {
+        "productId": "DO-005",
+        "productName": "불려드림",
+        "riskLevel": "중위험"
+      },
+      "applicationStatus": "미적용"
+    }
+  },
+  "signals": [],
+  "irpAccount": {
+    "valuationAmountKrw": 31600000,
+    "assetAllocation": [
+      {
+        "assetType": "원리금보장형",
+        "amountKrw": 14000000,
+        "weightPct": 44.3
+      },
+      {
+        "assetType": "실적배당형",
+        "amountKrw": 15000000,
+        "weightPct": 47.5
+      },
+      {
+        "assetType": "현금성자산",
+        "amountKrw": 2600000,
+        "weightPct": 8.2
+      }
+    ],
+    "oneYearReturnPct": 2.2,
+    "taxDeductionRemainingKrw": 3800000,
+    "latestProductOpening": {
+      "holdingId": "H002",
+      "productId": "FND-005",
+      "productName": "KB글로벌단기채증권자투자신탁(채권-재간접형)(H)C-퇴직E",
+      "openedAt": "2026-01-16",
+      "amountKrw": 15000000
+    }
+  },
+  "holdings": [
+    {
+      "holdingId": "H001",
+      "productId": "DEP-005",
+      "productName": "신한은행 TOPS퇴직플랜 정기예금",
+      "assetType": "원리금보장형",
+      "productCategory": "정기예금",
+      "contractTerm": "1년",
+      "valuationAmountKrw": 14000000,
+      "weightPct": 44.3,
+      "oneYearReturnPct": 3.25,
+      "openedAt": "2025-10-21",
+      "allocationBreakdown": null,
+      "flags": []
+    },
+    {
+      "holdingId": "H002",
+      "productId": "FND-005",
+      "productName": "KB글로벌단기채증권자투자신탁(채권-재간접형)(H)C-퇴직E",
+      "assetType": "실적배당형",
+      "productCategory": "채권형펀드",
+      "contractTerm": null,
+      "valuationAmountKrw": 15000000,
+      "weightPct": 47.5,
+      "oneYearReturnPct": 1.58,
+      "openedAt": "2026-01-16",
+      "allocationBreakdown": null,
+      "flags": []
+    },
+    {
+      "holdingId": "H003",
+      "productId": null,
+      "productName": "현금성자산",
+      "assetType": "현금성자산",
+      "productCategory": "현금성자산",
+      "contractTerm": null,
+      "valuationAmountKrw": 2600000,
+      "weightPct": 8.2,
+      "oneYearReturnPct": null,
+      "openedAt": null,
+      "allocationBreakdown": null,
+      "flags": []
+    }
+  ],
+  "에이전트맥락데이터": {
+    "스키마버전": "customer-agent-context.v0.1",
+    "고객계획": {
+      "재직상태": "재직"
+    },
+    "납입및세제": {
+      "올해개인부담금납입액원": 0
+    },
+    "계좌운영": {},
+    "퇴직및인출": {},
+    "최근사건": [],
+    "금융거래": [],
+    "상담이력": [],
+    "외부계좌": [
+      {
+        "외부계좌구분": "연금저축",
+        "외부계좌식별자": "EXTPS001",
+        "금융기관": null,
+        "정보확인일": "2026-09-14",
+        "연도별납입액원": [
+          {
+            "연도": 2024,
+            "개인부담금납입액원": 6000000
+          },
+          {
+            "연도": 2025,
+            "개인부담금납입액원": 6000000
+          },
+          {
+            "연도": 2026,
+            "개인부담금납입액원": 5200000
+          }
+        ]
+      }
+    ],
+    "투자성향이력": [],
+    "운용정책": {},
+    "상품진단": [],
+    "계산지표": [
+      {
+        "지표식별자": "M001",
+        "지표유형": "파생값",
+        "지표명": "2026년연금계좌세액공제대상납입액",
+        "대상참조": null,
+        "값": 5200000,
+        "단위": "원",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M002",
+        "지표유형": "파생값",
+        "지표명": "연금계좌세액공제잔여한도",
+        "대상참조": null,
+        "값": 3800000,
+        "단위": "원",
+        "산출기준일": "2026-09-14"
+      }
+    ],
+    "확인된특이사항": []
+  }
+}

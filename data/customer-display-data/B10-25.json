@@ -1,0 +1,176 @@
+{
+  "schemaVersion": "customer-briefing-display.v0.1",
+  "briefingMeta": {
+    "caseId": "B10-25",
+    "dataType": "시연용가상고객",
+    "asOfDate": "2026-09-14",
+    "generatedAt": "2026-09-14T07:00:00+09:00",
+    "currency": "KRW"
+  },
+  "customer": {
+    "customerId": "31579-86420",
+    "name": "한미경",
+    "age": 37,
+    "gender": "여",
+    "starClubGrade": "VIP",
+    "investmentProfile": "안정추구형",
+    "irpOpenedAt": "2018-02-07",
+    "defaultOption": {
+      "registrationStatus": "등록",
+      "designatedProduct": {
+        "productId": "DO-003",
+        "productName": "알파드림II",
+        "riskLevel": "저위험"
+      },
+      "applicationStatus": "미적용"
+    }
+  },
+  "signals": [],
+  "irpAccount": {
+    "valuationAmountKrw": 82400000,
+    "assetAllocation": [
+      {
+        "assetType": "원리금보장형",
+        "amountKrw": 24720000,
+        "weightPct": 30
+      },
+      {
+        "assetType": "실적배당형",
+        "amountKrw": 57680000,
+        "weightPct": 70
+      },
+      {
+        "assetType": "현금성자산",
+        "amountKrw": 0,
+        "weightPct": 0
+      }
+    ],
+    "oneYearReturnPct": -2.8,
+    "taxDeductionRemainingKrw": 800000,
+    "latestProductOpening": {
+      "holdingId": "H002",
+      "productId": "SAV-003",
+      "productName": "NH저축은행 퇴직연금 정기예금",
+      "openedAt": "2025-12-16",
+      "amountKrw": 24720000
+    }
+  },
+  "holdings": [
+    {
+      "holdingId": "H001",
+      "productId": "MF-017",
+      "productName": "교보악사 Tomorrow 장기우량K-1호 (채권)",
+      "assetType": "실적배당형",
+      "productCategory": "채권형펀드",
+      "contractTerm": null,
+      "valuationAmountKrw": 57680000,
+      "weightPct": 70,
+      "oneYearReturnPct": -5.51,
+      "openedAt": "2018-10-26",
+      "allocationBreakdown": null,
+      "flags": []
+    },
+    {
+      "holdingId": "H002",
+      "productId": "SAV-003",
+      "productName": "NH저축은행 퇴직연금 정기예금",
+      "assetType": "원리금보장형",
+      "productCategory": "정기예금",
+      "contractTerm": "1년",
+      "valuationAmountKrw": 24720000,
+      "weightPct": 30,
+      "oneYearReturnPct": 3.6,
+      "openedAt": "2025-12-16",
+      "allocationBreakdown": null,
+      "flags": []
+    }
+  ],
+  "에이전트맥락데이터": {
+    "스키마버전": "customer-agent-context.v0.1",
+    "고객계획": {
+      "재직상태": null,
+      "손실인지여부": true,
+      "유지교체결정상태": "미결정",
+      "남은운용가능기간": null,
+      "기존전략유지의향": null,
+      "일부교체수용의향": null
+    },
+    "납입및세제": {},
+    "계좌운영": {},
+    "퇴직및인출": {},
+    "최근사건": [
+      {
+        "이벤트식별자": "T001",
+        "발생일시": "2025-12-12T00:00:00+09:00",
+        "이벤트유형": "신규판매중단",
+        "계좌구분": "IRP",
+        "관련보유상품식별자": "H001",
+        "금액원": null,
+        "처리상태": "완료",
+        "채널": null
+      }
+    ],
+    "금융거래": [],
+    "상담이력": [
+      {
+        "상담식별자": "CRM001",
+        "상담일시": "2026-09-05T10:35:00+09:00",
+        "상담채널": "영업점전화",
+        "상담유형": "퇴직연금사후관리",
+        "상담메모": "고객은 해당 펀드의 평가손실과 신규판매 중단 사실을 알고 있으나 계속 보유할지 다른 상품으로 변경할지 아직 결정하지 못했다고 말함. 특정 대체상품이나 부분교체 의향은 확인하지 않음."
+      }
+    ],
+    "외부계좌": [],
+    "투자성향이력": [],
+    "운용정책": {},
+    "상품진단": [],
+    "계산지표": [
+      {
+        "지표식별자": "M001",
+        "지표유형": "파생값",
+        "지표명": "주요펀드보유기간일수",
+        "대상참조": null,
+        "값": 2880,
+        "단위": "일",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M002",
+        "지표유형": "파생값",
+        "지표명": "주요펀드보유기간년수",
+        "대상참조": null,
+        "값": 7.9,
+        "단위": "년",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M003",
+        "지표유형": "파생값",
+        "지표명": "주요펀드비중",
+        "대상참조": null,
+        "값": 70,
+        "단위": "%",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M004",
+        "지표유형": "파생값",
+        "지표명": "주요펀드평가손실금액",
+        "대상참조": null,
+        "값": 8120000,
+        "단위": "원",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M005",
+        "지표유형": "파생값",
+        "지표명": "주요펀드평가손실률",
+        "대상참조": null,
+        "값": 12.34,
+        "단위": "%",
+        "산출기준일": "2026-09-14"
+      }
+    ],
+    "확인된특이사항": []
+  }
+}

@@ -1,0 +1,175 @@
+{
+  "schemaVersion": "customer-briefing-display.v0.1",
+  "briefingMeta": {
+    "caseId": "B01-03",
+    "dataType": "시연용가상고객",
+    "asOfDate": "2026-09-14",
+    "generatedAt": "2026-09-14T07:00:00+09:00",
+    "currency": "KRW"
+  },
+  "customer": {
+    "customerId": "47306-92158",
+    "name": "오민서",
+    "age": 46,
+    "gender": "여",
+    "starClubGrade": "그랜드",
+    "investmentProfile": "위험중립형",
+    "irpOpenedAt": "2020-11-06",
+    "defaultOption": {
+      "registrationStatus": "등록",
+      "designatedProduct": {
+        "productId": "DO-006",
+        "productName": "불려드림II",
+        "riskLevel": "중위험"
+      },
+      "applicationStatus": "운용중"
+    }
+  },
+  "signals": [],
+  "irpAccount": {
+    "valuationAmountKrw": 63500000,
+    "assetAllocation": [
+      {
+        "assetType": "원리금보장형",
+        "amountKrw": 24130000,
+        "weightPct": 38
+      },
+      {
+        "assetType": "실적배당형",
+        "amountKrw": 35000000,
+        "weightPct": 55.1
+      },
+      {
+        "assetType": "현금성자산",
+        "amountKrw": 4370000,
+        "weightPct": 6.9
+      }
+    ],
+    "oneYearReturnPct": 10.1,
+    "taxDeductionRemainingKrw": 0,
+    "latestProductOpening": {
+      "holdingId": "H001",
+      "productId": "SAV-001",
+      "productName": "KB저축은행 퇴직연금 정기예금",
+      "openedAt": "2025-12-09",
+      "amountKrw": 24130000
+    }
+  },
+  "holdings": [
+    {
+      "holdingId": "H001",
+      "productId": "SAV-001",
+      "productName": "KB저축은행 퇴직연금 정기예금",
+      "assetType": "원리금보장형",
+      "productCategory": "정기예금",
+      "contractTerm": "1년",
+      "valuationAmountKrw": 24130000,
+      "weightPct": 38,
+      "oneYearReturnPct": 3.5,
+      "openedAt": "2025-12-09",
+      "allocationBreakdown": null,
+      "flags": []
+    },
+    {
+      "holdingId": "H002",
+      "productId": "DO-006",
+      "productName": "불려드림II",
+      "assetType": "실적배당형",
+      "productCategory": "디폴트옵션",
+      "contractTerm": null,
+      "valuationAmountKrw": 35000000,
+      "weightPct": 55.1,
+      "oneYearReturnPct": 15.9,
+      "openedAt": "2024-07-22",
+      "allocationBreakdown": [
+        {
+          "assetType": "실적배당형",
+          "weightPct": 100
+        }
+      ],
+      "flags": []
+    },
+    {
+      "holdingId": "H003",
+      "productId": null,
+      "productName": "현금성자산",
+      "assetType": "현금성자산",
+      "productCategory": "현금성자산",
+      "contractTerm": null,
+      "valuationAmountKrw": 4370000,
+      "weightPct": 6.9,
+      "oneYearReturnPct": null,
+      "openedAt": null,
+      "allocationBreakdown": null,
+      "flags": []
+    }
+  ],
+  "에이전트맥락데이터": {
+    "스키마버전": "customer-agent-context.v0.1",
+    "고객계획": {},
+    "납입및세제": {
+      "올해개인부담금납입액원": 9000000
+    },
+    "계좌운영": {},
+    "퇴직및인출": {},
+    "최근사건": [
+      {
+        "이벤트식별자": "T001",
+        "발생일시": "2026-03-14T00:00:00+09:00",
+        "이벤트유형": "개인부담금 입금",
+        "계좌구분": "IRP",
+        "관련보유상품식별자": null,
+        "금액원": 9000000,
+        "처리상태": "입금완료",
+        "채널": null
+      }
+    ],
+    "금융거래": [],
+    "상담이력": [
+      {
+        "상담식별자": "CRM001",
+        "상담일시": "2026-07-24T00:00:00+09:00",
+        "상담채널": null,
+        "상담유형": "직원상담메모",
+        "상담메모": "고객은 올해 연금계좌 세액공제 한도를 이미 채운 상태에서 '올해는 더 넣을 필요가 없겠네요'라고 말함."
+      }
+    ],
+    "외부계좌": [
+      {
+        "외부계좌구분": "ISA",
+        "외부계좌식별자": "EXT001",
+        "금융기관": "타행",
+        "평가금액원": null,
+        "만기일": "2026-10-07",
+        "정보확인일": "2026-09-14",
+        "자금사용계획": null,
+        "개인형퇴직연금전환의향": null,
+        "개인형퇴직연금전환예정금액원": null
+      }
+    ],
+    "투자성향이력": [],
+    "운용정책": {},
+    "상품진단": [],
+    "계산지표": [
+      {
+        "지표식별자": "M001",
+        "지표유형": "파생값",
+        "지표명": "연금계좌세액공제잔여한도",
+        "대상참조": null,
+        "값": 0,
+        "단위": "원",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M002",
+        "지표유형": "파생값",
+        "지표명": "ISA만기까지남은일수",
+        "대상참조": null,
+        "값": 23,
+        "단위": "일",
+        "산출기준일": "2026-09-14"
+      }
+    ],
+    "확인된특이사항": []
+  }
+}

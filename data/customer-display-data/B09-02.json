@@ -1,0 +1,226 @@
+{
+  "schemaVersion": "customer-briefing-display.v0.1",
+  "briefingMeta": {
+    "caseId": "B09-02",
+    "dataType": "시연용가상고객",
+    "asOfDate": "2026-09-14",
+    "generatedAt": "2026-09-14T07:00:00+09:00",
+    "currency": "KRW"
+  },
+  "customer": {
+    "customerId": "59318-24760",
+    "name": "오준석",
+    "age": 53,
+    "gender": "남",
+    "starClubGrade": "VVIP",
+    "investmentProfile": "적극투자형",
+    "irpOpenedAt": "2019-07-22",
+    "defaultOption": {
+      "registrationStatus": "등록",
+      "designatedProduct": {
+        "productId": "DO-008",
+        "productName": "모두드림",
+        "riskLevel": "고위험"
+      },
+      "applicationStatus": "미적용"
+    }
+  },
+  "signals": [],
+  "irpAccount": {
+    "valuationAmountKrw": 102500000,
+    "assetAllocation": [
+      {
+        "assetType": "원리금보장형",
+        "amountKrw": 25625000,
+        "weightPct": 25
+      },
+      {
+        "assetType": "실적배당형",
+        "amountKrw": 76875000,
+        "weightPct": 75
+      },
+      {
+        "assetType": "현금성자산",
+        "amountKrw": 0,
+        "weightPct": 0
+      }
+    ],
+    "oneYearReturnPct": 12.1,
+    "taxDeductionRemainingKrw": 2000000,
+    "latestProductOpening": {
+      "holdingId": "H003",
+      "productId": "SAV-013",
+      "productName": "DB저축은행 퇴직연금 정기예금",
+      "openedAt": "2026-02-06",
+      "amountKrw": 25625000
+    }
+  },
+  "holdings": [
+    {
+      "holdingId": "H001",
+      "productId": "ETF-006",
+      "productName": "RISE 미국S&P500",
+      "assetType": "실적배당형",
+      "productCategory": "ETF",
+      "contractTerm": null,
+      "valuationAmountKrw": 62525000,
+      "weightPct": 61,
+      "oneYearReturnPct": 17.97,
+      "openedAt": "2024-06-12",
+      "allocationBreakdown": null,
+      "flags": []
+    },
+    {
+      "holdingId": "H002",
+      "productId": "FND-003",
+      "productName": "한국투자크레딧포커스ESG증권자투자신탁1호(채권)C-RE",
+      "assetType": "실적배당형",
+      "productCategory": "채권형펀드",
+      "contractTerm": null,
+      "valuationAmountKrw": 14350000,
+      "weightPct": 14,
+      "oneYearReturnPct": 1.26,
+      "openedAt": "2025-09-22",
+      "allocationBreakdown": null,
+      "flags": []
+    },
+    {
+      "holdingId": "H003",
+      "productId": "SAV-013",
+      "productName": "DB저축은행 퇴직연금 정기예금",
+      "assetType": "원리금보장형",
+      "productCategory": "정기예금",
+      "contractTerm": "1년",
+      "valuationAmountKrw": 25625000,
+      "weightPct": 25,
+      "oneYearReturnPct": 3.75,
+      "openedAt": "2026-02-06",
+      "allocationBreakdown": null,
+      "flags": []
+    }
+  ],
+  "에이전트맥락데이터": {
+    "스키마버전": "customer-agent-context.v0.1",
+    "고객계획": {
+      "재직상태": "재직",
+      "개인형퇴직연금추가입금확정금액원": null,
+      "기존주식형펀드조정의향": null
+    },
+    "납입및세제": {
+      "올해개인부담금납입액원": 7000000
+    },
+    "계좌운영": {},
+    "퇴직및인출": {},
+    "최근사건": [
+      {
+        "이벤트식별자": "T001",
+        "발생일시": "2026-09-04T09:12:00+09:00",
+        "이벤트유형": "상여금입금",
+        "계좌구분": "급여계좌",
+        "관련보유상품식별자": null,
+        "금액원": 16800000,
+        "처리상태": "완료",
+        "채널": null
+      }
+    ],
+    "금융거래": [],
+    "상담이력": [
+      {
+        "상담식별자": "CRM001",
+        "상담일시": "2026-01-21T15:40:00+09:00",
+        "상담채널": "영업점대면",
+        "상담유형": "퇴직연금사후관리",
+        "상담메모": "고객과 IRP 목표 자산배분을 주식형 50%, 비주식형 50%로 정함. 향후 목표 변경 의사나 추가납입 의향은 확인하지 않음."
+      }
+    ],
+    "외부계좌": [],
+    "투자성향이력": [],
+    "운용정책": {
+      "목표자산배분이력": [
+        {
+          "설정일": "2026-01-21",
+          "주식형목표비중": 50,
+          "비주식형목표비중": 50,
+          "현재유효여부": true,
+          "근거상담식별자": "CRM001"
+        }
+      ]
+    },
+    "상품진단": [],
+    "계산지표": [
+      {
+        "지표식별자": "M001",
+        "지표유형": "파생값",
+        "지표명": "현재주식형비중",
+        "대상참조": null,
+        "값": 61,
+        "단위": "%",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M002",
+        "지표유형": "파생값",
+        "지표명": "목표주식형비중",
+        "대상참조": null,
+        "값": 50,
+        "단위": "%",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M003",
+        "지표유형": "파생값",
+        "지표명": "목표대비주식형초과비중포인트",
+        "대상참조": null,
+        "값": 11,
+        "단위": "%p",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M004",
+        "지표유형": "파생값",
+        "지표명": "상여금유입액",
+        "대상참조": null,
+        "값": 16800000,
+        "단위": "원",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M005",
+        "지표유형": "파생값",
+        "지표명": "상여금유입후경과일수",
+        "대상참조": null,
+        "값": 10,
+        "단위": "일",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M006",
+        "지표유형": "파생값",
+        "지표명": "세액공제기준한도",
+        "대상참조": null,
+        "값": 9000000,
+        "단위": "원",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M007",
+        "지표유형": "파생값",
+        "지표명": "올해연금계좌납입액",
+        "대상참조": null,
+        "값": 7000000,
+        "단위": "원",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M008",
+        "지표유형": "파생값",
+        "지표명": "세액공제잔여한도",
+        "대상참조": null,
+        "값": 2000000,
+        "단위": "원",
+        "산출기준일": "2026-09-14"
+      }
+    ],
+    "확인된특이사항": []
+  }
+}

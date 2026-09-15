@@ -1,0 +1,137 @@
+{
+  "schemaVersion": "customer-briefing-display.v0.1",
+  "briefingMeta": {
+    "caseId": "B04-15",
+    "dataType": "시연용가상고객",
+    "asOfDate": "2026-09-14",
+    "generatedAt": "2026-09-14T07:00:00+09:00",
+    "currency": "KRW"
+  },
+  "customer": {
+    "customerId": "46281-73509",
+    "name": "문지환",
+    "age": 36,
+    "gender": "남",
+    "starClubGrade": "VIP",
+    "investmentProfile": "위험중립형",
+    "irpOpenedAt": "2016-05-23",
+    "defaultOption": {
+      "registrationStatus": "등록",
+      "designatedProduct": {
+        "productId": "DO-006",
+        "productName": "불려드림II",
+        "riskLevel": "중위험"
+      },
+      "applicationStatus": "미적용"
+    }
+  },
+  "signals": [],
+  "irpAccount": {
+    "valuationAmountKrw": 68400000,
+    "assetAllocation": [
+      {
+        "assetType": "원리금보장형",
+        "amountKrw": 41600000,
+        "weightPct": 60.8
+      },
+      {
+        "assetType": "실적배당형",
+        "amountKrw": 26800000,
+        "weightPct": 39.2
+      },
+      {
+        "assetType": "현금성자산",
+        "amountKrw": 0,
+        "weightPct": 0
+      }
+    ],
+    "oneYearReturnPct": 2.6,
+    "taxDeductionRemainingKrw": 3000000,
+    "latestProductOpening": {
+      "holdingId": "H001",
+      "productId": "SAV-001",
+      "productName": "KB저축은행 퇴직연금 정기예금",
+      "openedAt": "2025-11-08",
+      "amountKrw": 41600000
+    }
+  },
+  "holdings": [
+    {
+      "holdingId": "H001",
+      "productId": "SAV-001",
+      "productName": "KB저축은행 퇴직연금 정기예금",
+      "assetType": "원리금보장형",
+      "productCategory": "정기예금",
+      "contractTerm": "1년",
+      "valuationAmountKrw": 41600000,
+      "weightPct": 60.8,
+      "oneYearReturnPct": 3.5,
+      "openedAt": "2025-11-08",
+      "allocationBreakdown": null,
+      "flags": []
+    },
+    {
+      "holdingId": "H002",
+      "productId": "FND-003",
+      "productName": "한국투자크레딧포커스ESG증권자투자신탁1호(채권)C-RE",
+      "assetType": "실적배당형",
+      "productCategory": "채권형펀드",
+      "contractTerm": null,
+      "valuationAmountKrw": 26800000,
+      "weightPct": 39.2,
+      "oneYearReturnPct": 1.26,
+      "openedAt": "2024-06-18",
+      "allocationBreakdown": null,
+      "flags": []
+    }
+  ],
+  "에이전트맥락데이터": {
+    "스키마버전": "customer-agent-context.v0.1",
+    "고객계획": {},
+    "납입및세제": {},
+    "계좌운영": {
+      "계좌유형": "대면형",
+      "개설채널": "영업점",
+      "수수료현황": {
+        "부과여부": true,
+        "운용관리수수료부과여부": true,
+        "자산관리수수료부과여부": true,
+        "현재부담액원": null,
+        "비대면전환후예상부담액원": null,
+        "예상절감액": null
+      },
+      "현재수수료부담액원": null,
+      "비대면전환후예상부담액원": null,
+      "예상절감액": null
+    },
+    "퇴직및인출": {},
+    "최근사건": [],
+    "금융거래": [],
+    "상담이력": [],
+    "외부계좌": [],
+    "투자성향이력": [],
+    "운용정책": {},
+    "상품진단": [],
+    "계산지표": [
+      {
+        "지표식별자": "M001",
+        "지표유형": "파생값",
+        "지표명": "IRP계좌유지기간년수",
+        "대상참조": null,
+        "값": 10,
+        "단위": "년",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M002",
+        "지표유형": "파생값",
+        "지표명": "향후90일예정이벤트수",
+        "대상참조": null,
+        "값": 0,
+        "단위": "건",
+        "산출기준일": "2026-09-14"
+      }
+    ],
+    "확인된특이사항": []
+  }
+}

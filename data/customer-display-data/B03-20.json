@@ -1,0 +1,178 @@
+{
+  "schemaVersion": "customer-briefing-display.v0.1",
+  "briefingMeta": {
+    "caseId": "B03-20",
+    "dataType": "시연용가상고객",
+    "asOfDate": "2026-09-14",
+    "generatedAt": "2026-09-14T07:00:00+09:00",
+    "currency": "KRW"
+  },
+  "customer": {
+    "customerId": "80429-36175",
+    "name": "최영호",
+    "age": 63,
+    "gender": "남",
+    "starClubGrade": "VVIP",
+    "investmentProfile": "안정형",
+    "irpOpenedAt": "2015-08-28",
+    "defaultOption": {
+      "registrationStatus": "등록",
+      "designatedProduct": {
+        "productId": "DO-001",
+        "productName": "지켜드림",
+        "riskLevel": "초저위험"
+      },
+      "applicationStatus": "미적용"
+    }
+  },
+  "signals": [],
+  "irpAccount": {
+    "valuationAmountKrw": 178350000,
+    "assetAllocation": [
+      {
+        "assetType": "원리금보장형",
+        "amountKrw": 171150000,
+        "weightPct": 96
+      },
+      {
+        "assetType": "실적배당형",
+        "amountKrw": 0,
+        "weightPct": 0
+      },
+      {
+        "assetType": "현금성자산",
+        "amountKrw": 7200000,
+        "weightPct": 4
+      }
+    ],
+    "oneYearReturnPct": 3.7,
+    "taxDeductionRemainingKrw": 0,
+    "latestProductOpening": {
+      "holdingId": "H002",
+      "productId": "GIC-001",
+      "productName": "KB손해보험 GIC (2026년 9월 특별제공안)",
+      "openedAt": "2026-09-10",
+      "amountKrw": 74750000
+    }
+  },
+  "holdings": [
+    {
+      "holdingId": "H001",
+      "productId": "DEP-008",
+      "productName": "한국증권금융 퇴직연금 정기예금",
+      "assetType": "원리금보장형",
+      "productCategory": "정기예금",
+      "contractTerm": "3년",
+      "valuationAmountKrw": 96400000,
+      "weightPct": 54.1,
+      "oneYearReturnPct": 3.35,
+      "openedAt": "2026-03-15",
+      "allocationBreakdown": null,
+      "flags": []
+    },
+    {
+      "holdingId": "H002",
+      "productId": "GIC-001",
+      "productName": "KB손해보험 GIC (2026년 9월 특별제공안)",
+      "assetType": "원리금보장형",
+      "productCategory": "GIC",
+      "contractTerm": "3년",
+      "valuationAmountKrw": 74750000,
+      "weightPct": 41.9,
+      "oneYearReturnPct": 4.62,
+      "openedAt": "2026-09-10",
+      "allocationBreakdown": null,
+      "flags": []
+    },
+    {
+      "holdingId": "H003",
+      "productId": null,
+      "productName": "현금성자산",
+      "assetType": "현금성자산",
+      "productCategory": "현금성자산",
+      "contractTerm": null,
+      "valuationAmountKrw": 7200000,
+      "weightPct": 4,
+      "oneYearReturnPct": null,
+      "openedAt": null,
+      "allocationBreakdown": null,
+      "flags": []
+    }
+  ],
+  "에이전트맥락데이터": {
+    "스키마버전": "customer-agent-context.v0.1",
+    "고객계획": {},
+    "납입및세제": {},
+    "계좌운영": {},
+    "퇴직및인출": {
+      "연금수령계획": {
+        "등록여부": true,
+        "개시연도": 2027,
+        "첫수령일": null,
+        "수령주기": "매월",
+        "월수령희망액": null,
+        "용도": "생활비",
+        "별도목돈필요액원": null
+      },
+      "월생활비필요액원": null,
+      "초기수령재원부족액": null
+    },
+    "최근사건": [
+      {
+        "이벤트식별자": "T001",
+        "발생일시": "2026-08-28T15:35:00+09:00",
+        "이벤트유형": "연금수령계획등록",
+        "계좌구분": "IRP",
+        "관련보유상품식별자": null,
+        "금액원": null,
+        "처리상태": "완료",
+        "채널": null
+      }
+    ],
+    "금융거래": [],
+    "상담이력": [],
+    "외부계좌": [],
+    "투자성향이력": [],
+    "운용정책": {},
+    "상품진단": [],
+    "계산지표": [
+      {
+        "지표식별자": "M001",
+        "지표유형": "파생값",
+        "지표명": "연금수령개시연도까지남은연수",
+        "대상참조": null,
+        "값": 1,
+        "단위": "년",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M002",
+        "지표유형": "파생값",
+        "지표명": "첫보유상품만기까지남은일수",
+        "대상참조": null,
+        "값": 913,
+        "단위": "일",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M003",
+        "지표유형": "파생값",
+        "지표명": "2029년만기집중금액",
+        "대상참조": null,
+        "값": 171150000,
+        "단위": "원",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M004",
+        "지표유형": "파생값",
+        "지표명": "2029년만기집중비중",
+        "대상참조": null,
+        "값": 96,
+        "단위": "%",
+        "산출기준일": "2026-09-14"
+      }
+    ],
+    "확인된특이사항": []
+  }
+}

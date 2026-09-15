@@ -1,0 +1,189 @@
+{
+  "schemaVersion": "customer-briefing-display.v0.1",
+  "briefingMeta": {
+    "caseId": "B08-05",
+    "dataType": "시연용가상고객",
+    "asOfDate": "2026-09-14",
+    "generatedAt": "2026-09-14T07:00:00+09:00",
+    "currency": "KRW"
+  },
+  "customer": {
+    "customerId": "26975-83104",
+    "name": "송혜진",
+    "age": 58,
+    "gender": "여",
+    "starClubGrade": "VIP",
+    "investmentProfile": "안정추구형",
+    "irpOpenedAt": "2022-06-17",
+    "defaultOption": {
+      "registrationStatus": "등록",
+      "designatedProduct": {
+        "productId": "DO-003",
+        "productName": "알파드림II",
+        "riskLevel": "저위험"
+      },
+      "applicationStatus": "미적용"
+    }
+  },
+  "signals": [],
+  "irpAccount": {
+    "valuationAmountKrw": 64800000,
+    "assetAllocation": [
+      {
+        "assetType": "원리금보장형",
+        "amountKrw": 38000000,
+        "weightPct": 58.6
+      },
+      {
+        "assetType": "실적배당형",
+        "amountKrw": 22800000,
+        "weightPct": 35.2
+      },
+      {
+        "assetType": "현금성자산",
+        "amountKrw": 4000000,
+        "weightPct": 6.2
+      }
+    ],
+    "oneYearReturnPct": 4.5,
+    "taxDeductionRemainingKrw": 2500000,
+    "latestProductOpening": {
+      "holdingId": "H001",
+      "productId": "GIC-003",
+      "productName": "한화생명 GIC (2026년 9월 특별제공안)",
+      "openedAt": "2026-09-05",
+      "amountKrw": 38000000
+    }
+  },
+  "holdings": [
+    {
+      "holdingId": "H001",
+      "productId": "GIC-003",
+      "productName": "한화생명 GIC (2026년 9월 특별제공안)",
+      "assetType": "원리금보장형",
+      "productCategory": "GIC",
+      "contractTerm": "1년",
+      "valuationAmountKrw": 38000000,
+      "weightPct": 58.6,
+      "oneYearReturnPct": 4,
+      "openedAt": "2026-09-05",
+      "allocationBreakdown": null,
+      "flags": []
+    },
+    {
+      "holdingId": "H002",
+      "productId": "FND-010",
+      "productName": "KB온국민평생소득TIF40증권자투자신탁(채권혼합-재간접)C-퇴직E",
+      "assetType": "실적배당형",
+      "productCategory": "TIF",
+      "contractTerm": null,
+      "valuationAmountKrw": 22800000,
+      "weightPct": 35.2,
+      "oneYearReturnPct": 6.1,
+      "openedAt": "2024-03-15",
+      "allocationBreakdown": null,
+      "flags": []
+    },
+    {
+      "holdingId": "H003",
+      "productId": null,
+      "productName": "현금성자산",
+      "assetType": "현금성자산",
+      "productCategory": "현금성자산",
+      "contractTerm": null,
+      "valuationAmountKrw": 4000000,
+      "weightPct": 6.2,
+      "oneYearReturnPct": null,
+      "openedAt": null,
+      "allocationBreakdown": null,
+      "flags": []
+    }
+  ],
+  "에이전트맥락데이터": {
+    "스키마버전": "customer-agent-context.v0.1",
+    "고객계획": {
+      "재직상태": null,
+      "운용선택지확대희망여부": true,
+      "직접펀드관리부담여부": true
+    },
+    "납입및세제": {},
+    "계좌운영": {},
+    "퇴직및인출": {},
+    "최근사건": [
+      {
+        "이벤트식별자": "T001",
+        "발생일시": "2026-08-31T00:00:00+09:00",
+        "이벤트유형": "연금저축보험납입완료",
+        "계좌구분": "연금저축보험",
+        "관련보유상품식별자": null,
+        "금액원": null,
+        "처리상태": "완료",
+        "채널": null
+      }
+    ],
+    "금융거래": [],
+    "상담이력": [
+      {
+        "상담식별자": "CRM001",
+        "상담일시": "2026-06-24T16:05:00+09:00",
+        "상담채널": "영업점전화",
+        "상담유형": "연금자산운용상담",
+        "상담메모": "고객은 연금자산의 운용 선택지는 넓히고 싶지만 펀드를 계속 직접 고르고 바꾸는 일은 부담스럽다고 말함. 연금저축보험의 IRP 이전 의향이나 TDF 선택 의향은 확정하지 않음."
+      }
+    ],
+    "외부계좌": [
+      {
+        "외부계좌구분": "연금저축",
+        "외부계좌식별자": "EXT-PEN-001",
+        "금융기관": null,
+        "상품유형": "연금저축보험",
+        "가입일": "2013-04-16",
+        "납입완료여부": true,
+        "납입완료일": "2026-08-31",
+        "연금개시여부": false,
+        "연금개시일": null,
+        "평가금액원": null,
+        "현재적용이율": null,
+        "개인형퇴직연금이전시환급금원": null,
+        "개인형퇴직연금이전의향": null,
+        "연금사용예정시점": null,
+        "정보확인일": "2026-09-10"
+      }
+    ],
+    "투자성향이력": [],
+    "운용정책": {},
+    "상품진단": [
+      {
+        "진단구분": "미산출지표",
+        "지표명": "현재보험유지예상금액",
+        "값": null
+      },
+      {
+        "진단구분": "미산출지표",
+        "지표명": "IRP이전예상금액",
+        "값": null
+      }
+    ],
+    "계산지표": [
+      {
+        "지표식별자": "M001",
+        "지표유형": "파생값",
+        "지표명": "연금저축보험유지기간년수",
+        "대상참조": null,
+        "값": 13.4,
+        "단위": "년",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M002",
+        "지표유형": "파생값",
+        "지표명": "연금저축보험납입완료후경과일수",
+        "대상참조": null,
+        "값": 14,
+        "단위": "일",
+        "산출기준일": "2026-09-14"
+      }
+    ],
+    "확인된특이사항": []
+  }
+}

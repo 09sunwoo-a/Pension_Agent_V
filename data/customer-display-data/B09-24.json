@@ -1,0 +1,185 @@
+{
+  "schemaVersion": "customer-briefing-display.v0.1",
+  "briefingMeta": {
+    "caseId": "B09-24",
+    "dataType": "시연용가상고객",
+    "asOfDate": "2026-09-14",
+    "generatedAt": "2026-09-14T07:00:00+09:00",
+    "currency": "KRW"
+  },
+  "customer": {
+    "customerId": "18642-57309",
+    "name": "차유진",
+    "age": 47,
+    "gender": "여",
+    "starClubGrade": "그랜드",
+    "investmentProfile": "적극투자형",
+    "irpOpenedAt": "2020-10-08",
+    "defaultOption": {
+      "registrationStatus": "등록",
+      "designatedProduct": {
+        "productId": "DO-001",
+        "productName": "지켜드림",
+        "riskLevel": "초저위험"
+      },
+      "applicationStatus": "미적용"
+    }
+  },
+  "signals": [],
+  "irpAccount": {
+    "valuationAmountKrw": 80600000,
+    "assetAllocation": [
+      {
+        "assetType": "원리금보장형",
+        "amountKrw": 52390000,
+        "weightPct": 65
+      },
+      {
+        "assetType": "실적배당형",
+        "amountKrw": 28210000,
+        "weightPct": 35
+      },
+      {
+        "assetType": "현금성자산",
+        "amountKrw": 0,
+        "weightPct": 0
+      }
+    ],
+    "oneYearReturnPct": 2.7,
+    "taxDeductionRemainingKrw": 1500000,
+    "latestProductOpening": {
+      "holdingId": "H001",
+      "productId": "SAV-001",
+      "productName": "KB저축은행 퇴직연금 정기예금",
+      "openedAt": "2026-01-15",
+      "amountKrw": 52390000
+    }
+  },
+  "holdings": [
+    {
+      "holdingId": "H001",
+      "productId": "SAV-001",
+      "productName": "KB저축은행 퇴직연금 정기예금",
+      "assetType": "원리금보장형",
+      "productCategory": "정기예금",
+      "contractTerm": "1년",
+      "valuationAmountKrw": 52390000,
+      "weightPct": 65,
+      "oneYearReturnPct": 3.5,
+      "openedAt": "2026-01-15",
+      "allocationBreakdown": null,
+      "flags": []
+    },
+    {
+      "holdingId": "H002",
+      "productId": "FND-003",
+      "productName": "한국투자크레딧포커스ESG증권자투자신탁1호(채권)C-RE",
+      "assetType": "실적배당형",
+      "productCategory": "채권형펀드",
+      "contractTerm": null,
+      "valuationAmountKrw": 28210000,
+      "weightPct": 35,
+      "oneYearReturnPct": 1.26,
+      "openedAt": "2025-08-19",
+      "allocationBreakdown": null,
+      "flags": []
+    }
+  ],
+  "에이전트맥락데이터": {
+    "스키마버전": "customer-agent-context.v0.1",
+    "고객계획": {
+      "재직상태": "재직",
+      "디폴트옵션변경의향": null,
+      "현재보유상품변경의향": null
+    },
+    "납입및세제": {},
+    "계좌운영": {},
+    "퇴직및인출": {},
+    "최근사건": [],
+    "금융거래": [],
+    "상담이력": [],
+    "외부계좌": [],
+    "투자성향이력": [
+      {
+        "이력식별자": "R001",
+        "분석일": "2024-01-15",
+        "투자성향": "위험중립형",
+        "현재여부": false
+      },
+      {
+        "이력식별자": "R002",
+        "분석일": "2026-08-29",
+        "투자성향": "적극투자형",
+        "현재여부": true
+      }
+    ],
+    "운용정책": {},
+    "상품진단": [],
+    "계산지표": [
+      {
+        "지표식별자": "M001",
+        "지표유형": "파생값",
+        "지표명": "최근투자성향변경일",
+        "대상참조": null,
+        "값": "2026-08-29",
+        "단위": null,
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M002",
+        "지표유형": "파생값",
+        "지표명": "투자성향변경후경과일수",
+        "대상참조": null,
+        "값": 16,
+        "단위": "일",
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M003",
+        "지표유형": "파생값",
+        "지표명": "이전투자성향",
+        "대상참조": null,
+        "값": "위험중립형",
+        "단위": null,
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M004",
+        "지표유형": "파생값",
+        "지표명": "현재투자성향",
+        "대상참조": null,
+        "값": "적극투자형",
+        "단위": null,
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M005",
+        "지표유형": "파생값",
+        "지표명": "현재디폴트옵션위험등급",
+        "대상참조": null,
+        "값": "초저위험",
+        "단위": null,
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M006",
+        "지표유형": "파생값",
+        "지표명": "디폴트옵션지정후투자성향변경여부",
+        "대상참조": null,
+        "값": true,
+        "단위": null,
+        "산출기준일": "2026-09-14"
+      },
+      {
+        "지표식별자": "M007",
+        "지표유형": "파생값",
+        "지표명": "현재보유상품디폴트옵션적용금액",
+        "대상참조": null,
+        "값": 0,
+        "단위": "원",
+        "산출기준일": "2026-09-14"
+      }
+    ],
+    "확인된특이사항": []
+  }
+}
