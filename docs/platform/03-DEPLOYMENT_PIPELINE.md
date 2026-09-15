@@ -1,6 +1,6 @@
 # 03. 배포 파이프라인
 
-> 근거: `sources/KB_GenAI_ProAgent_SourceOfTruth_v2.md` §2, §3, §16~§18
+> 근거: `references/KB_GenAI_ProAgent_SourceOfTruth_v2.md` §2, §3, §16~§18
 > 핵심: **배포의 시작점은 "코드 push"가 아니라 "git tag"** 다.
 
 ---
@@ -79,7 +79,7 @@ entrypoint : uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
 > `.env` 는 이 저장소에 **커밋하지 않는다.** 이름만 `agent/.env.example` 에 둔다.
-> → [09-보안-시크릿.md](09-보안-시크릿.md)
+> → [09-보안-시크릿.md](06-SECURITY.md)
 
 ---
 
@@ -199,4 +199,4 @@ Missing → Progressing → Healthy      (정상)
 [ ] Fabrix 경유 호출이 기존대로 동작       → 04
 ```
 
-실패했을 때의 진단 순서는 [08-트러블슈팅.md](08-트러블슈팅.md).
+실패했을 때의 진단 순서는 [08-트러블슈팅.md](05-TROUBLESHOOTING.md).

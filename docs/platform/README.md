@@ -10,41 +10,41 @@
         ↓
 README.md (이 파일)       ← 지도 · 검증 현황
         ↓
-01-사내환경-개요.md        ← 전체 아키텍처. 모두가 읽는다.
+01-INTERNAL_ENVIRONMENT.md ← 전체 아키텍처. 모두가 읽는다.
         ↓
-작업 영역별 02 ~ 09
+작업 영역별 02 ~ 06 (+ integration/, frontend/)
 ```
 
 ## 문서 목록
 
 | 문서 | 다루는 것 | 주로 읽는 사람 |
 |---|---|---|
-| [01-사내환경-개요.md](01-사내환경-개요.md) | 전체 아키텍처, 구성요소 역할, 금지 가정 | 전원 |
-| [02-에이전트-개발.md](02-에이전트-개발.md) | 코드 구조, 계층 분리, Gemma4 호출 규격, `/health` `/chat` | 백엔드 |
-| [03-배포-파이프라인.md](03-배포-파이프라인.md) | git tag → Portal → Jenkins/Kaniko → ACR → ArgoCD → K8s | 백엔드 |
-| [04-Fabrix-연계.md](04-Fabrix-연계.md) | Connector URL/헤더/바디, SSE 규격, 2단계 파싱 | 백엔드 · 프론트 |
-| [05-Starroot-프론트엔드.md](05-Starroot-프론트엔드.md) | SPA Shell, `PG_` 라이프사이클, CSS namespace, 렌더 안정성 | 프론트 |
-| [06-출력계약-Contract.md](06-출력계약-Contract.md) | Agent 출력 스키마, 프론트 블록 매핑, 어댑터 설계 | 백엔드 · 프론트 |
-| [07-requirements-정책.md](07-requirements-정책.md) | 사내 Nexus, 버전 정책, 패키지 추가 절차 | 백엔드 |
-| [08-트러블슈팅.md](08-트러블슈팅.md) | 증상별 진단 순서, 실제 장애 사례 | 전원 |
-| [09-보안-시크릿.md](09-보안-시크릿.md) | Secret 취급 규칙, 브라우저 토큰 노출 문제 | 전원 |
+| [01-INTERNAL_ENVIRONMENT.md](01-INTERNAL_ENVIRONMENT.md) | 전체 아키텍처, 구성요소 역할, 금지 가정 | 전원 |
+| [02-AGENT_DEVELOPMENT.md](02-AGENT_DEVELOPMENT.md) | 코드 구조, 계층 분리, Gemma4 호출 규격, `/health` `/chat` | 백엔드 |
+| [03-DEPLOYMENT_PIPELINE.md](03-DEPLOYMENT_PIPELINE.md) | git tag → Portal → Jenkins/Kaniko → ACR → ArgoCD → K8s | 백엔드 |
+| [Fabrix Guide (integration/)](../../integration/fabrix/FABRIX_GUIDE.md) | Connector URL/헤더/바디, SSE 규격, 2단계 파싱 | 백엔드 · 프론트 |
+| [Starroot Guide (frontend/)](../../frontend/platform/STARROOT_FRONTEND_GUIDE.md) | SPA Shell, `PG_` 라이프사이클, CSS namespace, 렌더 안정성 | 프론트 |
+| [Agent ↔ Frontend Contract (integration/)](../../integration/contracts/AGENT_FRONTEND_CONTRACT.md) | Agent 출력 스키마, 프론트 블록 매핑, 어댑터 설계 | 백엔드 · 프론트 |
+| [04-REQUIREMENTS_POLICY.md](04-REQUIREMENTS_POLICY.md) | 사내 Nexus, 버전 정책, 패키지 추가 절차 | 백엔드 |
+| [05-TROUBLESHOOTING.md](05-TROUBLESHOOTING.md) | 증상별 진단 순서, 실제 장애 사례 | 전원 |
+| [06-SECURITY.md](06-SECURITY.md) | Secret 취급 규칙, 브라우저 토큰 노출 문제 | 전원 |
 
 ## 참고 구현
 
-| 디렉터리 | 내용 |
+| 위치 | 내용 |
 |---|---|
-| [`examples/`](examples/) | 실제 동작을 확인한 코드 (토큰 제거본). 현재 `fabrixClient.js` — 브라우저 → Fabrix 호출 |
+| [`../../integration/fabrix/fabrixClient.js`](../../integration/fabrix/fabrixClient.js) | 브라우저 → Fabrix 호출 (동작 확인된 토큰 제거본) |
 
 ## 원본 근거 문서
 
-`sources/` 에 원본을 **수정 없이** 보관한다.
+`docs/platform/references/` 와 `frontend/platform/references/` 에 원본을 **수정 없이** 보관한다.
 
 | 파일 | 내용 |
 |---|---|
-| [sources/KB_GenAI_ProAgent_SourceOfTruth_v2.md](sources/KB_GenAI_ProAgent_SourceOfTruth_v2.md) | 에이전트 개발 · 배포 · Fabrix 연계 실전 기준 (§1~§53) |
-| [sources/STARROOT_FRONTEND_CODING_GUIDE.md](sources/STARROOT_FRONTEND_CODING_GUIDE.md) | Starroot SPA 프론트엔드 코딩 가이드 (§1~§25) |
+| [references/KB_GenAI_ProAgent_SourceOfTruth_v2.md](references/KB_GenAI_ProAgent_SourceOfTruth_v2.md) | 에이전트 개발 · 배포 · Fabrix 연계 실전 기준 (§1~§53) |
+| [../../frontend/platform/references/STARROOT_FRONTEND_CODING_GUIDE.md](../../frontend/platform/references/STARROOT_FRONTEND_CODING_GUIDE.md) | Starroot SPA 프론트엔드 코딩 가이드 (§1~§25) |
 
-**요약본(01~09)과 원본이 충돌하면 원본이 우선이다.** 그리고 요약본을 고쳐라.
+**요약본과 원본이 충돌하면 원본이 우선이다.** 그리고 요약본을 고쳐라.
 새로 검증한 사실이 생기면 원본이 아니라 요약본에 반영하고, 아래 검증 현황을 갱신한다.
 
 ---
@@ -94,17 +94,17 @@ README.md (이 파일)       ← 지도 · 검증 현황
 
 ```text
 1. 프론트 transport 교체
-   app/pensionAgentDemo.js 의 agSend() → Fabrix 호출 + 응답 어댑터
+   frontend/app/pensionAgentDemo.js 의 agSend() → Fabrix 호출 + 응답 어댑터
    (Mock QA/agRun 은 fallback으로 유지)
-   → 04, 05, 06
+   → integration/fabrix/, frontend/platform/, integration/contracts/
 
 2. Agent 출력 블록 타입 확장
    현재 paragraph / caution 2종 → 프론트가 이미 지원하는 10종까지
-   → 06
+   → integration/contracts/AGENT_FRONTEND_CONTRACT.md
 
 3. Multi-turn (message_hists) 설계 확정
-   → 02, 06
+   → 02-AGENT_DEVELOPMENT.md, integration/contracts/AGENT_FRONTEND_CONTRACT.md
 
 4. SERV 스테이지 End-to-End 검증
-   → 03
+   → 03-DEPLOYMENT_PIPELINE.md
 ```

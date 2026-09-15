@@ -1,6 +1,6 @@
 # 07. requirements / 패키지 정책
 
-> 근거: `sources/KB_GenAI_ProAgent_SourceOfTruth_v2.md` §4, §47~§53
+> 근거: `references/KB_GenAI_ProAgent_SourceOfTruth_v2.md` §4, §47~§53
 > 핵심: **외부 PyPI가 아니라 사내 Nexus다. 그리고 다른 프로젝트 버전을 섞지 마라.**
 
 ---

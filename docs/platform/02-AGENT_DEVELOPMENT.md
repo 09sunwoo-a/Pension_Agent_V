@@ -1,6 +1,6 @@
 # 02. 에이전트 내부 로직 개발
 
-> 근거: `sources/KB_GenAI_ProAgent_SourceOfTruth_v2.md` §1, §3~§15, §19
+> 근거: `references/KB_GenAI_ProAgent_SourceOfTruth_v2.md` §1, §3~§15, §19
 > 대상 파일: `agent/main.py`, `agent/llm_client.py`, `agent/Dockerfile`
 
 ---
@@ -27,7 +27,7 @@
 ```
 
 > **이 저장소에서는 `agent/` 아래에 두지만, 사내 GitLab 배포 repo에서는 root 평면 구조다.**
-> 디렉터리 매핑은 [03-배포-파이프라인.md](03-배포-파이프라인.md) 참고.
+> 디렉터리 매핑은 [03-배포-파이프라인.md](03-DEPLOYMENT_PIPELINE.md) 참고.
 
 ### 새 Python 파일을 추가할 때
 
@@ -51,7 +51,7 @@ COPY ./output_schema.py /custom/output_schema.py
 > 실제 사고: `from app.output_schema import ...` + `COPY` 누락
 > → `ModuleNotFoundError: No module named 'app'`
 > → Pod 기동 실패 → `Progressing` → `Degraded` → Health Check Timeout → rollback
-> 자세한 내용은 [08-트러블슈팅.md](08-트러블슈팅.md).
+> 자세한 내용은 [08-트러블슈팅.md](05-TROUBLESHOOTING.md).
 
 ---
 
@@ -176,7 +176,7 @@ def health():
 ```
 
 > Health Check 실패가 보인다고 해서 health endpoint 자체 문제라고 단정하지 마라.
-> 대부분은 startup 단계의 import/의존성 오류다. → [08-트러블슈팅.md](08-트러블슈팅.md)
+> 대부분은 startup 단계의 import/의존성 오류다. → [08-트러블슈팅.md](05-TROUBLESHOOTING.md)
 
 ### `POST /chat`
 

@@ -10,7 +10,7 @@
 > agent/main.py  →  (배포 repo) main.py  →  /custom/main.py
 > ```
 >
-> 매핑 상세: [`../docs/environment/03-배포-파이프라인.md`](../docs/environment/03-배포-파이프라인.md) §3
+> 매핑 상세: [`../docs/platform/03-DEPLOYMENT_PIPELINE.md`](../docs/platform/03-DEPLOYMENT_PIPELINE.md) §3
 
 ## 파일
 
@@ -31,9 +31,9 @@ POST /chat     → SSE (text/event-stream), `data: {JSON}\n\n`
 
 ## 수정 전에 읽을 것
 
-- [`../docs/environment/02-에이전트-개발.md`](../docs/environment/02-에이전트-개발.md) — 코드 구조 · Gemma 규격
-- [`../docs/environment/06-출력계약-Contract.md`](../docs/environment/06-출력계약-Contract.md) — 출력 계약
-- [`../docs/environment/07-requirements-정책.md`](../docs/environment/07-requirements-정책.md) — 패키지 추가 절차
+- [`../docs/platform/02-AGENT_DEVELOPMENT.md`](../docs/platform/02-AGENT_DEVELOPMENT.md) — 코드 구조 · Gemma 규격
+- [`../integration/contracts/AGENT_FRONTEND_CONTRACT.md`](../integration/contracts/AGENT_FRONTEND_CONTRACT.md) — 출력 계약
+- [`../docs/platform/04-REQUIREMENTS_POLICY.md`](../docs/platform/04-REQUIREMENTS_POLICY.md) — 패키지 추가 절차
 
 ## ⚠️ 새 `.py` 파일을 추가할 때
 

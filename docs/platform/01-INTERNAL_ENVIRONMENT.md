@@ -1,6 +1,6 @@
 # 01. 사내 환경 개요
 
-> 근거: `sources/KB_GenAI_ProAgent_SourceOfTruth_v2.md` §0, §2, §20
+> 근거: `references/KB_GenAI_ProAgent_SourceOfTruth_v2.md` §0, §2, §20
 > 이 문서는 **"공개 인터넷 환경과 무엇이 다른가"** 를 먼저 이해시키는 것이 목적이다.
 
 ---
@@ -113,7 +113,7 @@ Frontend parser 오류
 `schema_version` 누락 / `blocks` 누락 / `block.type` 랜덤 값이
 **프론트까지 도달하지 않게** 하는 것이 목표다.
 
-자세한 계약은 [06-출력계약-Contract.md](06-출력계약-Contract.md).
+자세한 계약은 [06-출력계약-Contract.md](../../integration/contracts/AGENT_FRONTEND_CONTRACT.md).
 
 ---
 
@@ -123,7 +123,7 @@ Frontend parser 오류
 
 ```text
 ┌─────────────────────────────────────────────┐
-│ app/pensionAgentDemo.js   (Starroot Vanilla) │  ← 05
+│ frontend/app/pensionAgentDemo.js (Starroot Vanilla) │  ← 05
 │   fetch → SSE 파싱 → 2단계 JSON.parse         │  ← 04
 │   → 어댑터 → 기존 renderer                    │  ← 06
 └─────────────────────────────────────────────┘

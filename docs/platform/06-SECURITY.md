@@ -1,6 +1,6 @@
 # 09. 보안 / Secret 취급
 
-> 근거: `sources/KB_GenAI_ProAgent_SourceOfTruth_v2.md` §22, §39
+> 근거: `references/KB_GenAI_ProAgent_SourceOfTruth_v2.md` §22, §39
 > 이 문서의 규칙에는 **예외가 없다.**
 
 ---

@@ -24,7 +24,7 @@ yarn-error.log*
 *.log
 tmp/
 
-# Secrets — 절대 커밋 금지 (docs/environment/09-보안-시크릿.md)
+# Secrets — 절대 커밋 금지 (docs/platform/06-SECURITY.md)
 .env
 .env.*
 !.env.example
