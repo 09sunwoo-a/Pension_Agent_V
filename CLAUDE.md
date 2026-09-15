@@ -104,6 +104,10 @@ FastAPI Pro Agent (K8s, /custom, uvicorn main:app)
 │   ├── pensionAgentDemo.js
 │   └── local_preview.html
 ├── data/                      # 더미 고객 데이터 · 골든 케이스
+├── sources/                   # 퇴직연금 지식 코퍼스 (RAG 원천, 399 files)
+│   ├── README.md              #   ★ 사용 규칙. 읽기 전에 반드시 확인
+│   ├── source_registry.md     #   탐색용 색인 (SRC-001 ~)
+│   └── corpus/
 ├── docs/
 │   ├── environment/           # ★ 사내 환경 기준 문서 (이 프로젝트의 Source of Truth)
 │   │   ├── README.md
@@ -125,6 +129,24 @@ FastAPI Pro Agent (K8s, /custom, uvicorn main:app)
 > ⚠️ `agent/` 디렉터리는 **사내 GitLab에 올릴 때 repo root 평면 구조가 되어야 한다.**
 > 이 저장소에서의 `agent/` 는 정리를 위한 디렉터리이고, 배포 시점의 컨테이너 경로는
 > `/custom/main.py` 다. 자세한 내용은 `03-배포-파이프라인.md` §"디렉터리 매핑".
+
+### ⚠️ `sources/` 가 두 개다. 헷갈리지 마라.
+
+| 경로 | 무엇인가 | 어떻게 쓰나 |
+|---|---|---|
+| `sources/` | **퇴직연금 지식 코퍼스** (행내 가이드·교육자료·상품지식 399개) | Agent가 답변 근거를 찾는 RAG 원천. `sources/README.md` 의 사용 규칙을 따른다 |
+| `docs/environment/sources/` | **사내 환경 원본 근거 문서** (MD 2건) | 이 프로젝트의 개발·배포 기준. 수정 금지 |
+
+`sources/` 를 다룰 때는 **그 디렉터리의 자체 규칙**([`sources/README.md`](sources/README.md))이 우선한다.
+요약하면:
+
+```text
+❌ Source Corpus 전체를 기본 Context로 읽지 않는다
+✅ source_registry.md 로 후보를 좁힌 뒤 필요한 원문/절만 확인한다
+✅ Source에 명시된 내용과 Agent의 추론을 구분한다
+❌ Source에 없는 업무 Fact를 생성하지 않는다
+❌ 충돌하는 Source를 임의로 통합/해소하지 않는다
+```
 
 ---
 

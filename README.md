@@ -43,6 +43,11 @@ FastAPI Pro Agent (K8s)
 │   ├── customer-display-data/   # 고객 30명 표시용 JSON + all-customers.json
 │   └── golden-cases/            # B01~B10 골든 케이스 더미데이터 (생성 원천자료)
 │
+├── sources/                  # 퇴직연금 지식 코퍼스 (RAG 원천, 399 files)
+│   ├── README.md             #   사용 규칙
+│   ├── source_registry.md    #   탐색용 색인
+│   └── corpus/
+│
 ├── docs/
 │   ├── environment/          # ★ 사내 환경 기준 문서 (Source of Truth)
 │   │   ├── README.md         #   지도 · 검증 현황 · 다음 단계
@@ -55,6 +60,7 @@ FastAPI Pro Agent (K8s)
 │   │   ├── 07-requirements-정책.md
 │   │   ├── 08-트러블슈팅.md
 │   │   ├── 09-보안-시크릿.md
+│   │   ├── examples/         #   동작 확인된 참고 구현 (fabrixClient.js)
 │   │   └── sources/          #   원본 근거 문서 (수정 금지)
 │   ├── briefings/            # 고객 브리핑 MD (B01~B10)
 │   ├── kb/                   # 상품 마스터 / 매칭 KB / 운용전략 KB
@@ -112,6 +118,13 @@ node scripts/generate_customer_display_data.js
 | Multi-turn / action 처리 / SERV E2E | ⏳ 미확정 |
 
 상세 현황은 [`docs/environment/README.md`](docs/environment/README.md#검증-현황).
+
+## ⚠️ `sources/` 가 두 개입니다
+
+| 경로 | 내용 |
+|---|---|
+| `sources/` | 퇴직연금 **지식 코퍼스** (RAG 원천). 자체 사용 규칙은 [`sources/README.md`](sources/README.md) |
+| `docs/environment/sources/` | 사내 환경 **원본 근거 문서** (수정 금지) |
 
 ## 주의
 
