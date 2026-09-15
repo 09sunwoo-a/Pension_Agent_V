@@ -3,7 +3,7 @@ const path = require("path");
 
 const AS_OF_DATE = "2026-09-14";
 const GENERATED_AT = "2026-09-14T07:00:00+09:00";
-const OUTPUT_DIR = path.join(__dirname, "..", "data", "customer-display-data");
+const OUTPUT_DIR = path.join(__dirname, "..", "..", "agent-workbench", "case-design", "active", "display-data");
 
 const products = {
   "DEP-002": { name: "농협은행 퇴직연금 정기예금", returns: { "1년": 3.37 } },
@@ -492,7 +492,7 @@ const agentContexts = {
   })
 };
 
-const GOLDEN_DIR = path.join(__dirname, "..", "data", "golden-cases");
+const GOLDEN_DIR = path.join(__dirname, "..", "..", "agent-workbench", "case-design", "active", "customer-data");
 
 function loadGoldenCases() {
   const loaded = {};
