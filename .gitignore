@@ -23,3 +23,15 @@ yarn-error.log*
 # Logs & temp
 *.log
 tmp/
+
+# Secrets — 절대 커밋 금지 (docs/environment/09-보안-시크릿.md)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# Python
+__pycache__/
+*.py[cod]
