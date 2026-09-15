@@ -1,106 +1,55 @@
-# Pension_Agent_V
+# Pension Agent
 
-KB 사내망(내부망) 퇴직연금 AI 상담 에이전트 프로젝트.
-에이전트 백엔드, Starroot 업무화면 프론트엔드, Fabrix 연동, 케이스 설계 작업공간, 지식 코퍼스, 사내 환경 기준 문서를 모아둔 저장소입니다.
+고객별 브리핑과 사내 Agent 구현을 이어가기 위한 저장소입니다. **30명 + 김서연(DEMO-01) 고객 데이터/브리핑**을 보존했습니다. 원래 김서연 `ksy` 화면도 최신 프론트 안에 유지됩니다.
 
-> **개발/코딩 에이전트는 [`CLAUDE.md`](CLAUDE.md) 를 먼저 읽으세요.**
-> 이 프로젝트는 공개 인터넷 환경의 관례(Public PyPI / OpenAI 공식 endpoint / React SPA / EventSource)를
-> 그대로 적용하면 동작하지 않습니다.
+## 작업별로 필요한 것만 읽기
 
-## 프로젝트 전체 경로
-
-```text
-Starroot 업무화면 (zmnbank.kbstar.com)
-    ↓  fetch + ReadableStream
-Fabrix Agent Connector
-    ↓
-FastAPI Pro Agent (K8s)
-    ↓
-사내 GenAI APIM → Gemma4
-```
-
-## 저장소 구조 (최상위)
-
-```
-.
-├── CLAUDE.md              ★ 코딩 에이전트 진입점
-│
-├── agent/                 실제 GenAI Portal에 배포되는 Agent 코드
-├── frontend/              Starroot 업무화면 코드와 프론트 환경 자료
-│   ├── app/                 mnPensionAgentDemo.html · pensionAgentDemo.{js,css} · local_preview.html
-│   └── platform/            Starroot 개발 규칙 (+ references/ 원본 근거)
-├── integration/           Frontend ↔ Fabrix ↔ Agent 통신·계약
-│   ├── fabrix/              FABRIX_GUIDE.md · fabrixClient.js
-│   └── contracts/           AGENT_FRONTEND_CONTRACT.md
-├── agent-workbench/       Golden Case / 고객 DATA / Display Data / Briefing 설계 작업공간
-│   └── case-design/
-│       ├── active/          customer-data · display-data · briefings
-│       └── materials/       schemas · case-candidates · source-maps · reference-cases · domain-knowledge
-├── knowledge/             퇴직연금 지식 코퍼스
-│   ├── 01-original/         원본 (PDF · Script · HTML · 이미지 · xlsx)
-│   ├── 02-source-md/        원문 MD/TXT 변환본
-│   ├── 03-curated/          주제별 정제 Knowledge
-│   ├── registry/            source_registry.md
-│   └── README.md            사용 규칙
-├── docs/
-│   └── platform/            사내 환경 기준 문서 (01~06 + references/)
-└── tools/
-    └── case-design/         generate_customer_display_data.js
-```
-
-## 빠른 시작
-
-### 프론트엔드 데모
-
-빌드 과정이 없습니다. `frontend/app/local_preview.html` 을 브라우저로 열면 바로 동작합니다.
-
-```bash
-open frontend/app/local_preview.html          # macOS
-npx serve frontend/app                        # 또는 정적 서버
-```
-
-`frontend/app/mnPensionAgentDemo.html` 은 CSS/JS를 `/mnbank/app/...` 절대경로로 참조하므로
-로컬에서 그대로 열면 스타일과 스크립트가 로드되지 않습니다. 로컬 확인은 `local_preview.html` 을 쓰세요.
-
-> 현재 실시간 상담 UI는 **Mock(사전 정의 QA)** 입니다.
-> 실제 Agent 연동은 다음 단계이며 설계는 [`integration/contracts/AGENT_FRONTEND_CONTRACT.md`](integration/contracts/AGENT_FRONTEND_CONTRACT.md) 에 있습니다.
-
-### 에이전트
-
-```bash
-cd agent
-cp .env.example .env     # 값 채우기 (커밋 금지)
-uvicorn main:app --host 0.0.0.0 --port 8000
-```
-
-사내망 밖에서는 LLM 호출이 되지 않습니다. 자세한 내용은 [`agent/README.md`](agent/README.md).
-
-### 고객 표시용 데이터 재생성
-
-`agent-workbench/case-design/active/customer-data/` 의 마크다운 JSON 블록을 읽어
-`agent-workbench/case-design/active/display-data/` 를 다시 만듭니다.
-
-```bash
-node tools/case-design/generate_customer_display_data.js
-```
-
-결과물: 고객별 JSON 30개, `all-customers.json`, 검증 결과 `validation-report.md`.
-
-## 현재 상태
-
-| 영역 | 상태 |
+| 작업 | 수정 원본 / 참고 |
 |---|---|
-| Gemma4 호출 · Agent SSE · Fabrix 전달 · Browser 2단계 파싱 | ✅ 검증 |
-| 배포 파이프라인 (git tag → Portal → Jenkins → ArgoCD → K8s) | ✅ 검증 |
-| Starroot Vanilla 화면 구동 | ✅ 검증 |
-| 프론트 Mock → 실제 Agent 교체 | ⏳ 다음 단계 |
-| Multi-turn / action 처리 / SERV E2E | ⏳ 미확정 |
+| Agent 내부 구현 | [agent/](agent/), [입출력 명세](integration/contracts/AGENT_FRONTEND_CONTRACT.md) |
+| 고객 데이터·브리핑 개선 | [31건 색인](agent-workbench/case-design/review/CASE_INDEX.md)의 해당 고객 JSON과 S1–S5 JSON |
+| 화면 레이아웃 | `frontend/src/briefing/mnPensionAgentDemo.html`, `pensionAgentDemo.css` |
+| S1–S5·추천상품 렌더링 | `frontend/src/briefing/pensionBriefingView.js` |
+| 상단 고객·계좌 렌더링 | `frontend/src/briefing/pensionCustomerView.js` |
+| 응답 필드 | `frontend/src/briefing/briefing-contract.js`, `fabrix-briefing-contract.js` |
+| 고객별 상태·기존 화면 연결 | `frontend/src/briefing/pensionBriefingStore.js`, `pensionBriefingAdapter.js` |
+| API 호출·설정 | `frontend/src/briefing/fabrix-transport.js`, `pensionFabrix.js` |
+| 기존 Vanilla 화면 동작 | `frontend/src/briefing/pensionAgentDemo.js` |
+| 내일 사내 반입·Agent 배포·연동 확인 | [COMPANY_DEPLOY_CHECKLIST.md](COMPANY_DEPLOY_CHECKLIST.md), 필요한 [플랫폼 문서](docs/platform/README.md) |
+| 지식 검색 | [색인](knowledge/registry/source_registry.md)으로 관련 자료만 선택 |
+| 변경·미완료 기록 | [WORK_LOG.md](docs/handover/WORK_LOG.md) |
 
-상세 현황은 [`docs/platform/README.md`](docs/platform/README.md#검증-현황).
+## 수정 원칙
 
-## 주의
+- 고객 입력: `agent-workbench/case-design/active/display-data/Bxx-xx.json` 직접 수정. 김서연은 `materials/reference-cases/DEMO-01_KIM_SEOYEON_표시용데이터_v0.1.json` 수정.
+- 브리핑: `active/briefing-json/<caseId>.json` 직접 수정. S1–S5와 출처/검토 메모만 저장합니다.
+- 위 경로의 `active/`, `materials/`는 모두 `agent-workbench/case-design/` 아래입니다.
+- Golden/브리핑 Markdown은 고객 맥락·출처 확인용입니다. JSON을 덮어쓰는 생성기/override는 제거했으므로 MD를 고쳐도 화면 JSON이 자동으로 바뀌지 않습니다.
+- 생성된 반입 JS, `agent/briefing_data.json`, 응답 예시는 직접 수정하지 않습니다. 같은 빌드가 프론트와 Agent 데이터 묶음을 함께 만들며 원본 JSON은 읽기만 합니다.
+- 원본 지식/사내 플랫폼 reference는 그대로 보존하며 전부 기본 컨텍스트로 읽지 않습니다.
 
-- 저장소에 포함된 고객 데이터는 전부 **더미 데이터**이며 실제 고객 정보가 아닙니다.
-- 분석 기준일(`AS_OF_DATE`)은 생성 스크립트 상단에 상수로 정의되어 있습니다.
-- **API Key / Fabrix Token / Client Secret 을 커밋하지 마세요.**
-  → [`docs/platform/06-SECURITY.md`](docs/platform/06-SECURITY.md)
+## 빌드·검증·화면 확인
+
+저장소 루트에서 실행합니다. Node.js 22 권장, npm 설치 없음.
+
+```sh
+node tools/briefing/build.js
+node tools/briefing/check.js
+node tools/briefing/check.js --agent
+node tools/briefing/build.js --preview
+```
+
+미리보기는 `http://127.0.0.1:8765`, 종료는 Ctrl+C입니다. 별도 모의 Agent/API 서버는 없습니다.
+
+사내 반입은 **[frontend/briefing-fabrix/](frontend/briefing-fabrix)의 HTML·JS·CSS 세 파일만** 합니다. Node나 원본 모듈은 WAS 실행에 필요하지 않습니다. 실제 파일코드 반영: `node tools/briefing/build.js <숫자파일코드>`.
+
+사내 Agent 응답 검증: `node tools/briefing/check.js request.json response.json` (내부 요청/answer JSON만, 토큰·헤더·실제 고객 정보 반입 금지). cfg 다섯 항목은 실행 시 연결 설정에서 입력하며 소스에 넣지 않습니다.
+
+## 현재 단계
+
+- 프론트·브리핑 규격·31건 구조 연결: 로컬 검증.
+- 브리핑 내용: 모두 draft, 대표 3건만 1차 개선. 검토 이슈는 각 JSON의 `reviewNotes`와 사례 색인.
+- **LLM 없는 고정 Agent 구현 완료**: 선택한 사례의 저장된 S1–S5를 반환하며 요청 식별값/고객 스냅샷이 다르면 오류. Python 응답은 프론트 계약으로 검증했습니다.
+- **로컬 FastAPI/Pydantic 미설치로 앱 기동은 미검증. 실제 사내 E2E, LLM 기반 생성, 운영 인증 방식은 미완료.**
+- 우측 실시간 상담은 기존 데모이며 이번 S1–S5 API와 별개입니다.
+- Secret과 실제 고객 데이터를 올리지 마세요.

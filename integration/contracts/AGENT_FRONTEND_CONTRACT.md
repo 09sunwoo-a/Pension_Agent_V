@@ -1,335 +1,273 @@
-# 06. 출력 계약 (Agent ↔ Frontend Contract)
+# FabriX 고객별 브리핑 — 테스트 방법 및 Agent 입출력 명세
 
-> 근거: `sources/KB_GenAI_ProAgent_SourceOfTruth_v2.md` §10~§13, §35~§38
-> + `frontend/app/pensionAgentDemo.js` 실제 구조 분석
-> 이 문서는 **Mock → 실제 Agent 교체 작업의 설계도** 다.
+## 1. 이 문서의 범위
 
----
+프론트 통합본은 **HTML 1개 + JS 1개 + CSS 1개**입니다. 실제 호출 기능을 포함하며, Agent는 아래 계약대로 결과를 반환하면 됩니다. Agent 내부의 검색·추론·문장 생성 방식은 이 문서가 정하지 않습니다. 기존 `fact` 상담 응답과 다른 **브리핑 전용 계약**입니다.
 
-## 1. 대원칙
+- 배포본: `frontend/briefing-fabrix/`
+- 고정 계약 버전: `customer-briefing-api.v1`
+- 전체 응답 예시: [response.example.json](response.example.json)
+- 기계 검증용 스키마는 프론트 계약 JS에만 정의합니다. 중복 JSON 스키마 파일은 두지 않습니다.
+- 현재 Agent는 LLM 없이 저장된 고객별 브리핑을 반환합니다. `case_id`로 조회하고 고객 ID·기준일·전체 입력 스냅샷이 배포 자료와 일치하는지 검사합니다. 다른 값이면 오류 이벤트를 반환합니다. 문장 생성은 이후 구현 범위입니다.
 
-```text
-LLM       = 문장을 생성한다
-Backend   = 구조를 결정한다      ← Pydantic으로 강제
-Frontend  = 표현을 결정한다
-```
+고정할 것은 **필드 이름·자료형·의미·이벤트 구분**입니다. 고객별 문장과 선택지·추천상품·고객 반응의 개수는 달라도 됩니다. 선택 필드의 값이 없으면 해당 화면 영역을 숨깁니다.
 
-LLM에게 아래를 **절대 생성시키지 않는다.**
+규격 수정 원본은 [briefing-contract.js](../../frontend/src/briefing/briefing-contract.js)의 S1–S5 공통 스키마와 [fabrix-briefing-contract.js](../../frontend/src/briefing/fabrix-briefing-contract.js)의 API envelope입니다. 별도 수정용 JSON 스키마는 두지 않습니다. 빌드가 같은 스키마와 고객·브리핑을 `agent/briefing_data.json`에 포함하므로 Python에서도 검사합니다. 응답 예시와 Agent 묶음은 직접 수정하지 않습니다. [수정 위치와 명령](../../README.md)을 참조하세요.
 
-```text
-schema_version   answer_type   event
-blocks           block.type    action.type
-CSS              HTML
-```
+## 2. 사내에서 테스트하는 방법
 
-이유:
+다음 세 파일만 배포합니다. 별도 JSON·JS 의존 파일, npm, 외부 CDN, React, 런타임 빌드는 필요하지 않습니다.
 
 ```text
-LLM 출력 변동 → JSON shape 변동 → Frontend parser 오류
+frontend/briefing-fabrix/
+  mnPensionAgentDemo.html
+  pensionAgentDemo.js
+  pensionAgentDemo.css
 ```
 
-프론트에서 *"어떤 필드가 올지 모르겠다"* 상태가 되면 안 된다.
-LLM이 이상한 걸 뱉어도 `schema_version` 누락 / `blocks` 누락 / `block.type` 랜덤 값이
-**프론트까지 도달하지 않게** Backend가 막는다.
-
----
-
-## 2. 현재 Agent 출력 계약 (`agent/main.py`)
-
-```python
-class Block(BaseModel):
-    type: Literal["paragraph", "caution"]
-    title: str | None = None
-    text: str
-    items: list[str] = Field(default_factory=list)
-
-
-class AgentAnswer(BaseModel):
-    schema_version: Literal["1.0"] = "1.0"
-    answer_type: Literal["fact"] = "fact"
-    lead: str
-    blocks: list[Block] = Field(default_factory=list)
-    followups: list[str] = Field(default_factory=list)
-
-
-class AnswerEvent(BaseModel):
-    event: Literal["answer"] = "answer"
-    data: AgentAnswer
-
-
-class ErrorEvent(BaseModel):
-    event: Literal["error"] = "error"
-    message: str
-```
-
-LLM은 `lead` / `detail` / `caution` **문자열 slot만** 채우고,
-Python이 `build_fact_answer()` 에서 조립한다.
-
----
-
-## 3. 검증된 전달 경로
+HTML의 리소스 경로는 검증본과 같습니다.
 
 ```text
-Python Pydantic Object
-    ↓ model_dump()
-    ↓ json.dumps(ensure_ascii=False)
-Agent SSE content
-    ↓
-Fabrix
-    ↓
-Browser
-    ↓ content 문자열
-    ↓ JSON.parse()
-Frontend 객체
+/mnbank/app/js/bfe/pension/pensionAgentDemo.js
+/mnbank/app/css/bfe/pension/pensionAgentDemo.css
 ```
 
-브라우저에 실제로 도달한 형태:
+최초 배포 시 `pensionAgentDemo.js`의 `STARROOT_FILE_CODE = 'REPLACE_WITH_FILE_CODE'`를 실제 파일코드로 바꿉니다. 이후 `PG_<파일코드>.onParam()` 초기화, `onBeforeUnload()` 정리를 사용합니다. `DOMContentLoaded`에 의존하지 않습니다. 파일 경로·파일코드 설정은 최초 배포 작업이며 FabriX 인증 설정과 별개입니다.
+
+1. 고객별 브리핑 목록에서 대표 사례 또는 30개 고객 중 하나를 선택합니다.
+2. **연결 설정**에서 아래 다섯 값을 입력하고 **설정 적용**을 누릅니다.
+3. **실제 브리핑 호출 / 재요청**을 누릅니다.
+4. 화면의 수신 상태와 S1~S5를 확인합니다. 상단 고객정보·IRP 계좌·보유상품은 바뀌지 않습니다.
+5. **요청 취소**, **더미로 복원**, **설정 삭제**를 사용할 수 있습니다.
+
+| 설정 필드 | 내용 |
+|---|---|
+| `endpointUrl` | Connector 기준 URL. 예: `https://…/prod/kb0/<connector-id>/1`. `/openapi/agent-chat/v1/agent-messages`는 프론트가 붙임 |
+| `openapiToken` | OpenAPI 인증 토큰. `Bearer `가 붙어 있어도 중복하지 않음 |
+| `generativeAiClient` | 인증용 클라이언트 값 |
+| `agentId` | 양의 정수. 예시의 0은 실제 설정으로 허용하지 않음 |
+| `xClientUser` | 직원 ID. 요청의 `x_client_user`로 전달 |
+
+호출 코드로 설정할 때도 동일한 필드를 사용합니다. 아래 `cfg`는 승인된 런타임 설정 경로에서 받은 객체이며, 실제 값을 정적 배포 파일에 넣지 않습니다.
+
+```js
+var configured = window.PensionFabrix.configure(cfg);
+// configured: { ok: true } 또는 { ok: false, code: 'CONFIG' }
+if (configured.ok) {
+  window.PensionFabrix.request('DEMO-01').then(function (result) {
+    // result에는 성공 여부·안전한 오류 코드만 포함됩니다.
+  });
+}
+```
+
+설정은 JS 메모리에만 보관하며 저장소·쿠키·파일·로그에 기록하지 않습니다. 화면 종료/설정 삭제 시 제거합니다. 설정 입력값은 Component 상태나 HTML value 속성에 보관하지 않으며 적용 후 입력창을 비웁니다. 다만 브라우저 직접 호출 특성상 Network 탭에는 인증 헤더가 보입니다. **승인된 사내 테스트 환경에서만 사용하고, 운영 적용 시 서버 프록시 등 인증 방식을 별도로 검토해야 합니다.** 개발자 도구 콘솔 기록에도 실제 토큰을 붙여넣지 않는 것을 권장합니다.
+
+`기존 데모 · 김서연`은 원래 화면을 보존하므로 API 호출 대상이 아닙니다. 김서연 실제 연결 테스트는 `대표 · 상품 제안 · 김서연`(`DEMO-01`)을 선택합니다. 데이터는 시연용이며, 원천 내용의 검토 완료를 뜻하지 않습니다.
+
+## 3. 프론트 → FabriX 요청
+
+```http
+POST {endpointUrl}/openapi/agent-chat/v1/agent-messages
+Content-Type: application/json; charset=UTF-8
+Accept: text/event-stream
+x-openapi-token: Bearer <실행 시 주입>
+x-generative-ai-client: <실행 시 주입>
+```
+
+요청 body는 아래 코드와 같은 구조입니다. **`contents[0]`은 객체가 아니라 JSON 문자열**입니다.
+
+```js
+{
+  agentId: cfg.agentId,
+  contents: [JSON.stringify(agentRequest)],
+  llmConfig: {},
+  isStream: true
+}
+```
+
+Agent에서 `FabrixRequest.input_value`를 JSON 파싱하면 `agentRequest` 객체를 얻습니다. 요청 필드는 아래 표를 따르며 `request()` 함수가 동일한 객체를 생성합니다.
+
+| `agentRequest` 필드 | 자료형 | 의미 |
+|---|---|---|
+| `schema_version` | string | `customer-briefing-api.v1` |
+| `task` | string | `customer_briefing` |
+| `request_id` | string | 프론트가 요청마다 생성한 식별값. 응답에서 그대로 반환 |
+| `message` | string | 브리핑 생성 요청 문장 |
+| `x_client_user` | string | 직원 ID |
+| `case_id` | string | 선택한 케이스 ID |
+| `customer_id` | string | 고객 스냅샷의 고객 ID |
+| `as_of_date` | string | 고객 스냅샷 기준일, `YYYY-MM-DD`. 서버의 오늘 날짜로 바꾸지 않음 |
+| `customer_data` | object | 프론트가 보유한 해당 고객의 시연용 스냅샷 |
+
+`customer_data`에는 `briefingMeta`, `customer`, `irpAccount`, `holdings`, `signals`, 제공된 경우 `에이전트맥락데이터`가 포함됩니다. 서버는 이 스냅샷으로 브리핑을 생성합니다. **상단 정보를 응답으로 다시 보내는 것이 아니라, Agent가 판단에 사용할 입력으로 보내는 것**입니다. 외부 업무·상품 지식의 조회는 이후 Agent 구현 범위입니다.
+
+## 4. Agent 논리 응답 — 정상
+
+프론트가 최종적으로 파싱할 객체는 다음과 같습니다. 아래 예시는 `request_id` 등 네 연결 값이 요청과 일치할 때 유효합니다.
 
 ```json
 {
   "event": "answer",
   "data": {
-    "schema_version": "1.0",
-    "answer_type": "fact",
-    "lead": "김서연 고객은 ...",
-    "blocks": [
-      { "type": "list", "title": "이 고객 기준 공제 구조", "text": null,
-        "items": ["기본 세액공제 잔여한도 500만원"] },
-      { "type": "paragraph", "title": null, "text": "...", "items": [] },
-      { "type": "caution",   "title": null, "text": "...", "items": [] }
-    ],
-    "followups": []
+    "schema_version": "customer-briefing-api.v1",
+    "answer_type": "briefing",
+    "request_id": "example-request-001",
+    "case_id": "DEMO-01",
+    "customer_id": "10274-38562",
+    "as_of_date": "2026-09-04",
+    "briefing": {
+      "s1": {
+        "items": [{
+          "text": "등록된 투자성향은 위험중립형입니다.",
+          "dataRefs": ["/customer/investmentProfile"]
+        }]
+      },
+      "s2": { "lead": "사용계획과 운용 의향을 확인합니다." },
+      "s3": { "lead": "확인된 사용시점에 맞춰 운용방향을 비교합니다." }
+    }
   }
 }
 ```
 
-**구조 보존이 확인됐다.** → `JSON.parse(event.content)` 로 정상 파싱 가능.
+- `event`, `schema_version`, `answer_type`, 요청 연결 정보는 서버 코드가 고정·복사합니다. LLM이 임의로 만들게 하지 않습니다.
+- `request_id`, `case_id`, `customer_id`, `as_of_date`는 **요청과 모두 일치**해야 합니다. 다르면 이전 브리핑을 유지하고 `IDENTITY` 오류를 표시합니다.
+- 문장·항목·추천상품은 `data.briefing`에만 넣습니다. HTML/CSS/클릭 핸들러/고객정보 객체/계좌 객체는 허용하지 않습니다.
+- 응답의 필드 구조는 JSON Schema로 서버에서도 검사하는 것을 권장합니다. 프론트는 구조 및 근거 ID·고객 필드 경로를 다시 검사합니다.
+- 전체 상품 예시는 [response.example.json](response.example.json)입니다. 고객별 `active/briefing-json/*.json` 내용을 `data.briefing`에 넣고 요청 식별 필드는 그대로 반환합니다.
 
----
+### 4.1 S1~S5 필드
 
-## 4. ★ 프론트가 실제로 기대하는 형태 (Mock 내부 구조)
+모든 경로는 `data.briefing` 기준입니다. `?`는 문서상의 선택 표시이며 실제 JSON 키에는 넣지 않습니다.
 
-여기가 핵심이다. **Agent 출력과 프론트 내부 구조는 키 이름이 다르다.**
-`frontend/app/pensionAgentDemo.js` 의 `QA[고객].answers[aid]` 는 이렇게 생겼다:
+| 구역 | 필드 | 규칙 / 화면 |
+|---|---|---|
+| S1 | `s1.items[]` | 필수, 1개 이상. 각 항목의 `text` 필수. 순번은 프론트가 표시 |
+| S1 근거 | `items[].dataRefs?`, `items[].sourceIds?` | 둘 중 최소 한 개의 유효한 참조가 필요 |
+| S2 | `s2.lead` | 필수, 상담 목적 |
+| S2 보조 | `why?`, `checks[]?`, `sourceIds[]?` | 이유/확인 질문. 비면 제목·박스까지 숨김 |
+| S3 | `s3.lead` | 필수, 관리 방향 |
+| S3 선택지 | `options[]?` | 각 항목 `id`, `title` 필수. `summary?`, `details[]?`, `products[]?`, `sourceIds[]?` 선택 |
+| S3 공통 | `notes[]?` | 선택지 공통 주의 문구 |
+| S4 | `s4?` | 선택 객체. `opening?`, `reactions[]?`, `notices[]?`, `sourceIds[]?` |
+| S4 반응 | `reactions[].label`, `paragraphs[]` | 반응 항목 생성 시 모두 필수, 문단 1개 이상. 문단 수만큼 모두 표시 |
+| S5 | `s5?` | 선택 객체. `tips[]?`, `actions[]?`, `sourceIds[]?` |
+| S5 TIP | `tips[].title`, `body?`, `sourceIds[]?` | 제목 필수, 본문 없으면 제목만 표시 |
+| S5 업무 | `actions[].title`, `screenCode?`, `description?` | 제목 필수, 화면번호는 `00-00-000`. 없으면 실행 버튼·코드칩 숨김 |
+| 근거 | `sources[]?` | 각 항목 `id`, `title` 필수. `description?`, `url?` 선택. URL은 HTTPS만 허용 |
+| 검토 | `reviewNotes[]?` | 자료 누락·충돌 등 내부 검토사항. 상담 후 기록 기능이 아님 |
 
-```javascript
-{
-  aType: 'fact',                       // ← answer_type 에 대응
-  status: ['관련 제도를 확인하고 있어요', ...],   // 로딩 중 표시 문구
-  lead: '완전히 못 빼는 건 아니고, ...',
-  leadSub: '',                         // 선택
-  blocks: [
-    { t: 'list', title: '...', items: ['...', '...'] },
-    { t: 'p',    x: '...' },           // ← text 가 아니라 x
-    { t: 'caution', x: '...' }
-  ],
-  srcs: [{ type: '본부 공식 자료' }],    // 출처 배지
-  evid: [{ doc, org, date, points: [], url }],   // 근거
-  cta:  { ask, yes, next },            // 후속 행동 제안
-  useGuard: false,
-  follow: ['고객이 앱에서 직접 할 수 있어?']     // ← followups 에 대응
-}
-```
+S4·S5는 표시할 내용이 전혀 없으면 구분선과 섹션 제목도 숨깁니다. S1~S3는 핵심 내용이므로 생략하지 않습니다. 선택 문자열은 생략/null/빈 문자열/공백, 선택 배열은 생략/null/빈 배열이면 미표시로 처리합니다. 다만 배열 안에 빈 객체를 넣어 카드 자리를 채우면 오류입니다.
 
-### 4.1 블록 타입 매핑표
+### 4.2 추천상품 구조
 
-`agVals()` (`pensionAgentDemo.js:736`) 가 `b.t` 로 분기한다.
+`s3.options[].products[]`의 각 상품:
 
-| 프론트 `b.t` | 의미 | 사용하는 필드 | Agent `block.type` (현재) |
-|---|---|---|---|
-| `p` | 문단 | `x` | `paragraph` ✅ |
-| `caution` | 주의 박스 | `x` | `caution` ✅ |
-| `list` | 목록 | `title`, `items` | ❌ 미지원 |
-| `steps` | 단계 | `title`, `items[{title,desc}]` | ❌ 미지원 |
-| `quote` | 인용 | `x` | ❌ 미지원 |
-| `msg` | 고객 안내 문구(복사 가능) | `msg` | ❌ 미지원 |
-| `table` | 표 | `title`, `rows: [k, v][]` | ❌ 미지원 |
-| `memoryNote` | 상담 기억 | `x` | ❌ 미지원 |
-| `link` | 링크 | `title`, `x` | ❌ 미지원 |
-| `eventCard` | 이벤트 카드 | `kind`, `icon`, `when`, `desc`, `msg` | ❌ 미지원 |
+| 필드 | 필수 여부 | 의미 |
+|---|---|---|
+| `name` | 필수 | 실제 후보 상품명 |
+| `sourceIds` | 필수, 1개 이상 | 같은 응답 `sources[].id` 참조 |
+| `productId` | 선택 | 상품 식별자. 같은 선택지 안에서 중복 금지 |
+| `category`, `riskLevel` | 선택 | 상품군·자료상 위험등급 |
+| `reason` | 선택 | 해당 고객에게 제안하는 이유 |
+| `notes[]` | 선택 | 상품별 조건·주의 문구 |
+| `metrics[]` | 선택 | 아래 지표 객체 배열 |
 
-### 4.2 `aType` 값
+지표 객체는 `kind`(`rate`: 표시금리 / `return`: 수익률), 숫자 `valuePct`, 문자열 `period`, 문자열 `asOf`가 모두 필수입니다. `3.85`는 3.85%이며 `0`도 유효합니다. 기간·기준 없이 숫자만 보내지 않습니다. 적용기간을 표시하려면 `validFrom`/`validUntil`을 `YYYY-MM-DD` 한 쌍으로 보내며 시작일이 종료일보다 늦을 수 없습니다.
 
-`TYPE` 맵 (`pensionAgentDemo.js:714`) — 답변 유형 배지를 결정한다.
+상품만 있고 `details`가 없어도 추천상품 펼치기가 표시됩니다. 상품과 상세가 모두 없으면 펼치기 버튼이 없습니다. ETF 조회 이력만 있고 상품이 특정되지 않았다면 상품명을 만들어 채우지 않습니다. 확인되지 않은 수익률은 `metrics`를 생략합니다.
 
-| `aType` | 배지 라벨 |
-|---|---|
-| `fact` | 제도 안내 |
-| `pitch` | 상담 화법 |
-| `memory` | 상담 기억 |
-| `knowhow` | 현장 노하우 |
-| `summary` | 상담 요약 |
-| `action` | 실행 |
+### 4.3 근거 참조와 검증의 한계
 
-Agent는 현재 `answer_type: Literal["fact"]` 하나만 낸다.
+`dataRefs`는 **요청의 `customer_data` 내부**를 기준으로 한 JSON Pointer입니다. 예: `/irpAccount/valuationAmountKrw`, `/customer/investmentProfile`. `/customer_data/...`로 시작하지 않습니다. `sourceIds`는 응답 `sources[].id`와 연결합니다.
 
-### 4.3 키 차이 요약 — **어댑터가 반드시 변환해야 하는 것**
+프론트는 필드·출처의 존재, 중복 ID, 값의 형식을 검사하지만 문장 의미·제도 현행성·상품 적합성까지 판단하지는 않습니다. 정상 수신해도 자동 승인하지 않고 내용 검토 전 초안으로 표시합니다. 상단 정보는 브리핑 문장에서 역산하거나 덮어쓰지 않습니다.
 
-```text
-Agent                    Frontend
-─────────────────────────────────────
-answer_type          →   aType
-block.type           →   block.t
-  "paragraph"        →     "p"          ← 이름이 다르다
-  "caution"          →     "caution"
-block.text           →   block.x        ← 이름이 다르다
-block.items          →   block.items
-block.title          →   block.title
-followups            →   follow
-lead                 →   lead
-(없음)                →   status, srcs, evid, cta, useGuard
-```
-
-> ⚠️ `paragraph` → `p`, `text` → `x` 이 두 개를 놓치면 블록이 **조용히 빈 칸으로 렌더된다.**
-> 에러가 안 나기 때문에 디버깅이 오래 걸린다.
-
----
-
-## 5. 연동 설계 — 기존 renderer를 재작성하지 마라
-
-```text
-agSend()                       (pensionAgentDemo.js:633)
-   ↓
-callFabrixAgent()              ← 신규 (transport)
-   ↓
-parseFabrixSSE()               ← 신규 (04 §7~8)
-   ↓
-JSON.parse(content)            ← 2단계 파싱
-   ↓
-normalizeAgentAnswer()         ← 신규 (어댑터, §4.3 변환)
-   ↓
-state.agChat                   ← 기존 state 그대로
-   ↓
-기존 agVals()                  (:709)
-   ↓
-기존 UI
-```
-
-```text
-✅ Transport만 교체
-✅ Response Adapter 추가
-✅ Renderer는 최대한 유지
-❌ renderer / 템플릿 재작성
-```
-
-### 어댑터 스켈레톤
-
-```javascript
-var BLOCK_TYPE_MAP = { paragraph: 'p', caution: 'caution', list: 'list',
-                       steps: 'steps', quote: 'quote', msg: 'msg',
-                       table: 'table', memoryNote: 'memoryNote',
-                       link: 'link', eventCard: 'eventCard' };
-
-function normalizeAgentAnswer(data) {
-  if (!data || typeof data !== 'object') return null;
-
-  return {
-    aType:  data.answer_type || 'fact',
-    lead:   data.lead || '',
-    blocks: (data.blocks || []).map(function (b) {
-      return {
-        t:     BLOCK_TYPE_MAP[b.type] || 'p',   // 모르는 타입은 문단으로 격하
-        title: b.title || '',
-        x:     b.text || '',
-        items: b.items || [],
-        rows:  b.rows || []
-      };
-    }),
-    follow: data.followups || [],
-    srcs: [], evid: [], cta: null, useGuard: false,
-    status: ['답변을 준비하고 있어요']
-  };
-}
-```
-
-> 모르는 `block.type` 이 와도 **throw하지 말고 `p` 로 격하**한다.
-> 계약 위반이 화면 전체를 깨뜨리면 안 된다.
-
----
-
-## 6. 계약을 확장할 때 (권장 순서)
-
-프론트는 이미 10종 블록을 렌더할 수 있으므로,
-**프론트를 고치는 게 아니라 Agent 쪽 `Literal` 을 넓히는 방향**이 맞다.
-
-```text
-1. agent/main.py 의 Block.type Literal 에 타입 추가
-   Literal["paragraph", "caution", "list", "steps", "table", ...]
-
-2. 필요한 필드 추가 (rows 등)
-   class Block(BaseModel):
-       type: Literal[...]
-       title: str | None = None
-       text: str = ""
-       items: list[str] = Field(default_factory=list)
-       rows: list[list[str]] = Field(default_factory=list)   # table용
-
-3. Python 조립 함수에서 해당 블록을 만든다 (LLM이 아니라!)
-
-4. 프론트 어댑터 BLOCK_TYPE_MAP 에 매핑 추가
-
-5. schema_version 은 호환성이 깨질 때만 올린다
-```
-
-### `schema_version` 정책
-
-```text
-1.0  현재
-     - 하위호환 필드 추가  → 버전 유지
-     - 필드 의미 변경/삭제 → 버전 상승 + 프론트 동시 배포
-```
-
-프론트는 모르는 `schema_version` 을 만나면 **에러가 아니라 degrade** 해야 한다.
-
----
-
-## 7. 오류 이벤트
+## 5. 오류 응답
 
 ```json
-{ "event": "error", "message": "답변 생성 중 오류가 발생했습니다." }
+{
+  "event": "error",
+  "request_id": "example-request-001",
+  "message": "브리핑 생성에 실패했습니다."
+}
 ```
 
-프론트는 `agentEvent.event` 로 분기한다.
+한 요청에는 정상 `answer` 또는 `error` 하나만 반환합니다. 오류 메시지에는 인증정보·고객 원문·내부 traceback을 넣지 않습니다. 프론트는 서버의 원시 메시지를 화면에 그대로 출력하지 않고 고정 안내문으로 `AGENT` 오류를 표시합니다.
 
-```javascript
-if (agentEvent.event === 'answer')  { /* 정상 */ }
-else if (agentEvent.event === 'error') { /* 안내 메시지 표시 */ }
-else { /* 알 수 없는 이벤트 → 무시하거나 fallback */ }
+## 6. Agent → FabriX SSE 포장
+
+4~5절의 논리 객체를 `logical_event`라고 할 때, Agent는 아래처럼 **JSON 문자열로 한 번 직렬화해 `content`에 넣습니다.** 다음 코드는 전송 형식 예시이며 Agent 생성 로직은 아닙니다.
+
+```python
+import json
+
+agent_chunk = {
+    "event": "CHUNK",
+    "content": json.dumps(logical_event, ensure_ascii=False),
+    "references": [],
+    "recommend_queries": [],
+    "actions": [],
+}
+frame = "data: " + json.dumps(agent_chunk, ensure_ascii=False) + "\n\n"
+# Content-Type: text/event-stream으로 frame을 전송한 후 스트림 종료
 ```
 
-> `event` (Agent 계약) 와 `event_status` (Fabrix envelope) 는 다른 키다. → [Fabrix Guide](../../integration/fabrix/FABRIX_GUIDE.md) §6
+FabriX를 거쳐 브라우저가 받는 포장은 다음과 같습니다. 바깥 키가 `event_status`로 바뀌는 점에 주의합니다.
 
----
-
-## 8. 아직 확정되지 않은 것
-
-```text
-⏳ Multi-turn / session       — FabrixRequest.message_hists 를 어떻게 쓸지 미확정
-⏳ actions 처리                — Fabrix envelope의 actions 활용 방안 미확정
-⏳ references / recommend_queries 활용
-⏳ 프론트의 srcs / evid / cta / guard 를 Agent가 채울지 여부
+```js
+{
+  event_status: 'CHUNK',
+  status: 'SUCCESS',
+  result_code: 'FR-200',
+  content: JSON.stringify(logical_event),
+  references: [],
+  recommend_queries: [],
+  actions: []
+}
 ```
 
-이 항목들은 **"미확정"** 이다. 임의로 설계해서 "검증됨"처럼 말하지 마라.
-필요하면 설계안을 제시하되 미확정임을 명시한다.
+확인된 추가 포장인 `content = JSON.stringify({event:'CHUNK', content:JSON.stringify(logical_event), ...})`도 한 겹까지 처리합니다. 바깥 `actions`, `references`, `recommend_queries`는 이번 브리핑에서 사용하지 않습니다. S5의 `actions` 및 브리핑의 `sources`와 섞지 않습니다.
 
----
+### 스트림 규칙
 
-## 9. 체크리스트
+- **완성된 논리 JSON 하나**를 보내고 스트림을 종료합니다. 여러 CHUNK에 JSON 문자열 조각을 나누는 논리적 token delta 전송은 이번 v1에서 지원하지 않습니다.
+- 네트워크 패킷이 한글 바이트·JSON·줄바꿈 중간에서 나뉘는 것은 정상적으로 처리합니다.
+- 빈 CHUNK와 빈 줄, 완결된 SSE 주석, LF/CRLF, 여러 `data:` 줄, 선택적인 `[DONE]`을 처리합니다.
+- 각 SSE 이벤트 끝에 빈 줄(`\n\n` 또는 `\r\n\r\n`)이 필요합니다. 불완전한 마지막 이벤트는 거절합니다.
+- 빈 `START`/`END`/`DONE` 포장은 허용합니다. 기타 알려지지 않은 포장 형식은 규격 오류입니다.
+- HTTP 성공 및 `text/event-stream`이어야 합니다. `status`가 있다면 `SUCCESS`여야 합니다.
+- `truncated: true` 또는 `finish_reason: 'length'`는 잘린 응답으로 처리합니다.
+- 최종 이벤트 수신 후 스트림이 정상 종료된 뒤에만 화면에 반영합니다. 후속 Gateway 오류나 중복 answer가 있으면 기존 정상 브리핑을 유지합니다.
+- 기본 전체 제한 시간은 90초, 디코딩된 스트림 최대 길이는 4×1024×1024 JS 문자열 코드 단위입니다.
 
-### Agent 쪽
-```text
-[ ] 출력이 Pydantic 모델을 거치는가
-[ ] LLM이 구조가 아니라 문장만 만드는가
-[ ] 예외 경로도 고정 구조(ErrorEvent)를 반환하는가
-[ ] Literal 확장 시 프론트 어댑터도 같이 갱신했는가
+## 7. 상태·실패 처리
+
+화면은 데이터 출처를 `더미 브리핑` / `실제 API 응답 · 내용 검토 전`으로 구분합니다. 오류 시 자동으로 더미를 성공 결과처럼 대체하지 않습니다. 표시할 기존 내용이 있으면 이전 브리핑임을 함께 안내합니다.
+
+진단 코드: `CONFIG`, `AUTH`, `HTTP`, `NETWORK`, `CONTENT_TYPE`, `STREAM`, `SSE`, `JSON`, `SCHEMA`, `VERSION`, `IDENTITY`, `AGENT`, `EMPTY`, `TRUNCATED`, `MULTIPLE`, `LIMIT`, `GATEWAY`, `TIMEOUT`, `ABORTED`.
+
+요청 취소·다른 고객 선택·목록으로 복귀·화면 종료·설정 교체/삭제 시 진행 중인 fetch를 중단합니다. 이미 도착했더라도 무효화된 요청은 반영하지 않습니다. 재시도는 호출 버튼으로 명시적으로 실행하며 자동 반복 호출하지 않습니다.
+
+## 8. 응답 규격을 나중에 변경할 때
+
+- 내부 생성 방식만 변경: 이 계약을 지키면 프론트 변경 없음.
+- 바깥 포장/필드명 변경: `fabrix-briefing-contract.js`와 필요 시 `fabrix-transport.js`의 변환·검증 수정.
+- S1~S5 필드 변경: `briefing-contract.js`의 공통 필드 정의와 해당 `pensionBriefingView.js` 구역 수정.
+- JSON 스키마는 `additionalProperties:false`입니다. 임의의 새 필드는 무시하지 않고 거절합니다. 변경 시 스키마·프론트를 함께 배포하고 호환성 변경에는 계약 버전을 올립니다.
+- 문장·상품 개수만 변경: 허용된 배열·선택 필드 범위 안에서는 HTML 수정 없음.
+
+반입본과 응답 예시는 빌드 결과입니다. 고객 데이터와 브리핑 JSON은 직접 수정하는 원본이며 빌드가 덮어쓰지 않습니다.
+
+```sh
+node tools/briefing/build.js
+# 실제 파일코드를 아는 경우: node tools/briefing/build.js 1121178
+node tools/briefing/check.js
 ```
 
-### 프론트 쪽
-```text
-[ ] 2단계 JSON.parse 를 하는가
-[ ] paragraph → p, text → x 변환을 하는가
-[ ] 모르는 block.type 을 p 로 격하하는가 (throw 금지)
-[ ] 기존 agVals / renderer 를 유지하는가
-[ ] Mock(QA) fallback 경로를 남겨뒀는가
-```
+## 9. 로컬 확인과 실제 응답 검증
+
+`node tools/briefing/build.js --preview` 후 `http://127.0.0.1:8765`를 엽니다. 반입 세 파일을 표시하는 정적 미리보기이며 모의 API는 없습니다. 실 API 호출은 승인된 사내 Origin에서 검증합니다.
+
+사내에서 비밀값을 제거한 논리적 요청 객체와 Agent answer 객체를 준비하면 `node tools/briefing/check.js request.json response.json`으로 계약 일치를 검사할 수 있습니다. 입력은 FabriX envelope/HAR가 아니라 위 명세의 내부 요청과 최종 answer JSON입니다. 토큰·전체 헤더·실제 고객 데이터는 저장소에 넣지 않습니다.
+
+기본 검사는 현재 JSON/반입본 일치, 31건 렌더링 매핑, 상단 고객 격리, 선택 필드, 요청 식별값과 SSE parser를 확인합니다. `node tools/briefing/check.js --agent`는 Python 고정 응답/SSE와 프론트 규격의 일치도 검사합니다. FastAPI/Pydantic이 있으면 ASGI 경로도 검사하며, 없으면 명시적으로 SKIP합니다. 실제 인증·CORS·Gateway·Starroot/WebView·추천 내용의 적합성은 [사내 체크리스트](../../COMPANY_DEPLOY_CHECKLIST.md)에서 별도로 검증합니다.

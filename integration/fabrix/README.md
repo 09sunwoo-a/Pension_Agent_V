@@ -25,7 +25,7 @@
 ```text
 integration/fabrix/fabrixClient.js   ← 여기서 transport 로직 참고
         ↓
-frontend/app/pensionAgentDemo.js 의 agSend()          ← 여기에 반영
+frontend/src/briefing/pensionAgentDemo.js 의 agSend() ← 실시간 상담 교체 시 참고
         ↓
 normalizeAgentAnswer()                       ← 어댑터 추가 (키 변환)
         ↓

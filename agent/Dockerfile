@@ -12,8 +12,9 @@ RUN pip install --no-cache-dir \
     --trusted-host stg-nexus-genaihub.kbonecloud.com \
     -r /custom/requirements.txt
 
-COPY ./.env /custom/.env
 COPY ./main.py /custom/main.py
+COPY ./briefing.py /custom/briefing.py
+COPY ./briefing_data.json /custom/briefing_data.json
 COPY ./llm_client.py /custom/llm_client.py
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -1,5 +1,7 @@
 # 02. 에이전트 내부 로직 개발
 
+> 2026-09-16 현재 `main.py`는 LLM 없는 고정 브리핑 반환으로 교체했습니다. `briefing.py`가 입력과 배포된 고객 스냅샷을 확인하고 `briefing_data.json`에서 S1–S5를 선택합니다. 아래 Gemma/이전 fact 생성 흐름은 이후 LLM 구현용 참고 이력입니다. 현재 실행 방법은 [agent/README.md](../../agent/README.md), 사내 검증은 [루트 체크리스트](../../COMPANY_DEPLOY_CHECKLIST.md)를 따릅니다.
+
 > 근거: `references/KB_GenAI_ProAgent_SourceOfTruth_v2.md` §1, §3~§15, §19
 > 대상 파일: `agent/main.py`, `agent/llm_client.py`, `agent/Dockerfile`
 

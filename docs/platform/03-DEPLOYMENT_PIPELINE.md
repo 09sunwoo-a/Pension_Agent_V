@@ -1,5 +1,7 @@
 # 03. 배포 파이프라인
 
+> 2026-09-16 고정 브리핑 배포본은 `briefing.py`와 `briefing_data.json`도 `/custom`에 COPY합니다. 이 단계에서는 LLM/.env를 읽지 않으므로 Dockerfile의 필수 `.env` COPY를 제거했습니다. 아래 Dockerfile은 최초 검증 이력이며 현재 배포에는 [agent/Dockerfile](../../agent/Dockerfile)과 [루트 체크리스트](../../COMPANY_DEPLOY_CHECKLIST.md)를 사용합니다. 기존 사내 이미지·Nexus·진입점·Stage 인자는 유지합니다.
+
 > 근거: `references/KB_GenAI_ProAgent_SourceOfTruth_v2.md` §2, §3, §16~§18
 > 핵심: **배포의 시작점은 "코드 push"가 아니라 "git tag"** 다.
 

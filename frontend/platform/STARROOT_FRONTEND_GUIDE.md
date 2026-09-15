@@ -1,5 +1,7 @@
 # 05. Starroot 프론트엔드
 
+> 경로 안내: 아래 `frontend/app/` 및 줄 번호는 최초 사내 검증 당시의 기록입니다. 해당 구버전 파일은 제거했으며 현재 수정 원본은 `frontend/src/briefing/`, 반입본은 `frontend/briefing-fabrix/`입니다. 로컬 확인은 저장소 루트에서 `node tools/briefing/build.js --preview`를 사용합니다. 원본 근거 문서는 변경하지 않았습니다.
+
 > 근거: `sources/STARROOT_FRONTEND_CODING_GUIDE.md` 전체
 > 대상 파일: `frontend/app/mnPensionAgentDemo.html`, `frontend/app/pensionAgentDemo.css`, `frontend/app/pensionAgentDemo.js`
 

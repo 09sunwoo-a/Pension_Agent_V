@@ -51,6 +51,10 @@ README.md (이 파일)       ← 지도 · 검증 현황
 
 ## 검증 현황
 
+2026-09-16: **고객별 S1–S5 브리핑**의 최신 프론트·계약·31건 JSON은 [작업 안내](../../README.md)에서 찾습니다. 아래 기존 `fact` 실시간 상담의 사내 검증 이력과 구분합니다. 최신 브리핑의 로컬 검사 통과가 실제 사내 E2E 완료를 뜻하지는 않습니다.
+
+현재 Agent는 **LLM 없는 고정 브리핑 반환**입니다. Python의 31건 응답/SSE는 프론트 규격 검사를 통과했습니다. 로컬 FastAPI/Pydantic 미설치로 앱 기동/ASGI 검사는 SKIP했고 실제 사내 배포·연동은 [체크리스트](../../COMPANY_DEPLOY_CHECKLIST.md)로 확인해야 합니다.
+
 이 표는 **"실제로 돌려봤는가"** 를 구분하기 위한 것이다.
 ✅ 가 아닌 항목을 "동작한다"고 말하지 마라.
 
@@ -94,7 +98,7 @@ README.md (이 파일)       ← 지도 · 검증 현황
 
 ```text
 1. 프론트 transport 교체
-   frontend/app/pensionAgentDemo.js 의 agSend() → Fabrix 호출 + 응답 어댑터
+   frontend/src/briefing/pensionAgentDemo.js 의 agSend() → Fabrix 호출 + 응답 어댑터
    (Mock QA/agRun 은 fallback으로 유지)
    → integration/fabrix/, frontend/platform/, integration/contracts/
 

@@ -1,0 +1,1714 @@
+(function (window, document) {
+  'use strict';
+
+  var MOUNT_ID = 'pensionAgentMount';
+  var TEMPLATE_ID = 'pensionAgentTemplate';
+  var instance = null;
+  var templateHtml = '';
+  var scheduled = false;
+  var lastRenderedState = null;
+  var viewportOffsetHandler = null;
+
+  function SafeHtml(value) { this.value = String(value == null ? '' : value); }
+  function safeHtml(value) { return new SafeHtml(value); }
+  function escapeHtml(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+  function isSafeHtml(value) { return value instanceof SafeHtml; }
+
+  function resolvePath(ctx, path) {
+    path = String(path || '').trim();
+    if (path === 'true') return true;
+    if (path === 'false') return false;
+    if (path === 'null') return null;
+    if (path === 'undefined' || path === '') return undefined;
+    var parts = path.split('.');
+    var cur = ctx;
+    for (var i = 0; i < parts.length; i++) {
+      if (cur == null) return undefined;
+      cur = cur[parts[i]];
+    }
+    return cur;
+  }
+
+  function wholeExpr(raw) {
+    var m = String(raw == null ? '' : raw).match(/^\s*\{\{\s*([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*|true|false|null|undefined)\s*\}\}\s*$/);
+    return m ? m[1] : null;
+  }
+
+  function interpolate(raw, ctx) {
+    return String(raw == null ? '' : raw).replace(/\{\{\s*([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*|true|false|null|undefined)\s*\}\}/g, function (_, p) {
+      var v = resolvePath(ctx, p);
+      if (v == null) return '';
+      if (isSafeHtml(v)) return v.value;
+      return String(v);
+    });
+  }
+
+  function bindAttr(el, name, raw, ctx) {
+    if (name.indexOf('sc-camel-on-') === 0) {
+      var evt = name.substring('sc-camel-on-'.length).replace(/-/g, '');
+      var expr = wholeExpr(raw);
+      var fn = expr ? resolvePath(ctx, expr) : undefined;
+      if (typeof fn === 'function') el.addEventListener(evt.toLowerCase(), function (e) { return fn(e); });
+      el.removeAttribute(name);
+      return;
+    }
+    if (name === 'sc-camel-view-box') {
+      el.setAttribute('viewBox', interpolate(raw, ctx));
+      el.removeAttribute(name);
+      return;
+    }
+    if (name === 'ref') {
+      var refExpr = wholeExpr(raw);
+      var refObj = refExpr ? resolvePath(ctx, refExpr) : null;
+      if (refObj && typeof refObj === 'object') refObj.current = el;
+      el.removeAttribute(name);
+      return;
+    }
+    if (name === 'key') { el.removeAttribute(name); return; }
+
+    if (String(raw).indexOf('{{') > -1) {
+      var exact = wholeExpr(raw);
+      var value = exact ? resolvePath(ctx, exact) : interpolate(raw, ctx);
+      if (typeof value === 'boolean') {
+        if (value) el.setAttribute(name, name);
+        else el.removeAttribute(name);
+      } else if (value == null) {
+        el.removeAttribute(name);
+      } else {
+        var str = isSafeHtml(value) ? value.value : String(value);
+        el.setAttribute(name, str);
+        if (name === 'value' && ('value' in el)) el.value = str;
+      }
+    }
+  }
+
+  function processText(node, ctx) {
+    var raw = node.nodeValue || '';
+    if (raw.indexOf('{{') < 0) return;
+    var exact = wholeExpr(raw);
+    if (exact) {
+      var v = resolvePath(ctx, exact);
+      if (isSafeHtml(v)) {
+        var t = document.createElement('template');
+        t.innerHTML = v.value;
+        node.replaceWith(t.content);
+      } else {
+        node.nodeValue = v == null ? '' : String(v);
+      }
+      return;
+    }
+    node.nodeValue = interpolate(raw, ctx);
+  }
+
+  function processNode(node, ctx) {
+    if (node.nodeType === 3) { processText(node, ctx); return; }
+    if (node.nodeType !== 1) return;
+
+    var tag = node.tagName.toLowerCase();
+
+    if (tag === 'sc-if') {
+      var expr = wholeExpr(node.getAttribute('value'));
+      var ok = !!(expr ? resolvePath(ctx, expr) : false);
+      if (!ok) { node.remove(); return; }
+      var ifFrag = document.createDocumentFragment();
+      Array.from(node.childNodes).forEach(function (child) {
+        var clone = child.cloneNode(true);
+        ifFrag.appendChild(clone);
+        processNode(clone, ctx);
+      });
+      node.replaceWith(ifFrag);
+      return;
+    }
+
+    if (tag === 'sc-for') {
+      var listExpr = wholeExpr(node.getAttribute('list'));
+      var list = listExpr ? resolvePath(ctx, listExpr) : [];
+      var alias = node.getAttribute('as') || 'item';
+      var forFrag = document.createDocumentFragment();
+      if (Array.isArray(list)) {
+        list.forEach(function (item) {
+          var childCtx = Object.create(ctx || null);
+          childCtx[alias] = item;
+          Array.from(node.childNodes).forEach(function (child) {
+            var clone = child.cloneNode(true);
+            forFrag.appendChild(clone);
+            processNode(clone, childCtx);
+          });
+        });
+      }
+      node.replaceWith(forFrag);
+      return;
+    }
+
+    Array.from(node.attributes).forEach(function (attr) { bindAttr(node, attr.name, attr.value, ctx); });
+    Array.from(node.childNodes).forEach(function (child) { processNode(child, ctx); });
+  }
+
+  function captureRenderUiState(mount) {
+    var snap = {
+      windowX: window.pageXOffset || document.documentElement.scrollLeft || 0,
+      windowY: window.pageYOffset || document.documentElement.scrollTop || 0,
+      scrolls: {},
+      focus: null
+    };
+
+    if (!mount) return snap;
+
+    mount.querySelectorAll('[data-scroll-key]').forEach(function (el) {
+      var key = el.getAttribute('data-scroll-key');
+      if (!key) return;
+      snap.scrolls[key] = {
+        top: el.scrollTop || 0,
+        left: el.scrollLeft || 0
+      };
+    });
+
+    var active = document.activeElement;
+    if (active && mount.contains(active) && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
+      snap.focus = {
+        tag: active.tagName,
+        placeholder: active.getAttribute('placeholder') || '',
+        value: active.value || '',
+        start: typeof active.selectionStart === 'number' ? active.selectionStart : null,
+        end: typeof active.selectionEnd === 'number' ? active.selectionEnd : null
+      };
+    }
+
+    return snap;
+  }
+
+  function restoreRenderUiState(mount, snap) {
+    if (!mount || !snap) return;
+
+    Object.keys(snap.scrolls || {}).forEach(function (key) {
+      var el = mount.querySelector('[data-scroll-key="' + key + '"]');
+      var pos = snap.scrolls[key];
+      if (!el || !pos) return;
+      el.scrollTop = pos.top;
+      el.scrollLeft = pos.left;
+    });
+
+    // Full re-render 때문에 input focus/caret가 날아가지 않도록 복원
+    if (snap.focus) {
+      var selector = snap.focus.tag.toLowerCase();
+      var candidates = Array.from(mount.querySelectorAll(selector));
+      var target = candidates.find(function (el) {
+        return (el.getAttribute('placeholder') || '') === snap.focus.placeholder;
+      });
+      if (target) {
+        try {
+          target.focus({ preventScroll: true });
+          if (snap.focus.start !== null && typeof target.setSelectionRange === 'function') {
+            target.setSelectionRange(snap.focus.start, snap.focus.end);
+          }
+        } catch (e) {}
+      }
+    }
+
+    // 업무 화면 밖 Starroot shell의 document scroll 위치도 유지
+    if ((window.pageXOffset || 0) !== snap.windowX || (window.pageYOffset || 0) !== snap.windowY) {
+      try { window.scrollTo(snap.windowX, snap.windowY); } catch (e) {}
+    }
+  }
+
+  function suppressReplayEntryAnimations(frag) {
+    // 이 포팅 버전은 state 변경 시 DOM 전체를 재생성한다.
+    // (v1.0) 입장 애니메이션은 CSS 클래스 .pad-in / .pad-in-late 로 이관됨. 동적 animation:{{ }} 인라인도 함께 탐지.
+    // 이미 화면에 떠 있던 msgIn 애니메이션까지 매번 다시 재생되면
+    // 브리핑/AI 분석 카드가 흔들려 보이므로 최초 렌더 이후에는 재생을 막는다.
+    if (!lastRenderedState || !frag || !frag.querySelectorAll) return;
+    frag.querySelectorAll('.pad-in, .pad-in-late, [style*="animation:msgIn"]').forEach(function (el) {
+      el.style.animation = 'none';
+    });
+  }
+
+  function renderNow() {
+    scheduled = false;
+    if (!instance) return;
+    var mount = document.getElementById(MOUNT_ID);
+    if (!mount) return;
+
+    var prevState = lastRenderedState;
+    var vals;
+    try {
+      vals = instance.renderVals();
+    } catch (err) {
+      console.error('[PensionAgentDemo] renderVals failed', err);
+      mount.innerHTML = '<div style="padding:24px;color:#B91C1C;font-size:13px">화면 데이터 생성 중 오류가 발생했습니다. Console을 확인해 주세요.</div>';
+      return;
+    }
+
+    var uiSnap = captureRenderUiState(mount);
+
+    var holder = document.createElement('template');
+    holder.innerHTML = templateHtml;
+    var frag = holder.content.cloneNode(true);
+    Array.from(frag.childNodes).forEach(function (node) { processNode(node, vals); });
+
+    suppressReplayEntryAnimations(frag);
+    mount.replaceChildren(frag);
+    restoreRenderUiState(mount, uiSnap);
+
+    lastRenderedState = Object.assign({}, instance.state);
+    if (prevState && typeof instance.componentDidUpdate === 'function') {
+      try { instance.componentDidUpdate(instance.props, prevState); } catch (err) { console.error(err); }
+    }
+  }
+
+  function scheduleRender() {
+    if (scheduled) return;
+    scheduled = true;
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(renderNow);
+    else setTimeout(renderNow, 0);
+  }
+
+  function installSetState(obj) {
+    obj.setState = function (next) {
+      var patch = typeof next === 'function' ? next(obj.state, obj.props) : next;
+      if (patch && typeof patch === 'object') Object.assign(obj.state, patch);
+      scheduleRender();
+    };
+  }
+
+  // Starroot 브라우저 테스트 상단바가 실제 화면 위를 덮는 경우에만
+  // 겹치는 높이만큼 자동으로 padding-top을 준다.
+  // 실제 앱/상단바가 없는 환경에서는 자동으로 0px가 된다.
+  function applyStarrootTopOffset() {
+    var root = document.getElementById('pensionAgentDemo');
+    if (!root) return;
+
+    var browserHeader = document.querySelector('.browserHeader.on');
+    if (!browserHeader) {
+      root.style.setProperty('--starroot-top-offset', '0px');
+      return;
+    }
+
+    var rootRect = root.getBoundingClientRect();
+    var headerRect = browserHeader.getBoundingClientRect();
+
+    var overlap = Math.max(0, Math.ceil(headerRect.bottom - rootRect.top));
+    // 비정상적인 shell 높이까지 밀리는 것을 방지
+    overlap = Math.min(overlap, 96);
+
+    root.style.setProperty('--starroot-top-offset', overlap + 'px');
+  }
+
+  function init(params) {
+    if (instance) return;
+    var t = document.getElementById(TEMPLATE_ID);
+    var mount = document.getElementById(MOUNT_ID);
+    if (!t || !mount) {
+      console.error('[PensionAgentDemo] mount/template not found');
+      return;
+    }
+    templateHtml = t.innerHTML;
+    instance = new Component({
+      showSparklines: true,
+      showCompleted: true,
+      panelDefault: '열림',
+      starrootParams: params || {}
+    });
+    installSetState(instance);
+    renderNow();
+
+    // SPA shell DOM과 실제 겹침을 측정한 뒤 화면을 아래로 보정
+    applyStarrootTopOffset();
+    setTimeout(applyStarrootTopOffset, 0);
+
+    if (!viewportOffsetHandler) {
+      viewportOffsetHandler = function () { applyStarrootTopOffset(); };
+      window.addEventListener('resize', viewportOffsetHandler);
+    }
+
+    if (typeof instance.componentDidMount === 'function') {
+      try { instance.componentDidMount(); } catch (err) { console.error(err); }
+    }
+    window.PensionAgentDemoInstance = instance;
+    console.log('[PensionAgentDemo] initialized');
+  }
+
+  function destroy() {
+    if (!instance) return;
+    if (typeof instance.componentWillUnmount === 'function') {
+      try { instance.componentWillUnmount(); } catch (err) { console.error(err); }
+    }
+    instance = null;
+    lastRenderedState = null;
+    scheduled = false;
+
+    if (viewportOffsetHandler) {
+      window.removeEventListener('resize', viewportOffsetHandler);
+      viewportOffsetHandler = null;
+    }
+
+    var root = document.getElementById('pensionAgentDemo');
+    if (root) root.style.removeProperty('--starroot-top-offset');
+
+    var mount = document.getElementById(MOUNT_ID);
+    if (mount) mount.innerHTML = '';
+    try { delete window.PensionAgentDemoInstance; } catch (e) { window.PensionAgentDemoInstance = null; }
+  }
+
+  window.__PensionVanilla = { init: init, destroy: destroy };
+
+class Component {
+  constructor(props) {
+    this.props = props || {};
+    this.state = { sel: null, filter: 'all', done: { sjh: 1, lth: 1, hkg: 1 }, holdOpen: false, panelOpen: true, chat: [], chips: [], input: '', tone: {}, copied: null, searchQ: '', busy: false, streamIdx: -1, streamN: 0, extOpen: false, ext: null, extA: null, listAnimK: 0, toastMsg: null, bfSol: null, bfReact: null, agInput: '', agBusy: false, agChat: [], agDone: {}, agAnimI: -1, agStreamN: 0, agBlockN: 0, agFootOn: false, agStatusI: 0, agCta: null, agEvidOpen: {}, agGuardOpen: {} };
+    this.chatRef = { current: null };
+  }
+
+  componentWillUnmount() { clearTimeout(this._tk1); clearTimeout(this._tk2); clearTimeout(this._ss); clearInterval(this._si); clearTimeout(this._agT1); clearInterval(this._agST); clearInterval(this._agSI); clearInterval(this._agT2); }
+
+  profileOf(c) {
+    if (!c) return { pin: '', age: '', sex: '', club: '', dopt: true, ret: '', taxHas: false, taxPaid: 0, acct: '', recent: { d: '', n: '', a: '' } };
+    const FIX = {
+      ksy: { pin: '10274-38562', age: 44, sex: '여', club: 'VIP', dopt: true, doptName: '뿔려드림 2호', ret: '+3.1%', acct: '2019.03.15', recent: { d: '2026.06.12', n: '키움 더드림 단기채', a: '1,500만원' } },
+      lsm: { pin: '10391-52847', age: 51, sex: '여', club: '그랜드', dopt: false, ret: '+2.8%', acct: '2014.05.20', recent: { d: '2025.09.26', n: 'OK저축은행 정기예금 1년', a: '7,000만원' } },
+      pjh: { pin: '10428-91635', age: 58, sex: '남', club: 'VVIP', dopt: true, doptName: '알파드림 1호', ret: '+3.2%', acct: '2021.11.05', recent: { d: '2026.03.10', n: 'KB저축은행 정기예금 1년', a: '2,000만원' } }
+    };
+    const TAXP = { ksy: 400, pjh: 300, pey: 520, lsc: 240, jmr: 180, cjh: 900, ysr: 420, msy: 700, hsw: 600, oks: 360, sjh: 900, hkg: 800 };
+    let h = 0; for (let i = 0; i < c.id.length; i++) h = (h * 31 + c.id.charCodeAt(i)) >>> 0;
+    const CLUBS = ['VVIP', 'VIP', '그랜드', '베스트'];
+    const DON = { '안정형': '지켜드림', '안정추구형': '알파드림 ' + (h % 3 + 1) + '호', '위험중립형': '뿔려드림 ' + (h % 3 + 1) + '호' };
+    const gen = {
+      pin: String(10000 + h % 90000) + '-' + String(10000 + (h * 7) % 90000),
+      age: 36 + h % 27, sex: h % 2 ? '남' : '여', club: CLUBS[h % 4], dopt: h % 3 !== 0,
+      doptName: DON[c.profile] || '모두드림 ' + (h % 2 + 1) + '호',
+      ret: '+' + (1.5 + (h % 40) / 10).toFixed(1) + '%',
+      acct: String(2012 + h % 13) + '.' + String(1 + (h * 3) % 12).padStart(2, '0') + '.' + String(1 + (h * 5) % 28).padStart(2, '0'),
+      recent: (c.hold && c.hold[0]) ? { d: '202' + (5 + h % 2) + '.' + String(1 + h % 12).padStart(2, '0') + '.' + String(1 + h % 28).padStart(2, '0'), n: c.hold[0].n, a: c.hold[0].a + '원' } : { d: '—', n: '—', a: '' }
+    };
+    const noDo = ((c.head && c.head.title) || '').indexOf('디폴트옵션 미등록') >= 0 || (c.tags || []).some(t => String(t.t || t).indexOf('디폴트옵션 미등록') >= 0);
+    if (noDo) gen.dopt = false;
+    const CLUB = { khj: 'VVIP', pey: 'VIP', lsc: 'VVIP', jmr: '베스트', kdy: '그랜드', cjh: 'VIP', hsw: 'VVIP', ysr: 'VIP', jmj: '그랜드', msy: 'VIP', bjh: 'VVIP', oks: 'VVIP', sjh: '그랜드', lth: 'VVIP', hkg: '베스트' };
+    if (CLUB[c.id]) gen.club = CLUB[c.id];
+    const f = FIX[c.id] || gen;
+    return { ...f, taxHas: TAXP[c.id] != null, taxPaid: TAXP[c.id] || 0 };
+  }
+
+  get QA() {
+    if (this._qa) return this._qa;
+    const GUARD = [
+      { doc: '개인형IRP 고객관리 가이드 「IRP야, KB를 떠나지 마오!」 [Series 1] IRP 수익률 관리', org: '연금컨설팅부', date: '2026-05', point: '사용계획 있는 자금(연금지급 대기·교체매매 중)은 먼저 걸러낼 것' },
+      { doc: '연금고객 수익률 KPI 평가대상 고객관리 시나리오', org: '연금컨설팅부', date: '2021말~2022초', point: "상담 용어 — '고유계정대' 대신 '현금성자산', '운용지시가 되지 않는 자산' 등 고객이 이해하기 쉬운 표현 사용" }
+    ];
+    const GS = '⚠ 상담 시 유의 — 사용계획 있는 자금은 먼저 확인하고, 고객에게는 쉬운 용어를 사용하세요.';
+    this._qa = {
+      ksy: {
+        intro: '김서연 고객님 상담을 시작해요. 상담 중 궁금한 내용을 바로 물어보세요.',
+        chips: [{ q: '중간에 인출할 수 있어?', aid: 'q1' }, { q: '세액공제 얼마나 더 받아?', aid: 'ka' }, { q: '안내할 이벤트 있어?', aid: 'e1' }],
+        kw: {
+          q1: { s: ['인출', '중도', '출금', '못빼', '못뺀', '뺄', '빼', '55세', '묶여', '묶이'], w: ['중간', '걱정'] },
+          ka: { s: ['세액공제', '세엑공제', '공제', '환급', '연말정산', '절세'], w: ['얼마나', '더받', '혜택'] },
+          e1: { s: ['이벤트', '세미나', '행사', '안내할', '추천할'], w: ['안내', '초대'] }
+        },
+        answers: {
+          q1: {
+            aType: 'fact',
+            status: ['관련 제도를 확인하고 있어요', '근거 자료를 확인하고 있어요'],
+            lead: '완전히 못 빼는 건 아니고, 법정 사유 6가지에 해당하면 중간에 인출할 수 있다고 안내해 주세요.',
+            blocks: [
+              { t: 'list', title: '인출 가능한 사유 (2026년 6월 기준)', items: [
+                '무주택자 주택 구입 — 매매계약 체결일부터 소유권 이전 등기 접수일 후 1개월 이내 신청',
+                '무주택자 전세금·임차보증금 — 계약 체결일부터 잔금 지급일 후 1개월 이내, 하나의 사업장 근무 중 1회 한정',
+                '본인·배우자·부양가족의 6개월 이상 요양 — 연간 임금총액의 12.5%를 초과하는 의료비 부담 시',
+                '자연재난·특별재난지역 사회재난 피해',
+                '5년 이내 개인회생절차 개시 결정',
+                '5년 이내 파산선고'] },
+              { t: 'p', x: '인출 가능 금액은 전액 또는 일부(최대 90%)이고, 횟수 제한은 없어요. 다만 연금을 이미 수령 중인 상태라면 중도인출이 아니라 해지만 가능하다는 점도 함께 알아두세요.' },
+              { t: 'p', x: '세금 부분은 고객님이 걱정하시는 포인트가 될 수 있어서 꼭 짚어드려야 해요. 중도인출은 일시금 수령과 동일하게 기타소득세 16.5%(지방소득세 포함)가 부과되고, 중도해지 시에도 세액공제 받은 납입원금과 운용수익에 같은 세율이 적용돼요. 이 부담은 납입할 때 받은 세액공제(최대 16.5%)와 크기가 같거나 더 커서, 공제받은 고객이 중도인출하면 혜택이 상쇄되는 구조예요.' },
+              { t: 'caution', x: '세액공제 혜택을 받은 상태에서 중도인출하면 절세 효과가 사라져요. 고객님이 납입 시 세액공제를 받으셨다면 이 점을 미리 충분히 설명해 드리는 게 좋아요.' }
+            ],
+            srcs: [{ type: '본부 공식 자료' }],
+            evid: [{ doc: '개인형IRP 마케팅 보물지도 Vol.1', org: '연금사업본부 연금컨설팅부', date: '2026-03', points: ['법정 중도인출 사유 6가지 — 기한·한도·횟수', '중도인출·일시금·중도해지 세율 — 기타소득세 16.5% 분리과세'] }],
+            follow: ['고객이 앱에서 직접 할 수 있어?']
+          },
+          ka: {
+            aType: 'fact',
+            status: ['고객 납입 현황을 확인하고 있어요', '세액공제 제도를 확인하고 있어요'],
+            lead: '이 고객은 올해 개인부담금 400만원을 납입해서, 기본 세액공제 한도 900만원 중 500만원이 남아 있어요. 여기에 ISA 만기자금을 IRP로 전환하면 전환금액의 10%, 최대 300만원의 추가 공제 한도가 생겨서 합산 최대 1,200만원까지 공제 대상이 될 수 있어요.',
+            blocks: [
+              { t: 'list', title: '이 고객 기준 공제 구조', items: [
+                '기본 한도 — 연 900만원(연금저축 포함) 중 이미 400만원 납입 → 잔여 500만원',
+                'ISA 전환 추가 한도 — 전환금액의 10%, 최대 300만원 (8,000만원 중 3,000만원 이상 전환 시 300만원 한도 도달)',
+                '공제율 — 총급여 5,500만원(종합소득 4,500만원) 이하 16.5% / 초과 13.2% (지방소득세 포함). 추가 한도 300만원 기준 환급 효과는 최대 49.5만원(16.5%) 또는 39.6만원(13.2%)'] },
+              { t: 'p', x: '다만 고객님의 총급여 구간 정보는 지금 확인되지 않아서, 어느 공제율이 적용되는지는 상담에서 여쭤봐야 해요. 그리고 세액공제 전 결정세액이 공제액보다 적으면 최대 환급액을 다 받지 못할 수 있어서, 원천징수영수증의 결정세액 항목을 함께 확인하는 게 정확해요.' },
+              { t: 'caution', x: '실제 환급액 확정 계산은 상담에서 단정하지 마시고, 원천징수영수증 확인과 화면 조회([04-10-099] 세금우대관련조회, [06-12-151] 납입한도 확인)로 연결해 주세요.' }
+            ],
+            srcs: [{ type: '본부 공식 자료' }],
+            evid: [
+              { doc: '개인형IRP 마케팅 보물지도 Vol.1', org: '연금사업본부 연금컨설팅부', date: '2026-03', points: ['세액공제 한도 900만원·구간별 공제율 16.5%/13.2%', 'ISA 전환 시 전환금액 10%·최대 300만원 추가 공제'] },
+              { doc: 'ISA 만기 자금 개인형IRP 전환 마케팅', org: '박수연 (동부산종합금융센터)', date: '2026-01-31', points: ['추가 공제 300만원의 환급 효과 — 최대 49.5만원'] }
+            ],
+            follow: ['원천징수영수증은 어디서 확인해?']
+          },
+          e1: {
+            aType: 'fact',
+            status: ['안내할 이벤트·세미나를 찾고 있어요'],
+            lead: '이 고객에게 안내할 수 있는 이벤트 1건, 세미나 1건이 있어요.',
+            blocks: [
+              { t: 'eventCard', kind: '이벤트', icon: '🎁',
+                title: 'ISA 만기자금, IRP로 이어가는 절세 이벤트',
+                when: '~10/30 · KB스타뱅킹',
+                desc: '고객님이 ISA 만기자금 보유 요건에 해당하기 때문에 매칭된 이벤트예요. ISA 만기자금을 IRP로 이전할 때 받을 수 있는 세액공제 제도와 경품 혜택을 함께 안내하는 내용이에요.',
+                msg: '(광고) 김서연 고객님, KB국민은행입니다.\nISA 만기자금을 IRP로 이전하면 절세 혜택을 받을 수 있는 이벤트가 10/30까지 KB스타뱅킹에서 진행돼요. ISA 만기자금을 보유하고 계신다면 세액공제 제도와 경품 혜택을 함께 확인해 보세요.\n▶ https://obank.kbstar.com/demo/event/irp-003\n무료수신거부 080-XXX-XXXX' },
+              { t: 'eventCard', kind: '세미나', icon: '🗓',
+                title: '내 투자성향에 맞는 퇴직연금 포트폴리오 찾기',
+                when: '9/17(목) 17시 · KB국민은행 WM투자상품부',
+                desc: '고객님의 투자성향은 위험중립형인데, 실제 IRP 포트폴리오는 원리금보장·현금성 67%, 채권형 33%로 보수적 운용 상태예요. 성향과 실제 운용 간 불일치를 점검하고 리밸런싱 시 고려사항을 설명하는 세미나라 이 고객 상황과 맞아요.',
+                msg: "(광고) 김서연 고객님, KB국민은행입니다.\n9/17(목) 17시 KB국민은행 WM투자상품부 세미나 '내 투자성향에 맞는 퇴직연금 포트폴리오 찾기'를 안내해 드려요. 위험중립형 성향이시지만 현재 포트폴리오가 원리금보장·채권형 위주로 운용 중이시라면, 성향과 실제 운용 간 불일치를 점검하고 리밸런싱 시 고려사항을 확인해 보시기 바랍니다.\n▶ https://obank.kbstar.com/demo/seminar/irp-004\n무료수신거부 080-XXX-XXXX" },
+              { t: 'p', x: '그 외 후보 이벤트 3건 · 세미나 4건이 더 열려 있어요.' }
+            ],
+            srcs: [{ type: '안내 콘텐츠' }],
+            evid: [{ doc: '안내 콘텐츠 레지스트리', org: 'AI 브리핑과 동일한 분석 기준', date: '', points: ['이 고객에게 열려 있는 이벤트·세미나 목록'] }],
+            cta: { ask: '«ISA 만기자금, IRP로 이어가는 절세 이벤트» 문구로 [75-08-110] 발송 화면 열까요?', yes: '네, 열어줘', next: 'e2' }
+          },
+          e2: {
+            aType: 'action',
+            status: ['발송 화면을 준비하고 있어요'],
+            lead: '«ISA 만기자금, IRP로 이어가는 절세 이벤트» 안내 문구로 [75-08-110] 발송 화면을 열었어요.',
+            blocks: [
+              { t: 'p', x: '화면이 열리면 이 문구를 넣어 주세요.' },
+              { t: 'msg', x: '(광고) 김서연 고객님, KB국민은행입니다.\nISA 만기자금을 IRP로 이전하면 절세 혜택을 받을 수 있는 이벤트가 10/30까지 KB스타뱅킹에서 진행돼요. ISA 만기자금을 보유하고 계신다면 세액공제 제도와 경품 혜택을 함께 확인해 보세요.\n▶ https://obank.kbstar.com/demo/event/irp-003\n무료수신거부 080-XXX-XXXX' }
+            ],
+            toast: '[75-08-110] 발송 화면으로 이동 (모형)'
+          }
+        }
+      },
+      lsm: {
+        intro: '이수민 고객님 상담을 시작해요. 상담 중 궁금한 내용을 바로 물어보세요.',
+        chips: [{ q: '타행 대비 KB IRP 수익률은?', aid: 'q1' }, { q: '그냥 예금으로 둬도 될까?', aid: 'q2' }, { q: 'DO 등록하면 1천만원도 자동운용?', aid: 'q3' }],
+        kw: {
+          q1: { s: ['수익률', '수익율', '타행', '다른은행', '타은행', '비교', '순위', '몇프로', '몇퍼'], w: ['얼마', '국민은행'] },
+          q2: { s: ['예금', '그냥둬', '놔둬', '냅둬', '두면', '놔두', '냅두'], w: ['그냥', '유지'] },
+          q3: { s: ['디폴트', '디폴트옵션', 'do', '옵션', '자동', '굴러', '알아서'], w: ['1000만', '천만', '등록'] }
+        },
+        guard: GUARD, guardSummary: GS,
+        answers: {
+          q1: {
+            aType: 'pitch',
+            status: ['공시 자료를 찾고 있어요', '상담 화법을 찾고 있어요'],
+            lead: '구체적인 수익률 수치(몇 %)는 자료에 없어요. 다만 공시 근거로 순위를 제시하고, 수익률 논의를 장기 관리 관점으로 옮기는 접근법은 자료에 있으니 그걸로 대응할 수 있어요.',
+            blocks: [
+              { t: 'p', x: '고객님이 숫자를 물어보시는 건 "국민은행이 정말 더 나은가"를 확인하고 싶은 거예요. 그러니 특정 수치를 즉석에서 말하기보다, 공신력 있는 공시 결과를 근거로 제시하는 게 더 설득력 있어요. 그다음엔 단기 수익률 비교에서 장기 관리 경험으로 논점을 옮기는 게 핵심이에요.' },
+              { t: 'quote', x: '2026년 1분기 금융감독원 발표에 따르면, KB국민은행이 IRP 실적배당형 부문에서 최근 1년, 3년, 5년, 7년 수익률 모두 주요 시중은행 가운데 가장 높은 수익률을 기록했습니다. 이는 꾸준한 고객관리로 만들어낸 결과물이죠^^' },
+              { t: 'p', x: '수익률 순위를 제시한 뒤에는 바로 이어서 관리 차별점으로 넘어가는 게 좋아요. 숫자 비교에서 멈추면 고객이 다시 "그래도 얼마냐"로 돌아오거든요.' },
+              { t: 'quote', x: 'IRP는 어디에 가입했느냐보다 어떻게 관리받느냐가 더 중요한 상품입니다. 국민은행은 고객님의 투자성향에 맞춰 이런 부분을 함께 관리해드리고 있습니다. 고객님처럼 투자에 관심이 많은 고객님들께는 온국민 투자가이드와 추천 포트폴리오도 안내드리고 시장상황에 맞춰 리밸런싱까지 상담해드리고 있습니다. 저희가 이번 1분기 공시기준, IRP 실적배당형 수익률 1위인 이유이기도 하죠^^' },
+              { t: 'p', x: '관리 경험의 차이를 설명할 때는 시장전망 자료 제공, 포트폴리오 정기 점검, 은퇴 후 연금상담 연결이라는 세 축을 구체적으로 짚어주면 고객이 "관리가 다르다"는 걸 실감하게 돼요.' },
+              { t: 'link', x: '이 고객의 «원리금보장상품 편중(80% 이상) · 디폴트옵션 미설정» 상태에 걸린 화법 2건도 이어서 볼 수 있어요.' }
+            ],
+            srcs: [{ type: '직원 교육자료' }],
+            evid: [{ doc: '연금왕 찐천재 마스터북 — 계약이전 화법(은행) (Level 1 · 3주차)', org: 'KB국민은행', date: '2026년 중', points: ['"수익률은 다른 은행이 더 좋던데요"라는 고객 → 공시 1위 근거 + 장기 관리 약속', "\"은행 다 거기서 거기 아니에요?\"라는 고객 → '어디서 가입'이 아니라 '어떻게 관리받는가'로 논점 이동"] }],
+            useGuard: true
+          },
+          q2: {
+            aType: 'pitch',
+            status: ['상담 화법을 찾고 있어요', '논거를 정리하고 있어요'],
+            lead: '"그냥 예금으로 둬도 되지 않나요?"는 원리금보장 편중 고객에게 가장 자주 나오는 말이에요. 이 질문에는 72의 법칙으로 숫자를 직접 보여주는 게 효과적이에요 — 안전하게 두는 것이 잘 관리하는 것이라는 통념을 흔들어야 다음 대화가 열리거든요.',
+            blocks: [
+              { t: 'p', x: '먼저 72의 법칙 논거예요. 적립금이 두 배가 되는 데 걸리는 시간을 "72 ÷ 연간 수익률"로 바로 계산할 수 있어요. 지금 원리금보장형 수준인 연 3%면 24년이 걸리는데, 이건 은퇴하고 난 뒤에야 두 배가 된다는 뜻이에요. 연 7%면 약 10년으로 줄어들고요. 고객님이 "예금으로 둬도 된다"고 느끼는 건 이 차이가 눈에 안 보이기 때문이니, 숫자로 보여주는 게 핵심이에요.' },
+              { t: 'p', x: '여기에 국민연금 비교를 붙이면 설득력이 더 올라가요. 국민연금 수익률은 연 6.21%인데, 국민연금은 정기예금에 전혀 투자하지 않고 자산배분 투자를 해요. 반면 퇴직연금 자산의 90% 이상은 정기예금에 몰려 있고, 수익률은 연 2.35%예요. "안전하게 두는 것"이 오히려 국민연금보다 훨씬 낮은 결과를 만들고 있다는 걸 보여주는 거예요.' },
+              { t: 'quote', x: '고객님, 72를 수익률로 나누면 돈이 두 배 되는 기간이 나와요. 지금 원리금보장형 수준인 연 3%면 24년이 걸리는데, 이건 은퇴하고 나서야 두 배가 된다는 뜻이에요. 그런데 국민연금은 연 6.21% 수익률을 내고 있거든요. 국민연금이 정기예금을 많이 할 것 같으시죠? 사실 국민연금은 정기예금에 전혀 투자하지 않아요. 자산을 나눠서 운용하기 때문에 이 수익률이 나오는 거예요. 퇴직연금은 노후에 충분히 받으려고 오랜 기간 쌓아가는 제도인데, 지금 방식으로는 그 특성을 살리기가 어려워요.' }
+            ],
+            srcs: [{ type: '직원 교육자료' }],
+            evid: [
+              { doc: '"[통합] 연금고객 이탈방지 상담 해결책"', org: 'KB StarLearn 직원교육', date: '', points: ['투자 필요성을 설득할 때 → 국민연금 6.21% vs 퇴직연금 2.35% 논거'] },
+              { doc: '연금 투자, 이거는 알고 하자', org: 'KB StarLearn 직원교육', date: '', points: ['저금리에 안주하는 고객에게 → 72의 법칙으로 "왜 연 3%로는 안 되는가" 숫자 제시'] }
+            ],
+            useGuard: true
+          },
+          q3: {
+            aType: 'fact',
+            status: ['관련 제도를 확인하고 있어요', '근거 자료를 확인하고 있어요'],
+            lead: '기존 적립금 1,000만원은 디폴트옵션 등록만으로 자동으로 운용되지는 않아요.',
+            blocks: [
+              { t: 'p', x: '디폴트옵션이 자동 적용되는 건 ① 적립금이 최초로 입금된 후 2주간 운용지시가 없을 때, ② 기존에 운용 중이던 상품이 만기가 된 후 4주 무지시 → 안내 → 2주 후 적용되는 구조, 이 두 케이스예요. 이미 운용 중인 적립금은 이 조건에 해당하지 않아서, 지금 있는 1,000만원은 고객님이 직접 운용지시를 해야 움직여요.' },
+              { t: 'p', x: "다만 '옵트인' 방법을 쓰면 대기 기간 없이 즉시 운용지시를 낼 수 있어요. 디폴트옵션을 아직 운용 중이 아닌 상태라면 원하는 상품으로 바로 지정할 수 있고, 이미 디폴트옵션으로 운용 중이라면 같은 상품으로만 가능하다는 조건이 붙어요. 그리고 상품을 바꾼다고 해서 기존 적립금을 먼저 매도해야 하는 건 아니에요." },
+              { t: 'caution', x: '고객님이 "알아서 굴러가냐"고 물으신 거라면, 지금 1,000만원을 어떻게 운용할지 지시를 직접 내려야 한다는 점을 먼저 짚어드리고, 그 방법으로 옵트인을 안내하는 흐름이 자연스러워요.' }
+            ],
+            srcs: [{ type: '본부 공식 자료' }],
+            evid: [{ doc: '연금사업부(상품) 오늘의할일 스크립트', org: '연금사업부(상품)', date: '2023~24 추정', points: ['디폴트옵션 제도 — 정의·위험등급 4단계·적용 케이스·옵트인·지정 의무'] }],
+            follow: ['고객이 스타뱅킹에서 직접 하는 경로가 있어?'],
+            useGuard: true
+          }
+        }
+      },
+      pjh: {
+        intro: '박정호 고객님 상담을 시작해요. 상담 중 궁금한 내용을 바로 물어보세요.',
+        chips: [{ q: '지난 상담에서 무슨 얘기 했지?', aid: 'q1' }, { q: '재취업 예정이면 계좌를 어떻게 나누지?', aid: 'q2' }, { q: '상담 내용 쪽지로 보내줘', aid: 'm1' }],
+        kw: {
+          q1: { s: ['지난', '저번', '과거', '전에', '무슨얘기', '뭐라'], w: ['상담', '이력', '기록', '했지'] },
+          q2: { s: ['재취업', '취업', '나눠', '나누', '분리', '3단계', '세단계'], w: ['계좌', '구성', '어떻게'] },
+          m1: { s: ['쪽지', '요약', '정리해'], w: ['보내', '내용'] }
+        },
+        guard: GUARD, guardSummary: GS,
+        answers: {
+          q1: {
+            aType: 'memory',
+            status: ['지난 상담 기록을 찾고 있어요'],
+            lead: '2026년 8월 20일에 고객센터 콜 상담이 있었어요. 8월 퇴직으로 퇴직급여 약 1억 5,000만원을 당행 일반 입출금계좌로 수령했다고 하셨고, 당장 쓸 계획은 없는데 어디에 넣어둘지 고민이라고 하셨어요.',
+            blocks: [{ t: 'memoryNote', x: '※ 지난 상담 기록입니다 — 그때 나눈 이야기이지 지금 기준 값이 아닐 수 있습니다.' }],
+            srcs: [{ type: '상담 이력' }],
+            evid: [{ doc: '상담 이력 기록', org: '과거 상담과 에이전트가 남긴 대화 기록', date: '2026-08-20 고객센터 콜', points: ['박정호 고객 상담 이력'] }],
+            follow: ['이 고객한테 안내할 만한 세미나나 이벤트 있어?', '이 고객 지금 현황은 어때?'],
+            useGuard: true
+          },
+          q2: {
+            aType: 'knowhow',
+            status: ['현장 노하우를 찾고 있어요', '고객 상황과 맞는지 확인하고 있어요'],
+            lead: '재취업 예정 고객에게는 계좌를 세 단계로 나눠 제안하는 게 핵심이에요. 계좌 하나로는 연금 수령·개시·계속 납입을 동시에 충족할 수 없기 때문이에요. 그래서 아래 순서로 제안서를 하나로 묶어 제시하는 방식을 씁니다.',
+            blocks: [
+              { t: 'steps', items: [
+                { title: '기존 적립용 IRP 연금개시', desc: '현재 평가금액 기준 수령 가능액을 계산해서 제시' },
+                { title: '퇴직용 IRP 신규 개설 및 연금개시', desc: '퇴직소득세 이연 · 연금 수령 기간 10년 이하 30%, 초과 40% 감면' },
+                { title: '적립용 IRP 신규 개설', desc: '재취업 후 납입과 세액공제 지속' }] },
+              { t: 'quote', x: '1. 기존 적립용 IRP 계좌 연금개시 → 2. 퇴직용 IRP 개설 및 연금개시 → 3. 적립용 IRP 신규개설을 제안하였습니다.' },
+              { t: 'caution', x: '실제 제안 전에, 기존 적립용 IRP 안에 연금지급 대기 중이거나 교체매매 진행 중인 자금이 있는지 먼저 확인해 두세요. 그런 자금은 개시 가능 금액 계산에서 먼저 걸러야 해요.' },
+              { t: 'link', x: '이 고객의 «원리금보장상품 편중(80% 이상) · 연금개시 요건충족 후 미개시» 상태에 걸린 관리 방법론 2건도 이어서 볼 수 있어요.' }
+            ],
+            srcs: [{ type: '영업점 현장 노하우', warn: true }],
+            evid: [{ doc: '꼼꼼한 고객관리로 거액의 개인형IRP 유치하기!!', org: '양혜련 (브랜드홍보부 / L3 팀원)', date: '2025-04-23', points: ['퇴직 후 재취업 예정 고객 → 계좌를 3단(개시/퇴직용/적립용)으로 나눠 제안'], url: 'https://lxp.kbstar.com/app/board/hottip-my/view/200352.E876185BA546CADB311458A7E5AA1076159581DEAE19AC73F1F5A0846EBC76BD' }],
+            useGuard: true
+          },
+          m1: {
+            aType: 'summary',
+            status: ['이번 상담 내용을 정리하고 있어요'],
+            lead: '퇴직연금 사후관리 에이전트의 박정호 고객님 상담 내용 요약입니다.',
+            leadSub: '2026.09.04 기준',
+            blocks: [
+              { t: 'list', items: [
+                '지난 상담 내용 — 2026년 8월 20일 고객센터 콜 상담 기록이 있어요. 8월 퇴직으로 퇴직급여 약 1억 5,000만원을 당행 일반 입출금계좌로 수령했고, 당장 쓸 계획은 없지만 어디에 넣어둘지 고민이라고 하셨어요.',
+                '재취업 예정 고객의 계좌 구성 — 기존 적립용 IRP 연금개시 → 퇴직용 IRP 신규 개설 및 연금개시 → 적립용 IRP 신규 개설, 세 단계로 나눠 제안하는 방식을 안내했어요. 실제 제안 전에 기존 적립용 IRP 안에 연금지급 대기 중이거나 교체매매 진행 중인 자금이 있는지 먼저 확인해야 한다는 점도 짚었어요.'] },
+              { t: 'table', title: '고객 주요 정보', rows: [
+                ['연령 · 투자성향', '58세 · 안정추구형'],
+                ['평가금액', '2,000만원'],
+                ['수익률(1년)', '+3.2%'],
+                ['연금개시', '요건 충족 · 미개시'],
+                ['세액공제 잔여한도', '600만원'],
+                ['관리 사유', '원리금보장상품 편중(80% 이상) · 연금개시 요건충족 후 미개시 · 세액공제 활용 가능 · 추가입금 여력 보유']] }
+            ],
+            srcs: [{ type: '이번 상담 기록' }],
+            evid: [{ doc: '상담 세션 기록', org: '에이전트가 턴마다 남긴 이번 상담의 대화', date: '', points: ['이번 상담 대화 기록'] }],
+            cta: { ask: '이 요약을 쪽지로 보낼까요? 받는 사람은 본인이에요.', yes: '네, 보내줘', next: 'm2' },
+            useGuard: true
+          },
+          m2: {
+            aType: 'action',
+            status: ['쪽지를 보내고 있어요'],
+            lead: '쪽지를 보냈어요 — 받는 사람: 본인.',
+            blocks: [],
+            toast: '쪽지 발송 완료 (모형)'
+          }
+        }
+      }
+    };
+    return this._qa;
+  }
+
+  agNorm(s) { return String(s).toLowerCase().replace(/[\s?!.,'"~…·\-]/g, ''); }
+
+  agMatch(text) {
+    const qa = this.QA[this.state.sel];
+    if (!qa) return null;
+    const n = this.agNorm(text);
+    let best = null;
+    Object.keys(qa.kw).forEach(aid => {
+      const k = qa.kw[aid];
+      let score = 0, strong = 0;
+      k.s.forEach(w => { if (n.indexOf(this.agNorm(w)) >= 0) { score += 2; strong++; } });
+      k.w.forEach(w => { if (n.indexOf(this.agNorm(w)) >= 0) score += 1; });
+      if (score >= 2 && (!best || score > best.score || (score === best.score && strong > best.strong))) best = { aid, score, strong };
+    });
+    return best ? best.aid : null;
+  }
+
+  agSend(text, directAid) {
+    text = String(text || '').trim();
+    if (!text || this.state.agBusy) return;
+    const qa = this.QA[this.state.sel];
+    if (!qa) return;
+    const FB = '이 질문은 지금 준비된 답변 범위 밖이에요. 아래 질문으로 이어가시거나, 다른 표현으로 다시 물어봐 주세요.';
+    const S = this.state;
+    if (S.agCta && !directAid) {
+      const n = this.agNorm(text);
+      const NEG = ['아니', '노', '됐', '취소', '나중', '필요없', '안할', '안열', '안보'];
+      const POS = ['응', '네', '넹', '예', 'ㅇㅇ', 'ㅇㅋ', '오케이', 'ok', 'yes', '좋아', '그래', '열어', '보내', '해줘', '고고', '부탁', 'ㄱㄱ'];
+      if (NEG.some(w => n.indexOf(w) >= 0)) {
+        this.setState(s => ({ agChat: [...s.agChat, { k: 'user', text }, { k: 'sys', text: '네, 필요하시면 언제든 다시 말씀해 주세요.' }], agCta: null, agInput: '' }));
+        return;
+      }
+      if (POS.some(w => n.indexOf(w) >= 0)) {
+        const next = S.agCta.next;
+        this.setState(s => ({ agChat: [...s.agChat, { k: 'user', text }], agCta: null, agInput: '', agBusy: true }));
+        this.agRun(next);
+        return;
+      }
+      const other = this.agMatch(text);
+      if (other) {
+        this.setState(s => ({ agChat: [...s.agChat, { k: 'user', text }], agCta: null, agInput: '', agBusy: true }));
+        this.agRun(other);
+        return;
+      }
+      this.setState(s => ({ agChat: [...s.agChat, { k: 'user', text }, { k: 'sys', text: FB }], agInput: '' }));
+      return;
+    }
+    const aid = directAid || this.agMatch(text);
+    this.setState(s => ({ agChat: [...s.agChat, { k: 'user', text }], agInput: '', agBusy: true, agCta: null }));
+    if (!aid) {
+      this._agT1 = setTimeout(() => this.setState(s => ({ agChat: [...s.agChat, { k: 'sys', text: FB }], agBusy: false })), 500);
+      return;
+    }
+    this.agRun(aid);
+  }
+
+  agRun(aid) {
+    const qa = this.QA[this.state.sel];
+    const a = qa.answers[aid];
+    clearTimeout(this._agT1); clearInterval(this._agST); clearInterval(this._agSI); clearInterval(this._agT2);
+    const isAction = a.aType === 'action';
+    const labels = isAction ? (a.status || []) : ['질문 내용을 파악하고 있어요', '무엇을 찾아볼지 정하고 있어요'].concat(a.status || []);
+    const total = isAction ? 600 : Math.max(3200, labels.length * 1100);
+    this.setState(s => ({ agChat: [...s.agChat, { k: 'status', labels }], agStatusI: 0, agBusy: true }));
+    this._agST = setInterval(() => this.setState(s => ({ agStatusI: s.agStatusI + 1 })), 1100);
+    this._agT1 = setTimeout(() => {
+      clearInterval(this._agST);
+      if (a.toast) {
+        const m = a.toast.match(/^\[(\d{2}-\d{2}-\d{3})\]/);
+        if (m) window.location.href = 'mystar-link://scnNo=' + m[1].replace(/-/g, '') + '&mode=D';
+        this.toast(a.toast);
+      }
+      this.setState(s => {
+        const chat = s.agChat.filter(x => x.k !== 'status');
+        chat.push({ k: 'ans', aid });
+        return { agChat: chat, agAnimI: chat.length - 1, agStreamN: 0, agBlockN: 0, agFootOn: false, agDone: { ...s.agDone, [aid]: 1 } };
+      });
+      const lead = a.lead || '';
+      const nb = (a.blocks || []).length;
+      this._agSI = setInterval(() => {
+        if (this.state.agStreamN >= lead.length) {
+          clearInterval(this._agSI);
+          this._agT2 = setInterval(() => {
+            if (this.state.agBlockN >= nb) {
+              clearInterval(this._agT2);
+              this.setState({ agFootOn: true, agBusy: false, agCta: a.cta ? { ask: a.cta.ask, yes: a.cta.yes, next: a.cta.next } : null });
+            } else this.setState(s => ({ agBlockN: s.agBlockN + 1 }));
+          }, 120);
+        } else this.setState(s => ({ agStreamN: s.agStreamN + 3 }));
+      }, 40);
+    }, total);
+  }
+
+  agVals(c) {
+    const S = this.state;
+    const AGQ = c ? this.QA[c.id] : null;
+    const noop = () => {};
+    if (!AGQ) return { agentOn: false, agentOff: true, agName: '', agMsgs: [], agChipsOn: false, agChips: [], agInput: '', agBusy: false, agNotBusy: true, agOnInput: noop, agOnKey: noop, agSendTap: noop };
+    const TYPE = { fact: ['제도 안내', '#FFF3C2', '#7A6108'], pitch: ['상담 화법', '#E8ECF3', '#3D4A5C'], memory: ['상담 기억', '#F2F3F5', '#696E76'], knowhow: ['현장 노하우', '#F9EFD8', '#A96A00'], summary: ['상담 요약', '#E6F6EF', '#047857'], action: ['실행', '#26282C', '#FFCC00'] };
+    const SRC = { '본부 공식 자료': ['#FFF3C2', '#7A6108'], '직원 교육자료': ['#E8ECF3', '#3D4A5C'], '영업점 현장 노하우': ['#F9EFD8', '#A96A00'], '상담 이력': ['#F2F3F5', '#696E76'], '이번 상담 기록': ['#F2F3F5', '#696E76'], '안내 콘텐츠': ['#E6F6EF', '#047857'] };
+    const remaining = AGQ.chips.filter(ch => !S.agDone[ch.aid]);
+    const EMPTY = { lead: '', hasLeadSub: false, leadSub: '', streaming: false, blocks: [], footOn: false, srcBadges: [], hasGuard: false, guardSummary: '', evidN: 0, evidOpen: false, evid: [], guardN: 0, guardOpen: false, guard: [], hasFollow: false, follow: [], ctaOn: false, ctaAsk: '', ctaYes: '', typeLabel: '', typeBg: 'transparent', typeFg: 'transparent', onEvid: noop, onGuard: noop, onCtaYes: noop, onCtaNo: noop };
+    const agMsgs = (S.agChat || []).map((m, i) => {
+      const base = { isSys: m.k === 'sys', isUser: m.k === 'user', isStatus: m.k === 'status', isAns: m.k === 'ans', text: m.text || '', statusLabel: '' };
+      if (m.k === 'status') base.statusLabel = (m.labels && m.labels.length) ? m.labels[S.agStatusI % m.labels.length] : '확인하고 있어요';
+      if (m.k !== 'ans') return { ...base, ...EMPTY };
+      const a = AGQ.answers[m.aid];
+      if (!a) return { ...base, ...EMPTY, isAns: false };
+      const anim = i === S.agAnimI;
+      const lead = a.lead || '';
+      const streaming = anim && S.agStreamN < lead.length;
+      const tp = TYPE[a.aType] || TYPE.fact;
+      const footReady = anim ? S.agFootOn : true;
+      const footOn = footReady && a.aType !== 'action' && !streaming;
+      const blockSrc = anim ? (a.blocks || []).slice(0, S.agBlockN) : (a.blocks || []);
+      return { ...base,
+        typeLabel: tp[0], typeBg: tp[1], typeFg: tp[2],
+        lead: anim ? lead.slice(0, S.agStreamN) : lead, streaming,
+        hasLeadSub: !!a.leadSub && !streaming, leadSub: a.leadSub || '',
+        blocks: blockSrc.map((b, bi) => {
+          const key = 'ag' + i + '-' + bi;
+          return {
+            isP: b.t === 'p', isList: b.t === 'list', isSteps: b.t === 'steps', isQuote: b.t === 'quote', isMsg: b.t === 'msg', isTable: b.t === 'table', isCaution: b.t === 'caution', isMemory: b.t === 'memoryNote', isLink: b.t === 'link', isEvCard: b.t === 'eventCard',
+            x: b.x || '', title: b.title || '', hasTitle: !!b.title,
+            kind: b.kind || '', icon: b.icon || '', when: b.when || '', desc: b.desc || '', msg: b.msg || '',
+            msgOpen: !!S.agEvOpen && !!S.agEvOpen[key], msgRot: (S.agEvOpen && S.agEvOpen[key]) ? '180deg' : '0deg',
+            onMsgToggle: () => this.setState(s => ({ agEvOpen: { ...(s.agEvOpen || {}), [key]: !(s.agEvOpen || {})[key] } })),
+            items: (b.items || []).map((it, ii, arr) => (typeof it === 'string' ? { no: ii + 1, t: it, title: '', desc: '', hasLine: ii < arr.length - 1 } : { no: ii + 1, t: '', title: it.title || '', desc: it.desc || '', hasLine: ii < arr.length - 1 })),
+            rows: (b.rows || []).map(r => ({ k: r[0], v: r[1] })),
+            copyLabel: S.copied === key ? '복사됨 ✓' : '복사',
+            onCopy: () => this.copy(key, b.msg || b.x || '')
+          };
+        }),
+        footOn,
+        srcBadges: (a.srcs || []).map(sr => ({ t: sr.type, bg: (SRC[sr.type] || SRC['상담 이력'])[0], fg: (SRC[sr.type] || SRC['상담 이력'])[1], warn: !!sr.warn })),
+        hasGuard: !!a.useGuard && !!(AGQ.guard && AGQ.guard.length),
+        guardSummary: AGQ.guardSummary || '',
+        evidN: (a.evid || []).length,
+        evidOpen: !!S.agEvidOpen[i],
+        onEvid: () => this.setState(s => ({ agEvidOpen: { ...s.agEvidOpen, [i]: !s.agEvidOpen[i] } })),
+        evid: (a.evid || []).map(e => ({ doc: e.doc, meta: [e.org, e.date].filter(Boolean).join(' · '), points: (e.points || []).map(p => ({ t: p })), hasUrl: !!e.url, url: e.url || '' })),
+        guardN: (AGQ.guard || []).length,
+        guardOpen: !!S.agGuardOpen[i],
+        onGuard: () => this.setState(s => ({ agGuardOpen: { ...s.agGuardOpen, [i]: !s.agGuardOpen[i] } })),
+        guard: (AGQ.guard || []).map(g => ({ doc: g.doc, meta: [g.org, g.date].filter(Boolean).join(' · '), point: g.point })),
+        hasFollow: !!(a.follow && a.follow.length) && footOn,
+        follow: (a.follow || []).map(f => ({ t: f })),
+        ctaOn: footOn && !!a.cta && !!S.agCta && anim,
+        ctaAsk: a.cta ? a.cta.ask : '', ctaYes: a.cta ? a.cta.yes : '',
+        onCtaYes: () => { if (!a.cta) return; this.setState(s => ({ agChat: [...s.agChat, { k: 'user', text: a.cta.yes }], agCta: null, agBusy: true })); this.agRun(a.cta.next); },
+        onCtaNo: () => this.setState(s => ({ agChat: [...s.agChat, { k: 'user', text: '아니오' }, { k: 'sys', text: '네, 필요하시면 언제든 다시 말씀해 주세요.' }], agCta: null }))
+      };
+    });
+    return {
+      agentOn: true, agentOff: false, agName: c.name, agMsgs,
+      agChipsOn: !S.agBusy && remaining.length > 0,
+      agChips: remaining.map(ch => ({ label: ch.q, onTap: () => this.agSend(ch.q, ch.aid) })),
+      agInput: S.agInput, agBusy: !!S.agBusy, agNotBusy: !S.agBusy,
+      agOnInput: e => this.setState({ agInput: e.target.value }),
+      agOnKey: e => { if (e.key === 'Enter') this.agSend(this.state.agInput); },
+      agSendTap: () => this.agSend(this.state.agInput)
+    };
+  }
+
+  toast(m) { clearTimeout(this._toastT); this.setState({ toastMsg: m }); this._toastT = setTimeout(() => this.setState({ toastMsg: null }), 2400); }
+
+  bold(t) {
+    const parts = String(t == null ? '' : t).split('**');
+    if (parts.length <= 1) return String(t == null ? '' : t);
+    return safeHtml(parts.map((x, i) => i % 2 ? '<b style="font-weight:700">' + escapeHtml(x) + '</b>' : escapeHtml(x)).join(''));
+  }
+
+  get BRIEFS() {
+    if (this._bf) return this._bf;
+    const C = this.C;
+    const B = (t, k) => ({ t, bg: C[k + 'T'], fg: C[k + 'F'] });
+    const GIC2 = [
+      { n: 'DB손해보험 무배당 스마트 퇴직연금 이율보증형(3년)', badge: 'GIC · AAA', bk: 'bl', stat: '연 4.41%' },
+      { n: '시중은행 정기예금 1년제', stat: '연 3.20~3.70% · 2026.08 기준' }];
+    this._bf = {
+      ksy: {
+        badges: [B('타행 ISA 만기 D-3', 'am'), B('ETF 조회', 'bl')],
+        s1: { main: '**신한은행 ISA 약 8,000만원이 9월 7일 만기 예정**입니다.', sub: '당행 IRP 4,500만원은 **정기예금·채권형 펀드 중심**으로 운용 중입니다. 최근에는 스타뱅킹에서 **IRP ETF 상품을 조회**했습니다.' },
+        s2: { lead: 'ISA 만기자금 8,000만원의 **사용계획을 확인하고, 남는 자금의 IRP 전환 여부와 향후 운용방향을 함께 점검합니다.**',
+          why: 'ISA 만기 후 **60일 이내**에만 IRP로 전환할 수 있으며, 전환금액의 10% 범위에서 **최대 300만원의 추가 세액공제 한도**가 적용됩니다.',
+          checks: ['가까운 시일 내 사용할 금액이 있는지', '남는 자금을 노후자금으로 계속 운용할 의향이 있는지', '예금 중심 운용 외에 투자상품도 함께 검토할 의향이 있는지'] },
+        s3: { lead: '현재의 안정적 운용을 유지하면서, 최근 ETF 조회 이력을 고려해 **일부 자금은 TDF·ETF 등으로 분산 운용**하는 방향을 제안합니다.',
+          tiles: [
+            { k: 'tdf', name: 'TDF', desc: '은퇴까지의 운용기간을 고려한 장기 분산운용', btn: '운용 후보 보기', prods: [{ n: '마이다스 기본 TDF 2030', badge: '위험등급 4등급', bk: 'am', stat: '1년 +18.50% · 2026.07.30 기준', desc: '은퇴까지의 운용기간을 고려해 장기적으로 분산 운용할 자금의 후보입니다.' }] },
+            { k: 'etf', name: 'ETF', desc: '실제 관심이 확인되는 경우 투자성향 범위 내에서 활용', btn: '운용 후보 보기', prods: [
+              { n: 'KODEX 장기채권PLUS', badge: '위험등급 6등급', bk: 'gr', stat: '채권형', desc: '금리 변동에 따라 안정적으로 운용할 채권형 ETF 후보입니다.' },
+              { n: 'RISE 200', badge: '위험등급 2등급', bk: 'am', stat: '대표 지수형', desc: '국내 대표지수를 따라가는 지수형 ETF 후보입니다.' }] },
+            { k: 'gic', name: '정기예금·GIC', desc: '안정적으로 유지할 자금은 원리금보장 중심으로 운용', btn: '운용 후보 보기', prods: GIC2 }],
+          foot: '※ 각 운용안을 선택하면 고객의 투자성향에 적합한 구체적인 상품 후보와 위험등급·수익률·금리 등 상세정보를 확인할 수 있습니다.' },
+        s4: { opening: '김서연 고객님, 신한은행 ISA가 이달 7일에 만기더라고요. 만기 지나면 60일 안에만 쓸 수 있는 세금 혜택이 하나 있어서, 놓치시기 전에 미리 전화드렸어요.', openingHl: true,
+          note: '⚠ 9.9%·3.3~5.5% 세율은 현장 팁 출처 — 안내 전 공식 기준 확인. 중도해지 시 기타소득세 16.5% 부과는 함께 고지.',
+          reacts: [
+            { label: '당장 사용할 계획이 없는 경우', m: ['그러시면 IRP 전환을 꼭 한 번 보셔야 해요. 세 가지가 달라지는데요. 첫째, 전환금액의 10%, 최대 300만 원이 세액공제 한도로 추가돼요 — 이것만으로 환급이 최대 49.5만 원이고, 고객님은 올해 기본 한도도 500만 원 남아 있어요. 둘째, ISA에서 비과세 한도 넘은 수익은 9.9% 분리과세지만, IRP로 옮겨 연금으로 받으면 3.3~5.5%로 끝나요. 셋째, 전부 옮기실 필요 없이 안 쓰실 금액만 일부 전환하셔도 됩니다.', '그리고 ISA는 해지하셔도 새로 하나 더 만드시면 3년 뒤에 이 혜택을 또 쓰실 수 있어요. 만기금은 IRP에서 공제 받고, 새 ISA로 비과세 한도는 다시 쓰는 거죠.'] },
+            { label: '투자상품도 함께 검토하는 경우', m: ['마침 잘 됐어요. 지금 IRP가 예금·채권 위주라 사실상 안정형처럼 굴러가고 있는데, 성향검사로는 위험중립형이시거든요. 이 돈은 내일 쓸 돈이 아니라 10년 넘게 굴릴 노후자금이라, 기간을 길게 보면 변동성의 의미가 달라져요.', '그래서 한 번에 바꾸는 게 아니라 안 쓰실 금액의 일부만 TDF처럼 알아서 분산되는 상품으로 시작해 보시고, 해보시다 안 맞으면 언제든 예금으로 되돌리시면 됩니다.'] },
+            { label: '안정적인 운용을 원하는 경우', m: ['네, 그대로 가셔도 됩니다. 다만 한 가지만 — 예금 금리에서 물가 오르는 걸 빼면 실제로 남는 게 많지 않아서요. 안정형 안에서도 금리를 더 챙기는 방법이 있어요.', '한 번에 1년 예금에 다 넣는 대신 1·3·5년으로 나눠 담으면 금리가 내려도 장기 고금리가 잠겨 있고, 이율보증형(GIC)은 지금 연 4%대라 예금보다 높은데 원금 보장은 똑같아요.'] }] },
+        s5: { tip: { url: 'https://lxp.kbstar.com/app/board/hottip-my/view/204287.10A23D02D0E43DEA0A6FB41B9007AC2FB40B42A524DD2EDED36CDD0DCCA9504B', title: 'ISA 만기 자금 개인형IRP 전환 마케팅', body: 'ISA 만기자금의 사용계획을 먼저 확인하고, 사용할 자금과 노후자금으로 유지할 자금을 구분해 일부 전환까지 선택지로 활용할 수 있습니다.', meta: '동부산종합금융센터 박수연 팀장 · 2026.01.31', stats: '조회 727 · 좋아요 33' },
+          ordered: false,
+          exec: [{ chip: '01-12-213', name: '입금/입금예약', desc: 'ISA 만기자금의 전환 가능금액 확인 및 IRP 입금 처리' }] }
+      },
+      lsm: {
+        badges: [B('정기예금 만기 D-22', 'am'), B('현금성 1,000만원 대기', 'am')],
+        s1: { main: '**IRP 정기예금 7,000만원이 9월 26일 만기 예정**입니다.', sub: '지난 6월 만기된 **1,000만원은 약 10주간 운용지시 없이 현금성자산**으로 남아 있으며, 최근 스타뱅킹에서 **IRP 수익률과 정기예금 금리를 조회**했습니다.' },
+        s2: { lead: '만기 예정인 7,000만원과 기존 대기자금 1,000만원의 **향후 운용방향을 정하고, 만기 후 현금성자산으로 대기하는 상황이 반복되지 않도록 함께 점검합니다.**',
+          why: '정기예금은 자동 재예치가 폐지되어 만기 시 운용지시가 없으면 현금성자산으로 상환되며, **만기상품 예약변경은 만기 1개월 전부터 가능해 지금부터 만기 이후의 운용방향을 미리 정할 수 있습니다.**',
+          checks: ['만기자금과 대기 중인 1,000만원을 가까운 시일 내 사용할 계획이 있는지', '직접 상품을 고르는 방식과 자동 운용 중 어느 쪽이 편한지', '은퇴를 언제쯤으로 생각하고 있는지'] },
+        s3: { lead: '현재의 원리금보장 중심 운용과 최근 정기예금 금리 조회 이력을 고려해 기본 자금은 안정적으로 재운용하되, 고객 의향에 따라 **일부 실적배당형 또는 디폴트옵션을 활용해 운용 공백을 줄이는** 방향을 제안합니다.',
+          tiles: [
+            { k: 'gic', name: '정기예금·GIC', desc: '기존처럼 안정적으로 운용할 자금은 만기 전 예약변경으로 재운용', btn: '운용 후보 보기', prods: GIC2 },
+            { k: 'perf', name: '일부 실적배당형', desc: '일부 자금은 위험중립형 범위 내에서 분산운용', btn: '운용 후보 보기', prods: [
+              { n: '삼성 EMP 리얼리턴(UH)', badge: '위험등급 4등급', bk: 'am', stat: '1년 +18.58%' },
+              { n: '한국투자 크레딧 포커스 ESG', badge: '위험등급 5등급', bk: 'am', stat: '1년 +0.87%' }] },
+            { k: 'do', name: '디폴트옵션', desc: '상품 선택이나 지속적인 관리가 번거로운 경우 자동운용 활용', btn: '포트폴리오 보기', prods: [
+              { n: '안정형 (지켜드림)', badge: '초저위험', bk: 'gr', desc: '시중은행 정기예금 100%로 구성' },
+              { n: '안정투자형 (알파드림 1·2·3호)', badge: '저위험', bk: 'bl', desc: '정기예금과 TDF, GIC 등을 혼합' },
+              { n: '중립투자형 (뿔려드림 1·2·3호)', badge: '중위험', bk: 'am', desc: 'TDF 및 자산배분형 펀드 중심' },
+              { n: '적극투자형 (모두드림 1·2·3호)', badge: '고위험', bk: 'red', desc: 'TDF 100%로 운용' }] }],
+          foot: '※ 디폴트옵션 등록만으로 기존 현금성자산 1,000만원이 이동하지 않으므로, 대기자금 교체매매를 함께 처리합니다.' },
+        s4: { opening: '고객님, IRP 정기예금 7,000만원이 이달 26일 만기가 되어서 미리 연락드렸어요. 요즘은 만기가 되어도 자동으로 재예치되지 않아서, 지금부터 만기에 맞춰 예약을 걸어두실 수 있습니다.',
+          reacts: [
+            { label: '자금 사용계획을 확인할 때', m: ['이 돈을 가까운 시일에 쓰실 계획이 있으신가요? 그리고 은퇴는 언제쯤으로 생각하고 계세요? 남은 기간에 따라 어울리는 방법이 달라져서요.'] },
+            { label: '현금성 대기자금을 설명할 때', m: ['6월에 만기 된 1,000만원이 지금 현금성자산으로 있는데요. 이번 만기 자금까지 겹치기 전에 같이 정리해 두시면 좋습니다.'] },
+            { label: '디폴트옵션에 거부감을 보이는 경우', m: ['원치 않는 상품에 강제로 가입되는 게 아닌지 걱정하실 수 있는데요. 법에 따라 모든 금융기관이 운영하는 제도이고, 심사·승인된 포트폴리오 중에서 고객님 성향에 맞는 것을 직접 선택하시는 방식입니다. 부담스러우시면 일부부터 시작하고 나중에 변경하셔도 됩니다.'] }] },
+        s5: { tip: { url: 'https://lxp.kbstar.com/app/board/hottip-hq/view/9737.11560FFFEC1B47B1E99FB966A6F43F718768F3F3933351F4D8B076231DE07474', title: '《퇴직연금》현금성 대기자산 보유고객 관리 노하우 BEST10', body: '디폴트옵션 등록과 대기자금 교체매매를 함께 진행하고, 은퇴 예정 시기와 투자성향·과거 투자경험을 확인한 후 고객에게 맞는 운용방향을 제안하는 현장 노하우입니다.', meta: '채태정 · 2023.09.25', stats: '조회 524' },
+          ordered: false,
+          exec: [
+            { chip: '04-12-642', name: '적립금및수익률조회', desc: '현금성자산 적용 금리 확인' },
+            { chip: '06-12-918', name: '디폴트옵션 대기자금 관리', desc: '디폴트옵션 등록 후에도 남아 있는 대기자금 1,000만원 직접 처리' }] }
+      },
+      pjh: {
+        badges: [B('퇴직급여 1억 5,000만원 입금', 'gr'), B('퇴직연금 입금 메뉴 조회', 'bl')],
+        s1: { main: '**8월 14일 퇴직급여 1억 5,000만원이 당행 입출금계좌로 입금**된 뒤 그대로 남아 있습니다.', sub: '고객은 올해 8월 퇴직했으며, 상담에서 "당장 쓸 계획은 없는데 어디 넣어둘지 고민"이라고 언급한 이후 **퇴직연금 입금 메뉴와 관련 콘텐츠를 조회**했습니다.' },
+        s2: { lead: '퇴직급여 1억 5,000만원의 **사용계획과 IRP 재입금 여부를 확인하고, 재입금 시 필요한 과세이연 절차와 이후 운용방향을 함께 점검합니다.**',
+          why: '퇴직금은 지급일로부터 **60일 이내 IRP로 재입금하면 이미 차감된 퇴직소득세를 환급**받을 수 있으며, 현재 입금 후 약 3주가 지나 해당 시한이 진행 중입니다.',
+          checks: ['퇴직소득원천징수영수증 기준의 정확한 지급일과 금액', '퇴직금 중 가까운 시일 내 사용할 금액이 있는지', '재취업 예정이 있는지'] },
+        s3: { lead: '당장 사용할 계획이 없는 퇴직금은 **60일 이내 IRP로 재입금해 과세이연을 이어가고**, 58세 안정추구형 고객의 기존 운용을 고려해 원리금보장 중심으로 운용하되 유동성이 필요한 일부는 단기채권형으로 나누는 방향을 제안합니다.',
+          tiles: [
+            { k: 'rein', name: 'IRP 재입금', desc: '퇴직금 재입금을 통해 과세이연 구조 유지', btn: '처리 순서 보기', steps: ['과세이연정보 등록', 'IRP 재입금', '과세이연계좌신고서 발급', '퇴직회사 환급 신청', '환급금 IRP 입금'], note: '※ **과세이연정보 등록 후 입금** 순서로 진행합니다.' },
+            { k: 'gic', name: 'GIC', desc: '장기적으로 유지할 퇴직자금은 원리금보장 중심 운용', btn: '운용 후보 보기', prods: [
+              { n: '무배당 메리츠화재 이율보증형보험3(개인형IRP·3년)', badge: 'GIC · AA+', bk: 'bl', stat: '연 4.36%' },
+              { n: 'DB손해보험 무배당 스마트 퇴직연금 이율보증형(5년)', badge: 'GIC · AAA', bk: 'bl', stat: '연 4.31%' }] },
+            { k: 'bond', name: '단기채권형', desc: '유동성을 고려할 일부 자금은 낮은 위험의 단기 운용 검토', btn: '운용 후보 보기', prods: [
+              { n: '키움 더드림 단기채', badge: '위험등급 6등급(매우낮은)', bk: 'gr', stat: '1년 +2.29%' }] }] },
+        s4: { opening: '고객님 안녕하세요. 퇴직금이 통장으로 입금되신 것 보고 연락드렸어요. 보통은 IRP를 통해 받으시는데, 혹시 바로 쓰실 데가 있어서 일반 통장으로 받으신 걸까요?',
+          reacts: [
+            { label: '당장 사용할 계획이 없는 경우', m: ['그러시면 알아두시면 좋은 제도가 있습니다. 퇴직금 지급일로부터 60일 이내에 IRP로 다시 입금하시면 이미 차감된 퇴직소득세를 환급받으실 수 있어요. 정확한 지급일은 원천징수영수증으로 같이 확인해 보시죠.'] },
+            { label: '절차가 복잡하지 않냐고 묻는 경우', m: ['절차가 몇 단계 있지만 순서는 저희가 챙겨드리고, 고객님께서 준비하실 것은 원천징수영수증 정도입니다. 다만 환급이 끝나기 전까지는 IRP에서 지급이나 연금설계 등록이 제한되니, 그 사이에 쓰실 자금이 없는지만 먼저 확인하고 진행하겠습니다.'] },
+            { label: '재입금 후 운용을 묻는 경우', m: ['퇴직금은 금액도 크고 한 번 결정하면 다시 만들기 어려운 자금이라, 고객님 성향에 맞춰 안정적으로 지키는 운용을 중심으로 보시는 게 좋습니다. 이후 연금으로 받는 구조까지 함께 점검해 두시면 좋습니다.'] }] },
+        s5: { tip: { url: 'https://lxp.kbstar.com/app/board/hottip-my/view/200352.E876185BA546CADB311458A7E5AA1076159581DEAE19AC73F1F5A0846EBC76BD', title: '꼼꼼한 고객관리로 거액의 개인형IRP 유치하기', body: '퇴직금뿐 아니라 전체 자산현황과 기존 상담내용을 함께 살펴보고, 고객의 자금 사용계획과 여러 니즈의 우선순위를 정리한 뒤 퇴직금 수령·운용방향을 제안한 현장 사례입니다.', meta: '양혜련 팀장 · 2025.04.23', stats: '조회 619 · 좋아요 26' },
+          ordered: true,
+          exec: [
+            { chip: '06-12-501', name: '후선업무 의뢰등록', desc: '과세이연정보 등록·수정 요청 — 입금보다 먼저 처리' },
+            { chip: '01-12-213', name: '입금/입금예약', desc: '퇴직금 IRP 재입금 처리' },
+            { chip: '04-12-648', name: '과세이연정보관리', desc: '과세이연계좌신고서 출력' },
+            { chip: '04-12-644', name: '거래내역 조회', desc: '퇴직회사 환급 신청에 필요한 IRP 입금내역 출력' }] }
+      }
+    };
+    return this._bf;
+  }
+
+  get C() { return { red: '#DC2626', redT: '#FDECEC', redF: '#B91C1C', am: '#D99000', amT: '#F9EFD8', amF: '#A96A00', gr: '#059669', grT: '#E6F6EF', grF: '#047857', bl: '#FFCC00', blT: '#FFF3C2', blF: '#7A6108' }; }
+
+  get DATA() {
+    if (this._d) return this._d;
+    const C = this.C;
+    const tag = (t, k) => ({ t, bg: C[k + 'T'], fg: C[k + 'F'] });
+    const GEN = { dir: '우려 인정 후 제안 범위 축소', why: '저항 발화 직후 설득 강도를 높이면 보류 확률이 올라갑니다. 범위를 줄여 되제시하세요.', ment: '말씀하신 부분 충분히 이해합니다. 그럼 지금 구조는 그대로 두고, 부담 없는 범위에서 딱 한 가지만 바꾸는 안으로 다시 정리해 말씀드릴게요.', mentAlt: '네, 그 마음 이해해요. 그럼 제일 부담 없는 것 하나만 추려서 다시 말씀드릴게요.', chips: [] };
+    this.GEN = GEN;
+    this.COMMON = {
+      '바쁘시다고 함': { dir: '예상 시간을 명시하고 짧게 재요청', ment: '3분이면 가능한데, 혹시 어려우실까요? 어려우시면 편하신 시간 말씀해주시면 그때 다시 전화드릴게요.', mentAlt: '바쁘신데 죄송해요. 딱 3분이면 되는데, 지금 어려우시면 편하신 시간 알려주세요. 그때 맞춰서 다시 전화드릴게요.' },
+      '본인이 아님': { dir: '계좌·상품 정보는 일절 언급하지 않고 종료', ment: '고객님께 안내드릴 내용이 있어 전화드렸습니다. 다음에 다시 연락드리겠습니다. 감사합니다.', warn: '본인 확인 전에는 퇴직연금 계좌 상태·보유상품을 말하지 않습니다' },
+      '생각해본다고 함': { dir: '수용하고 다음 접점 날짜를 고정', ment: '네, 천천히 생각해보세요. 제가 다음 주 화요일쯤 다시 한 번 전화드려도 될까요? 그때 궁금하신 것만 답 드릴게요.', mentAlt: '그럼요, 천천히 생각해보세요. 부담 안 드리게 다음 주 화요일쯤 한 번만 다시 전화드릴게요. 그때 궁금하신 것만 답 드리면 되니까요.' }
+    };
+    this._d = [
+      { id: 'ksy', name: '김서연', product: 'IRP', deposit: '4,500만', profile: '위험중립형', bar: C.am, tags: [tag('타행 ISA 만기 D-3', 'am'), tag('ETF 조회', 'bl')], why: '신한은행 ISA 8,000만원 9.7 만기 — 60일 내 IRP 전환 가능', ml: 'ISA 만기', pa: '26.3', stale: false, head: { bar: C.am, title: '타행 ISA 8,000만원 만기 D-3 — 만기자금 사용계획 확인 상담 권장' },
+        metrics: [{ l: '적립금', v: '4,500만', s: 'IRP 평가금액' }, { l: '타행 ISA 만기', v: 'D-3', s: '9.7 · 약 8,000만원' }, { l: '올해 개인부담금', v: '400만', s: '한도 900만 중' }, { l: '디폴트옵션', v: '등록', s: '사전지정 완료' }],
+        hold: [{ n: 'KB저축은행 정기예금 1년', t: '원리금보장', a: '2,800만', w: '62%', r: '+4.3%' }, { n: '키움 더드림 단기채', t: '실적배당', a: '1,500만', w: '33%', r: '+2.3%' }, { n: '현금성자산', t: '대기', a: '200만', w: '5%', r: '+0.2%' }],
+        act: { name: 'ISA 만기자금 상담', opts: ['', ''] } },
+      { id: 'lsm', name: '이수민', product: 'IRP', deposit: '8,000만', profile: '위험중립형', bar: C.am, tags: [tag('만기 D-22', 'am'), tag('디폴트옵션 미등록', 'am')], why: '9.26 만기 7,000만 + 현금성 1,000만 10주 대기 — 예약변경 가능 구간', ml: '9.26 만기', pa: '26.5', stale: false, head: { bar: C.am, title: '정기예금 7,000만원 만기 D-22 · 디폴트옵션 미등록 — 예약변경 상담 권장' },
+        metrics: [{ l: '만기 예정', v: '7,000만', s: '9.26 · D-22' }, { l: '현금성 대기', v: '1,000만', s: '6.19 만기 후 약 10주' }, { l: '디폴트옵션', v: '미등록', s: '사전지정 필요' }, { l: '마지막 운용지시', v: '12개월 전', s: '25.9 만기 재예치' }],
+        hold: [{ n: 'OK저축은행 정기예금 1년', t: '원리금보장', a: '7,000만', w: '88%', r: '+4.2%' }, { n: '현금성자산', t: '대기', a: '1,000만', w: '12%', r: '+0.2%' }],
+        act: { name: '만기 예약변경 상담', opts: ['', ''] } },
+      { id: 'pjh', name: '박정호', product: 'IRP', deposit: '2,000만', profile: '안정추구형', bar: C.gr, tags: [tag('퇴직급여 수령', 'gr'), tag('과세이연 시한', 'am')], why: '8.14 퇴직급여 1.5억 일반통장 수령 — 60일 내 IRP 재입금 시 세액 환급', ml: '퇴직급여', pa: '26.8', stale: false, head: { bar: C.gr, title: '퇴직급여 1억 5,000만원 일반통장 수령 — 60일 내 재입금 시 퇴직소득세 환급' },
+        metrics: [{ l: '퇴직급여', v: '1억 5,000만', s: '8.14 입출금계좌 입금' }, { l: '과세이연 시한', v: '진행 중', s: '지급일로부터 60일 이내' }, { l: 'IRP 적립금', v: '2,000만', s: '정기예금 · 만기 27.3.10' }, { l: '올해 개인부담금', v: '300만', s: '한도 900만 중' }],
+        hold: [{ n: 'KB저축은행 정기예금 1년', t: '원리금보장', a: '2,000만', w: '100%', r: '+4.1%' }],
+        act: { name: '퇴직금 과세이연 상담', opts: ['', ''] } },
+      { id: 'khj', name: '김형준', product: 'IRP', deposit: '4.3억', profile: '안정추구형', bar: C.am, tags: [tag('만기 D-7', 'am'), tag('이탈위험 상승', 'red')], why: '예금 72% 편중 + 8.17 만기 — 재예치 시점에 채권형 분산 제안 적기', ml: '예금 비중', risk: 1, mat: 1,
+        head: { bar: C.am, title: '예금 편중 + 만기 D-7 — 오늘 재예치 상담 권장', sub: '만기 자금의 15~20%를 채권형으로 분산하면 원금 중심 구조를 유지하면서 수익률 개선 여지가 있습니다.' },
+        metrics: [
+          { l: '예금 비중', v: '72%', s: '고객군 평균 30% · +42%p 편중' },
+          { l: '정기예금 만기', v: 'D-7', s: '8.17 · 3.1억 재예치 필요' },
+          { l: '1년 수익률', v: '+2.9%', s: '고객군 평균 대비 −1.1%p' }],
+        ev: ['26.03.07 상담 "예금 유지" 보류 — 이후 앱 수익률 화면 4회 조회, 관심도 상승', '8.17 정기예금 3.1억 만기 도래 — 재예치 의사결정 시점', '동일 성향 고객군 대비 예금 비중 +42%p — 수익률 격차 연 1.1%p 누적'],
+        act: { name: '재예치 + 채권형 분산 제안 통화', opts: ['만기 안내 LMS 발송 후 내주 재통화', '디폴트옵션(BF20) 재안내'] },
+        ment: '안녕하세요 김형준 고객님, 17일에 정기예금 만기가 돌아와서 미리 연락드렸어요. 요즘 예금 금리가 계속 내려가고 있어서, 만기 자금을 어떻게 두실지 같이 점검해 드리고 싶었습니다.',
+        chips: ['지난번에도 말씀드렸지만 예금이 편해요', '채권도 손실 나잖아요', '생각해볼게요'],
+        script: {
+          '지난번에도 말씀드렸지만 예금이 편해요': { dir: '동의로 시작 — 예금 유지를 먼저 확인시키고 "일부 분산"으로 좁히기', why: '안정추구형은 기존 선택을 부정당하면 저항이 커집니다. 예금을 지키는 제안임을 먼저 각인하세요.', ment: '맞아요, 예금이 제일 마음 편하시죠. 그래서 예금은 그대로 두시고요. 이번에 만기되는 금액 중 15% 정도만, 예금보다 한 단계 넓은 채권형으로 나눠 두시는 걸 말씀드리는 거예요.', mentAlt: '예금 좋죠, 저도 그렇게 생각해요. 예금은 그대로 가시고, 이번 만기 금액의 15%만 채권형으로 살짝 나눠보시는 건 어떨까요?', chips: ['채권도 손실 나잖아요', '15%면 얼마 정도예요?'] },
+          '채권도 손실 나잖아요': { dir: '손실 가능성 인정 + 변동 "크기"를 예금과 비교해 축소', why: '사실을 부정하면 신뢰가 깎입니다. 회피 성향에는 크기 비교가 효과적입니다.', ment: '네, 채권도 값이 움직이는 건 맞습니다. 다만 말씀드린 글로벌채권인덱스는 주식보다 변동 폭이 훨씬 작고, 최근 1년은 예금 금리보다 성과가 좋았어요. 그래서 전부가 아니라 15%만 권해드리는 거예요.', mentAlt: '맞아요, 움직이긴 해요. 그런데 폭이 예금 금리 언저리 수준이라, 그래서 딱 15%만 말씀드리는 거예요.', chips: ['생각해볼게요', '수수료는 얼마나 돼요?'] },
+          '생각해볼게요': { dir: '보류 전에 다음 접점을 날짜로 고정', why: '3월 상담도 기한 없이 끝나 보류로 이어졌습니다. 만기(8.17) 전 접점이 필수입니다.', ment: '그럼요, 천천히 보셔도 됩니다. 다만 만기가 17일이라서요, 그 전에 예금과 채권형을 나란히 비교한 표를 하나 보내드리고, 금요일에 5분만 다시 통화드려도 될까요?', mentAlt: '네네, 편하게 보세요. 대신 만기 전이 좋으니까 비교표 보내드리고 금요일에 잠깐만 다시 전화드릴게요.', chips: ['네, 그러세요', '비교표만 먼저 보내주세요'] },
+          '15%면 얼마 정도예요?': { dir: '금액을 구체화해 심리적 크기 줄이기', why: '비율보다 "남는 예금 금액"을 먼저 말하면 안전감이 유지됩니다.', ment: '이번 만기 금액 3.1억 기준으로 15%면 4,600만 원 정도예요. 나머지 2억 6천은 그대로 예금으로 재예치되고요.', mentAlt: '3.1억 중에 4,600만 원 정도예요. 2억 6천은 그대로 예금에 있는 거고요.', chips: ['채권도 손실 나잖아요', '생각해볼게요'] },
+          '수수료는 얼마나 돼요?': { dir: '총보수를 연 단위 원화로 환산해 답하기', why: '% 표기는 크게 느껴집니다. 금액 환산이 저항을 낮춥니다.', ment: 'C-P 클래스라 총보수는 연 0.45% 수준이에요. 4,600만 원 기준으로 연 20만 원 정도이고, 가입할 때 따로 떼는 판매수수료는 없습니다.', mentAlt: '연 0.45%예요. 금액으로 치면 1년에 20만 원쯤이고, 들어갈 때 떼는 건 없어요.', chips: ['생각해볼게요', '네, 그러세요'] },
+          '네, 그러세요': { dir: '합의 확정 — 일정과 자료를 즉시 고정', why: '확답 직후 실행을 예약해야 보류로 되돌아가지 않습니다.', ment: '감사합니다. 그럼 오늘 중으로 비교표를 문자로 보내드리고, 금요일 오전 10시에 전화드릴게요. 만기 전에 편하게 결정하시면 됩니다.', mentAlt: '네, 비교표 오늘 보내드리고 금요일 오전에 전화드릴게요!', chips: [] },
+          '비교표만 먼저 보내주세요': { dir: '자료 요청 수용 + 확인 접점만 가볍게 예약', why: '자료만 보내면 개봉률이 낮습니다. 확인 전화를 붙이세요.', ment: '네, 바로 보내드릴게요. 보시고 궁금한 점이 생기실 테니, 금요일에 딱 5분만 확인 전화드려도 될까요?', mentAlt: '바로 보내드릴게요. 보시다가 궁금하면 편하게 전화 주시고, 저도 금요일에 한 번 여쭤볼게요.', chips: [] }
+        } },
+      { id: 'pey', name: '박은영', product: 'IRP', deposit: '1.8억', profile: '적극투자형', bar: C.red, tags: [tag('이탈위험 상승', 'red')], why: '실적배당형 −6.8% + 최근 7일 콜센터 수익률 문의 2회', ml: '1년 수익률', risk: 1, perf: 1,
+        head: { bar: C.red, title: '수익률 불만 신호 — 오늘 선제 통화로 이탈 차단 권장', sub: '손실 원인(코스피 −4.2%)을 먼저 짚고 채권 혼합 리밸런싱으로 전환을 제안하세요.' },
+        metrics: [{ l: '1년 수익률', v: '−6.8%', s: '고객군 평균 대비 −2.9%p' }, { l: '콜센터 문의', v: '2회', s: '최근 7일 · 모두 수익률 관련' }, { l: '주식형 비중', v: '87%', s: '고객군 평균 41%' }],
+        ev: ['8.06 · 8.09 콜센터 수익률 문의 2회 — 불만 누적 신호', '주식형 87% 편중 — 이번 주 하락 직격', '동일 패턴 고객의 30%가 90일 내 타행 이전'],
+        act: { name: '손실 원인 브리핑 + 리밸런싱 통화', opts: ['하락장 대응 리포트 LMS 발송 후 반응 대기', '지점 방문 상담 예약 제안'] },
+        ment: '박은영 고객님, 최근 시장이 많이 흔들려서 수익률 걱정이 크셨을 것 같아 먼저 연락드렸어요. 지금 계좌 상황과 앞으로 어떻게 지켜갈지 정리해서 말씀드리려고요.',
+        chips: ['지금이라도 다 팔고 예금으로 갈까요?', '왜 이렇게 많이 떨어진 거예요?'] },
+      { id: 'lsc', name: '이상철', product: 'IRP', deposit: '2.1억', profile: '위험중립형', bar: C.red, tags: [tag('이탈위험 상승', 'red')], why: '타행 IRP 신규 개설 감지 — 적립금 이전 검토 가능성', ml: '적립금', risk: 1,
+        head: { bar: C.red, title: '타행 IRP 개설 감지 — 이전 전 관계 접점 필요', sub: '수익률은 평균 이상입니다. 수수료 우대와 관리 서비스를 선제적으로 안내하세요.' },
+        metrics: [{ l: '적립금', v: '2.1억', s: 'IRP 단일 계좌' }, { l: '타행 개설', v: 'D+3', s: '8.08 마이데이터 감지' }, { l: '1년 수익률', v: '+4.1%', s: '고객군 평균 대비 +0.6%p' }],
+        ev: ['8.08 타행 IRP 신규 개설 감지 (마이데이터)', '최근 90일 내점·통화 이력 없음 — 접점 공백', '수익률은 평균 이상 — 이전 사유는 수수료·관계 요인 가능성'],
+        act: { name: '관계 점검 통화 + 수수료 우대 안내', opts: ['수수료 비교 리포트 LMS 발송', '분기 정기 리뷰 일정 제안'] },
+        ment: '이상철 고객님, 요즘 IRP 관리를 제가 제대로 챙겨드리지 못한 것 같아 연락드렸어요. 수수료 우대 프로그램이 새로 생겨서, 고객님 계좌에 적용되는지 확인해 드리려고요.',
+        chips: ['옮기려던 건 아니고 그냥 만들어본 거예요', '거기가 수수료가 더 싸다고 해서요'] },
+      { id: 'jmr', name: '정미란', product: 'IRP', deposit: '0.7억', profile: '안정형', bar: C.red, tags: [tag('이탈위험 상승', 'red')], why: '디폴트옵션 미지정 + 저수익 방치 — 수익률 불만 상담 이력', ml: '1년 수익률', risk: 1, perf: 1,
+        head: { bar: C.red, title: '저수익 방치 + 디폴트옵션 미지정 — 지정 상담 권장', sub: '대기성 자금 비중이 높습니다. 초저위험 디폴트옵션 지정부터 제안하세요.' },
+        metrics: [{ l: '1년 수익률', v: '+0.8%', s: '고객군 평균 대비 −1.9%p' }, { l: '대기성 자금', v: '38%', s: '2,700만 원 미운용' }, { l: '디폴트옵션', v: '미지정', s: '25.11 안내 후 보류' }],
+        ev: ['26.01.15 상담 — "수익이 너무 안 난다" 불만 표현', '대기성 자금 38% — 6개월째 미운용', '디폴트옵션 미지정 — 제도 혜택 미활용'],
+        act: { name: '디폴트옵션 지정 + 대기자금 운용 통화', opts: ['디폴트옵션 안내문 LMS 발송', '내점 시 지정 처리 예약'] },
+        ment: '정미란 고객님, 지난번에 수익이 아쉽다고 하셨던 게 마음에 걸려서요. 원금은 지키면서 지금보다 나은 구조를 하나 찾아뒀는데, 5분만 설명드려도 될까요?',
+        chips: ['그게 뭔지 어려워서요', '수익이 나긴 하는 거예요?'] },
+      { id: 'kdy', name: '강도윤', product: 'IRP', deposit: '1.1억', profile: '위험중립형', bar: C.red, tags: [tag('이탈위험 상승', 'red')], why: '1년 수익률 하위 10% + 앱 접속 주 7회로 급증', ml: '1년 수익률', risk: 1, perf: 1,
+        head: { bar: C.red, title: '수익률 하위 10% + 앱 접속 급증 — 불안 해소 통화 권장', sub: '이탈 전 마지막 관찰 단계일 수 있습니다. 포트폴리오 점검을 먼저 제안하세요.' },
+        metrics: [{ l: '1년 수익률', v: '−4.2%', s: '동일 상품군 하위 10%' }, { l: '앱 접속', v: '주 7회', s: '직전 4주 평균 주 1회' }, { l: '적립금', v: '1.1억', s: '테마 주식형 62%' }],
+        ev: ['앱 접속 주 1회 → 7회 급증 — 수익률 화면 위주', '테마 주식형 62% — 하락 구간 직격', '동일 패턴(접속 급증+저수익) 고객의 이탈률 2.4배'],
+        act: { name: '포트폴리오 점검 통화', opts: ['점검 리포트 LMS 발송', '주말 화상 상담 제안'] },
+        ment: '강도윤 고객님, 요즘 시장 때문에 계좌 자주 열어보고 계신 것 같아서요. 지금 구조에서 뭘 지키고 뭘 바꿀지, 제가 한 번 정리해서 말씀드릴게요.',
+        chips: ['제가 알아서 보고 있어요', '지금 팔면 손해 확정이잖아요'] },
+      { id: 'cjh', name: '최지현', product: 'IRP', deposit: '1.2억', profile: '안정추구형', bar: C.am, tags: [tag('만기 D-14', 'am')], why: '정기예금 1.2억 만기 — 기준금리 인하 전 재예치 필요', ml: '8.25 만기', mat: 1,
+        head: { bar: C.am, title: '정기예금 만기 D-14 — 금리 인하 전 재예치 상담 권장', sub: '인하 전 장기물 재예치 또는 채권형 일부 분산이 유리한 시점입니다.' },
+        metrics: [{ l: '만기 금액', v: '1.2억', s: '8.25 정기예금 만기' }, { l: '현재 금리', v: '3.1%', s: '재예치 예상 2.7~2.9%' }, { l: '1년 수익률', v: '+3.1%', s: '고객군 평균 수준' }],
+        ev: ['8.25 정기예금 1.2억 만기', '기준금리 인하 사이클 — 재예치 금리 하락 예상', '장기물 전환 또는 채권형 분산 시 조건 방어 가능'],
+        act: { name: '재예치 조건 안내 통화', opts: ['만기 안내 LMS 발송', '내점 예약 제안'] },
+        ment: '최지현 고객님, 이달 25일에 예금 만기가 있어서 미리 연락드렸어요. 금리가 내려가는 중이라 지금 조건으로 미리 잡아두시는 게 유리할 것 같아서요.',
+        chips: ['1년짜리로 그냥 연장해 주세요', '금리가 얼마나 떨어지는데요?'] },
+      { id: 'hsw', name: '홍성우', product: 'IRP', deposit: '2.6억', profile: '적극투자형', bar: C.gr, tags: [tag('추가납입 기회', 'gr')], why: '상여 입금 확인 — IRP 세액공제 한도 300만 원 여유', ml: '한도 여유', opp: 1,
+        head: { bar: C.gr, title: '상여 입금 + 세액공제 한도 여유 — 추가납입 제안 적기', sub: '연 900만 한도 중 600만 납입 완료. 300만 추가 시 최대 49.5만 원 환급 효과.' },
+        metrics: [{ l: '한도 여유', v: '300만', s: '연 900만 중 600만 납입' }, { l: '예상 절세', v: '49.5만', s: '16.5% 공제율 기준' }, { l: '상여 입금', v: '8.10', s: '급여계좌 입금 확인' }],
+        ev: ['8.10 상여 입금 확인 — 여유 자금 발생', '세액공제 한도 300만 미소진', '입금 후 72시간 내 제안 시 전환율 3배'],
+        act: { name: '추가납입 제안 통화', opts: ['절세 계산서 LMS 발송', '연말 일괄 납입 리마인드 등록'] },
+        ment: '홍성우 고객님, 올해 세액공제 한도가 300만 원 남아 있더라고요. 이번에 채우시면 연말정산 때 49만 원 정도 돌려받으실 수 있어서, 미리 말씀드리려고 연락드렸어요.',
+        chips: ['지금 여유가 될지 모르겠네요', '연말에 한꺼번에 하면 안 돼요?'] },
+      { id: 'ysr', name: '윤소라', product: 'IRP', deposit: '1.5억', profile: '위험중립형', bar: C.bl, tags: [tag('리밸런싱 제안', 'bl')], why: 'TDF 2038 보유 — 은퇴 목표 2045와 빈티지 불일치', ml: 'TDF 빈티지',
+        head: { bar: C.bl, title: 'TDF 빈티지 불일치 — 2045로 교체 제안 권장', sub: '은퇴 목표보다 7년 이른 빈티지로 주식 비중이 조기 축소되고 있습니다.' },
+        metrics: [{ l: '보유 TDF', v: '2038', s: '은퇴 목표 2045' }, { l: '주식 비중 격차', v: '−14%p', s: '목표 대비 조기 축소' }, { l: '1년 수익률', v: '+3.8%', s: '2045 빈티지 +5.2%' }],
+        ev: ['24.02 가입 당시 은퇴 예정 2038 — 이후 2045로 변경', '빈티지 불일치로 주식 비중 조기 축소 중', '동일 목표 고객 대비 기대 수익 격차 누적'],
+        act: { name: 'TDF 빈티지 교체 제안 통화', opts: ['빈티지 비교 자료 LMS 발송', '분기 리뷰 시 함께 안내'] },
+        ment: '윤소라 고객님, 계좌를 점검하다 보니 TDF가 실제 은퇴 계획보다 이른 시점으로 맞춰져 있더라고요. 목표 시점에 맞게 조정하면 좋을 것 같아 연락드렸어요.',
+        chips: ['바꾸면 수수료 들어요?', '지금 바꿔도 손해 없는 거죠?'] },
+      { id: 'jmj', name: '조민재', product: 'IRP', deposit: '0.9억', profile: '안정추구형', bar: C.red, tags: [tag('이탈위험 상승', 'red')], why: '만기 자금 3주째 대기성 자금으로 방치 — 무관심 이탈 패턴', ml: '미운용 대기', risk: 1,
+        head: { bar: C.red, title: '만기 자금 3주 방치 — 무관심 이탈 차단 통화 권장', sub: '대기 자금은 사실상 무수익 상태입니다. 간단한 재예치안부터 제시하세요.' },
+        metrics: [{ l: '대기 자금', v: '0.9억', s: '7.21 만기 후 미운용' }, { l: '방치 기간', v: '21일', s: '무수익 구간 지속' }, { l: '기회비용', v: '−16만', s: '예금 대비 3주 누적' }],
+        ev: ['7.21 만기 후 재예치 지시 없음', '만기 안내 LMS 2회 미개봉', '무관심 방치 고객의 12개월 내 이탈률 상승'],
+        act: { name: '재예치 간편 처리 통화', opts: ['재예치 링크 LMS 발송', '내점 시 일괄 처리 예약'] },
+        ment: '조민재 고객님, 지난달 만기된 금액이 아직 이자 없이 쉬고 있어서요. 전화로 5분이면 재예치 처리가 가능해서, 편하신 방법으로 도와드리려고 연락드렸어요.',
+        chips: ['시간이 없어서요', '그냥 알아서 해주시면 안 돼요?'] },
+      { id: 'sjh', name: '서정화', product: 'IRP', deposit: '1.4억', profile: '위험중립형', bar: C.red, tags: [tag('이탈위험 상승', 'red')], why: '완료 · 오전 9:20 통화 — 채권 혼합 리밸런싱 동의', ml: '9:20 통화', risk: 1, head: { bar: C.red, title: '처리 완료 — 채권 혼합 리밸런싱 동의', sub: '오전 9:20 통화. 주식형 30%를 채권 혼합으로 전환 접수했습니다.' },
+        metrics: [{ l: '처리 결과', v: '동의', s: '리밸런싱 접수 완료' }, { l: '통화 시간', v: '11분', s: '오전 9:20' }, { l: '전환 비중', v: '30%', s: '주식형 → 채권 혼합' }],
+        ev: ['오전 9:20 통화 완료', '주식형 30% 채권 혼합 전환 접수', '다음 리뷰: 9월 정기'], act: { name: '후속 없음 — 9월 정기 리뷰 예정', opts: ['9월 정기 리뷰 리마인드', '접수 확인 LMS 발송'] },
+        ment: '서정화 고객님, 오전에 접수해 드린 전환 건은 오늘 밤 반영되고요, 반영되면 문자로 한 번 더 확인드릴게요.',
+        chips: [] },
+      { id: 'lth', name: '임태호', product: 'IRP', deposit: '3.2억', profile: '적극투자형', bar: C.red, tags: [tag('이탈위험 상승', 'red')], why: '완료 · 시황 리포트 발송 + 금요 통화 예약', ml: '금요 통화 예약', risk: 1, perf: 1, head: { bar: C.red, title: '처리 완료 — 리포트 발송 + 금요 통화 예약', sub: '오전 8:50 LMS 발송. 8.14(금) 10:30 통화 예약됨.' },
+        metrics: [{ l: '처리 결과', v: '예약', s: '8.14 금 10:30' }, { l: 'LMS 발송', v: '8:50', s: '하락장 대응 리포트' }, { l: '1년 수익률', v: '−5.1%', s: '실적배당형 91%' }],
+        ev: ['오전 8:50 리포트 LMS 발송', '8.14 금 10:30 통화 예약', '통화 전 개봉 여부 확인 권장'], act: { name: '금요 통화 준비 — 개봉 여부 확인', opts: ['목요일 리마인드 LMS', '통화 스크립트 사전 생성'] },
+        ment: '임태호 고객님, 보내드린 리포트 보셨을까요? 금요일 통화 전에 궁금한 점 있으시면 미리 편하게 남겨주세요.',
+        chips: [] },
+      { id: 'hkg', name: '한가을', product: 'IRP', deposit: '0.5억', profile: '안정추구형', bar: C.gr, tags: [tag('추가납입 기회', 'gr')], why: '완료 · 추가납입 200만 원 접수', ml: '200만 접수', opp: 1, head: { bar: C.gr, title: '처리 완료 — 추가납입 200만 원 접수', sub: '오전 9:05 통화. 세액공제 한도 내 200만 원 납입 접수했습니다.' },
+        metrics: [{ l: '처리 결과', v: '접수', s: '추가납입 200만' }, { l: '예상 절세', v: '33만', s: '16.5% 공제율' }, { l: '한도 잔여', v: '100만', s: '연말 전 추가 여지' }],
+        ev: ['오전 9:05 통화 완료', '추가납입 200만 접수', '잔여 한도 100만 — 연말 리마인드 등록'], act: { name: '후속 없음 — 연말 리마인드 등록됨', opts: ['11월 잔여 한도 리마인드', '접수 확인 LMS'] },
+        ment: '한가을 고객님, 오전에 접수한 추가납입은 내일 반영돼요. 연말 전에 남은 한도 100만 원도 시기 봐서 다시 안내드릴게요.',
+        chips: [] },
+      { id: 'msy', name: '문세영', product: 'IRP', deposit: '1.6억', profile: '위험중립형', bar: C.bl, tags: [tag('성과저조', 'bl')], why: '보유 펀드가 이번 분기 환매추천 목록에 신규 편입', ml: '환매추천', imp: 1, perf: 1, brief: 1,
+        head: { bar: C.bl, title: '보유 펀드 환매추천 편입 — 대체 펀드 교체 제안 권장', sub: '3개 분기 연속 유형 평균을 밑돌아 상품위원회 환매추천 목록에 편입됐습니다. 동일 유형 대체 펀드로 교체를 제안하세요.' },
+        metrics: [{ l: '해당 펀드 비중', v: '44%', s: '적립금 7,040만 원' }, { l: '1년 수익률', v: '−3.4%', s: '동일 유형 평균 −0.9%' }, { l: '편입 시점', v: '8.01', s: '26년 3분기 환매추천' }],
+        ev: ['8.01 상품위원회 환매추천 목록 신규 편입', '3개 분기 연속 동일 유형 평균 하회', '고객은 편입 사실을 아직 인지하지 못한 상태'],
+        act: { name: '환매추천 안내 + 대체 펀드 교체 제안', opts: ['교체 비교표 LMS 발송 후 반응 대기', '지점 방문 상담 예약 제안'] },
+        ment: '문세영 고객님, 보유하신 펀드가 이번 분기 환매추천 목록에 새로 들어가서 미리 안내드리려고 연락드렸어요. 같은 유형에서 성과가 더 나은 대안이 있어 비교해 보시면 좋겠습니다.',
+        chips: ['그냥 계속 두면 안 되나요?', '지금 팔면 손해 확정 아닌가요?'] },
+      { id: 'bjh', name: '배정훈', product: 'IRP', deposit: '2.2억', profile: '안정추구형', bar: C.bl, tags: [tag('원리금보장 100%', 'bl')], why: '적립금 전액 정기예금 운용 — 저위험 이상 분산 여지', ml: '원리금보장', imp: 1,
+        head: { bar: C.bl, title: '적립금 전액 원리금보장 — 저위험 분산 제안 권장', sub: '5년째 정기예금만 운용 중입니다. 원금 중심 구조를 유지하면서 10~20%만 채권형으로 나누는 안을 제안하세요.' },
+        metrics: [{ l: '원리금보장 비중', v: '100%', s: '고객군 평균 58%' }, { l: '1년 수익률', v: '+3.3%', s: '고객군 평균 대비 −0.4%p' }, { l: '운용 유지 기간', v: '5년', s: '가입 이후 상품 변경 없음' }],
+        ev: ['가입 후 5년간 정기예금 단일 운용', '금리 하락기 진입 시 재예치 조건 악화 예상', '동일 성향 고객의 42%가 채권형 10~20% 병행'],
+        act: { name: '저위험 분산 제안 통화', opts: ['분산 예시 리포트 LMS 발송', '만기 시점 재상담 예약'] },
+        ment: '배정훈 고객님, 지금처럼 원금 지키는 운용은 그대로 두시고, 아주 일부만 채권형으로 나눠두는 방법이 있어 안내드리려고 연락드렸어요.',
+        chips: ['원금 손실 나는 거 아니에요?', '지금도 이자 잘 나오는데요'] },
+      { id: 'oks', name: '오경숙', product: 'IRP', deposit: '3.4억', profile: '안정형', bar: C.gr, tags: [tag('연금수령기', 'gr')], why: '만 55세 D-30 — 연금개시·수령방식 상담 시점', ml: '만 55세', opp: 1,
+        head: { bar: C.gr, title: '연금 개시 가능 D-30 — 수령방식 설계 상담 적기', sub: '일시금 대신 연금으로 수령하면 퇴직소득세 30~40%가 감면됩니다. 개시 전에 수령 기간 설계가 필요합니다.' },
+        metrics: [{ l: '연금 개시', v: 'D-30', s: '9.10 만 55세 도달' }, { l: '적립금', v: '3.4억', s: 'IRP 단일 계좌' }, { l: '예상 절세', v: '30~40%', s: '연금 수령 시 퇴직소득세 감면' }],
+        ev: ['9.10 만 55세 도달 — 연금 개시 요건 충족', '10년 이상 수령 설계 시 감면율 확대 구간 진입', '개시 후에는 수령 기간 변경 폭이 제한됨'],
+        act: { name: '연금 개시 설계 상담 예약', opts: ['수령방식 비교표 LMS 발송', '가족 동반 내점 상담 제안'] },
+        ment: '오경숙 고객님, 다음 달이면 연금으로 받으실 수 있는 나이가 되셔서 미리 안내드리려고 연락드렸어요. 어떻게 나눠 받느냐에 따라 세금이 달라져서 한 번 같이 정리해 보시면 좋겠습니다.',
+        chips: ['한 번에 받는 게 편하지 않나요?', '연금으로 받으면 얼마나 차이 나요?'] }
+    ];
+    const OVR = {
+      ksy: { opp: 1 }, lsm: { mat: 1 }, pjh: { opp: 1 },
+      pey: { bar: C.red, tags: [tag('성과저조', 'red'), tag('앱 조회 급증', 'red')], why: '보유 펀드 환매추천 편입 + 앱 수익률 화면 조회 급증', ml: '1년 수익률', risk: 1, perf: 1, brief: 1 },
+      khj: { bar: C.am, hbar: C.am, tags: [tag('만기 D-7', 'am'), tag('디폴트옵션 미등록', 'am')], why: '8.17 만기 3.1억 — 지시 없으면 현금성자산으로 대기', ml: '8.17 만기', mat: 1 },
+      lsc: { bar: C.red, tags: [tag('타행 개설', 'red')], why: '타행 IRP 신규 개설 감지 — 적립금 이전 검토 가능성', ml: '적립금', risk: 1 },
+      kdy: { bar: C.red, tags: [tag('성과저조', 'red'), tag('앱 조회 급증', 'red')], why: '테마 주식형 62% + 앱 접속 주 1회→7회 급증', ml: '1년 수익률', risk: 1, perf: 1, brief: 1 },
+      jmj: { bar: C.am, hbar: C.am, tags: [tag('현금성자산 과다', 'am')], why: '미운용 현금성자산 9,000만 원 — 3주째 무수익', ml: '미운용 대기', mat: 1 },
+      cjh: { bar: C.am, hbar: C.am, tags: [tag('만기 D-14', 'am')], why: '8.25 만기 1.2억 — 금통위 전 예치조건 확인 필요', ml: '8.25 만기', mat: 1 },
+      ysr: { bar: C.bl, hbar: C.bl, tags: [tag('성향 불일치', 'bl')], why: '공격투자형인데 디폴트옵션 초저위험으로 사전지정', ml: '사전지정', imp: 1 },
+      msy: { bar: C.bl, hbar: C.bl, tags: [tag('성과저조', 'bl')], why: '보유 펀드가 이번 분기 환매추천 목록에 신규 편입', ml: '환매추천', imp: 1, perf: 1, brief: 1 },
+      jmr: { bar: C.am, hbar: C.am, tags: [tag('만기 D-22', 'am'), tag('디폴트옵션 미등록', 'am')], why: '9.02 만기 예정 + 디폴트옵션 미등록 상태', ml: '디폴트옵션', mat: 1 },
+      bjh: { bar: C.bl, hbar: C.bl, tags: [tag('원리금보장 100%', 'bl')], why: '적립금 전액 정기예금 운용 — 저위험 이상 분산 여지', ml: '원리금보장', imp: 1 },
+      hsw: { bar: C.gr, hbar: C.gr, tags: [tag('추가납입 여력', 'gr')], why: '세액공제 한도 300만 원 미소진 — 급여계좌 상여 입금 확인', ml: '한도 여유', opp: 1 },
+      oks: { bar: C.gr, hbar: C.gr, tags: [tag('연금수령기', 'gr')], why: '만 55세 D-30 — 연금개시·수령방식 상담 시점', ml: '만 55세', opp: 1 },
+      lth: { bar: C.red, hbar: C.red, tags: [tag('성과저조', 'red')], why: '완료 · 8.14(금) 10:30 재통화 예약', ml: '금요 통화', risk: 1, perf: 1 },
+      sjh: { bar: C.bl, hbar: C.bl, tags: [tag('성과저조', 'bl')], why: '완료 · 채권 혼합 리밸런싱 접수', ml: '30% 전환', imp: 1 },
+      hkg: { bar: C.gr, hbar: C.gr, tags: [tag('추가납입 여력', 'gr')], why: '완료 · 추가납입 200만 원 접수', ml: '200만 접수', opp: 1 }
+    };
+    this._d.forEach(c => {
+      const o = OVR[c.id] || {};
+      Object.assign(c, { product: 'IRP', risk: 0, mat: 0, imp: 0, opp: 0, perf: 0, brief: 0 }, o);
+      if (o.hbar) c.head.bar = o.hbar;
+    });
+    const EXT = {
+      khj: { pa: '26.2', stale: false,
+        ai: '8.17 만기 3.1억 원이 지시 없이는 현금성자산으로 대기됩니다. 디폴트옵션도 미등록 상태라 재예치 지시와 함께 등록까지 마무리하는 게 좋습니다. 상담에서는 채권형 15% 분산까지 이어가세요.',
+        m4: { l: '디폴트옵션', v: '미등록', s: '만기 전 등록 권장' },
+        hold: [{ n: 'KB 정기예금 1년', t: '원리금보장', a: '3.1억', w: '72%', r: '+3.4%' }, { n: 'KB 온국민TDF 2035', t: '실적배당', a: '0.8억', w: '19%', r: '+4.1%' }, { n: '현금성자산', t: '대기', a: '0.4억', w: '9%', r: '+0.2%' }],
+        warn: '디폴트옵션 미등록 — 재예치 지시와 함께 등록 처리 필요',
+        opts: ['만기 안내 후 내주 재통화 예약', '디폴트옵션(지켜드림) 등록만 우선 처리'], tip: { match: '만기 재예치 + 분산 제안 고객 대응', title: '"예금은 그대로"를 먼저 말하면 분산이 열립니다', src: '서초남지점 김민석 님' } },
+      pey: { pa: '26.5', stale: false,
+        ai: '보유 펀드가 8.1 환매추천 목록에 편입됐고, 앱 수익률 화면 조회가 급증해 이탈 전 관찰 단계로 보입니다. 손실 원인을 먼저 짚고 대체 펀드 교체를 제안하세요. 과거 본인 선택을 지적하는 표현은 피해야 합니다.',
+        m4: { l: '앱 조회', v: '주 9회', s: '수익률 화면 위주' },
+        hold: [{ n: 'KB 코리아액티브 주식형', t: '실적배당', a: '0.79억', w: '44%', r: '−6.8%', redeem: 1 }, { n: 'KB 성장테마 주식형', t: '실적배당', a: '0.77억', w: '43%', r: '−3.9%' }, { n: '현금성자산', t: '대기', a: '0.24억', w: '13%', r: '+0.2%' }],
+        warn: '수익률 문의 2회 누적 — 손실 축소 표현 금지, 원인 브리핑 먼저',
+        opts: ['교체 비교표 전달 후 반응 대기', '지점 방문 상담 예약 제안'],
+        tip: { match: '성과저조 + 수익률 문의 고객 대응', title: '수익률 항의 전화, 첫 30초는 숫자 먼저', src: '분당중앙지점 박서연 님' } },
+      lsc: { pa: '25.9', stale: true,
+        ai: '타행 IRP 개설이 감지됐지만 수익률은 평균 이상이라 관계 요인일 가능성이 큽니다. 90일 접점 공백이 원인일 수 있으니 추궁 없이 관리 접점부터 복원하세요. 성향분석도 11개월 경과라 재분석을 함께 안내하면 자연스럽습니다.',
+        m4: { l: '성향분석', v: '11개월 경과', s: '25.9 분석 — 재분석 권장' },
+        hold: [{ n: 'KB 온국민TDF 2040', t: '실적배당', a: '1.3억', w: '62%', r: '+4.6%' }, { n: 'KB 국공채 채권형', t: '실적배당', a: '0.6억', w: '29%', r: '+3.2%' }, { n: '현금성자산', t: '대기', a: '0.2억', w: '9%', r: '+0.2%' }],
+        opts: ['수수료 비교 리포트 지참 내점 제안', '분기 정기 리뷰 일정 등록'],
+        tip: { match: '증권사·타행 이전 고민 고객 대응', title: '"옮기지 마세요"라고 하면 옮깁니다', src: '여의도지점 정태윤 님' } },
+      jmr: { pa: '26.1', stale: false,
+        ai: '9.02 만기까지 3주 남았고 디폴트옵션이 미등록 상태입니다. 용어에 거부감이 있는 고객이라 "자동으로 굴러가는 예금"처럼 쉬운 말로 지켜드림 등록부터 마무리하세요.',
+        m4: { l: '만기', v: 'D-22', s: '9.02 정기예금 0.43억' },
+        hold: [{ n: 'KB 정기예금 1년', t: '원리금보장', a: '0.43억', w: '62%', r: '+3.1%' }, { n: '현금성자산', t: '대기', a: '0.27억', w: '38%', r: '+0.2%' }],
+        warn: '제도 용어 거부감 — "디폴트옵션" 대신 생활 언어로 설명',
+        opts: ['내점 시 등록 일괄 처리 예약', '가족 동반 상담 제안'], tip: { match: '용어 어려워하는 시니어 고객 대응', title: '설명은 한 문장, 확인은 질문으로', src: '노원지점 한지민 님' } },
+      kdy: { pa: '26.6', stale: false,
+        ai: '테마 주식형 62%가 하락 구간을 직격했고 앱 접속이 주 7회로 급증했습니다. 본인 판단으로 늘린 포지션이라 지적 대신 "전략 업그레이드" 프레임으로 혼합형 40% 전환을 제안하세요.',
+        m4: { l: '평가손익', v: '−520만', s: '최근 4주 누적' },
+        hold: [{ n: 'KB 2차전지 테마 주식형', t: '실적배당', a: '0.68억', w: '62%', r: '−4.2%', redeem: 1 }, { n: 'KB 배당성장 혼합', t: '실적배당', a: '0.31억', w: '28%', r: '+2.4%' }, { n: '현금성자산', t: '대기', a: '0.11억', w: '10%', r: '+0.2%' }],
+        warn: '본인 주도 결정 이력 — 판단 지적 표현 금지',
+        opts: ['포트폴리오 점검 리포트 지참 상담', '주말 화상 상담 제안'],
+        tip: { match: '테마 집중 + 손실 방어적 고객 대응', title: '"반등하면 그때 팔게요"에는 기준선을 주세요', src: '판교지점 이준호 님', warn: 1 } },
+      jmj: { pa: '25.8', stale: true,
+        ai: '만기 자금 9,000만 원이 3주째 무수익으로 대기 중입니다. 금융 업무를 번거로워하는 고객이라 "전화 5분이면 끝"이라는 간편함을 앞세워 재예치를 처리하세요.',
+        m4: { l: '성향분석', v: '12개월 경과', s: '25.8 분석 — 재분석 권장' },
+        hold: [{ n: '현금성자산', t: '대기', a: '0.9억', w: '100%', r: '+0.2%' }],
+        opts: ['내점 시 일괄 처리 예약', '지켜드림 등록으로 재발 방지'], tip: { match: '무관심·방치형 고객 대응', title: '선택지는 딱 하나만 제시하세요', src: '수원영통지점 오세라 님' } },
+      cjh: { pa: '26.3', stale: false,
+        ai: '8.25 만기 1.2억, 금통위(8.27) 직전이라 지금 조건으로 잡아두는 게 유리합니다. 협조적인 고객이니 "시한"을 명확히 전달하면 빠르게 결정합니다.',
+        m4: { l: '금통위', v: 'D-16', s: '8.27 — 만기 직후 인하 가능성' },
+        hold: [{ n: 'KB 정기예금 1년', t: '원리금보장', a: '1.2억', w: '92%', r: '+3.1%' }, { n: '현금성자산', t: '대기', a: '0.1억', w: '8%', r: '+0.2%' }],
+        opts: ['1년물 유지 재예치 (현행 조건)', '내점 예약 후 일괄 처리'],
+        tip: { match: '만기 재예치 협조 고객 대응', title: '우대 쿠폰은 마지막에 꺼내세요', src: '대치지점 문가영 님' } },
+      ysr: { pa: '26.7', stale: false, profile: '공격투자형',
+        head: { bar: C.bl, title: '투자성향·디폴트옵션 불일치 — 재지정 제안 권장', sub: '26.7 재분석에서 공격투자형으로 상향됐지만 디폴트옵션은 초저위험으로 남아 있습니다. 성향에 맞는 재지정을 안내하세요.' },
+        ai: '최근 성향분석에서 공격투자형으로 상향됐는데 디폴트옵션은 초저위험(지켜드림)으로 사전지정돼 있습니다. 만기 시 자동 운용이 성향과 어궸나므로 모두드림 재지정을 제안하세요.',
+        metrics: [{ l: '투자성향', v: '공격투자형', s: '26.7 재분석 상향' }, { l: '사전지정', v: '초저위험', s: '지켜드림 · 24.9 지정' }, { l: '1년 수익률', v: '+3.8%', s: '성향 기대 대비 −1.4%p' }, { l: '적립금', v: '1.5억', s: 'IRP 단일 계좌' }],
+        hold: [{ n: 'KB 온국민TDF 2045', t: '실적배당', a: '1.0억', w: '67%', r: '+5.2%' }, { n: 'KB 지켜드림(디폴트)', t: '원리금보장', a: '0.4억', w: '26%', r: '+3.3%' }, { n: '현금성자산', t: '대기', a: '0.1억', w: '7%', r: '+0.2%' }],
+        act: { name: '디폴트옵션 재지정 상담', opts: ['뿔려드림(중위험)으로 단계 상향', '분기 리뷰에서 재논의'] },
+        ment: '윤소라 고객님, 지난달 성향분석에서 공격투자형으로 바뀌셨는데, 자동 운용 설정은 예전 초저위험으로 남아 있더라고요. 성향에 맞게 맞춰드리려고 연락드렸어요.',
+        chips: ['고위험이면 위험한 거 아니에요?', '그냥 두면 어떻게 되는데요?'],
+        tip: { match: '성향 상향 고객 대응', title: '상향 고객에게는 "축하"가 먼저', src: '마포지점 장윤호 님' } },
+      msy: { pa: '26.4', stale: false,
+        ai: '보유 펀드가 8.1 환매추천 목록에 신규 편입됐고 고객은 아직 모르는 상태입니다. 지난 리뷰에서 유지를 선택했던 이력이 있으니 "은행 기준이 바뀌어 먼저 알려드린다"는 프레임으로 교체를 제안하세요.',
+        m4: { l: '대체 후보 수익률', v: '+2.1%', s: 'KB 스타 국내주식 1년' },
+        hold: [{ n: 'KB 코어밸류 주식형', t: '실적배당', a: '0.70억', w: '44%', r: '−3.4%', redeem: 1 }, { n: 'KB 국공채 채권형', t: '실적배당', a: '0.74억', w: '46%', r: '+3.2%' }, { n: '현금성자산', t: '대기', a: '0.16억', w: '10%', r: '+0.2%' }],
+        warn: '25.11 유지 선택 이력 — 과거 판단 지적 금지',
+        opts: ['교체 비교표 전달 후 반응 대기', '지점 방문 상담 예약 제안'],
+        tip: { match: '환매추천 편입 안내 대응', title: '편입 사실은 통화 첫 문장에서', src: '을지로지점 김하늘 님' } },
+      bjh: { pa: '25.9', stale: true,
+        ai: '5년째 정기예금 단일 운용으로 실질 수익이 정체돼 있습니다. 손실 언급에 민감하니 "원금 85%는 그대로"를 먼저 고정하고 금액 단위로 15% 분산을 제안하세요.',
+        m4: { l: '성향분석', v: '11개월 경과', s: '25.9 분석 — 재분석 권장' },
+        hold: [{ n: 'KB 정기예금 1년', t: '원리금보장', a: '2.2억', w: '100%', r: '+3.3%' }],
+        opts: ['만기 시점 재상담 예약', '알파드림(저위험) 구조 안내부터'], tip: { match: '원리금보장 장기 고객 대응', title: '5년 무변경 고객은 "그대로"가 먼저', src: '일산서지점 최복동 님' } },
+      hsw: { pa: '26.7', stale: false,
+        ai: '8.10 상여 입금이 확인됐고 세액공제 한도 300만 원이 남아 있습니다. 입금 후 72시간이 전환율이 가장 높은 구간이니 오늘 절세 금액을 구체적 숫자로 제시하세요.',
+        m4: { l: '납입 실적', v: '600만', s: '연 900만 한도 중' },
+        hold: [{ n: 'KB 온국민TDF 2040', t: '실적배당', a: '1.7억', w: '65%', r: '+5.4%' }, { n: 'KB 배당성장 혼합', t: '실적배당', a: '0.7억', w: '27%', r: '+3.8%' }, { n: '현금성자산', t: '대기', a: '0.2억', w: '8%', r: '+0.2%' }],
+        opts: ['연말 일괄 납입 리마인드 등록', '월 분할 자동이체 설정 제안'],
+        tip: { match: '상여 입금 직후 제안', title: '상여 얘기는 꺼내지 마세요', src: '강남스타지점 유해진 님' } },
+      oks: { pa: '26.6', stale: false,
+        ai: '9.10 만 55세 도달로 연금 개시 요건을 채웁니다. 일시금 선호 성향이니 제도 설명보다 세후 수령액 차이 2,600만 원을 금액으로 먼저 보여주세요.',
+        m4: { l: '세후 차액', v: '+2,600만', s: '10년 분할 vs 일시금' },
+        hold: [{ n: 'KB 정기예금 1년', t: '원리금보장', a: '2.4억', w: '71%', r: '+3.2%' }, { n: 'KB 국공채 채권형', t: '실적배당', a: '0.8억', w: '23%', r: '+3.1%' }, { n: '현금성자산', t: '대기', a: '0.2억', w: '6%', r: '+0.2%' }],
+        opts: ['수령방식 비교표 지참 내점 상담', '가족 동반 상담 제안'],
+        tip: { match: '연금 개시 상담', title: '수령 기간은 생활비로 계산해 주세요', src: '부산서면지점 임철수 님' } },
+      lth: { pa: '26.5', stale: false,
+        ai: '오전 8:50 하락장 대응 리포트를 발송했고 8.14(금) 10:30 통화가 예약돼 있습니다. 통화 전 개봉 여부를 확인하고 스크립트를 준비하세요.',
+        metrics: [{ l: '처리 결과', v: '예약', s: '8.14 금 10:30' }, { l: '리포트 발송', v: '8:50', s: '하락장 대응 리포트' }, { l: '1년 수익률', v: '−5.1%', s: '실적배당형 91%' }, { l: '다음 접점', v: '8.14(금)', s: '10:30 통화 예약' }],
+        hold: [{ n: 'KB 글로벌테크 주식형', t: '실적배당', a: '2.9억', w: '91%', r: '−5.1%' }, { n: '현금성자산', t: '대기', a: '0.3억', w: '9%', r: '+0.2%' }],
+        opts: ['목요일 리마인드 발송', '통화 스크립트 사전 생성'] },
+      sjh: { pa: '26.7', stale: false,
+        ai: '오전 9:20 통화에서 주식형 30% → 채권 혼합 전환을 접수했습니다. 오늘 밤 반영되며, 반영 확인 문자만 남았습니다.',
+        m4: { l: '반영 예정', v: '오늘 밤', s: '접수 확인 문자 예정' },
+        hold: [{ n: 'KB 코리아 주식형', t: '실적배당', a: '0.62억', w: '44%', r: '−2.1%' }, { n: 'KB 채권혼합 (전환 접수)', t: '실적배당', a: '0.42억', w: '30%', r: '+2.8%' }, { n: 'KB 국공채 채권형', t: '실적배당', a: '0.36억', w: '26%', r: '+3.0%' }],
+        opts: ['9월 정기 리뷰 리마인드', '접수 확인 문자 발송'] },
+      hkg: { pa: '26.4', stale: false,
+        ai: '오전 9:05 추가납입 200만 원을 접수했습니다. 잔여 한도 100만 원은 연말 리마인드에 등록돼 있습니다.',
+        m4: { l: '한도 잔여', v: '100만', s: '연말 리마인드 등록' },
+        hold: [{ n: 'KB 정기예금 1년', t: '원리금보장', a: '0.45억', w: '90%', r: '+3.2%' }, { n: '현금성자산', t: '대기', a: '0.05억', w: '10%', r: '+0.2%' }],
+        opts: ['11월 잔여 한도 리마인드', '접수 확인 문자 발송'] }
+    };
+    this._d.forEach(c => {
+      const x = EXT[c.id] || {};
+      Object.assign(c, x);
+      if (x.m4) c.metrics = c.metrics.slice(0, 3).concat([x.m4]);
+      if (x.opts && !x.act) c.act = Object.assign({}, c.act, { opts: x.opts });
+    });
+    const EXT2 = {
+      pey: { pa: '25.9', stale: true, deposit: '1.8억', profile: '적극투자형',
+        head: { bar: C.red, title: '보유 펀드 환매추천 편입 · 수익률 조회 증가' },
+        ai: '손실 구간을 조정 없이 지나온 계좌인데, 최근 수익률 조회가 늘어난 건 고객이 이미 상황을 인지하고 있다는 신호입니다. 통화에서 손실을 새로 알려드리기보다 하락 배경을 먼저 정리해드리는 쪽이 자연스럽습니다. 다만 본인이 고른 펀드일 수 있으니 상품 지적으로 들리지 않게 유의하세요.',
+        metrics: [{ l: '1년 수익률', v: '−6.8%', s: '성향 평균 −2.9%' }, { l: '수익률 조회', v: '6회', s: '최근 1개월 · 스타뱅킹' }, { l: '환매추천펀드 비중', v: '87%', s: '보유 펀드 기준' }, { l: '마지막 운용지시', v: '11개월 전', s: '25.9월' }],
+        hold: [{ n: '이스트스프링글로벌이머징증권자투자신탁제2호(주식-재간접)', t: '실적배당', a: '0.94억', w: '52%', r: '−9.2%', redeem: 1 }, { n: '이스트스프링퇴직연금업종일등증권자투자신탁(주식)', t: '실적배당', a: '0.63억', w: '35%', r: '−4.1%', redeem: 1 }, { n: 'OK저축은행 정기예금 1년', t: '원리금보장', a: '0.18억', w: '10%', r: '+4.2%' }, { n: '현금성자산', t: '대기', a: '0.05억', w: '3%', r: '+0.2%' }],
+        act: { name: '하락 배경 브리핑 + 교체 상담 통화', opts: ['부재 시 오후 재통화', '8.30 세미나(배당·연금수령) 안내로 가벼운 접점'] },
+        warn: '교체 전 보유 펀드 환매 기준가 적용일 확인 · 성향분석 유효기간 확인 — 통화 시 갱신 함께 진행',
+        ment: '박은영 고객님, 요즘 시장이 많이 흔들려서 계좌 궁금하실 것 같아 먼저 연락드렸어요. 이번 하락이 왜 왔는지랑, 고객님 계좌는 지금 어떤 상태인지 정리해서 말씀드리려고요. 3분이면 되는데 잠깝 괜찮으세요?',
+        tip: { match: '손실 고객 재신뢰 화법', title: '《실전상담백서》 — 공감 먼저, 달라진 방식으로 재시도', src: '잠원동지점 이채희 님' } },
+      lsc: { pa: '26.1', stale: false,
+        head: { bar: C.red, title: '타행 IRP 신규 개설 감지 (D+3)' },
+        ai: '수익률이 성향 평균을 웃돌고 있어, 성과 불만보다는 조건 비교 차원의 개설일 가능성이 있습니다. 개설 사실을 직접 언급하면 조회당한 인상을 줄 수 있으니, 정기 점검을 명분으로 접점을 만드는 편이 안전합니다. 이전을 단정하지 말고 관리·혜택 안내로 시작하세요.',
+        metrics: [{ l: '적립금', v: '2.1억', s: 'IRP 단일 계좌' }, { l: '타행 개설', v: 'D+3', s: '8.08 감지 · 직원 확인용' }, { l: '1년 수익률', v: '+4.1%', s: '성향 평균 +3.5%' }, { l: '마지막 운용지시', v: '5개월 전', s: '26.3월' }],
+        hold: [{ n: '혼합형 펀드', t: '실적배당', a: '1.16억', w: '55%', r: '+5.2%' }, { n: '정기예금 1년', t: '원리금보장', a: '0.84억', w: '40%', r: '+3.3%' }, { n: '현금성자산', t: '대기', a: '0.10억', w: '5%', r: '+0.2%' }],
+        act: { name: '정기 점검 명분 접점 통화', opts: ['부재 시 재통화 예약', '포트폴리오 점검 리포트 지참 내점 제안'] },
+        warn: null,
+        ment: '이상철 고객님, 계좌 정기 점검 겸 연락드렸어요. 요즘 수수료 우대랑 관리 서비스 쪽에 바뀜 게 있어서, 고객님께 해당되는 것만 골라서 안내드리려고요. 3분이면 됩니다.',
+        tip: { match: '증권사 이전 고민 고객 대응', title: '《퇴직연금 뻗기지 않을꺼예요》 — 오해 교정 → 관리 강점 순', src: '학동지점 임혜림 님', warn: 1 } },
+      kdy: { pa: '25.11', stale: false,
+        head: { bar: C.red, title: '테마 주식형 편중 · 수익률 조회 급증' },
+        ai: '위험중립형 성향 대비 테마 주식형 비중이 높은 상태에서 하락을 맞았고, 최근 조회가 급증해 손실 인지가 뚜렷합니다. 지금은 상품 권유보다 계좌 점검 제안이 받아들여지기 쉬운 시점입니다. 편중을 지적하기보다 "구조를 같이 보자"는 접근이 안전합니다.',
+        metrics: [{ l: '1년 수익률', v: '−4.2%', s: '성향 평균 +3.5%' }, { l: '수익률 조회', v: '12회', s: '최근 1개월 · 스타뱅킹' }, { l: '테마 주식형 비중', v: '62%', s: '위험중립형 기준 높음' }, { l: '마지막 운용지시', v: '8개월 전', s: '25.12월' }],
+        hold: [{ n: '테마 주식형 펀드', t: '실적배당', a: '0.68억', w: '62%', r: '−7.1%' }, { n: 'KB 온국민 TDF 2040', t: '실적배당', a: '0.23억', w: '21%', r: '+2.8%' }, { n: 'KB저축은행 정기예금 1년', t: '원리금보장', a: '0.15억', w: '14%', r: '+4.4%' }, { n: '현금성자산', t: '대기', a: '0.03억', w: '3%', r: '+0.2%' }],
+        act: { name: '계좌 점검 + 분산 제안 통화', opts: ['부재 시 재통화', '8.18 IRP·TDF 세미나 안내'] },
+        warn: '교체 전 환매 기준가 적용일 확인',
+        ment: '강도윤 고객님, 요즘 시장이 어수선해서 계좌 점검차 연락드렸어요. 지금 구조에서 뭘 지키고 뭘 바꿀지, 제가 한 번 정리해서 말씀드릴게요.',
+        tip: { match: '손실 고객 재신뢰 화법', title: '《실전상담백서》 — 공감 먼저, 달라진 방식으로 재시도', src: '잠원동지점 이채희 님' } },
+      lth: { pa: '26.3', stale: false,
+        head: { bar: C.red, title: '처리 완료 · 8.14(금) 10:30 재통화 예약' },
+        ai: '오전 통화에서 하락 배경 안내를 마쳤고, 교체 여부는 금요 통화에서 결정하기로 했습니다. 통화 전 보유 펀드의 환매추천 상태와 이번 주 수익률 변화를 확인해 두면 좋습니다.',
+        metrics: [{ l: '처리 상태', v: '재통화 예약', s: '8.14 금 10:30' }, { l: '1년 수익률', v: '−5.1%', s: '—' }, { l: '환매추천 비중', v: '91%', s: '—' }, { l: '마지막 운용지시', v: '14개월 전', s: '—' }],
+        hold: [{ n: '해외주식형 펀드', t: '실적배당', a: '2.91억', w: '91%', r: '−5.8%', redeem: 1 }, { n: '현금성자산', t: '대기', a: '0.29억', w: '9%', r: '+0.2%' }],
+        act: { name: '금요(8.14) 통화 준비', opts: ['목요일 사전 확인 연락', '통화 시 이벤트(투자상품 보유 대상) 함께 안내'] },
+        warn: null,
+        ment: '임태호 고객님, 금요일 10시 반 통화 전에 궁금하신 점 있으시면 편하게 먼저 연락 주세요.',
+        tip: null },
+      khj: { pa: '26.4', stale: false,
+        head: { bar: C.am, title: '정기예금 만기 D-7 · 디폴트옵션 미등록' },
+        ai: '정기예금 자동 재예치가 폐지돼 있어, 8.17 만기 3.1억 원은 지시가 없으면 현금성자산으로 대기됩니다. 미등록 상태라 만기 후 받아줄 장치도 없는 계좌입니다. 금리가 석 달째 오르고 있어 조건은 유리한 편이니, 만기 예약변경과 등록 안내를 한 통화로 묶는 게 효율적입니다.',
+        metrics: [{ l: '만기 금액', v: '3.1억', s: '8.17 · D-7' }, { l: '디폴트옵션', v: '미등록', s: '사전지정 필요' }, { l: '현재 적용금리', v: '3.30%', s: '1년제 · 8월 · 3개월 연속↑' }, { l: '마지막 운용지시', v: '1년 2개월 전', s: '직전 만기 시' }],
+        hold: [{ n: '정기예금 1년', t: '원리금보장', a: '3.10억', w: '72%', r: '+3.2%' }, { n: '채권형 펀드', t: '실적배당', a: '0.77억', w: '18%', r: '+1.9%' }, { n: '현금성자산', t: '대기', a: '0.43억', w: '10%', r: '+0.2%' }],
+        act: { name: '만기 예약변경 + 디폴트옵션 등록 통화', opts: ['부재 시 만기 전(~8.16) 재통화', '내점 일괄 처리 예약'] },
+        warn: '이율보증형 제안 시 중도해지 조건 먼저 확인',
+        ment: '김형준 고객님, 17일에 정기예금 만기가 돌아와서 미리 연락드렸어요. 요즘 예금 금리가 석 달째 오르고 있어서 조건이 나쁘지 않거든요. 만기 자금 어떻게 두실지, 미리 정해두시면 만기 날 신경 안 쓰셔도 돼서요.',
+        tip: { match: '만기 자금 고금리 재예치', title: '《WM고객수익률 관리 득점방법》', src: '도곡스타PB센터 엄주원 님' } },
+      cjh: { pa: '26.6', stale: false,
+        head: { bar: C.am, title: '정기예금 만기 D-14 · 금통위 직전' },
+        ai: '8.25 만기와 8.27 금통위가 이틀 간격이라, 결과에 따라 재예치 조건이 달라질 수 있는 일정입니다. 금리가 3개월 연속 오른 상태라 지금 조건도 나쁘지 않습니다. 안정 성향을 유지하면서 이자를 높이는 선택지로 3년제 이율보증형(4%대) 비교를 준비해 두면 대화가 넓어집니다.',
+        metrics: [{ l: '만기 금액', v: '1.2억', s: '8.25 · D-14' }, { l: '현재 적용금리', v: '3.30%', s: '1년제 · 8월 · 3개월 연속↑' }, { l: '금통위', v: 'D-16', s: '8.27' }, { l: '마지막 운용지시', v: '1년 전', s: '직전 만기 시' }],
+        hold: [{ n: '정기예금 1년', t: '원리금보장', a: '1.14억', w: '95%', r: '+3.2%' }, { n: '현금성자산', t: '대기', a: '0.06억', w: '5%', r: '+0.2%' }],
+        act: { name: '만기 예약변경 상담 통화', opts: ['부재 시 만기 전(~8.24) 재통화', '내점 예약'] },
+        warn: '이율보증형 제안 시 중도해지 조건 먼저 확인',
+        ment: '최지현 고객님, 25일에 예금 만기가 돌아와서요. 요즘 금리가 계속 오르고 있어서 조건이 나쁘지 않은데, 27일 금통위 지나면 또 달라질 수 있거든요. 그 전에 미리 봐드리려고 연락드렸어요.',
+        tip: { match: '만기 자금 고금리 재예치', title: '《WM고객수익률 관리 득점방법》', src: '도곡스타PB센터 엄주원 님' } },
+      jmr: { pa: '25.10', stale: true,
+        head: { bar: C.am, title: '정기예금 만기 D-22 · 디폴트옵션 미등록' },
+        ai: '9.02 만기 후 지시가 없으면 대기 자금으로 남는데, 미등록 상태라 받아줄 장치가 없습니다. 안정형 성향이라 새 상품 제안보다 등록 안내가 부담이 적습니다. 제도 용어에 어려움을 느끼실 수 있으니 "시중은행 3년 정기예금 묶음으로 알아서 굴러가는 것"처럼 구성으로 풀어 설명하는 편이 좋습니다.',
+        metrics: [{ l: '만기 금액', v: '5,200만', s: '9.02 · D-22' }, { l: '디폴트옵션', v: '미등록', s: '사전지정 필요' }, { l: '현재 적용금리', v: '3.30%', s: '1년제 · 8월' }, { l: '마지막 운용지시', v: '1년 전', s: '직전 만기 시' }],
+        hold: [{ n: '정기예금 1년', t: '원리금보장', a: '0.52억', w: '74%', r: '+3.2%' }, { n: '현금성자산', t: '대기', a: '0.18억', w: '26%', r: '+0.2%' }],
+        act: { name: '디폴트옵션 등록 + 만기 예약변경 안내 통화', opts: ['내점 시 등록 처리 예약', '재통화'] },
+        warn: null,
+        ment: '정미란 고객님, 다음 달 2일에 예금 만기가 있어서요. 만기 되고 나서 따로 신경 안 쓰셔도 알아서 예금으로 굴러가게 해두는 방법이 있거든요. 그것만 5분 정도 안내드리려고 연락드렸어요.',
+        tip: { match: '상품 선택을 어려워하는 고객', title: '《퇴직연금 뻗기지 않을꺼예요》', src: '학동지점 임혜림 님' } },
+      jmj: { pa: '26.2', stale: false,
+        head: { bar: C.am, title: '미운용 현금성자산 9,000만 원 · 3주째 대기' },
+        ai: '7.21 만기 이후 전액이 3주째 무수익 대기 상태로, 방치가 길어질수록 예금 대비 격차가 쌓입니다. 상품 설명보다 "전화 5분이면 처리된다"는 간편함을 앞세우는 게 맞는 계좌입니다. 고유대 금리가 낫지 않냐는 반응이 나올 수 있는데, 매일 변동하는 금리라는 점만 짚으면 됩니다.',
+        metrics: [{ l: '대기 자금', v: '9,000만', s: '7.21 만기 후' }, { l: '방치 기간', v: '21일', s: '무수익 지속' }, { l: '기회비용', v: '약 −17만', s: '예금 1년 3.30% 환산 · 3주 누적' }, { l: '마지막 운용지시', v: '13개월 전', s: '—' }],
+        hold: [{ n: '현금성자산', t: '대기', a: '0.90억', w: '100%', r: '+0.0%' }],
+        act: { name: '대기자금 운용지시 통화', opts: ['내점 시 일괄 처리 예약', '재통화'] },
+        warn: null,
+        ment: '조민재 고객님, 지난달 만기된 금액이 아직 이자 없이 쉬고 있어서요. 전화로 5분이면 처리가 되니까, 편하신 방법으로 도와드리려고 연락드렸어요.',
+        tip: { match: '미운용 자금 안내', title: '《개인형IRP 고객수 단기간 최대득점하기》', src: '서여의도영업부 박서영 님' } },
+      ysr: { pa: '26.5', stale: false,
+        head: { bar: C.bl, title: '공격투자형 · 초저위험 사전지정 상태' },
+        ai: '성향분석은 공격투자형인데 사전지정은 정기예금만으로 구성된 초저위험이라, 성향과 등록 상품의 위험 수준이 어궸나 있습니다. 수익률도 성향 평균 대비 4.1%p 낮은 상태입니다. "잘못 골랐다"가 아니라 "성향분석 결과에 설정만 맞추면 된다"는 톤으로 가벼워 제안하세요.',
+        metrics: [{ l: '사전지정', v: '초저위험', s: '지켜드림 · 정기예금 100%' }, { l: '투자성향', v: '공격투자형', s: '26.5 분석' }, { l: '1년 수익률', v: '+2.1%', s: '성향 평균 +6.2%' }, { l: '마지막 운용지시', v: '1년 8개월 전', s: '가입 후 미변경' }],
+        hold: [{ n: 'KB 지켜드림(초저위험)', t: '원리금보장', a: '1.32억', w: '88%', r: '+2.1%' }, { n: '현금성자산', t: '대기', a: '0.18억', w: '12%', r: '+0.2%' }],
+        act: { name: '사전지정 변경 상담 통화', opts: ['세미나 먼저 안내 후 후속 통화', '내점 예약'] },
+        warn: '변경 시 동의 변경 등록 + 기존 상품 매도 필요',
+        ment: '윤소라 고객님, 계좌를 점검하다 보니 투자성향은 공격투자형으로 분석돼 있는데, 연금은 정기예금형으로만 설정돼 있더라고요. 성향 결과에 맞게 설정을 조정하면 좋을 것 같아서, 5분만 설명드려도 될까요?',
+        tip: { match: '성향·설정 불일치 고객', title: '《퇴직연금 뻗기지 않을꺼예요》', src: '학동지점 임혜림 님' } },
+      bjh: { pa: '26.3', stale: false, deposit: '1.3억', profile: '위험중립형',
+        head: { bar: C.bl, title: '원리금보장상품 100% 운용' },
+        ai: '적립금 전액이 정기예금으로만 운용 중이라 위험중립형 성향 대비 보수적인 구성입니다. 예금 선호가 뚜렷할 수 있으니 부정하지 말고, 예금은 그대로 두고 일부만 넓혀보자는 제안이 저항이 적습니다. 8.18 IRP·TDF 세미나가 부담 없는 첫 접점이 될 수 있습니다.',
+        metrics: [{ l: '원리금보장 비중', v: '100%', s: '정기예금' }, { l: '1년 수익률', v: '+3.1%', s: '성향 평균 +3.5%' }, { l: '투자성향', v: '위험중립형', s: '26.3 분석' }, { l: '마지막 운용지시', v: '10개월 전', s: '만기 재예치만 반복' }],
+        hold: [{ n: '정기예금 1년', t: '원리금보장', a: '0.78억', w: '60%', r: '+3.2%' }, { n: '정기예금 3년', t: '원리금보장', a: '0.47억', w: '36%', r: '+3.3%' }, { n: '현금성자산', t: '대기', a: '0.05억', w: '4%', r: '+0.2%' }],
+        act: { name: '분산 제안 통화', opts: ['세미나 안내 → 익일 후속 통화', '내점 예약'] },
+        warn: null,
+        ment: '배정훈 고객님, 계좌 점검차 연락드렸어요. 지금 예금으로 잘 두고 계신데, 예금은 그대로 두시고 일부만 살짝 넓혀보는 방법이 있어서요. 마침 다음 주 화요일에 딱 맞는 온라인 세미나도 있어서 같이 안내드리려고요.',
+        tip: { match: '예금 선호 고객 화법', title: '《실전상담백서》', src: '잠원동지점 이채희 님' } },
+      msy: { pa: '26.7', stale: false, deposit: '0.8억',
+        head: { bar: C.bl, title: '보유 펀드 환매추천 목록 신규 편입' },
+        ai: '이번 분기 갱신에서 보유 펀드가 환매추천 목록에 새로 편입됐습니다. 조회 이력이 늘지 않은 걸 보면 아직 인지하지 못했을 가능성이 있어, 먼저 알려드리는 것 자체가 관리받는 인상을 줍니다. 교체를 전제하지 말고 "분기 점검에서 확인된 내용 안내" 톤으로 시작하세요.',
+        metrics: [{ l: '환매추천 편입', v: '신규', s: '이번 분기 갱신' }, { l: '해당 펀드 비중', v: '44%', s: '3,500만' }, { l: '1년 수익률', v: '+0.9%', s: '성향 평균 +3.5%' }, { l: '마지막 운용지시', v: '7개월 전', s: '26.1월' }],
+        hold: [{ n: '파인만코리아국가대표증권자투자신탁1호(주식)', t: '실적배당', a: '0.35억', w: '44%', r: '−1.2%', redeem: 1 }, { n: 'KB 온국민 TDF 2035', t: '실적배당', a: '0.30억', w: '38%', r: '+2.9%' }, { n: 'OK저축은행 정기예금 1년', t: '원리금보장', a: '0.12억', w: '15%', r: '+4.2%' }, { n: '현금성자산', t: '대기', a: '0.03억', w: '3%', r: '+0.2%' }],
+        act: { name: '분기 점검 안내 통화', opts: ['부재 시 재통화', '내점 예약'] },
+        warn: '교체 전 환매 기준가 적용일 확인',
+        ment: '문세영 고객님, 분기 점검에서 확인된 내용이 있어서 안내드리려고요. 보유하신 펀드 하나가 이번 분기 점검 목록에 들어와서요. 그대로 두실지 바꾸실지, 같이 한 번 보시면 좋을 것 같아요.',
+        tip: { match: '선제 안내로 신뢰 만들기', title: '《퇴직연금 뻗기지 않을꺼예요》', src: '학동지점 임혜림 님' } },
+      sjh: { pa: '26.6', stale: false, head: { bar: C.bl, title: '처리 완료 · 채권 혼합 리밸런싱 접수' },
+        ai: '주식형 30%를 채권 혼합으로 전환 접수했고 오늘 밤 반영 예정입니다. 반영 확인 연락만 남았습니다.',
+        metrics: [{ l: '처리 상태', v: '접수 완료', s: '오늘 밤 반영' }, { l: '전환 비중', v: '30%', s: '주식형→채권혼합' }, { l: '전환 후 주식형', v: '44%', s: '74%에서 축소' }, { l: '마지막 운용지시', v: '오늘', s: '—' }],
+        hold: [{ n: '주식형 펀드', t: '실적배당', a: '0.62억', w: '44%', r: '−2.1%' }, { n: '채권혼합 (전환 접수)', t: '실적배당', a: '0.56억', w: '40%', r: '+2.8%' }, { n: '정기예금 1년', t: '원리금보장', a: '0.18억', w: '13%', r: '+3.2%' }, { n: '현금성자산', t: '대기', a: '0.04억', w: '3%', r: '+0.2%' }],
+        act: { name: '반영 확인 연락만 남음', opts: ['9월 정기 리뷰 리마인드 등록', '접수 확인 문자 발송'] },
+        warn: null,
+        ment: '서정화 고객님, 오전에 접수해 드린 전환 건은 오늘 밤 반영되고요, 반영되면 한 번 더 확인 연락드릴게요.',
+        tip: null },
+      hsw: { pa: '26.1', stale: false,
+        head: { bar: C.gr, title: '세액공제 한도 300만 원 미소진' },
+        ai: '연 900만 한도 중 300만 원이 남았고, 급여계좌에 상여 입금이 확인됩니다. 남은 한도를 채우면 환급 효과가 최대 49.5만 원(16.5% 가정)이라 숫자로 제시하기 좋은 건입니다. 멘트에서는 입금 얘기 대신 연말정산 시즐을 명분으로 삼는 게 자연스럽습니다.',
+        metrics: [{ l: '한도 여유', v: '300만', s: '연 900만 중 600만 납입' }, { l: '예상 절세', v: '최대 49.5만', s: '총급여 5,500만 이하 가정' }, { l: '상여 입금', v: '8.10', s: '직원 확인용' }, { l: '마지막 운용지시', v: '3개월 전', s: '26.5월' }],
+        hold: [{ n: '해외주식형 펀드', t: '실적배당', a: '1.25억', w: '48%', r: '+6.1%' }, { n: 'TDF', t: '실적배당', a: '0.78억', w: '30%', r: '+4.8%' }, { n: '정기예금 1년', t: '원리금보장', a: '0.47억', w: '18%', r: '+3.2%' }, { n: '현금성자산', t: '대기', a: '0.10억', w: '4%', r: '+0.2%' }],
+        act: { name: '추가납입 제안 통화', opts: ['연말 일괄 납입 리마인드 등록', '재통화'] },
+        warn: null,
+        ment: '홍성우 고객님, 올해 세액공제 한도가 300만 원 남아 있더라고요. 연말정산 시즐 전에 채우시면 49만 원 정도 돌려받으실 수 있어서, 미리 말씀드리려고 연락드렸어요.',
+        tip: { match: '추가납입 클로징', title: '《개인형IRP 상담 노하우》', src: '서여의도영업부 백선규 님' } },
+      oks: { pa: '26.4', stale: false, deposit: '2.8억', profile: '안정추구형',
+        head: { bar: C.gr, title: '만 55세 D-30 · 연금개시 요건 충족' },
+        ai: '9.10에 개시 가능 연령이 되고, 가입 7년으로 수령요건은 충족한 계좌입니다. 퇴직소득 이연분이 포함돼 있어 수령방식에 따라 세금이 달라지므로, 개시 전에 방식을 정해두는 상담이 의미가 큽니다. "언제 받을지"보다 "어떻게 받을지"부터 여쭤보는 게 대화가 편합니다.',
+        metrics: [{ l: '만 55세 도래', v: 'D-30', s: '9.10' }, { l: '적립금', v: '2.8억', s: '퇴직소득 이연분 포함' }, { l: '가입기간', v: '7년', s: '수령요건 충족' }, { l: '마지막 운용지시', v: '6개월 전', s: '26.2월' }],
+        hold: [{ n: '정기예금 1년', t: '원리금보장', a: '1.54억', w: '55%', r: '+3.2%' }, { n: '채권형 펀드', t: '실적배당', a: '0.84억', w: '30%', r: '+2.1%' }, { n: 'TDF', t: '실적배당', a: '0.34억', w: '12%', r: '+2.5%' }, { n: '현금성자산', t: '대기', a: '0.08억', w: '3%', r: '+0.2%' }],
+        act: { name: '연금개시 전 수령방식 상담 통화', opts: ['내점 예약 (세금 시뮬레이션 동반)', '개시일(9.10) 전 주 재통화'] },
+        warn: null,
+        ment: '오경숙 고객님, 다음 달이면 연금 개시가 가능한 나이가 되셔서요. 받는 방법에 따라 세금이 꽤 달라지거든요. 개시 전에 한 번 정리해두시면 좋을 것 같아 연락드렸어요.',
+        tip: { match: '연금수령 상담', title: '《퇴직소득세 절세마케팅 3탄》', src: '서여의도영업부 백선규 님' } },
+      hkg: { pa: '26.5', stale: false, head: { bar: C.gr, title: '처리 완료 · 추가납입 200만 원 접수' },
+        ai: '오전 접수분은 내일 반영됩니다. 잔여 한도 100만 원은 11월 리마인드로 등록돼 있습니다.',
+        metrics: [{ l: '처리 상태', v: '접수 완료', s: '내일 반영' }, { l: '예상 절세', v: '33만', s: '16.5% 가정' }, { l: '한도 잔여', v: '100만', s: '11월 리마인드' }, { l: '마지막 운용지시', v: '오늘', s: '—' }],
+        hold: [{ n: '정기예금 1년', t: '원리금보장', a: '0.35억', w: '70%', r: '+3.2%' }, { n: 'TDF', t: '실적배당', a: '0.13억', w: '26%', r: '+2.6%' }, { n: '현금성자산', t: '대기', a: '0.02억', w: '4%', r: '+0.2%' }],
+        act: { name: '접수 확인', opts: ['11월 잔여 한도 리마인드', '접수 확인 문자 발송'] },
+        warn: null,
+        ment: '한가을 고객님, 오전에 접수한 추가납입은 내일 반영돼요. 남은 한도 100만 원도 연말 전에 시기 봐서 다시 안내드릴게요.',
+        tip: null }
+    };
+    this._d.forEach(c => {
+      const x = EXT2[c.id] || {};
+      Object.assign(c, x);
+    });
+    const SRC_LHR = '학동지점 임혜림 님 · 좋아요 27', SRC_WM = 'WM투자상품부 · 8.7', SRC_LCH = '잠원동지점 이채희 님 · 좋아요 19';
+    const SCR = {
+      lsc: { chips: ['증권사가 수수료 무료라던데요', 'ETF 하려고 만든 거예요', '옮기려던 건 아니고 그냥 만들어봤어요', '이미 옮기기로 했어요'], script: {
+        '증권사가 수수료 무료라던데요': { dir: '반박하지 말고 우리 조건을 사실대로 먼저', why: '수수료는 팩트 싸움이라 방어적으로 굴면 신뢰만 깎입니다. 우리도 조건이 있다는 걸 담백하게 놓고 시작하는 게 유리합니다.', ment: '맞아요, 수수료 따져보시는 게 당연하죠. 저희도 만 55세 이후에 연금으로 받기 시작하시면 수수료가 0원이고요. 퇴직금 규모에 따라 면제되는 조건도 있는데, 그건 고객님 경우로 정확히 확인해서 말씀드릴게요.', mentAlt: '그럼요, 수수료 꼼꼼히 따져보시는 게 맞아요. 저희도 만 55세 이후 연금으로 받기 시작하시면 수수료가 0원이고요, 퇴직금 규모에 따라 면제 조건도 있어요. 고객님 경우로 제가 정확히 확인해서 알려드릴게요.', chips: ['그래도 증권사가 낫지 않아요?', '55세까지 한참 남았는데요'] },
+        '그래도 증권사가 낫지 않아요?': { dir: '수수료 비교에서 관리 비교로 프레임 전환', why: '수수료 싸움은 끝이 없습니다. 연금은 10년 넘게 가져가는 계좌라 "누가 관리해주냐"로 기준을 바꾸면 우리 강점이 삽니다.', ment: '수수료만 보면 그럴 수 있어요. 그런데 연금은 한 번 사고 끝이 아니라 10년 넘게 관리하는 계좌거든요. 증권사는 고객님이 직접 다 챙기셔야 하는데, 저희는 가까운 영업점 어디서든 포트폴리오 점검이랑 리밸런싱 상담을 받으실 수 있어요. 그 차이가 수수료보다 훨씬 커요.', src: SRC_LHR, chips: ['관리라고 해봤자 뭘 해주는데요?'] },
+        '55세까지 한참 남았는데요': { dir: '수수료와 이자의 크기 비교로 체감시키기', why: '기간이 남았다는 건 수수료 누적 걱정입니다. 연 0.2% 수준 수수료는 예금 이자만으로도 덮인다는 크기 감각을 주면 해소됩니다.', ment: '네, 그 기간 동안 수수료 나가는 게 아까우실 수 있죠. 그런데 수수료가 연 0.2% 정도인데, IRP 안에서 예금만 하셔도 지금 3%대 이자가 나와요. 수수료는 이자로 충분히 덮고도 남고, 그동안 세액공제 혜택은 계속 받으시는 거예요.' },
+        'ETF 하려고 만든 거예요': { dir: '오해 교정 — KB IRP에서도 ETF 가능', why: '"은행은 ETF 안 된다"는 오해가 이탈의 가장 흔한 이유입니다. 교정 한 줄이면 이전할 이유의 절반이 사라집니다.', ment: '아, 그러셨구나. 그런데 고객님, 저희 국민은행 IRP에서도 ETF 투자 되는 거 알고 계셨어요? 투자성향 평가만 통과하시면 ETF로 100%까지도 구성이 가능해요. 굳이 옮기실 필요 없이 지금 계좌에서 하실 수 있어요.', mentAlt: '아, ETF 때문이셨구나. 그런데 저희 국민은행 IRP에서도 ETF 투자가 돼요. 성향 평가만 통과하시면 100%까지도 구성할 수 있고요. 옮기지 않으셔도 지금 계좌에서 충분히 하실 수 있어요.', src: SRC_LHR, chips: ['은행 ETF는 실시간 매매가 안 된다던데'] },
+        '은행 ETF는 실시간 매매가 안 된다던데': { dir: '차이 인정 + 연금 관점 재정렬 + 대안 제시', why: '사실인 부분을 부정하면 신뢰가 무너집니다. 인정 후 "연금에서 실시간이 얼마나 중요한가"로 관점을 옮기는 게 정석입니다.', ment: '맞아요, 매매 방식에 차이가 있어요. 그런데 연금은 단타 하는 계좌가 아니라 10년 보고 가는 돈이잖아요. 장기로 가져가시는 거면 방식 차이가 수익률을 가르진 않아요. 그래도 편하게 굴리고 싶으시면 TDF나 디폴트옵션처럼 알아서 조정되는 상품을 섞는 방법도 있고요.' },
+        '옮기려던 건 아니고 그냥 만들어봤어요': { dir: '가볍게 수용하고 접점만 남기기', why: '캐묻거나 잡으려 들면 오히려 이전을 의식하게 만듭니다. 부담 없이 받고, 혜택 안내로 다음 연결고리만 만들어 두면 됩니다.', ment: '네, 요즘 비교해보시는 분들 많으세요. 잘하고 계신 거예요. 참, 마침 저희 쪽에 수수료 우대랑 계좌 점검 서비스가 있어서요. 다음에 한 번 정리해서 안내드릴게요. 언제가 편하세요?' },
+        '이미 옮기기로 했어요': { dir: '존중하고 돌아올 문만 열어두기', why: '결정을 되돌리려는 설득은 관계까지 잃습니다. 이전 후에도 다시 계약이전이 가능하다는 사실만 남기면 재유치 여지가 살아있습니다.', ment: '네, 결정하셨다면 존중할게요. 그동안 거래해주셔서 감사했고요. 한 가지만 말씀드리면, 나중에라도 관리가 아쉬우시면 운용하시던 상품 그대로 다시 옮겨오실 수 있어요. 그때는 제가 직접 챙겨드릴게요. 언제든 연락 주세요.', mentAlt: '네, 고민 많으셨을 텐데 결정하셨다니 존중할게요. 그동안 정말 감사했어요. 혹시라도 나중에 관리가 아쉬우시면 상품 그대로 다시 옮겨오실 수 있으니까, 그때는 제가 직접 챙겨드릴게요.', warn: '중도해지 손실 비교 자료는 한 번만 유효한 카드입니다 — 이 단계에서 꺼내지 마세요' }
+      } },
+      pey: { chips: ['왜 이렇게 많이 떨어진 거예요?', '다 팔고 예금으로 바꿀래요', '그냥 지켜보면 안 돼요?'], script: {
+        '왜 이렇게 많이 떨어진 거예요?': { dir: '하락 원인을 회사 판단으로 담백하게', why: '불안한 고객에게 필요한 건 위로가 아니라 설명입니다. 개인 의견이 아닌 회사 분석임을 밝히면 무게가 실립니다.', ment: '많이 놀라셨죠. 저희 투자전략팀 분석으로는 기업 실적이 나빠진 게 아니라, 수급이 꼬이면서 생긴 하락이에요. 실제로 외국인 자금도 떠난 게 아니라 대기 중인 걸로 보고 있고요. 회사가 망가진 하락이랑 수급 때문에 눌린 하락은 대응이 달라요.', mentAlt: '많이 놀라셨죠, 저라도 그랬을 거예요. 저희 투자전략팀에서는 기업이 나빠진 게 아니라 수급이 꼬여서 생긴 하락으로 보고 있어요. 회사가 망가진 하락이랑은 대응이 다르거든요. 그 얘기부터 차근차근 드릴게요.', src: SRC_WM, chips: ['그럼 언제쯤 회복돼요?'] },
+        '그럼 언제쯤 회복돼요?': { dir: '시점 단정 금지, 회사 전망의 범위만', why: '회복 시점을 찍어주면 나중에 책임이 됩니다. 전망은 "회사 판단 + 시점 기준"으로만 전달합니다.', ment: '시점을 딱 말씀드리긴 어려워요. 다만 투자전략팀에서는 빠른 반등보다는 바닥을 다지면서 천천히 회복하는 그림으로 보고 있어요. 그래서 지금 급하게 움직이시기보다, 계좌 구조를 점검해두시는 게 먼저예요.', src: SRC_WM },
+        '다 팔고 예금으로 바꿀래요': { dir: '전량 매도 만류 + 일부 전환으로 낮추기', why: '지금 판단으로는 손절 실익이 크지 않은 구간입니다. 다만 고객 손실률·성향 확인 없이 일률 적용은 금물 — 절충안(일부 전환)이 안전합니다.', ment: '그 마음 이해해요. 그런데 저희 분석으로는 지금이 손절해서 얻는 게 크지 않은 구간이라고 봐요. 다 파시는 것보다, 일단 일부만 안정적인 쪽으로 옮겨서 마음 편한 비중을 만들어보시는 건 어때요? 해보시고 마음에 안 드시면 언제든 다시 바꿀 수 있어요.', mentAlt: '네, 그 마음 충분히 이해해요. 다만 지금 다 파시면 얻는 게 크지 않은 구간이라고 저희는 보고 있어서요. 일단 일부만 안정적인 쪽으로 옮겨서 마음 편한 비중부터 만들어볼까요? 해보시고 안 맞으면 언제든 되돌릴 수 있어요.', src: SRC_WM },
+        '그냥 지켜보면 안 돼요?': { dir: '수용 + 방치와 관망의 차이만 짚기', why: '지켜보겠다는 고객을 밀어붙이면 역효과입니다. 다만 11개월째 조정이 없었다는 사실은 알려드릴 가치가 있습니다.', ment: '네, 그것도 방법이에요. 다만 한 가지만요 — 계좌를 보니까 작년 9월 이후로 조정을 한 번도 안 하셨더라고요. 지켜보시더라도 지금 구조가 지켜볼 만한 구조인지 한 번만 같이 점검해봐요. 10분이면 돼요.', mentAlt: '그럼요, 지켜보시는 것도 방법이에요. 다만 작년 9월 이후로 조정이 한 번도 없으셨더라고요. 지켜보시더라도 지금 구조가 그래도 되는 구조인지만 한 번 같이 봐요. 10분이면 충분해요.' }
+      } },
+      kdy: { chips: ['다 정리하고 싶어요', '언제쯤 회복돼요?', '제가 고른 펀드라서요…'], script: {
+        '다 정리하고 싶어요': { dir: '전량 매도 만류 + 일부 전환으로 낮추기', why: '손절 실익이 크지 않은 구간이라는 게 회사 판단입니다. 절충안(일부 전환)으로 낮춰 받는 게 안전합니다.', ment: '그 마음 이해해요. 그런데 저희 분석으로는 지금이 손절해서 얻는 게 크지 않은 구간이라고 봐요. 다 파시는 것보다 일부만 안정적인 쪽으로 옮겨서 마음 편한 비중을 만들어보시는 건 어때요?', src: SRC_WM, chips: ['일부만 바꾸는 건 얼마나요?'] },
+        '언제쯤 회복돼요?': { dir: '시점 단정 금지, 회사 전망의 범위만', why: '회복 시점을 찍어주면 나중에 책임이 됩니다. 전망은 "회사 판단 + 시점 기준"으로만 전달합니다.', ment: '시점을 딱 말씀드리긴 어려워요. 다만 투자전략팀에서는 빠른 반등보다는 바닥을 다지면서 천천히 회복하는 그림으로 보고 있어요. 그래서 급하게 움직이시기보다 계좌 구조부터 점검해두시는 게 먼저예요.', src: SRC_WM },
+        '제가 고른 펀드라서요…': { dir: '선택 존중 + 구조 점검으로 전환', why: '본인 판단을 지적하면 방어적이 됩니다. 선택이 아니라 비중 얘기로 옮기면 저항이 낮아집니다.', ment: '잘 고르셨어요, 시장이 안 도와준 것뿐이에요. 고른 걸 바꾸자는 게 아니라 비중만 같이 볼까요?' }
+      } },
+      khj: { chips: ['그냥 예금으로 다시 넣어주세요', '디폴트옵션이 뭐예요?', '금리 더 주는 데 없어요?'], script: {
+        '그냥 예금으로 다시 넣어주세요': { dir: '수용 + 예약변경 처리 + 등록을 한 통화로', why: '요청을 그대로 처리하면서 미등록 상태만 함께 해결하면 다음 만기부터 신경 쓸 일이 없어집니다.', ment: '네, 그렇게 처리해드릴게요. 예약변경으로 걸어두면 만기 날 자동으로 이어지고요. 겸사겸사 만기 때마다 신경 안 쓰셔도 되게 등록 하나만 해두시죠. 1분이면 돼요.', chips: ['등록하면 뭐가 좋은데요?'] },
+        '디폴트옵션이 뭐예요?': { dir: '제도 용어를 생활 언어로 풀기', why: '용어 설명이 길어지면 부담만 커집니다. 구성으로 풀어 한 문장이면 충분합니다.', ment: '고객님이 따로 지시 안 하셔도 미리 정해둔 방법으로 알아서 운용되는 제도예요. 시중은행 3년 정기예금 묶음 같은 걸로요.' },
+        '금리 더 주는 데 없어요?': { dir: '이율보증형 비교 제시 + 조건은 확인 후', why: '조건 확인 없이 확정적으로 말하면 되돌리기 어렵습니다. 숫자는 제시하되 조건은 유보하세요.', ment: '이자 더 원하시면 3년짜리 이율보증형이 4%대예요. 대신 중도해지 조건이 있어서 그건 확인하고 말씀드릴게요.', warn: '이율보증형 제안 시 중도해지 조건 먼저 확인' }
+      } },
+      cjh: { chips: ['금통위가 뭔데요?', '그냥 1년 또 할게요', '더 좋은 조건 없어요?'], script: {
+        '금통위가 뭔데요?': { dir: '일정을 결정 명분으로 연결', why: '제도 설명은 짧게, 고객에게 미치는 영향만 말하면 됩니다.', ment: '기준금리 정하는 회의인데, 결과 따라 예금 조건이 바뀔 수 있어서요. 그 전에 정해두시면 유리한 쪽으로 잡아드릴 수 있어요.', chips: ['그럼 언제 정하는 게 좋아요?'] },
+        '그냥 1년 또 할게요': { dir: '수용 + 예약변경 처리', why: '협조적인 결정은 그 자리에서 고정하는 게 최선입니다.', ment: '네, 그렇게 해드릴게요. 지금 조건이면 3.30%로 들어가고요, 예약변경으로 걸어두면 만기 날 자동으로 이어져요.' },
+        '더 좋은 조건 없어요?': { dir: '이율보증형 비교 제시 + 조건은 확인 후', why: '숫자는 제시하되 중도해지 조건은 확인 후 안내가 안전합니다.', ment: '이자 더 원하시면 3년짜리 이율보증형이 4%대예요. 대신 중도해지 조건이 있어서 그건 확인하고 말씀드릴게요.', warn: '이율보증형 제안 시 중도해지 조건 먼저 확인' }
+      } },
+      jmr: { chips: ['어려운 건 싫어요', '돈이 어떻게 되는 건데요?', '지금 꼭 해야 해요?'], script: {
+        '어려운 건 싫어요': { dir: '간편함을 앞세워 부담 낮추기', why: '용어에 거부감이 있는 고객에게는 "하나만 해두면 끝"이라는 단순함이 가장 잘 통합니다.', ment: '어려운 거 하나도 없어요. 지금 예금 그대로 두고, 만기 후에 알아서 예금으로 이어지게 설정 하나만 해두는 거예요.', chips: ['나중에 바꿀 수 있어요?'] },
+        '돈이 어떻게 되는 건데요?': { dir: '돈의 위치부터 안심시키기', why: '안정형 고객의 질문은 대부분 "내 돈이 어디 있냐"입니다. 위치를 먼저 고정하세요.', ment: '고객님 돈은 그대로 예금에 있어요. 만기 됐을 때 갈 곳을 미리 정해두는 것뿐이에요.' },
+        '지금 꼭 해야 해요?': { dir: '기한을 알리되 압박하지 않기', why: '기한만 담백하게 알려주면 결정은 고객 몫으로 남습니다.', ment: '다음 달 2일 만기 전까지만 하면 돼요. 오늘 하시면 만기 날 신경 안 쓰셔도 되고요.' }
+      } },
+      jmj: { chips: ['아 그거 나중에 할게요', '얼마나 손해인데요?', '그냥 전화로 되나요?'], script: {
+        '아 그거 나중에 할게요': { dir: '미루는 비용을 하루 단위로 환산', why: '번거로워하는 고객은 설득보다 "오늘 5분"이라는 간편함이 움직입니다.', ment: '네, 다만 하루 지날 때마다 이자 없이 쉬는 날이 늘어나서요. 오늘 5분이면 끝나요.', chips: ['5분이면 정말 돼요?'] },
+        '얼마나 손해인데요?': { dir: '기회비용을 금액으로', why: '비율보다 원화 금액이 체감을 만듭니다.', ment: '예금 넣으셨으면 3주 동안 17만 원 정도 이자가 붙었을 금액이에요.' },
+        '그냥 전화로 되나요?': { dir: '즉시 처리로 연결', why: '처리 의사가 생긴 순간 바로 실행해야 보류로 돌아가지 않습니다.', ment: '네, 전화로 바로 처리돼요. 지금 도와드릴까요?' }
+      } },
+      ysr: { chips: ['제가 언제 공격투자형이라고 했죠?', '바꾸면 원금 손실 나는 거 아니에요?', '뭐가 좋은데요?'], script: {
+        '제가 언제 공격투자형이라고 했죠?': { dir: '분석 시점·결과를 사실대로 + 재분석 선택지', why: '기억과 다르다는 반응에는 기록을 근거로 답하되, 재분석 선택지를 열어두면 방어감이 사라집니다.', ment: '5월에 성향분석 하셨을 때 결과가 그렇게 나왔어요. 결과지 다시 보내드릴게요. 혹시 지금 생각과 다르시면 분석부터 다시 하셔도 돼요.', chips: ['분석 다시 하면 뭐가 달라져요?'] },
+        '바꾸면 원금 손실 나는 거 아니에요?': { dir: '예금 유지 전제 + 일부 변경 + 되돌림 가능', why: '손실 우려에는 "그대로 두는 부분"을 먼저 고정하는 게 정석입니다.', ment: '정기예금 부분은 그대로 두고 일부만 바꾸는 것도 돼요. 바꾼 부분은 투자상품이라 변동은 있는데, 마음에 안 드시면 다시 되돌릴 수 있어요.' },
+        '뭐가 좋은데요?': { dir: '현재 구조의 한계 + 공시 근거 제시', why: '막연한 권유보다 공시 순위 같은 외부 근거가 설득력이 높습니다.', ment: '지금 초저위험은 정기예금만이라 연 3% 초반인데, 저위험 이상은 수익 기회가 더 있어요. KB 디폴트옵션이 고용노동부 공시에서 은행권 수익률 1위이기도 하고요.' }
+      } },
+      bjh: { chips: ['예금이 제일 안전하죠', '세미나는 무슨 내용이에요?', '얼마나 옮기라는 거예요?'], script: {
+        '예금이 제일 안전하죠': { dir: '동의로 시작 — 예금은 그대로, 일부만', why: '예금 선호를 부정하면 대화가 닫힙니다. 인정 후 "일부만"으로 좁히는 화법이 검증돼 있습니다.', ment: '맞아요, 예금이 제일 마음 편하죠. 그래서 예금은 그대로 두시고, 일부만 예금+알파 구조로 나눠보자는 거예요.', src: SRC_LCH, chips: ['알파가 뭔데요?'] },
+        '세미나는 무슨 내용이에요?': { dir: '부담 없는 첫 접점으로 안내', why: '상품 제안 전 세미나는 저항 없는 연결고리가 됩니다.', ment: '다음 주 화요일 3시에 유튜브로 하는 무료 세미나인데, IRP를 연금답게 굴리는 방법이 주제예요. 부담 없이 들어보시면 좋아요.' },
+        '얼마나 옮기라는 거예요?': { dir: '비중 강요 없이 스몰스텝', why: '숫자를 정해주면 부담이 됩니다. 시작 범위만 제시하세요.', ment: '정해진 건 없어요. 마음 편한 만큼만요. 보통 1~2할 정도로 시작하세요.' }
+      } },
+      msy: { chips: ['그게 무슨 목록인데요?', '나쁜 펀드라는 거예요?', '바꾸면 뭘로 바꿔요?'], script: {
+        '그게 무슨 목록인데요?': { dir: '제도를 관리 서비스로 설명', why: '"환매추천"이라는 말 자체가 불안을 줍니다. 점검 체계로 풀면 관리받는 인상이 됩니다.', ment: '본부에서 분기마다 펀드를 점검해서, 계속 두시기보다 바꾸는 걸 검토해볼 만한 펀드를 알려주는 목록이에요.', chips: ['언제까지 정해야 해요?'] },
+        '나쁜 펀드라는 거예요?': { dir: '평가 완화 + 결정권은 고객에게', why: '단정적 평가는 과거 선택에 대한 지적으로 들립니다. 결정권을 돌려주면 방어감이 사라집니다.', ment: '나쁘다기보다 성과가 아쉬워서 점검 대상이 된 거예요. 그대로 두실지 바꾸실지는 고객님이 정하시는 거고, 저는 선택지만 정리해드릴게요.' },
+        '바꾸면 뭘로 바꿔요?': { dir: '성향 범위 내 선택지 예고', why: '즉석에서 상품명을 나열하기보다 범위를 좁혀 다음 단계를 예고하는 게 안전합니다.', ment: '성향에 맞는 범위에서 몇 가지 추려드릴게요. 예금+투자 섞인 것부터 볼 수 있어요.' }
+      } },
+      hsw: { chips: ['지금 여유가 안 돼요', '얼마나 돌려받는데요?', '그거 넣으면 못 빼는 거잖아요'], script: {
+        '지금 여유가 안 돼요': { dir: '납입 방식의 유연함으로 부담 해소', why: '정기 납입 의무로 오해하는 경우가 많습니다. 유연함을 알리면 거절 이유가 사라집니다.', ment: '매달 넣는 상품이 아니라서요. 여유 있는 달에만, 되는 만큼만 넣으시면 돼요. 연말 전까지만 채우시면 효과는 같아요.', chips: ['내년에 하면 안 돼요?'] },
+        '얼마나 돌려받는데요?': { dir: '환급액을 구체적 숫자로', why: '환급액을 숫자로 말하면 결정이 빨라집니다.', ment: '남은 300만 원 채우시면 연말정산 때 49만 원 정도예요. 적금 이자로 치면 몇 배 수준이에요.' },
+        '그거 넣으면 못 빼는 거잖아요': { dir: '원칙 인정 + 법정 예외 안내', why: '사실을 부정하면 신뢰가 깎입니다. 예외 조건은 확인 후 안내로 유보하세요.', ment: '노후 계좌라 원칙은 그런데, 주택 구입이나 전세보증금 같은 법정 사유면 중도인출이 돼요. 사유별로 조건이 달라서 그건 확인하고 안내드릴게요.' }
+      } },
+      oks: { chips: ['세금이 얼마나 다른데요?', '연금 받으면 돈이 묶이는 거 아니에요?', '아직 일하는데 받아도 돼요?'], script: {
+        '세금이 얼마나 다른데요?': { dir: '절세를 본인 금액으로 환산 제안', why: '제도 설명보다 본인 금액 기준 숫자가 와닿습니다.', ment: '수령한도 안에서 나눠 받으시면 퇴직소득세를 30% 덜 내세요. 고객님 금액으로 환산해서 정확히 계산해드릴게요.', chips: ['지금 신청하면 언제부터 받아요?'] },
+        '연금 받으면 돈이 묶이는 거 아니에요?': { dir: '오해 교정 — 개시 후에도 운용·인출 가능', why: '"묶인다"는 오해가 연금 수령의 가장 큰 심리 장벽입니다.', ment: '아니에요, 개시 후에도 남은 돈은 계속 운용되고, 필요하실 때 한도 안에서 인출도 돼요. 자유인출 신청까지 같이 해두면 더 유연해지고요.' },
+        '아직 일하는데 받아도 돼요?': { dir: '가능 여부 확답 + 유불리는 상담으로', why: '가능/불가능은 즉답하고, 복잡한 유불리는 상담 의제로 넘기는 게 깔끔합니다.', ment: '네, 소득 있으셔도 개시는 가능해요. 다만 받는 방식에 따라 유불리가 있어서, 그 부분을 상담에서 같이 보시면 돼요.' }
+      } },
+      lth: { chips: ['금요일 통화 미리 준비할 것'], script: {
+        '금요일 통화 미리 준비할 것': { dir: '금요 통화 사전 점검', ment: '금요 통화 전 확인: 환매추천 상태, 주간 수익률 변화, 전환안 2개' }
+      } },
+      sjh: { chips: ['반영 확인 연락 멘트'], script: {
+        '반영 확인 연락 멘트': { dir: '반영 확인 연락', ment: '서정화 고객님, 오전 접수 건 오늘 밤 반영 예정이에요. 반영되면 확인 연락드릴게요.' }
+      } },
+      hkg: { chips: ['접수 확인 멘트'], script: {
+        '접수 확인 멘트': { dir: '접수 확인', ment: '한가을 고객님, 추가납입 내일 반영돼요. 남은 한도는 연말 전에 다시 안내드릴게요.' }
+      } }
+    };
+    this._d.forEach(c => { const s = SCR[c.id]; if (s) { c.chips = s.chips; c.script = s.script; } });
+    const NOS = [['7024-0117', '010-3311-2094'], ['7024-0242', '010-7462-8850'], ['7024-0388', '010-5190-6637'], ['7024-1183', '010-4472-3391'], ['7024-2087', '010-9034-1127'], ['7024-3315', '010-2251-8804'], ['7024-4602', '010-7719-0463'], ['7024-5178', '010-3382-5540'], ['7024-6941', '010-8163-2278'], ['7024-7420', '010-5527-9016'], ['7024-8093', '010-6648-3352'], ['7024-9267', '010-9905-7731'], ['7025-0134', '010-2470-6689'], ['7025-1808', '010-8812-4405'], ['7025-2556', '010-3096-1174'], ['7025-3719', '010-4451-2263'], ['7025-4382', '010-7736-9018'], ['7025-5047', '010-2284-6650']];
+    this._d.forEach((c, i) => { c.cno = NOS[i][0]; c.phone = NOS[i][1]; });
+    return this._d;
+  }
+
+  get DIR() {
+    if (this._dir) return this._dir;
+    const basic = e => ({ ...e, bar: '#D8D5D0', tags: [{ t: '특이 신호 없음', bg: '#F2F3F5', fg: '#696E76' }], why: '오늘 타겟 아님 — 정기 모니터링 중', mv: e.deposit, ml: '적립금', pa: '26.4', stale: false,
+      ai: '오전 7:30 분석 기준 이탈·만기·기회 신호가 감지되지 않았습니다. 내방 목적을 먼저 확인하고 계좌 현황 브리핑으로 정기 점검을 진행하세요.',
+      propose: '내방 목적 확인 + 포트폴리오 정기 점검',
+      hold: [{ n: '포트폴리오 요약', t: '혼합', a: e.deposit, w: '100%', r: e.ret }],
+      docs: ['개인화 포트폴리오 현황 리포트'],
+      head: { bar: '#FFCC00', title: '특이 신호 없음 — 내방 목적 확인 후 정기 점검 권장', sub: '오전 7:30 분석 기준 이탈·만기·기회 신호가 감지되지 않았습니다.' },
+      metrics: [{ l: '적립금', v: e.deposit, s: e.product + ' 계좌' }, { l: '1년 수익률', v: e.ret, s: '고객군 평균 +3.1%' }, { l: '최근 접점', v: e.last, s: e.lastS }, { l: '다음 정기 리뷰', v: e.next, s: '자동 등록' }],
+      evPreview: '감지된 신호 없음 · 정기 모니터링만 수행 중', ev: ['이탈·만기·기회 신호 없음', '수익률 고객군 평균 범위 내', '다음 정기 리뷰: ' + e.next],
+      act: { name: '내방 목적 확인 + 정기 점검', d1: '포트폴리오 현황 리포트', d2: '투자성향 재확인', d3: '상담 10분', sim: '내방 정기 점검 상담', opts: ['정기 리뷰 일정 갱신', '관심 상품 태그 등록'] },
+      cmp: { title: '1년 수익률 — 고객군 비교', rows: [{ l: e.name + ' 고객', v: e.ret, w: e.w1, c: '#FFCC00' }, { l: '고객군 평균', v: '+3.1%', w: '41%', c: '#D8D5D0' }] },
+      ment: e.name + ' 고객님, 내방해 주셔서 감사합니다. 계좌 전반을 같이 보면서 궁금하신 부분부터 확인해 드릴게요.',
+      refs: [{ t: '상담 이력', n: '1건', preview: e.last + ' · ' + e.lastS, items: [{ x: e.last + ' · ' + e.lastS }] }, { t: '보낼 자료', n: '1건', preview: '포트폴리오 현황 리포트', items: [{ x: '개인화 포트폴리오 현황 리포트', btn: 1 }] }, { t: '유사 성공 사례', n: '0건', preview: '—', items: [{ x: '—' }] }],
+      simBrief: e.name + ' 님은 특이 신호가 없는 내방 고객입니다. 내방 목적을 먼저 확인하고, 계좌 현황 브리핑으로 신뢰 접점을 만드세요.',
+      chips: ['요즘 수익률이 궁금해서 왔어요', '상품을 좀 바꿔볼까 해서요'] });
+    const EX = [
+      { id: 'osh', name: '오세훈', product: 'DB', deposit: '2.4억', profile: '위험중립형', ret: '+3.4%', last: '26.05.14', lastS: '정기 리뷰 통화', next: '26.11', w1: '45%', cno: '7031-1042', phone: '010-5211-7893' },
+      { id: 'kny', name: '김나연', product: 'IRP', deposit: '0.8억', profile: '안정추구형', ret: '+2.7%', last: '26.02.20', lastS: '내점 상담', next: '26.09', w1: '36%', cno: '7031-2518', phone: '010-8834-1206' },
+      { id: 'pjs', name: '박정수', product: 'IRP', deposit: '1.9억', profile: '적극투자형', ret: '+5.6%', last: '26.06.02', lastS: '리밸런싱 통화', next: '26.12', w1: '74%', cno: '7031-3390', phone: '010-2967-4451' },
+      { id: 'lhr', name: '이혜림', product: 'IRP', deposit: '1.3억', profile: '위험중립형', ret: '+3.0%', last: '26.04.08', lastS: '정기 리뷰 통화', next: '26.10', w1: '40%', cno: '7031-4076', phone: '010-7148-9925' },
+      { id: 'cws', name: '최원식', product: 'IRP', deposit: '3.5억', profile: '안정추구형', ret: '+2.5%', last: '26.01.30', lastS: '만기 재예치 처리', next: '27.01', w1: '33%', cno: '7031-5661', phone: '010-4423-0587' },
+      { id: 'sde', name: '송다은', product: 'IRP', deposit: '0.4억', profile: '안정형', ret: '+2.2%', last: '25.12.15', lastS: '가입 상담', next: '26.12', w1: '29%', cno: '7031-6249', phone: '010-9370-2214' }];
+    this._dir = this.DATA.concat(EX.map(basic));
+    return this._dir;
+  }
+
+  sel() { return this.DIR.find(c => c.id === this.state.sel) || null; }
+
+  select(id, skipBridge) {
+    const c = this.DIR.find(x => x.id === id);
+    if (!skipBridge && c && this.state.sel !== id) {
+      (this._bridgeTimers || []).forEach(clearTimeout);
+      this._bridgeTimers = [];
+      const at = (ms, fn) => this._bridgeTimers.push(setTimeout(fn, ms));
+      this.setState({ bridge: id, bridgeStep: 1, bridgeFade: false });
+      this.select(id, true);
+      at(1000, () => this.setState({ bridgeStep: 2 }));
+      at(2000, () => this.setState({ bridgeStep: 3 }));
+      at(3600, () => this.setState({ bridgeFade: true }));
+      at(4000, () => this.setState({ bridge: null, bridgeStep: 0, bridgeFade: false }));
+      return;
+    }
+    clearTimeout(this._tk1); clearTimeout(this._tk2); clearTimeout(this._ss); clearInterval(this._si); clearTimeout(this._agT1); clearInterval(this._agST); clearInterval(this._agSI); clearInterval(this._agT2);
+    this.setState({ sel: id, agInput: '', agBusy: false, agChat: this.QA[id] ? [{ k: 'sys', text: this.QA[id].intro }] : [], agDone: {}, agAnimI: -1, agStreamN: 0, agBlockN: 0, agFootOn: false, agStatusI: 0, agCta: null, agEvidOpen: {}, agGuardOpen: {}, agEvOpen: {}, bfSol: null, bfReact: null, pfNewOpen: false, busy: false, streamIdx: -1, streamN: 0, searchQ: '', searched: false, holdOpen: false, tone: {}, input: '', panelOpen: (this.props.panelDefault ?? '열림') !== '접힘', chat: [{ kind: 'brief', text: c.name + ' 고객님 통화를 준비해볼게요. 예상 반응을 골라 연습하거나, 상황을 직접 입력하셔도 됩니다.' }], chips: (c.chips || []).slice() });
+  }
+
+  sendUser(text) {
+    if (!text.trim() || this.state.busy) return;
+    const c = this.sel();
+    const offered = this.state.chips.indexOf(text) >= 0;
+    const r = (c && c.script && c.script[text]) || this.COMMON[text];
+    this.setState(s => ({ chat: [...s.chat, { kind: 'user', text }], chips: [], input: '', busy: true }));
+    if (!r && offered && c && c.script) {
+      this.think(() => this.setState(s => ({ chat: [...s.chat.filter(x => x.kind !== 'typing'), { kind: 'brief', text: '여기서부터는 직접 입력으로 이어가 주세요. 고객 반응을 입력창에 적어주시면 대응 방향을 정리해드릴게요.' }], chips: (c.chips || []).slice(), busy: false })));
+      return;
+    }
+    const g = r || this.GEN;
+    const nextChips = (g.chips || (c && c.chips) || []).slice();
+    this.think(() => {
+      this.setState(s => {
+        const chat = [...s.chat.filter(x => x.kind !== 'typing'), { kind: 'ai', dir: g.dir, why: g.why, ment: g.ment, mentAlt: g.mentAlt, src: g.src, warn: g.warn }];
+        return { chat: chat, streamIdx: chat.length - 1, streamN: 0 };
+      });
+      this.startStream(nextChips);
+    });
+  }
+
+  openScn(chip, name) {
+    if (/^\d{2}-\d{2}-\d{3}$/.test(chip)) {
+      window.location.href = 'mystar-link://scnNo=' + chip.replace(/-/g, '') + '&mode=D';
+      this.toast('[' + chip + '] ' + name + ' 화면 연결');
+    } else this.toast('[' + chip + '] ' + name + ' 화면으로 이동 (모형)');
+  }
+
+  think(fn) {
+    clearTimeout(this._tk1); clearTimeout(this._tk2);
+    this._tk1 = setTimeout(() => this.setState(s => ({ chat: [...s.chat, { kind: 'typing' }] })), 240);
+    this._tk2 = setTimeout(fn, 1350);
+  }
+
+  startStream(nextChips) {
+    clearTimeout(this._ss); clearInterval(this._si);
+    this._ss = setTimeout(() => {
+      this._si = setInterval(() => {
+        const S = this.state, m = S.chat[S.streamIdx];
+        if (!m) { clearInterval(this._si); return; }
+        if (S.streamN >= (m.ment || '').length) {
+          clearInterval(this._si);
+          setTimeout(() => this.setState({ streamIdx: -1, streamN: 0, busy: false, chips: nextChips }), 200);
+        } else this.setState(s => ({ streamN: s.streamN + 3 }));
+      }, 40);
+    }, 340);
+  }
+
+  copy(key, text) {
+    try { navigator.clipboard.writeText(text); } catch (e) {}
+    this.setState({ copied: key });
+    clearTimeout(this._ct);
+    this._ct = setTimeout(() => this.setState({ copied: null }), 1400);
+  }
+
+  componentDidUpdate(pp, ps) {
+    let el = this.chatRef.current;
+    if (!el || !el.isConnected) el = document.querySelector('.chat-scroll');
+    if (el) {
+      if (this._lastChat !== undefined && this._lastChat !== this.state.chat) {
+        el.scrollTop = el.scrollHeight;
+      } else if (this._lastStreamN !== undefined && this._lastStreamN !== this.state.streamN) {
+        el.scrollTop = el.scrollHeight;
+      }
+    }
+    this._lastChat = this.state.chat;
+    this._lastStreamN = this.state.streamN;
+    const agSig = (this.state.agChat || []).length + '/' + this.state.agStreamN + '/' + this.state.agBlockN + '/' + (this.state.agFootOn ? 1 : 0) + '/' + this.state.agStatusI + '/' + (this.state.agCta ? 1 : 0);
+    if (el && this._agSig !== undefined && this._agSig !== agSig) {
+      el.scrollTop = el.scrollHeight;
+    }
+    this._agSig = agSig; this._agLen = (this.state.agChat || []).length;
+  }
+
+  renderVals() {
+    const S = this.state, C = this.C, DATA = this.DATA;
+    const isDone = c => !!S.done[c.id];
+    const QMETA = {
+      ksy: { club: 'VIP', mg: 'new', sig: [['타행 ISA 만기 D-3', 'am'], ['ETF 조회', 'bl']], bal: '4,500만원', ret: '+3.1%' },
+      lsm: { club: '그랜드', mg: 'new', sig: [['정기예금 만기 D-22', 'am'], ['현금성 장기대기', 'am']], bal: '8,000만원', ret: '+2.8%' },
+      pjh: { club: 'VVIP', mg: 'new', sig: [['퇴직급여 수령', 'gr'], ['과세이연 시한', 'am']], bal: '2,000만원', ret: '+2.9%' },
+      khj: { club: 'VVIP', mg: 'on', sig: [['정기예금 만기 임박', 'am'], ['원리금보장 편중', 'am']], bal: '4.3억원', ret: '+3.0%' },
+      pey: { club: 'VIP', mg: 'on', sig: [['수익률 부진', 'red'], ['수익률 문의 증가', 'red']], bal: '1.8억원', ret: '−6.8%' },
+      lsc: { club: 'VVIP', mg: 'on', sig: [['타행 IRP 개설', 'red'], ['이탈징후', 'red']], bal: '2.1억원', ret: '+4.1%' },
+      jmr: { club: '베스트', mg: 'on', sig: [['현금성 장기대기', 'am'], ['DO 미등록', 'am']], bal: '7,000만원', ret: '+0.8%' },
+      kdy: { club: '그랜드', mg: 'on', sig: [['수익률 부진', 'red'], ['앱 조회 증가', 'am']], bal: '1.1억원', ret: '−4.2%' },
+      cjh: { club: 'VIP', mg: 'on', sig: [['정기예금 만기 임박', 'am']], bal: '1.2억원', ret: '+3.1%' },
+      hsw: { club: 'VVIP', mg: 'on', sig: [['추가납입 기회', 'gr'], ['세액공제 한도', 'gr']], bal: '2.6억원', ret: '+5.2%' },
+      ysr: { club: 'VIP', mg: 'on', sig: [['리밸런싱 점검', 'bl'], ['TDF 빈티지', 'bl']], bal: '1.5억원', ret: '+3.8%' },
+      jmj: { club: '그랜드', mg: 'on', sig: [['현금성 장기대기', 'am']], bal: '9,000만원', ret: '+0.4%' },
+      msy: { club: 'VIP', mg: 'on', sig: [['판매중단 펀드 보유', 'am'], ['성과부진', 'red']], bal: '1.6억원', ret: '−3.4%' },
+      bjh: { club: 'VVIP', mg: 'on', sig: [['원리금보장 100%', 'am']], bal: '2.2억원', ret: '+3.3%' },
+      oks: { club: 'VVIP', mg: 'on', sig: [['연금개시 시점', 'gr']], bal: '3.4억원', ret: '+3.0%' },
+      sjh: { club: '그랜드', mg: 'done', sig: [['리밸런싱 완료', 'gr']], bal: '1.4억원', ret: '+3.6%' },
+      lth: { club: 'VVIP', mg: 'done', sig: [['후속상담 예약', 'bl']], bal: '3.2억원', ret: '−5.1%' },
+      hkg: { club: '베스트', mg: 'done', sig: [['추가납입 완료', 'gr']], bal: '5,000만원', ret: '+3.1%' }
+    };
+    const RESOLVED = [
+      { name: '김나연', club: '그랜드', sig: [['운용지시 완료', 'gr']], bal: '1.3억원', ret: '+2.6%' },
+      { name: '이혜림', club: '베스트', sig: [['만기 재예치 완료', 'gr']], bal: '6,000만원', ret: '+3.0%' }
+    ];
+    const match = c => {
+      const qm = QMETA[c.id] || {};
+      if (S.filter === 'all') return true;
+      if (S.filter === 'new') return qm.mg === 'new';
+      if (S.filter === 'ongoing') return qm.mg === 'on';
+      if (S.filter === 'resolved') return false;
+      return S.filter === 'risk' ? c.risk : S.filter === 'mat' ? c.mat : S.filter === 'imp' ? c.imp : S.filter === 'opp' ? c.opp : S.filter === 'perf' ? c.perf : S.filter === 'brief' ? c.brief : true;
+    };
+    const TAX = { ksy: 400, pjh: 300, pey: 520, lsc: 240, jmr: 180, cjh: 900, ysr: 420, msy: 700, hsw: 600, oks: 360, sjh: 900, hkg: 800 };
+    const INVG = p => (p === '안정형' || p === '안정추구형') ? 'st' : p === '위험중립형' ? 'nu' : 'ag';
+    const extMatch = (c, E) => !E ? true :
+      (E.prod === 'all' || c.product === E.prod) &&
+      (E.dep === 'all' || (E.dep === 'lt1' ? parseFloat(c.deposit) < 1 : E.dep === '1to2' ? (parseFloat(c.deposit) >= 1 && parseFloat(c.deposit) < 2) : parseFloat(c.deposit) >= 2)) &&
+      (E.inv === 'all' || INVG(c.profile) === E.inv) &&
+      (!E.taxOnly || (TAX[c.id] != null && TAX[c.id] < 900));
+    const ORD = ['ksy', 'lsm', 'pjh', 'khj', 'pey', 'lsc', 'jmr', 'kdy', 'cjh', 'hsw', 'ysr', 'jmj', 'msy', 'bjh', 'oks', 'sjh', 'lth', 'hkg'];
+    const rank = c => { const i = ORD.indexOf(c.id); return i < 0 ? 99 : i; };
+    const showCompleted = this.props.showCompleted ?? true;
+    let visible = DATA.filter(match).filter(c => extMatch(c, S.extA)).filter(c => showCompleted || !isDone(c)).slice().sort((a, b) => rank(a) - rank(b));
+    if (S.extA && S.extA.topN) visible = visible.slice(0, S.extA.topN);
+    const MGL = { new: ['신규 선정', '#FFF3C2', '#7A6108'], on: ['지속 관리', '#F2F3F5', '#696E76'], done: ['처리완료', '#F2F3F5', '#696E76'], res: ['관리 해소', '#E6F6EF', '#047857'] };
+    const mkTags = sig => sig.map(p => ({ t: p[0], bg: C[p[1] + 'T'], fg: C[p[1] + 'F'] }));
+    const retC = r => (r.charAt(0) === '−' || r.charAt(0) === '-') ? '#B91C1C' : '#696E76';
+    const rowAnim = i => S.listAnimK ? ((S.listAnimK % 2 ? 'rowIn' : 'rowIn2') + ' .4s ease both ' + (i * 55) + 'ms') : 'none';
+    const queue = S.filter === 'resolved'
+      ? RESOLVED.map((r, i) => ({ name: r.name, club: r.club, mg: MGL.res[0], mgBg: MGL.res[1], mgFg: MGL.res[2], mgShow: true, tags: mkTags(r.sig), bal: r.bal, ret: r.ret, retC: retC(r.ret), bar: '#059669', op: '1', done: false, anim: rowAnim(i), taxOn: false, taxOff: true, onTap: () => this.toast('전일 관리사유가 해소된 고객이에요 — 오늘 조치는 필요 없어요'), onDone: e => e.stopPropagation(), ckBd: '#E2E4E8', ckBg: '#fff', ckOp: '0.25', ckStroke: '#9298A2' }))
+      : [...visible.filter(c => !isDone(c)), ...visible.filter(isDone)].map((c, i) => {
+        const qm = QMETA[c.id] || { club: '', mg: 'on', sig: [], bal: c.deposit + '원', ret: '' };
+        const ml = MGL[qm.mg];
+        const paid = TAX[c.id], has = paid != null, remain = has ? 900 - paid : 0, pct = has ? paid / 900 : 0;
+        return { name: c.name, club: qm.club, mg: ml[0], mgBg: ml[1], mgFg: ml[2], mgShow: qm.mg !== 'new' && qm.mg !== 'on', tags: mkTags(qm.sig), bal: qm.bal, ret: qm.ret, retC: retC(qm.ret),
+          taxOn: has, taxOff: !has, taxColor: remain > 0 ? '#059669' : '#C9CDD3',
+          taxDash: (pct * 72.3).toFixed(1) + ' 72.3', taxPctLabel: Math.round(pct * 100) + '%',
+          taxRemainLabel: has ? (remain > 0 ? '잔여 ' + remain + '만' : '소진 완료') : '',
+          bar: isDone(c) ? '#D8D5D0' : c.bar, op: isDone(c) ? '0.45' : '1', done: isDone(c), anim: rowAnim(i), onTap: () => this.select(c.id),
+          onDone: e => { e.stopPropagation(); this.setState(s => ({ done: { ...s.done, [c.id]: !s.done[c.id] } })); },
+          ckBd: isDone(c) ? '#059669' : '#D2D5DA', ckBg: isDone(c) ? '#E6F6EF' : '#fff', ckOp: isDone(c) ? '1' : '0.4', ckStroke: isDone(c) ? '#059669' : '#9298A2' };
+      });
+    const doneCount = DATA.filter(isDone).length;
+    const extraDone = Math.max(0, doneCount - 3);
+    const cnt = k => DATA.filter(c => c[k]).length;
+    const c = this.sel();
+    const pf = this.profileOf(c);
+    const selHoldings = (c && c.hold ? c.hold : []).map(h => ({ n: h.n, t: h.t, a: h.a, w: h.w, r: h.r, rc: (h.r || '').indexOf('−') === 0 ? '#B91C1C' : '#26282C', redeem: !!h.redeem }));
+    const msgs = S.chat.map((m, i) => {
+      const alt = !!S.tone[i] && m.mentAlt;
+      const streaming = i === S.streamIdx && m.kind === 'ai';
+      const full = alt ? m.mentAlt : (m.ment || '');
+      return { isBrief: m.kind === 'brief', isUser: m.kind === 'user', isAi: m.kind === 'ai', isTyping: m.kind === 'typing', text: m.text || '',
+        dirTitle: m.dir || '', dirWhy: m.why || '', hasWhy: !!m.why, mentShown: streaming ? full.slice(0, S.streamN) : full, streaming: streaming,
+        hasSrc: !!m.src && !streaming, src: m.src || '', hasWarn: !!m.warn && !streaming, warn: m.warn || '', copyLabel: S.copied === 'm' + i ? '복사됨 ✓' : '복사', onCopy: () => this.copy('m' + i, alt ? m.mentAlt : m.ment),
+      };
+    });
+    const DEFX = { trig: 'all', prod: 'all', dep: 'all', inv: 'all', topN: 0, taxOnly: false };
+    const Ed = S.ext || DEFX;
+    const setE = (k, v) => this.setState(s => ({ ext: { ...(s.ext || DEFX), [k]: v } }));
+    const grp = (label, k, opts) => ({ label, opts: opts.map(([v, l]) => { const on = Ed[k] === v; return { label: l, bg: on ? '#26282C' : '#fff', fg: on ? '#fff' : '#696E76', bd: on ? '#26282C' : '#E2E4E8', onTap: () => setE(k, v) }; }) });
+    const extGroups = [
+      grp('트리거', 'trig', [['all', '전체'], ['risk', '이탈위험'], ['mat', '만기·방치'], ['imp', '운용개선'], ['opp', '기회']]),
+      grp('적립금', 'dep', [['all', '전체'], ['lt1', '1억 미만'], ['1to2', '1~2억'], ['gt2', '2억 이상']]),
+      grp('투자성향', 'inv', [['all', '전체'], ['st', '안정·안정추구'], ['nu', '위험중립'], ['ag', '적극·공격']]),
+      grp('인원 수', 'topN', [[0, '전체'], [5, '상위 5명'], [10, '상위 10명']]),
+      { label: '세액공제', opts: [{ label: Ed.taxOnly ? '✓ 잔여 한도 있는 고객만' : '잔여 한도 있는 고객만', bg: Ed.taxOnly ? '#26282C' : '#fff', fg: Ed.taxOnly ? '#fff' : '#696E76', bd: Ed.taxOnly ? '#26282C' : '#E2E4E8', onTap: () => setE('taxOnly', !Ed.taxOnly) }] }
+    ];
+    const pvList = DATA.filter(c => Ed.trig === 'all' ? true : !!c[Ed.trig]).filter(c => extMatch(c, Ed));
+    const extPreviewN = Ed.topN ? Math.min(Ed.topN, pvList.length) : pvList.length;
+    const EAp = S.extA, extChipL = [];
+    if (EAp) {
+      const TL = { risk: '이탈위험', mat: '만기·방치', imp: '운용개선', opp: '기회' };
+      const DL = { lt1: '적립금 1억 미만', '1to2': '적립금 1~2억', gt2: '적립금 2억 이상' };
+      const IL = { st: '안정·안정추구', nu: '위험중립', ag: '적극·공격' };
+      if (TL[EAp.trig]) extChipL.push(TL[EAp.trig]);
+      if (EAp.prod !== 'all') extChipL.push(EAp.prod);
+      if (DL[EAp.dep]) extChipL.push(DL[EAp.dep]);
+      if (IL[EAp.inv]) extChipL.push(IL[EAp.inv]);
+      if (EAp.topN) extChipL.push('상위 ' + EAp.topN + '명');
+      if (EAp.taxOnly) extChipL.push('세액공제 잔여');
+    }
+    const BF = c ? this.BRIEFS[c.id] : null;
+    const bfOpenTile = BF ? BF.s3.tiles.find(t => t.k === S.bfSol) : null;
+    const bfProds = (bfOpenTile && bfOpenTile.prods) || [];
+    const bfSteps = (bfOpenTile && bfOpenTile.steps) || [];
+    const pending = DATA.filter(x => !isDone(x));
+    return {
+      bridgeOn: !!S.bridge, bridgeOpacity: S.bridgeFade ? 0 : 1,
+      bridgeName: (() => { const b = S.bridge && this.DIR.find(x => x.id === S.bridge); return b ? b.name : ''; })(),
+      showDashboard: !S.sel, showBriefing: !!S.sel,
+      doneCount: Math.min(6, 2 + extraDone), targetCount: 6, remainCount: Math.max(0, 4 - extraDone), progressPct: Math.round(Math.min(6, 2 + extraDone) / 6 * 100) + '%',
+      branchDone: Math.min(15, 4 + extraDone), branchPct: Math.round(Math.min(15, 4 + extraDone) / 15 * 100) + '%',
+      extOpen: !!S.extOpen,
+      extBtnBd: S.extOpen || extChipL.length ? '#26282C' : '#E2E4E8', extBtnBg: S.extOpen || extChipL.length ? '#26282C' : '#fff', extBtnFg: S.extOpen || extChipL.length ? '#fff' : '#696E76',
+      extToggle: () => this.setState(s => ({ extOpen: !s.extOpen, ext: s.ext || { ...DEFX, trig: ({ risk: 1, mat: 1, imp: 1, opp: 1 })[s.filter] ? s.filter : 'all' } })),
+      extGroups, extPreviewN,
+      extApply: () => this.setState(s => ({ extA: { ...(s.ext || DEFX) }, filter: (s.ext || DEFX).trig, extOpen: false, listAnimK: s.listAnimK + 1 })),
+      extReset: () => this.setState({ ext: { ...DEFX } }),
+      extClear: () => this.setState(s => ({ extA: null, ext: null, filter: 'all', listAnimK: s.listAnimK + 1 })),
+      extOn: extChipL.length > 0, extChips: extChipL.map(l => ({ label: l })),
+      extResultN: queue.length,
+      xlsTap: () => { clearTimeout(this._toastT); this.setState({ toastMsg: '현재 조건 ' + queue.length + '명 — 타겟고객_명단.xlsx 다운로드 (모형)' }); this._toastT = setTimeout(() => this.setState({ toastMsg: null }), 2400); },
+      toastOn: !!S.toastMsg, toastMsg: S.toastMsg || '',
+      ...this.agVals(c),
+      legacyBrief: true, showLegacyTip: true, hasExecItems: !!(BF && BF.s5.exec.length),
+      hasWhy: !!(BF && BF.s2.why), hasChecks: !!(BF && BF.s2.checks.length), hasOptions: !!(BF && BF.s3.tiles.length),
+      hasS4: !!BF, hasOpening: !!(BF && BF.s4.opening), hasReactions: !!(BF && BF.s4.reacts.length), hasS5: !!BF,
+      profileAnalysisLabel: '오전 7:30 분석', briefingAnalysisLabel: '2026.09.04 기준 분석', holdingReturnLabel: '1년 수익률',
+      hasAiBrief: !!BF, noAiBrief: !!c && !BF, bfName: c ? c.name : '',
+      bfBadges: BF ? BF.badges : [],
+      bfS1Lines: BF ? [BF.s1.main].concat(BF.s1.sub.split(/(?<=\.) /)).map((t, i) => ({ no: i + 1, t: this.bold(t), fw: i === 0 ? 800 : 400, fg: i === 0 ? '#26282C' : '#4E545C' })) : [],
+      bfS2Lead: BF ? this.bold(BF.s2.lead) : '', bfS2Why: BF ? this.bold(BF.s2.why) : '',
+      bfS2Checks: BF ? BF.s2.checks.map(t => ({ t })) : [],
+      bfS3Lead: BF ? this.bold(BF.s3.lead) : '',
+      bfTiles: BF ? BF.s3.tiles.map(t => { const open = S.bfSol === t.k; return { name: t.name, desc: t.desc, hasBtn: !!t.btn, btnLabel: t.btn || '', bd: open ? '#26282C' : '#ECEDF0', rot: open ? '180deg' : '0deg', onTap: () => this.setState(s => ({ bfSol: s.bfSol === t.k ? null : t.k })) }; }) : [],
+      bfOpenOn: !!bfOpenTile && (bfProds.length > 0 || bfSteps.length > 0),
+      bfOpenHasSteps: bfSteps.length > 0, bfOpenSteps: bfSteps.map((t, i, a) => ({ no: i + 1, t, hasLine: i < a.length - 1 })),
+      bfOpenHasProds: bfProds.length > 0,
+      bfOpenProds: bfProds.map((p, i) => ({ i: i + 1, n: p.n, hasBadge: !!p.badge, badge: p.badge || '', bBg: p.bk ? C[p.bk + 'T'] : '#F2F3F5', bFg: p.bk ? C[p.bk + 'F'] : '#696E76', hasStat: !!p.stat, stat: p.stat || '', hasDesc: !!p.desc, desc: p.desc || '' })),
+      bfOpenHasNote: !!(bfOpenTile && bfOpenTile.note), bfOpenNote: bfOpenTile && bfOpenTile.note ? this.bold(bfOpenTile.note) : '',
+      bfHasS3Foot: !!(BF && BF.s3.foot), bfS3Foot: BF && BF.s3.foot ? BF.s3.foot : '',
+      bfOpening: BF ? BF.s4.opening : '', bfOpeningBg: BF && BF.s4.openingHl ? 'linear-gradient(transparent 62%,#FFE580 62%)' : 'none',
+      bfReacts: BF ? BF.s4.reacts.map((r, i) => { const open = S.bfReact === i; return { label: r.label, open, rot: open ? '180deg' : '0deg', m1: r.m[0], hasM2: r.m.length > 1, m2: r.m[1] || '', onTap: () => this.setState(s => ({ bfReact: s.bfReact === i ? null : i })) }; }) : [],
+      bfS4HasNote: !!(BF && BF.s4.note), bfS4Note: BF && BF.s4.note ? BF.s4.note : '',
+      bfTipTitle: BF ? BF.s5.tip.title : '', bfTipBody: BF ? BF.s5.tip.body : '', bfTipMeta: BF ? BF.s5.tip.meta : '', bfTipStats: BF ? BF.s5.tip.stats : '',
+      bfTipGo: () => { const u = BF && BF.s5.tip.url; if (u) window.open(u, '_blank'); else this.toast('현장 TIP 게시글로 이동 (모형)'); },
+      bfExecItems: BF ? BF.s5.exec.map((e, i) => ({ canOpen: true, hasNo: !!BF.s5.ordered, no: i + 1, chip: e.chip, name: e.name, desc: e.desc, onOpen: () => this.openScn(e.chip, e.name) })) : [],
+      filterAll: () => this.setState(s => ({ filter: 'all', listAnimK: s.listAnimK + 1 })),
+      filterNew: () => this.setState(s => ({ filter: 'new', listAnimK: s.listAnimK + 1 })),
+      kNewTap: () => this.setState(s => ({ filter: s.filter === 'new' ? 'all' : 'new', listAnimK: s.listAnimK + 1 })),
+      kOnTap: () => this.setState(s => ({ filter: s.filter === 'ongoing' ? 'all' : 'ongoing', listAnimK: s.listAnimK + 1 })),
+      kResTap: () => this.setState(s => ({ filter: s.filter === 'resolved' ? 'all' : 'resolved', listAnimK: s.listAnimK + 1 })),
+      kNewOn: S.filter === 'new', kOnOn: S.filter === 'ongoing', kResOn: S.filter === 'resolved',
+      kNewBd: S.filter === 'new' ? '#26282C' : '#ECEDF0', kOnBd: S.filter === 'ongoing' ? '#26282C' : '#ECEDF0', kResBd: S.filter === 'resolved' ? '#26282C' : '#ECEDF0',
+      allBg: S.filter === 'all' ? '#26282C' : '#fff', allFg: S.filter === 'all' ? '#fff' : '#696E76', allBd: S.filter === 'all' ? '#26282C' : '#E2E4E8',
+      subChipOn: ['new', 'ongoing', 'resolved', 'perf', 'brief'].indexOf(S.filter) >= 0,
+      subChipLabel: S.filter === 'new' ? '신규 선정' : S.filter === 'ongoing' ? '지속 관리' : S.filter === 'resolved' ? '오늘 방문 예정' : S.filter === 'brief' ? '오늘 브리핑 대상 · ' + cnt('brief') + '명' : '환매추천펀드 보유 ' + cnt('perf'),
+      searchQ: S.searchQ, onSearchInput: e => this.setState({ searchQ: e.target.value, searched: false }),
+      doSearch: () => this.setState({ searched: S.searchQ.trim().length > 0 }),
+      searchOpen: !!S.searched,
+      searchResults: (() => {
+        if (!S.searched) return [];
+        const q = S.searchQ.trim().toLowerCase(), qd = q.replace(/\D/g, '');
+        const inQ = x => DATA.indexOf(x) >= 0;
+        return this.DIR.filter(x => x.name.toLowerCase().includes(q) || (qd && (x.cno.replace(/\D/g, '').includes(qd) || x.phone.replace(/\D/g, '').includes(qd)))).slice(0, 6)
+          .map(x => ({ name: x.name, product: x.product, cno: x.cno, phone: x.phone,
+            tag: inQ(x) ? '오늘 타겟' : '타겟 외', tagBg: inQ(x) ? '#FFF3C2' : '#F2F3F5', tagFg: inQ(x) ? '#7A6108' : '#9298A2',
+            onTap: () => this.select(x.id) }));
+      })(),
+      searchEmpty: !!S.searched && !this.DIR.some(x => { const q = S.searchQ.trim().toLowerCase(), qd = q.replace(/\D/g, ''); return x.name.toLowerCase().includes(q) || (qd && (x.cno.replace(/\D/g, '').includes(qd) || x.phone.replace(/\D/g, '').includes(qd))); }),
+      queue,
+      selName: c ? c.name : '', selMeta: c ? c.product + ' · 적립금 ' + c.deposit + ' · ' + c.profile : '', selPa: c ? (c.pa || '26.4') : '', selPaColor: c && c.stale ? '#D99000' : '#696E76',
+      pfPin: pf.pin, pfRows: [{ l: '나이 · 성별', v: pf.age + '세 · ' + pf.sex }, { l: '스타클럽 등급', v: pf.club }, { l: '투자성향', v: c ? c.profile : '' }],
+      pfNewDate: pf.recent.d, pfNewName: pf.recent.n, pfNewAmt: pf.recent.a,
+      pfAcctDate: pf.acct || '',
+      pfNewOpen: !!S.pfNewOpen, pfNewRot: S.pfNewOpen ? '180deg' : '0deg', pfNewToggle: () => this.setState(s => ({ pfNewOpen: !s.pfNewOpen })),
+      pfDo: pf.dopt ? '등록 · ' + pf.doptName : '미등록', pfDoBg: pf.dopt ? C.grT : C.amT, pfDoFg: pf.dopt ? C.grF : C.amF,
+      pfAmt: c ? c.deposit + '원' : '', pfRet: pf.ret, pfRetFg: pf.ret.indexOf('-') === 0 ? '#B91C1C' : '#059669',
+      ...(() => {
+        const P = { '원리금보장형': 0, '실적배당형': 0, '고유계정대': 0 };
+        const COL = { '원리금보장형': '#FFCC00', '실적배당형': '#26282C', '고유계정대': '#C9CDD3' };
+        const num = a => { const s = String(a); const eok = s.match(/([\d.]+)억/), man = s.match(/([\d,]+)만/); return (eok ? parseFloat(eok[1]) * 10000 : 0) + (man ? parseFloat(man[1].replace(/,/g, '')) : 0); };
+        ((c && c.hold) || []).forEach(x => { const k = x.t === '대기' ? '고유계정대' : x.t === '실적배당' ? '실적배당형' : '원리금보장형'; P[k] += num(x.a); });
+        const tot = P['원리금보장형'] + P['실적배당형'] + P['고유계정대'] || 1;
+        const fmt = v => v >= 10000 ? (Math.round(v / 1000) / 10) + '억' : v.toLocaleString() + '만';
+        const CIRC = 2 * Math.PI * 54;
+        let acc = 0;
+        const arcs = Object.keys(P).filter(l => P[l] > 0).map(l => {
+          const frac = P[l] / tot, a = { color: COL[l], dash: (frac * CIRC).toFixed(1) + ' ' + CIRC.toFixed(1), off: (-acc * CIRC).toFixed(1) };
+          acc += frac; return a;
+        });
+        return {
+          pfArcs: arcs,
+          pfPort: Object.keys(P).map(l => ({ l, color: COL[l], v: P[l] ? fmt(P[l]) + '원' : '—', w: tot > 1 && P[l] ? Math.round(P[l] / tot * 100) + '%' : '' }))
+        };
+      })(),
+      pfTaxRemain: pf.taxHas ? (900 - pf.taxPaid) + '만원' : '확인 필요', pfTaxFg: pf.taxHas ? (pf.taxPaid < 900 ? '#059669' : '#C9CDD3') : '#C9CDD3',
+      holdCount: selHoldings.length, selHoldings, holdOpen: S.holdOpen, holdRot: S.holdOpen ? '180deg' : '0deg', toggleHold: () => this.setState(s => ({ holdOpen: !s.holdOpen })),
+      panelOpen: !!S.sel && S.panelOpen, panelClosed: !!S.sel && !S.panelOpen,
+      togglePanel: () => this.setState(s => ({ panelOpen: !s.panelOpen })),
+      msgs, chips: S.chips.map(label => ({ label, onTap: () => this.sendUser(label) })), hasChips: S.chips.length > 0,
+      commonChips: ['바쁘시다고 함', '본인이 아님', '생각해본다고 함'].map(label => ({ label, onTap: () => this.sendUser(label) })), hasCommonChips: !!c,
+      busy: !!S.busy, notBusy: !S.busy, inputVal: S.input, onInput: e => this.setState({ input: e.target.value }),
+      onKeyEnter: e => { if (e.key === 'Enter') this.sendUser(S.input); }, onSend: () => this.sendUser(S.input),
+      goBack: () => this.setState({ sel: null }),
+      goNext: () => { if (!c) return; const list = pending.filter(x => x.id !== c.id); if (!list.length) return; const idxAll = DATA.indexOf(c); const nxt = list.find(x => DATA.indexOf(x) > idxAll) || list[0]; this.select(nxt.id); },
+      chatRef: this.chatRef
+    };
+  }
+}
+
+  if (window.PensionBriefingAdapter) window.PensionBriefingAdapter.install(Component);
+  if (window.PensionFabrix) window.PensionFabrix.install(Component);
+
+  // Starroot adapter
+  // 아래 문자열 값만 실제 '파일코드' 숫자로 교체하세요.
+  // 예: var STARROOT_FILE_CODE = '1121178';
+  // bracket notation을 사용하므로 숫자 파일코드여도 JS 문법 오류가 나지 않습니다.
+  var STARROOT_FILE_CODE = 'REPLACE_WITH_FILE_CODE';
+
+  window['PG_' + STARROOT_FILE_CODE] = new (function () {
+    this.beforeBinding = function () {};
+    this.onParam = function (params) { window.__PensionVanilla.init(params || {}); };
+    this.onGoback = function () {};
+    this.onBeforeUnload = function () { window.__PensionVanilla.destroy(); };
+  })();
+
+})(window, document);
