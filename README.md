@@ -42,7 +42,7 @@ node tools/briefing/build.js --preview
 
 미리보기는 `http://127.0.0.1:8765`, 종료는 Ctrl+C입니다. 별도 모의 Agent/API 서버는 없습니다.
 
-사내 반입은 **[frontend/briefing-fabrix/](frontend/briefing-fabrix)의 HTML·JS·CSS 세 파일만** 합니다. Node나 원본 모듈은 WAS 실행에 필요하지 않습니다. 실제 파일코드 반영: `node tools/briefing/build.js <숫자파일코드>`.
+사내 반입은 **[frontend/briefing-fabrix/](frontend/briefing-fabrix)의 HTML·JS·CSS 세 파일만** 합니다. Node나 원본 모듈은 WAS 실행에 필요하지 않습니다. 반입본의 Starroot 파일코드는 빌드 기본값 `1288272`이며, 다른 코드는 `node tools/briefing/build.js <숫자파일코드>`로 생성합니다.
 
 사내 Agent 응답 검증: `node tools/briefing/check.js request.json response.json` (내부 요청/answer JSON만, 토큰·헤더·실제 고객 정보 반입 금지). cfg 다섯 항목은 화면 진입 시 `onParam(params).fabrix` 또는 `window.__PENSION_FABRIX_CONFIG`로 주입하며 소스에 넣지 않습니다.
 

@@ -32,7 +32,7 @@ Node·개별 고객 JSON·프론트 원본 모듈은 WAS에 올리지 않습니�
 ## 2. 프론트 세 파일 반입 및 화면 확인
 
 - [ ] 기존 사내 화면 파일을 백업하고 원복 위치를 기록합니다.
-- [ ] 실제 Starroot 파일코드를 확인합니다. `node tools/briefing/build.js <숫자파일코드>`로 생성하거나, 이미 생성한 JS의 실제 선언 `var STARROOT_FILE_CODE = 'REPLACE_WITH_FILE_CODE';` 한 곳을 바꿉니다. 주석의 예시가 아니라 실제 선언을 수정합니다. 이 수동 설정은 재빌드 시 다시 지정해야 합니다.
+- [ ] 반입 JS의 파일코드가 `var STARROOT_FILE_CODE = '1288272';`인지 확인합니다. 빌드 기본값이 1288272이므로 별도 치환은 필요 없고, 다른 코드로 올릴 때만 `node tools/briefing/build.js <숫자파일코드>`로 다시 생성합니다.
 - [ ] HTML을 업무 페이지에 등록하고 JS/CSS를 아래 경로에 배치합니다.
 
 ```text

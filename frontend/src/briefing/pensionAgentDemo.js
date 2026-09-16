@@ -1700,8 +1700,8 @@ class Component {
   if (window.PensionChat) window.PensionChat.install(Component);
 
   // Starroot adapter
-  // 아래 문자열 값만 실제 '파일코드' 숫자로 교체하세요.
-  // 예: var STARROOT_FILE_CODE = '1121178';
+  // 빌드(tools/briefing/build.js)가 아래 자리표시를 실제 파일코드(기본 1288272)로 치환합니다.
+  // 다른 코드로 빌드하려면 node tools/briefing/build.js <파일코드>.
   // bracket notation을 사용하므로 숫자 파일코드여도 JS 문법 오류가 나지 않습니다.
   var STARROOT_FILE_CODE = 'REPLACE_WITH_FILE_CODE';
 

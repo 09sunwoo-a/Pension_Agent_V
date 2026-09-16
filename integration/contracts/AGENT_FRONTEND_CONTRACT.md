@@ -32,7 +32,7 @@ HTML의 리소스 경로는 검증본과 같습니다.
 /mnbank/app/css/bfe/pension/pensionAgentDemo.css
 ```
 
-최초 배포 시 `pensionAgentDemo.js`의 `STARROOT_FILE_CODE = 'REPLACE_WITH_FILE_CODE'`를 실제 파일코드로 바꿉니다. 이후 `PG_<파일코드>.onParam()` 초기화, `onBeforeUnload()` 정리를 사용합니다. `DOMContentLoaded`에 의존하지 않습니다. 파일 경로·파일코드 설정은 최초 배포 작업이며 FabriX 인증 설정과 별개입니다.
+반입 JS의 `STARROOT_FILE_CODE`는 빌드 기본값 `1288272`입니다(다른 코드는 `node tools/briefing/build.js <파일코드>`). `PG_<파일코드>.onParam()` 초기화, `onBeforeUnload()` 정리를 사용합니다. `DOMContentLoaded`에 의존하지 않습니다. 파일 경로·파일코드 설정은 최초 배포 작업이며 FabriX 인증 설정과 별개입니다.
 
 연결 설정 다섯 값은 화면 진입 시 런타임으로 주입합니다. 정적 배포 파일·소스·Git에는 넣지 않습니다.
 
@@ -273,7 +273,7 @@ S1~S5에는 API 응답만 표시하며 반입본에 더미 브리핑 문장을 �
 
 ```sh
 node tools/briefing/build.js
-# 실제 파일코드를 아는 경우: node tools/briefing/build.js 1121178
+# 파일코드 기본값 1288272. 다른 코드: node tools/briefing/build.js <파일코드>
 node tools/briefing/check.js
 ```
 

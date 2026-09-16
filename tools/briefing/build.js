@@ -37,7 +37,10 @@ function inputs() {
   return { customers, briefings };
 }
 
-function artifacts(fileCode = 'REPLACE_WITH_FILE_CODE') {
+// Starroot file code of the deployed business page; pass another code as the CLI argument to override.
+const DEFAULT_FILE_CODE = '1288272';
+
+function artifacts(fileCode = DEFAULT_FILE_CODE) {
   if (!/^(REPLACE_WITH_FILE_CODE|\d+)$/.test(fileCode)) throw new Error('File code must be numeric');
   const data = inputs();
   const modules = ['briefing-contract.js', 'pensionCustomerView.js', 'pensionBriefingView.js',
@@ -103,6 +106,6 @@ function preview() {
 }
 if (require.main === module) {
   if (process.argv[2] === '--preview') preview();
-  else build(process.argv[2]);
+  else build(process.argv[2] || DEFAULT_FILE_CODE);
 }
-module.exports = { ROOT, SRC, OUT, ACTIVE, inputs, artifacts, agentData, build };
+module.exports = { ROOT, SRC, OUT, ACTIVE, DEFAULT_FILE_CODE, inputs, artifacts, agentData, build };
