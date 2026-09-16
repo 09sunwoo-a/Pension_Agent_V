@@ -166,15 +166,15 @@ TDF는 실제 자금 사용시점과 위험수용 수준을 확인한 뒤 빈티
 | <a id="p03"></a>**P03 · S3 GIC 펼쳐보기** | **[요약]** 한화생명 GIC 1년물은 9월 특별제공안에 연 4.00%로 기재돼 있다. 매수 완료일의 금리·잔여한도와 정식 상품명은 거래 전 확인한다. | **9월 퇴직연금 원리금보장 특별제공상품 안내** · 행내 공지 · 연금상품부 645, 2026-08-31 발신 | 원본 기재 파일 `9월_퇴직연금_원리금보장_특별제공상품_안내(1).md` · L19~29·L58~70 / [상품 마스터 GIC-003][master-gic003] |
 
 [hottip-original]: https://lxp.kbstar.com/app/board/hottip-my/view/204287.10A23D02D0E43DEA0A6FB41B9007AC2FB40B42A524DD2EDED36CDD0DCCA9504B
-[guide]: https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/02_마케팅_캠페인/개인형IRP_마케팅_보물지도_Vol1.md
+[guide]: https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/02_마케팅_캠페인/개인형IRP_마케팅_보물지도_Vol1.md
 [kb-irp]: https://kbthink.com/retirement-pension/irp-account.html
 [nts-tax]: https://nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=7875&mi=6439
 [nts-withdraw]: https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=7888&mi=6608
-[fund-edu]: https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/03_영업화법_스크립트_연금왕찐천재/연금왕찐천재_마스터북_Level2_6주차_실적배당상품.md
-[safe-edu]: https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/03_영업화법_스크립트_연금왕찐천재/연금왕찐천재_마스터북_Level2_5주차_원리금보장상품.md
-[hottip]: https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/03_스타런_영업점_Hottip/posts/2026-01-31_204287_%5B%20ISA%20만기%20자금%20개인형IRP%20전환%20마케팅%20%5D.md
-[screen]: https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/06_퇴직연금_주요거래_화면번호_안내/퇴직연금_주요거래_화면번호_안내.md
-[matching]: https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/05_상품_기반지식/PRODUCT_MATCHING_KB.md
-[master-mf010]: https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/05_상품_기반지식/PRODUCT_MASTER.md#MF-010
-[master-sav009]: https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/05_상품_기반지식/PRODUCT_MASTER.md#SAV-009
-[master-gic003]: https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/05_상품_기반지식/PRODUCT_MASTER.md#GIC-003
+[fund-edu]: https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/03_영업화법_스크립트_연금왕찐천재/연금왕찐천재_마스터북_Level2_6주차_실적배당상품.md
+[safe-edu]: https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/03_영업화법_스크립트_연금왕찐천재/연금왕찐천재_마스터북_Level2_5주차_원리금보장상품.md
+[hottip]: https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/03_스타런_영업점_Hottip/posts/2026-01-31_204287_%5B%20ISA%20만기%20자금%20개인형IRP%20전환%20마케팅%20%5D.md
+[screen]: https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/06_퇴직연금_주요거래_화면번호_안내/퇴직연금_주요거래_화면번호_안내.md
+[matching]: https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/05_상품_기반지식/PRODUCT_MATCHING_KB.md
+[master-mf010]: https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/05_상품_기반지식/PRODUCT_MASTER.md#MF-010
+[master-sav009]: https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/05_상품_기반지식/PRODUCT_MASTER.md#SAV-009
+[master-gic003]: https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/05_상품_기반지식/PRODUCT_MASTER.md#GIC-003

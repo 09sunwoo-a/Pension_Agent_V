@@ -134,20 +134,20 @@
     {
       "id": "source-2",
       "title": "K11-01 · S2 제안 근거 / S4 자동 재예치 응대 · KBthink — 퇴직연금 디폴트옵션 언제 적용될까? — DC, IRP 가입자라면 꼭 알아두세요 · 저장소 MD 정리본 · 게시 2026-07-10, 작성 기준 2026-07-07",
-      "description": "[요약·출처맵 경유] IRP 일반 정기예금은 만기 후 자동 재예치를 전제로 하지 않고 재운용 지시가 필요하다는 안내를 사용했다. 고객의 디폴트옵션 지정 여부나 적용 예정일은 확인된 사실로 쓰지 않았다.\n출처맵 후보 11 → 저장소 원천 · sources/corpus/04_KBthink_연금/03_디폴트옵션_제도.md · FAQ L82–83",
-      "url": "https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/04_KBthink_%EC%97%B0%EA%B8%88/03_%EB%94%94%ED%8F%B4%ED%8A%B8%EC%98%B5%EC%85%98_%EC%A0%9C%EB%8F%84.md"
+      "description": "[요약·출처맵 경유] IRP 일반 정기예금은 만기 후 자동 재예치를 전제로 하지 않고 재운용 지시가 필요하다는 안내를 사용했다. 고객의 디폴트옵션 지정 여부나 적용 예정일은 확인된 사실로 쓰지 않았다.\n출처맵 후보 11 → 저장소 원천 · knowledge/corpus/04_KBthink_연금/03_디폴트옵션_제도.md · FAQ L82–83",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/04_KBthink_%EC%97%B0%EA%B8%88/03_%EB%94%94%ED%8F%B4%ED%8A%B8%EC%98%B5%EC%85%98_%EC%A0%9C%EB%8F%84.md"
     },
     {
       "id": "source-3",
       "title": "K11-02 · S3 조건 비교 / S4 금리·해지 응대 / S5 업무지식 · 연금왕 찐천재 마스터북 Level 2·5주차 원리금보장상품 · 행내 교육자료 · 기준일 미표기, 본문 금리 예시는 2026.08",
-      "description": "[요약] 시중은행 예금의 연단리, 저축은행 예금의 월복리, GIC의 연복리라는 교안 기준을 참고해 같은 기간의 이자를 비교한다. 일반 중도해지는 만기 유지와 이율이 다를 수 있으므로 개별 약정의 조건을 반영한다.\n저장소 원천 · sources/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/03_영업화법_스크립트_연금왕찐천재/연금왕찐천재_마스터북_Level2_5주차_원리금보장상품.md · 상품마다 다른 금리 표시 기준 L100–134〔출처맵 경유〕, 연금지급 관련 상품선택 유의사항 L189–196〔해당 절 열람〕",
-      "url": "https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/01_%ED%96%89%EB%82%B4%EA%B0%80%EC%9D%B4%EB%93%9C%EB%AC%B8%EC%84%9C_%EC%97%B0%EA%B8%88%EC%82%AC%EC%97%85%EB%B6%80_%EC%97%B0%EA%B8%88%EC%BB%A8%EC%84%A4%ED%8C%85%EB%B6%80/03_%EC%98%81%EC%97%85%ED%99%94%EB%B2%95_%EC%8A%A4%ED%81%AC%EB%A6%BD%ED%8A%B8_%EC%97%B0%EA%B8%88%EC%99%95%EC%B0%90%EC%B2%9C%EC%9E%AC/%EC%97%B0%EA%B8%88%EC%99%95%EC%B0%90%EC%B2%9C%EC%9E%AC_%EB%A7%88%EC%8A%A4%ED%84%B0%EB%B6%81_Level2_5%EC%A3%BC%EC%B0%A8_%EC%9B%90%EB%A6%AC%EA%B8%88%EB%B3%B4%EC%9E%A5%EC%83%81%ED%92%88.md"
+      "description": "[요약] 시중은행 예금의 연단리, 저축은행 예금의 월복리, GIC의 연복리라는 교안 기준을 참고해 같은 기간의 이자를 비교한다. 일반 중도해지는 만기 유지와 이율이 다를 수 있으므로 개별 약정의 조건을 반영한다.\n저장소 원천 · knowledge/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/03_영업화법_스크립트_연금왕찐천재/연금왕찐천재_마스터북_Level2_5주차_원리금보장상품.md · 상품마다 다른 금리 표시 기준 L100–134〔출처맵 경유〕, 연금지급 관련 상품선택 유의사항 L189–196〔해당 절 열람〕",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/01_%ED%96%89%EB%82%B4%EA%B0%80%EC%9D%B4%EB%93%9C%EB%AC%B8%EC%84%9C_%EC%97%B0%EA%B8%88%EC%82%AC%EC%97%85%EB%B6%80_%EC%97%B0%EA%B8%88%EC%BB%A8%EC%84%A4%ED%8C%85%EB%B6%80/03_%EC%98%81%EC%97%85%ED%99%94%EB%B2%95_%EC%8A%A4%ED%81%AC%EB%A6%BD%ED%8A%B8_%EC%97%B0%EA%B8%88%EC%99%95%EC%B0%90%EC%B2%9C%EC%9E%AC/%EC%97%B0%EA%B8%88%EC%99%95%EC%B0%90%EC%B2%9C%EC%9E%AC_%EB%A7%88%EC%8A%A4%ED%84%B0%EB%B6%81_Level2_5%EC%A3%BC%EC%B0%A8_%EC%9B%90%EB%A6%AC%EA%B8%88%EB%B3%B4%EC%9E%A5%EC%83%81%ED%92%88.md"
     },
     {
       "id": "source-4",
       "title": "K11-03 · S3 예약 / S4 예약 응대 / S5 관련 업무 · 퇴직연금 주요거래 화면번호 안내 · 업무화면 안내 · 기준일 미표기",
-      "description": "[요약·출처맵 경유] 보유상품변경 06-12-611은 보유상품의 즉시·예약·만기예약 변경을 지원하는 화면으로 기재돼 있다. 해당 고객이 고른 상품의 예약 가능 여부까지 확인된 것으로 보지는 않는다.\n출처맵 후보 11 → 저장소 원천 · sources/corpus/06_퇴직연금_주요거래_화면번호_안내/퇴직연금_주요거래_화면번호_안내.md · 보유상품변경 L67",
-      "url": "https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/06_%ED%87%B4%EC%A7%81%EC%97%B0%EA%B8%88_%EC%A3%BC%EC%9A%94%EA%B1%B0%EB%9E%98_%ED%99%94%EB%A9%B4%EB%B2%88%ED%98%B8_%EC%95%88%EB%82%B4/%ED%87%B4%EC%A7%81%EC%97%B0%EA%B8%88_%EC%A3%BC%EC%9A%94%EA%B1%B0%EB%9E%98_%ED%99%94%EB%A9%B4%EB%B2%88%ED%98%B8_%EC%95%88%EB%82%B4.md"
+      "description": "[요약·출처맵 경유] 보유상품변경 06-12-611은 보유상품의 즉시·예약·만기예약 변경을 지원하는 화면으로 기재돼 있다. 해당 고객이 고른 상품의 예약 가능 여부까지 확인된 것으로 보지는 않는다.\n출처맵 후보 11 → 저장소 원천 · knowledge/corpus/06_퇴직연금_주요거래_화면번호_안내/퇴직연금_주요거래_화면번호_안내.md · 보유상품변경 L67",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/06_%ED%87%B4%EC%A7%81%EC%97%B0%EA%B8%88_%EC%A3%BC%EC%9A%94%EA%B1%B0%EB%9E%98_%ED%99%94%EB%A9%B4%EB%B2%88%ED%98%B8_%EC%95%88%EB%82%B4/%ED%87%B4%EC%A7%81%EC%97%B0%EA%B8%88_%EC%A3%BC%EC%9A%94%EA%B1%B0%EB%9E%98_%ED%99%94%EB%A9%B4%EB%B2%88%ED%98%B8_%EC%95%88%EB%82%B4.md"
     },
     {
       "id": "source-5",

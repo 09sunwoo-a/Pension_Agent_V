@@ -221,7 +221,7 @@
           "id": "source-1",
           "title": "K01 · S2 / S4 / S5 조회 · 개인형IRP 마케팅 보물지도 Vol.1 · 본부 행내 가이드 · 2026.03. 기한·공제효과는 원본의 KB Think 안내도 참고.",
           "description": "[요약] ISA 만기일부터 60일 이내 전부 또는 일부를 전환하면 전환액의 10%·최대 300만원의 추가 공제대상 한도를 활용한다. ‘04-10-099’의 ISA 전환 조회는 전체 연금계좌 공제 여력이 합산 확인됐다는 뜻은 아니다.\n저장소 MD · 납입·세액공제 L122~135, ISA 전환 L491~508 및 ISA 관련 조회 절. KB Think IRP 안내 · 작성 기준 2026-06-08",
-          "url": "https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/02_마케팅_캠페인/개인형IRP_마케팅_보물지도_Vol1.md"
+          "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/02_마케팅_캠페인/개인형IRP_마케팅_보물지도_Vol1.md"
         },
         {
           "id": "source-2",
@@ -239,43 +239,43 @@
           "id": "source-4",
           "title": "K04 · S3 / S4 투자상품 · 연금왕 찐천재 마스터북 Level 2·6주차 실적배당상품 · 행내 교육자료 · 기준일 미표기",
           "description": "[요약] TDF는 목표시점에 맞춰 주식·채권 비중을 조정하며, 빈티지는 사용시점과 투자성향 등을 고려한다. ETF는 원하는 투자대상·상품유형·위험을 확인해 비교한다.\n저장소 MD · §1-2 TDF / §1-3 ETF, L141~177",
-          "url": "https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/03_영업화법_스크립트_연금왕찐천재/연금왕찐천재_마스터북_Level2_6주차_실적배당상품.md"
+          "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/03_영업화법_스크립트_연금왕찐천재/연금왕찐천재_마스터북_Level2_6주차_실적배당상품.md"
         },
         {
           "id": "source-5",
           "title": "K05 · S3 / S4 안정 운용 · 연금왕 찐천재 마스터북 Level 2·5주차 원리금보장상품 · 행내 교육자료 · 예시 금리 2026.08 기준",
           "description": "[요약] 예금·GIC는 기간과 이자계산 기준을 맞춰 비교한다. 교안의 상품군 기준은 시중은행 예금 연단리·저축은행 예금 월복리·GIC 연복리이며, 개별 약관은 별도 확인한다.\n저장소 MD · 원리금보장상품 4종·금리 표시 기준, L1~135",
-          "url": "https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/03_영업화법_스크립트_연금왕찐천재/연금왕찐천재_마스터북_Level2_5주차_원리금보장상품.md"
+          "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/03_영업화법_스크립트_연금왕찐천재/연금왕찐천재_마스터북_Level2_5주차_원리금보장상품.md"
         },
         {
           "id": "source-6",
           "title": "K06 · S5 TIP / 입금 업무 · Hot Tip 204287 — ISA 만기 자금 개인형IRP 전환 마케팅 · 직원 경험담 · 2026-01-31 / 퇴직연금 주요거래 화면번호 안내 · 기준일 미표기",
           "description": "[요약] ‘입금/입금예약 01-12-213’에서 ‘ISA 만기자금 입금’을 선택하고 조회된 입금가능금액을 확인한다. 타행 증빙·처리조건은 현행 업무기준을 확인한다.\nHot Tip 저장소 MD · §1, L27~64 / 자료 기재 게시판 원문 / 화면 안내 MD · L42",
-          "url": "https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/03_스타런_영업점_Hottip/posts/2026-01-31_204287_%5B%20ISA%20만기%20자금%20개인형IRP%20전환%20마케팅%20%5D.md"
+          "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/03_스타런_영업점_Hottip/posts/2026-01-31_204287_%5B%20ISA%20만기%20자금%20개인형IRP%20전환%20마케팅%20%5D.md"
         },
         {
           "id": "source-7",
           "title": "K07 · S3 고객별 추천 이유 · PRODUCT_MATCHING_KB · 자료 기반 기획 매핑 · v1.0, 2026-09-10",
           "description": "[설계 적용] PM-04의 동일 조건 원리금보장 비교, PM-05의 장기자금 다자산 운용, PM-07의 ETF 관심 확인을 김서연의 기존 구성·조회 이력에 연결했다. 조회 이력만으로 개별 상품 매수 의사를 확정하지 않는다.\n매핑 KB · PM-04·PM-05·PM-07. 공식 상품설명서나 적합성 승인 기준은 아님",
-          "url": "https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/05_상품_기반지식/PRODUCT_MATCHING_KB.md"
+          "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/05_상품_기반지식/PRODUCT_MATCHING_KB.md"
         },
         {
           "id": "source-8",
           "title": "P01 · S3 자산배분형 펼쳐보기 · 퇴직연금 추천펀드·포트폴리오(2026년 9월) · 행내 상품자료 정리본",
           "description": "[요약] KB 드림스타 자산배분 안정형은 국내외 ETF를 통해 주식·채권·대체자산에 분산하는 전략이며 자료상 위험은 ‘보통’이다. 클래스 미확정으로 성과 수치는 사용하지 않았다.\n원본 기재 파일 퇴직연금_추천펀드_포트폴리오_2026-09(1).md · §1, L24 / 상품 마스터 MF-010",
-          "url": "https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/05_상품_기반지식/PRODUCT_MASTER.md#MF-010"
+          "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/05_상품_기반지식/PRODUCT_MASTER.md#MF-010"
         },
         {
           "id": "source-9",
           "title": "P02 · S3 정기예금 펼쳐보기 · 저축은행 퇴직연금 정기예금 적용금리 · 행내 금리자료 · 2026-09-01~09-30",
           "description": "[요약] SBI저축은행의 개인형 IRP 1년 금리는 자료상 연 3.85%다. 실제 제공한도·가입조건 확인이 필요한 비교 후보이며 고객의 확정 약정금리는 아니다.\n원본 기재 파일 저축은행_퇴직연금_정기예금_적용금리_2026-09(1).md · L98~102 / 상품 마스터 SAV-009",
-          "url": "https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/05_상품_기반지식/PRODUCT_MASTER.md#SAV-009"
+          "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/05_상품_기반지식/PRODUCT_MASTER.md#SAV-009"
         },
         {
           "id": "source-10",
           "title": "P03 · S3 GIC 펼쳐보기 · 9월 퇴직연금 원리금보장 특별제공상품 안내 · 행내 공지 · 연금상품부 645, 2026-08-31 발신",
           "description": "[요약] 한화생명 GIC 1년물은 9월 특별제공안에 연 4.00%로 기재돼 있다. 매수 완료일의 금리·잔여한도와 정식 상품명은 거래 전 확인한다.\n원본 기재 파일 9월_퇴직연금_원리금보장_특별제공상품_안내(1).md · L19~29·L58~70 / 상품 마스터 GIC-003",
-          "url": "https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/05_상품_기반지식/PRODUCT_MASTER.md#GIC-003"
+          "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/05_상품_기반지식/PRODUCT_MASTER.md#GIC-003"
         }
       ],
       "reviewNotes": [

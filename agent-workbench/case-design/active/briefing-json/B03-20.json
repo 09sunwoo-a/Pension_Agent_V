@@ -126,14 +126,14 @@
     {
       "id": "source-2",
       "title": "K20-01 · S2 지급재원 / S3 기존 상품 유지 / S4 만기 전 수령 / S5 업무지식·후속 · 연금왕 찐천재 마스터북 Level 2·5주차 원리금보장상품 · 행내 교육자료 · 기준일 미표기, 본문 금리 예시는 2026.08",
-      "description": "[요약] 연금지급 사유의 특별중도해지는 약정금리를 일할 계산하는 것으로 설명되며 일반 임의해지와 구분하되, 실제 상품별 적용조건을 확인한다. 연금개시 예정 고객의 수령 시기별 단기·중장기 재원 구분 예시는 참고하고, 그 비중을 고객의 확정 배분으로 옮기지 않았다.\n저장소 원천 · sources/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/03_영업화법_스크립트_연금왕찐천재/연금왕찐천재_마스터북_Level2_5주차_원리금보장상품.md · 연금지급 관련 상품선택 유의사항 L175–196〔해당 절 열람〕, IRP 맞춤 설계 매뉴얼 ‘연금개시 예정 고객’ L306–310〔출처맵 경유〕",
-      "url": "https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/01_%ED%96%89%EB%82%B4%EA%B0%80%EC%9D%B4%EB%93%9C%EB%AC%B8%EC%84%9C_%EC%97%B0%EA%B8%88%EC%82%AC%EC%97%85%EB%B6%80_%EC%97%B0%EA%B8%88%EC%BB%A8%EC%84%A4%ED%8C%85%EB%B6%80/03_%EC%98%81%EC%97%85%ED%99%94%EB%B2%95_%EC%8A%A4%ED%81%AC%EB%A6%BD%ED%8A%B8_%EC%97%B0%EA%B8%88%EC%99%95%EC%B0%90%EC%B2%9C%EC%9E%AC/%EC%97%B0%EA%B8%88%EC%99%95%EC%B0%90%EC%B2%9C%EC%9E%AC_%EB%A7%88%EC%8A%A4%ED%84%B0%EB%B6%81_Level2_5%EC%A3%BC%EC%B0%A8_%EC%9B%90%EB%A6%AC%EA%B8%88%EB%B3%B4%EC%9E%A5%EC%83%81%ED%92%88.md"
+      "description": "[요약] 연금지급 사유의 특별중도해지는 약정금리를 일할 계산하는 것으로 설명되며 일반 임의해지와 구분하되, 실제 상품별 적용조건을 확인한다. 연금개시 예정 고객의 수령 시기별 단기·중장기 재원 구분 예시는 참고하고, 그 비중을 고객의 확정 배분으로 옮기지 않았다.\n저장소 원천 · knowledge/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/03_영업화법_스크립트_연금왕찐천재/연금왕찐천재_마스터북_Level2_5주차_원리금보장상품.md · 연금지급 관련 상품선택 유의사항 L175–196〔해당 절 열람〕, IRP 맞춤 설계 매뉴얼 ‘연금개시 예정 고객’ L306–310〔출처맵 경유〕",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/01_%ED%96%89%EB%82%B4%EA%B0%80%EC%9D%B4%EB%93%9C%EB%AC%B8%EC%84%9C_%EC%97%B0%EA%B8%88%EC%82%AC%EC%97%85%EB%B6%80_%EC%97%B0%EA%B8%88%EC%BB%A8%EC%84%A4%ED%8C%85%EB%B6%80/03_%EC%98%81%EC%97%85%ED%99%94%EB%B2%95_%EC%8A%A4%ED%81%AC%EB%A6%BD%ED%8A%B8_%EC%97%B0%EA%B8%88%EC%99%95%EC%B0%90%EC%B2%9C%EC%9E%AC/%EC%97%B0%EA%B8%88%EC%99%95%EC%B0%90%EC%B2%9C%EC%9E%AC_%EB%A7%88%EC%8A%A4%ED%84%B0%EB%B6%81_Level2_5%EC%A3%BC%EC%B0%A8_%EC%9B%90%EB%A6%AC%EA%B8%88%EB%B3%B4%EC%9E%A5%EC%83%81%ED%92%88.md"
     },
     {
       "id": "source-3",
       "title": "K20-02 · S2 잔여자금 운용 / S3 자금 구분 / S4 전액 현금화 응대 · 개인투자자 연령대별 퇴직연금 운용 전략 · 교육자료 STT 정리본·강사 견해 · 기준일 미표기",
-      "description": "[요약·출처맵 경유] 연금을 나눠 받는 경우 수령이 시작된 뒤에도 잔여자금의 운용기간이 남아 있다는 원칙을 사용했다. 이 고객에게는 성장자산 확대가 아니라 기존 원리금보장 운용을 이어갈 근거로 적용했다.\n출처맵 후보 20 → 저장소 원천 · sources/corpus/02_스타런_퇴직연금_교육자료/02_투자교육/연령대별_퇴직연금_운용전략.md · 소비 행태의 변화·투자가능기간을 다시 계산해야 한다 L62–75",
-      "url": "https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/02_%EC%8A%A4%ED%83%80%EB%9F%B0_%ED%87%B4%EC%A7%81%EC%97%B0%EA%B8%88_%EA%B5%90%EC%9C%A1%EC%9E%90%EB%A3%8C/02_%ED%88%AC%EC%9E%90%EA%B5%90%EC%9C%A1/%EC%97%B0%EB%A0%B9%EB%8C%80%EB%B3%84_%ED%87%B4%EC%A7%81%EC%97%B0%EA%B8%88_%EC%9A%B4%EC%9A%A9%EC%A0%84%EB%9E%B5.md"
+      "description": "[요약·출처맵 경유] 연금을 나눠 받는 경우 수령이 시작된 뒤에도 잔여자금의 운용기간이 남아 있다는 원칙을 사용했다. 이 고객에게는 성장자산 확대가 아니라 기존 원리금보장 운용을 이어갈 근거로 적용했다.\n출처맵 후보 20 → 저장소 원천 · knowledge/corpus/02_스타런_퇴직연금_교육자료/02_투자교육/연령대별_퇴직연금_운용전략.md · 소비 행태의 변화·투자가능기간을 다시 계산해야 한다 L62–75",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/02_%EC%8A%A4%ED%83%80%EB%9F%B0_%ED%87%B4%EC%A7%81%EC%97%B0%EA%B8%88_%EA%B5%90%EC%9C%A1%EC%9E%90%EB%A3%8C/02_%ED%88%AC%EC%9E%90%EA%B5%90%EC%9C%A1/%EC%97%B0%EB%A0%B9%EB%8C%80%EB%B3%84_%ED%87%B4%EC%A7%81%EC%97%B0%EA%B8%88_%EC%9A%B4%EC%9A%A9%EC%A0%84%EB%9E%B5.md"
     },
     {
       "id": "source-4",
