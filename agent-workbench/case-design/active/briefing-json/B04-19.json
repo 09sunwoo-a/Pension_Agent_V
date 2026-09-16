@@ -139,20 +139,20 @@
     {
       "id": "source-2",
       "title": "K02 · S2 상품 유지 / S3 통합·현금화 선택 / S4 상품 처리·사전고지 / S5 결과 조회·최종 결정 · 연금왕 찐천재 마스터북 Level 1 / 3주차 계약이전 화법(은행) · 행내 가이드 · 기준일 미표기, 본문 수익률표는 2026년 2분기 기준",
-      "description": "[요약] 실물이전 가능한 보유상품은 유지해 옮길 수 있고, 당행 미취급·해당 금융회사 전용상품 등은 현금화가 필요한 경우가 있다. 기존 금융회사가 상품별 가능 여부·처리방법을 안내한 뒤 고객이 최종 이전 여부를 결정하며, 신청 후 가능·불가상품은 06-AD-020에서 확인한다.\n저장소 MD · §1 대출은 국민은행, IRP는 타은행으로 가입중인 고객 중 상품 유지 화법 L43–51, 실물이전 처리 흐름·본인 의사확인 L61–74. 경로: sources/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/03_영업화법_스크립트_연금왕찐천재/연금왕찐천재_마스터북_계약이전화법_은행.md · 이번 작업에서 해당 MD 문단 확인, 도식 내용은 MD의 판독문 기준. fileciteturn39file0L2-L2",
-      "url": "https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/01_%ED%96%89%EB%82%B4%EA%B0%80%EC%9D%B4%EB%93%9C%EB%AC%B8%EC%84%9C_%EC%97%B0%EA%B8%88%EC%82%AC%EC%97%85%EB%B6%80_%EC%97%B0%EA%B8%88%EC%BB%A8%EC%84%A4%ED%8C%85%EB%B6%80/03_%EC%98%81%EC%97%85%ED%99%94%EB%B2%95_%EC%8A%A4%ED%81%AC%EB%A6%BD%ED%8A%B8_%EC%97%B0%EA%B8%88%EC%99%95%EC%B0%90%EC%B2%9C%EC%9E%AC/%EC%97%B0%EA%B8%88%EC%99%95%EC%B0%90%EC%B2%9C%EC%9E%AC_%EB%A7%88%EC%8A%A4%ED%84%B0%EB%B6%81_%EA%B3%84%EC%95%BD%EC%9D%B4%EC%A0%84%ED%99%94%EB%B2%95_%EC%9D%80%ED%96%89.md#L43-L74"
+      "description": "[요약] 실물이전 가능한 보유상품은 유지해 옮길 수 있고, 당행 미취급·해당 금융회사 전용상품 등은 현금화가 필요한 경우가 있다. 기존 금융회사가 상품별 가능 여부·처리방법을 안내한 뒤 고객이 최종 이전 여부를 결정하며, 신청 후 가능·불가상품은 06-AD-020에서 확인한다.\n저장소 MD · §1 대출은 국민은행, IRP는 타은행으로 가입중인 고객 중 상품 유지 화법 L43–51, 실물이전 처리 흐름·본인 의사확인 L61–74. 경로: knowledge/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/03_영업화법_스크립트_연금왕찐천재/연금왕찐천재_마스터북_계약이전화법_은행.md · 이번 작업에서 해당 MD 문단 확인, 도식 내용은 MD의 판독문 기준. fileciteturn39file0L2-L2",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/01_%ED%96%89%EB%82%B4%EA%B0%80%EC%9D%B4%EB%93%9C%EB%AC%B8%EC%84%9C_%EC%97%B0%EA%B8%88%EC%82%AC%EC%97%85%EB%B6%80_%EC%97%B0%EA%B8%88%EC%BB%A8%EC%84%A4%ED%8C%85%EB%B6%80/03_%EC%98%81%EC%97%85%ED%99%94%EB%B2%95_%EC%8A%A4%ED%81%AC%EB%A6%BD%ED%8A%B8_%EC%97%B0%EA%B8%88%EC%99%95%EC%B0%90%EC%B2%9C%EC%9E%AC/%EC%97%B0%EA%B8%88%EC%99%95%EC%B0%90%EC%B2%9C%EC%9E%AC_%EB%A7%88%EC%8A%A4%ED%84%B0%EB%B6%81_%EA%B3%84%EC%95%BD%EC%9D%B4%EC%A0%84%ED%99%94%EB%B2%95_%EC%9D%80%ED%96%89.md#L43-L74"
     },
     {
       "id": "source-3",
       "title": "K03 · S2 제안 근거 / S4 실물이전 요건 · KBthink — IRP(개인형 퇴직연금)란? 계좌 개설부터 퇴직금 수령, 세액공제 혜택까지 · 공개 안내의 저장소 MD 정리본 · 게시 2026-06-11, 작성 기준 2026-06-08",
-      "description": "[요약] 실물이전은 같은 퇴직연금 유형·동일 상품 간 이전으로, 수취기관에서 취급하며 실물이전이 가능한 상품이어야 한다. 이 조건을 충족하는 상품에 한해 해지 없는 이전을 설명했다.\n원천 위치 — KBthink 저장소 MD · FAQ L84–85. 경로: sources/corpus/04_KBthink_연금/01_IRP_개인형퇴직연금.md · 출처맵 후보 19 행의 요약을 통해 활용, 이번 작업에서 해당 원문 추가 열람 없음. fileciteturn35file2L43-L43",
-      "url": "https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/04_KBthink_%EC%97%B0%EA%B8%88/01_IRP_%EA%B0%9C%EC%9D%B8%ED%98%95%ED%87%B4%EC%A7%81%EC%97%B0%EA%B8%88.md#L84-L85"
+      "description": "[요약] 실물이전은 같은 퇴직연금 유형·동일 상품 간 이전으로, 수취기관에서 취급하며 실물이전이 가능한 상품이어야 한다. 이 조건을 충족하는 상품에 한해 해지 없는 이전을 설명했다.\n원천 위치 — KBthink 저장소 MD · FAQ L84–85. 경로: knowledge/corpus/04_KBthink_연금/01_IRP_개인형퇴직연금.md · 출처맵 후보 19 행의 요약을 통해 활용, 이번 작업에서 해당 원문 추가 열람 없음. fileciteturn35file2L43-L43",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/04_KBthink_%EC%97%B0%EA%B8%88/01_IRP_%EA%B0%9C%EC%9D%B8%ED%98%95%ED%87%B4%EC%A7%81%EC%97%B0%EA%B8%88.md#L84-L85"
     },
     {
       "id": "source-4",
       "title": "K04 · S5 TIP·사전조회·신청 후 결과 확인 · Hot Tip 203917 — [신통방통]-⑨개인형IRP 계약이전! 나에게만 맡겨!! · 직원 경험담 · 2025-11-12",
-      "description": "[요약] 신청 전 타행 보유내역과 당행 라인업을 대조하고, 펀드 등의 사전 조회에 04-12-333, 신청 후 실물이전 가능 여부 결과 조회에 06-AD-020을 활용한 직원 절차를 참고했다. 04-12-333은 Hot Tip 단독 기재 화면이며, 예금까지 같은 화면에서 모두 조회된다고 확대하지 않았다.\n원천 위치 — 저장소 MD · §실물 계약 이전 전 체크 사항 L68–122 / 게시판 원문. 경로: sources/corpus/03_스타런_영업점_Hottip/posts/2025-11-12_203917_[신통방통]-⑨개인형IRP 계약이전! 나에게만 맡겨!!.md · 출처맵 후보 19 행의 요약을 통해 활용, 이번 작업에서 해당 MD·게시판 원문 추가 열람 없음. fileciteturn35file2L44-L44",
-      "url": "https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/03_%EC%8A%A4%ED%83%80%EB%9F%B0_%EC%98%81%EC%97%85%EC%A0%90_Hottip/posts/2025-11-12_203917_%5B%EC%8B%A0%ED%86%B5%EB%B0%A9%ED%86%B5%5D-%E2%91%A8%EA%B0%9C%EC%9D%B8%ED%98%95IRP%20%EA%B3%84%EC%95%BD%EC%9D%B4%EC%A0%84%21%20%EB%82%98%EC%97%90%EA%B2%8C%EB%A7%8C%20%EB%A7%A1%EA%B2%A8%21%21.md#L68-L122"
+      "description": "[요약] 신청 전 타행 보유내역과 당행 라인업을 대조하고, 펀드 등의 사전 조회에 04-12-333, 신청 후 실물이전 가능 여부 결과 조회에 06-AD-020을 활용한 직원 절차를 참고했다. 04-12-333은 Hot Tip 단독 기재 화면이며, 예금까지 같은 화면에서 모두 조회된다고 확대하지 않았다.\n원천 위치 — 저장소 MD · §실물 계약 이전 전 체크 사항 L68–122 / 게시판 원문. 경로: knowledge/corpus/03_스타런_영업점_Hottip/posts/2025-11-12_203917_[신통방통]-⑨개인형IRP 계약이전! 나에게만 맡겨!!.md · 출처맵 후보 19 행의 요약을 통해 활용, 이번 작업에서 해당 MD·게시판 원문 추가 열람 없음. fileciteturn35file2L44-L44",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/03_%EC%8A%A4%ED%83%80%EB%9F%B0_%EC%98%81%EC%97%85%EC%A0%90_Hottip/posts/2025-11-12_203917_%5B%EC%8B%A0%ED%86%B5%EB%B0%A9%ED%86%B5%5D-%E2%91%A8%EA%B0%9C%EC%9D%B8%ED%98%95IRP%20%EA%B3%84%EC%95%BD%EC%9D%B4%EC%A0%84%21%20%EB%82%98%EC%97%90%EA%B2%8C%EB%A7%8C%20%EB%A7%A1%EA%B2%A8%21%21.md#L68-L122"
     }
   ],
   "reviewNotes": [

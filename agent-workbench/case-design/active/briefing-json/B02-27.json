@@ -149,20 +149,20 @@
     {
       "id": "source-2",
       "title": "K27-01 · S2 제안 근거 / S3 향후 설정 / S4 자동이체 응대 / S5 업무지식 · 연금왕 찐천재 마스터북 Level 2·7주차 디폴트옵션 상품 · 행내 교육자료 · 기준일 미표기",
-      "description": "[요약·출처맵 경유] 입금예정상품은 새로 입금되는 자금을 미리 지정한 상품으로 자동매수하는 설정이며, 디폴트옵션보다 우선 적용된다. 디폴트옵션은 별도 운용지시가 없는 자금의 운용방법으로 구분한다.\n출처맵 후보 27 → 저장소 원천 · sources/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/03_영업화법_스크립트_연금왕찐천재/연금왕찐천재_마스터북_Level2_7주차_디폴트옵션상품.md · 비교표 L145–150, Q5 해설·실전TIP L527–540",
-      "url": "https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/01_%ED%96%89%EB%82%B4%EA%B0%80%EC%9D%B4%EB%93%9C%EB%AC%B8%EC%84%9C_%EC%97%B0%EA%B8%88%EC%82%AC%EC%97%85%EB%B6%80_%EC%97%B0%EA%B8%88%EC%BB%A8%EC%84%A4%ED%8C%85%EB%B6%80/03_%EC%98%81%EC%97%85%ED%99%94%EB%B2%95_%EC%8A%A4%ED%81%AC%EB%A6%BD%ED%8A%B8_%EC%97%B0%EA%B8%88%EC%99%95%EC%B0%90%EC%B2%9C%EC%9E%AC/%EC%97%B0%EA%B8%88%EC%99%95%EC%B0%90%EC%B2%9C%EC%9E%AC_%EB%A7%88%EC%8A%A4%ED%84%B0%EB%B6%81_Level2_7%EC%A3%BC%EC%B0%A8_%EB%94%94%ED%8F%B4%ED%8A%B8%EC%98%B5%EC%85%98%EC%83%81%ED%92%88.md"
+      "description": "[요약·출처맵 경유] 입금예정상품은 새로 입금되는 자금을 미리 지정한 상품으로 자동매수하는 설정이며, 디폴트옵션보다 우선 적용된다. 디폴트옵션은 별도 운용지시가 없는 자금의 운용방법으로 구분한다.\n출처맵 후보 27 → 저장소 원천 · knowledge/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/03_영업화법_스크립트_연금왕찐천재/연금왕찐천재_마스터북_Level2_7주차_디폴트옵션상품.md · 비교표 L145–150, Q5 해설·실전TIP L527–540",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/01_%ED%96%89%EB%82%B4%EA%B0%80%EC%9D%B4%EB%93%9C%EB%AC%B8%EC%84%9C_%EC%97%B0%EA%B8%88%EC%82%AC%EC%97%85%EB%B6%80_%EC%97%B0%EA%B8%88%EC%BB%A8%EC%84%A4%ED%8C%85%EB%B6%80/03_%EC%98%81%EC%97%85%ED%99%94%EB%B2%95_%EC%8A%A4%ED%81%AC%EB%A6%BD%ED%8A%B8_%EC%97%B0%EA%B8%88%EC%99%95%EC%B0%90%EC%B2%9C%EC%9E%AC/%EC%97%B0%EA%B8%88%EC%99%95%EC%B0%90%EC%B2%9C%EC%9E%AC_%EB%A7%88%EC%8A%A4%ED%84%B0%EB%B6%81_Level2_7%EC%A3%BC%EC%B0%A8_%EB%94%94%ED%8F%B4%ED%8A%B8%EC%98%B5%EC%85%98%EC%83%81%ED%92%88.md"
     },
     {
       "id": "source-3",
       "title": "K27-02 · S3 설정 후보 / S4 예금 응대 / S5 업무지식 · 연금왕 찐천재 마스터북 Level 2·8주차 상품운용 · 행내 교육자료 · 기준일 미표기",
-      "description": "[요약·저장소 해당 절 열람] 원리금보장상품 중 입금예정상품 변경이 가능한 상품군은 시중은행 정기예금으로 표시된다. ‘오늘 입금한 금액 투자’와 계속성 운용지시는 구분되므로, 과거부터 쌓인 대기금을 오늘 입금분으로 취급하지 않는다.\n저장소 원천 · sources/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/03_영업화법_스크립트_연금왕찐천재/연금왕찐천재_마스터북_Level2_8주차_상품운용.md · §1-2 원리금보장상품 거래하기, L68–96",
-      "url": "https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/01_%ED%96%89%EB%82%B4%EA%B0%80%EC%9D%B4%EB%93%9C%EB%AC%B8%EC%84%9C_%EC%97%B0%EA%B8%88%EC%82%AC%EC%97%85%EB%B6%80_%EC%97%B0%EA%B8%88%EC%BB%A8%EC%84%A4%ED%8C%85%EB%B6%80/03_%EC%98%81%EC%97%85%ED%99%94%EB%B2%95_%EC%8A%A4%ED%81%AC%EB%A6%BD%ED%8A%B8_%EC%97%B0%EA%B8%88%EC%99%95%EC%B0%90%EC%B2%9C%EC%9E%AC/%EC%97%B0%EA%B8%88%EC%99%95%EC%B0%90%EC%B2%9C%EC%9E%AC_%EB%A7%88%EC%8A%A4%ED%84%B0%EB%B6%81_Level2_8%EC%A3%BC%EC%B0%A8_%EC%83%81%ED%92%88%EC%9A%B4%EC%9A%A9.md"
+      "description": "[요약·저장소 해당 절 열람] 원리금보장상품 중 입금예정상품 변경이 가능한 상품군은 시중은행 정기예금으로 표시된다. ‘오늘 입금한 금액 투자’와 계속성 운용지시는 구분되므로, 과거부터 쌓인 대기금을 오늘 입금분으로 취급하지 않는다.\n저장소 원천 · knowledge/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/03_영업화법_스크립트_연금왕찐천재/연금왕찐천재_마스터북_Level2_8주차_상품운용.md · §1-2 원리금보장상품 거래하기, L68–96",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/01_%ED%96%89%EB%82%B4%EA%B0%80%EC%9D%B4%EB%93%9C%EB%AC%B8%EC%84%9C_%EC%97%B0%EA%B8%88%EC%82%AC%EC%97%85%EB%B6%80_%EC%97%B0%EA%B8%88%EC%BB%A8%EC%84%A4%ED%8C%85%EB%B6%80/03_%EC%98%81%EC%97%85%ED%99%94%EB%B2%95_%EC%8A%A4%ED%81%AC%EB%A6%BD%ED%8A%B8_%EC%97%B0%EA%B8%88%EC%99%95%EC%B0%90%EC%B2%9C%EC%9E%AC/%EC%97%B0%EA%B8%88%EC%99%95%EC%B0%90%EC%B2%9C%EC%9E%AC_%EB%A7%88%EC%8A%A4%ED%84%B0%EB%B6%81_Level2_8%EC%A3%BC%EC%B0%A8_%EC%83%81%ED%92%88%EC%9A%B4%EC%9A%A9.md"
     },
     {
       "id": "source-4",
       "title": "K27-03 · S5 관련 업무 · 퇴직연금 주요거래 화면번호 안내 · 업무화면 안내 · 기준일 미표기",
-      "description": "[요약·출처맵 경유] 상품운용내역조회 04-12-640, 보유상품변경 06-12-611, 입금예정상품 등록/변경 06-12-610을 각각 현재 지시 확인·현재 대기금 운용·향후 설정에 연결했다. 현재 자금의 주문과 앞으로의 매수설정을 같은 처리로 보지 않는다.\n출처맵 후보 27·18 → 저장소 원천 · sources/corpus/06_퇴직연금_주요거래_화면번호_안내/퇴직연금_주요거래_화면번호_안내.md · 상품운용 표 L66–68",
-      "url": "https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/06_%ED%87%B4%EC%A7%81%EC%97%B0%EA%B8%88_%EC%A3%BC%EC%9A%94%EA%B1%B0%EB%9E%98_%ED%99%94%EB%A9%B4%EB%B2%88%ED%98%B8_%EC%95%88%EB%82%B4/%ED%87%B4%EC%A7%81%EC%97%B0%EA%B8%88_%EC%A3%BC%EC%9A%94%EA%B1%B0%EB%9E%98_%ED%99%94%EB%A9%B4%EB%B2%88%ED%98%B8_%EC%95%88%EB%82%B4.md"
+      "description": "[요약·출처맵 경유] 상품운용내역조회 04-12-640, 보유상품변경 06-12-611, 입금예정상품 등록/변경 06-12-610을 각각 현재 지시 확인·현재 대기금 운용·향후 설정에 연결했다. 현재 자금의 주문과 앞으로의 매수설정을 같은 처리로 보지 않는다.\n출처맵 후보 27·18 → 저장소 원천 · knowledge/corpus/06_퇴직연금_주요거래_화면번호_안내/퇴직연금_주요거래_화면번호_안내.md · 상품운용 표 L66–68",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/06_%ED%87%B4%EC%A7%81%EC%97%B0%EA%B8%88_%EC%A3%BC%EC%9A%94%EA%B1%B0%EB%9E%98_%ED%99%94%EB%A9%B4%EB%B2%88%ED%98%B8_%EC%95%88%EB%82%B4/%ED%87%B4%EC%A7%81%EC%97%B0%EA%B8%88_%EC%A3%BC%EC%9A%94%EA%B1%B0%EB%9E%98_%ED%99%94%EB%A9%B4%EB%B2%88%ED%98%B8_%EC%95%88%EB%82%B4.md"
     },
     {
       "id": "source-5",
@@ -179,8 +179,8 @@
     {
       "id": "source-7",
       "title": "P27-02 · S3 단기채 후보 / S4 투자위험 / 상품 펼쳐보기 · KB국민은행 퇴직연금 판매중 ETF·펀드 · 상품목록 마스터 · 원천 기준일 미기재 / KBthink IRP 안내 · 저장소 MD · 2026-06-08 기준",
-      "description": "[요약] 해당 C-P2E(퇴직연금) 클래스는 마스터에 국내 초단기채권형, 6등급 ‘매우낮은위험’으로 기재돼 있으며, 원금손실·예금자보호 비대상이라는 고지는 KBthink 저장소 MD의 집합투자증권 안내를 사용했다. 성과 기준일이 없어 수익률은 쓰지 않았고, 자동매수 지원·적합성 확인 전 확정 추천하지 않는다.\n제공 상품 마스터 FND-001 → S05 KB국민은행_퇴직연금_판매중_ETF_펀드(1).md L205; 위험·보호 고지: KBthink 저장소 MD · sources/corpus/04_KBthink_연금/01_IRP_개인형퇴직연금.md L99〔해당 절 열람〕",
-      "url": "https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/04_KBthink_%EC%97%B0%EA%B8%88/01_IRP_%EA%B0%9C%EC%9D%B8%ED%98%95%ED%87%B4%EC%A7%81%EC%97%B0%EA%B8%88.md"
+      "description": "[요약] 해당 C-P2E(퇴직연금) 클래스는 마스터에 국내 초단기채권형, 6등급 ‘매우낮은위험’으로 기재돼 있으며, 원금손실·예금자보호 비대상이라는 고지는 KBthink 저장소 MD의 집합투자증권 안내를 사용했다. 성과 기준일이 없어 수익률은 쓰지 않았고, 자동매수 지원·적합성 확인 전 확정 추천하지 않는다.\n제공 상품 마스터 FND-001 → S05 KB국민은행_퇴직연금_판매중_ETF_펀드(1).md L205; 위험·보호 고지: KBthink 저장소 MD · knowledge/corpus/04_KBthink_연금/01_IRP_개인형퇴직연금.md L99〔해당 절 열람〕",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/04_KBthink_%EC%97%B0%EA%B8%88/01_IRP_%EA%B0%9C%EC%9D%B8%ED%98%95%ED%87%B4%EC%A7%81%EC%97%B0%EA%B8%88.md"
     }
   ],
   "reviewNotes": [

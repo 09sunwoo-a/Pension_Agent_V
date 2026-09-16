@@ -1005,29 +1005,29 @@ IRP에서 인출하는 돈이 모두 동일하게 과세되는 것은 아니며,
 
 각 카드의 근거는 본 대화에서 사용한 출처를 옮긴 것입니다. 원본 CASE·RS·추출지식의 세부 항목 번호는 앞선 표기를 유지했으며, ChatGPT 화면 전용 인용표시 대신 문서명과 링크로 정리했습니다. 링크 접근 상태와 법령·은행 정책의 최신성은 이번 파일 작성에서 다시 검증하지 않았습니다.
 
-GitHub 링크는 모두 `09sunwoo-a/Pension_agent_code`의 `claude/demo-spec-migration` 브랜치를 가리킵니다. 해당 브랜치가 변경되면 연결되는 자료도 달라질 수 있습니다.
+GitHub 링크는 모두 `09sunwoo-a/Pension_Agent_V`의 `claude/demo-spec-migration` 브랜치를 가리킵니다. 해당 브랜치가 변경되면 연결되는 자료도 달라질 수 있습니다.
 
 [^golden]: `퇴직연금_Agent_Golden_Case_최종_통합_보강_01-25.md` — 프로젝트 원본 자료. 각 카드의 “원본 CASE”는 이 문서의 번호입니다. 본 통합본의 후보 번호와 다릅니다.
 
 [^strategy]: `퇴직연금_Agent_일반운용전략_Master_KB_v0.2.md` — 프로젝트 일반 운용전략 자료. RS 번호는 이 문서의 전략 식별자입니다.
 
-[^segments]: [01_고객세그먼트.md](https://github.com/09sunwoo-a/Pension_agent_code/blob/claude/demo-spec-migration/references/06_%EC%A3%BC%EC%A0%9C%EB%B3%84_%EC%B6%94%EC%B6%9C%EC%A7%80%EC%8B%9D/01_%EA%B3%A0%EA%B0%9D%EC%84%B8%EA%B7%B8%EB%A8%BC%ED%8A%B8.md) — 지정 브랜치의 주제별 추출지식.
+[^segments]: [01_고객세그먼트.md](https://github.com/09sunwoo-a/Pension_Agent_V/blob/claude/demo-spec-migration/references/06_%EC%A3%BC%EC%A0%9C%EB%B3%84_%EC%B6%94%EC%B6%9C%EC%A7%80%EC%8B%9D/01_%EA%B3%A0%EA%B0%9D%EC%84%B8%EA%B7%B8%EB%A8%BC%ED%8A%B8.md) — 지정 브랜치의 주제별 추출지식.
 
-[^management]: [02_IRP관리방법론.md](https://github.com/09sunwoo-a/Pension_agent_code/blob/claude/demo-spec-migration/references/06_%EC%A3%BC%EC%A0%9C%EB%B3%84_%EC%B6%94%EC%B6%9C%EC%A7%80%EC%8B%9D/02_IRP%EA%B4%80%EB%A6%AC%EB%B0%A9%EB%B2%95%EB%A1%A0.md) — 지정 브랜치의 주제별 추출지식.
+[^management]: [02_IRP관리방법론.md](https://github.com/09sunwoo-a/Pension_Agent_V/blob/claude/demo-spec-migration/references/06_%EC%A3%BC%EC%A0%9C%EB%B3%84_%EC%B6%94%EC%B6%9C%EC%A7%80%EC%8B%9D/02_IRP%EA%B4%80%EB%A6%AC%EB%B0%A9%EB%B2%95%EB%A1%A0.md) — 지정 브랜치의 주제별 추출지식.
 
-[^sales]: [03_영업화법.md](https://github.com/09sunwoo-a/Pension_agent_code/blob/claude/demo-spec-migration/references/06_%EC%A3%BC%EC%A0%9C%EB%B3%84_%EC%B6%94%EC%B6%9C%EC%A7%80%EC%8B%9D/03_%EC%98%81%EC%97%85%ED%99%94%EB%B2%95.md) — 지정 브랜치의 주제별 추출지식.
+[^sales]: [03_영업화법.md](https://github.com/09sunwoo-a/Pension_Agent_V/blob/claude/demo-spec-migration/references/06_%EC%A3%BC%EC%A0%9C%EB%B3%84_%EC%B6%94%EC%B6%9C%EC%A7%80%EC%8B%9D/03_%EC%98%81%EC%97%85%ED%99%94%EB%B2%95.md) — 지정 브랜치의 주제별 추출지식.
 
-[^facts]: [04_제도상품팩트.md](https://github.com/09sunwoo-a/Pension_agent_code/blob/claude/demo-spec-migration/references/06_%EC%A3%BC%EC%A0%9C%EB%B3%84_%EC%B6%94%EC%B6%9C%EC%A7%80%EC%8B%9D/04_%EC%A0%9C%EB%8F%84%EC%83%81%ED%92%88%ED%8C%A9%ED%8A%B8.md) — 지정 브랜치의 제도·상품 팩트 정리. 문서의 상태 표시와 별개로 적용시점의 조건 확인이 필요합니다.
+[^facts]: [04_제도상품팩트.md](https://github.com/09sunwoo-a/Pension_Agent_V/blob/claude/demo-spec-migration/references/06_%EC%A3%BC%EC%A0%9C%EB%B3%84_%EC%B6%94%EC%B6%9C%EC%A7%80%EC%8B%9D/04_%EC%A0%9C%EB%8F%84%EC%83%81%ED%92%88%ED%8C%A9%ED%8A%B8.md) — 지정 브랜치의 제도·상품 팩트 정리. 문서의 상태 표시와 별개로 적용시점의 조건 확인이 필요합니다.
 
-[^operations]: [05_업무처리절차.md](https://github.com/09sunwoo-a/Pension_agent_code/blob/claude/demo-spec-migration/references/06_%EC%A3%BC%EC%A0%9C%EB%B3%84_%EC%B6%94%EC%B6%9C%EC%A7%80%EC%8B%9D/05_%EC%97%85%EB%AC%B4%EC%B2%98%EB%A6%AC%EC%A0%88%EC%B0%A8.md) — 지정 브랜치의 업무처리 지식.
+[^operations]: [05_업무처리절차.md](https://github.com/09sunwoo-a/Pension_Agent_V/blob/claude/demo-spec-migration/references/06_%EC%A3%BC%EC%A0%9C%EB%B3%84_%EC%B6%94%EC%B6%9C%EC%A7%80%EC%8B%9D/05_%EC%97%85%EB%AC%B4%EC%B2%98%EB%A6%AC%EC%A0%88%EC%B0%A8.md) — 지정 브랜치의 업무처리 지식.
 
-[^demo]: [DEMO-01_KIM_SEOYEON.md](https://github.com/09sunwoo-a/Pension_agent_code/blob/claude/demo-spec-migration/demo/seed_cases/DEMO-01_KIM_SEOYEON.md) — 김서연 고객 DEMO. 고객 상황과 제안의 자연스러운 연결을 위한 레퍼런스입니다.
+[^demo]: [DEMO-01_KIM_SEOYEON.md](https://github.com/09sunwoo-a/Pension_Agent_V/blob/claude/demo-spec-migration/demo/seed_cases/DEMO-01_KIM_SEOYEON.md) — 김서연 고객 DEMO. 고객 상황과 제안의 자연스러운 연결을 위한 레퍼런스입니다.
 
-[^tip204696]: Hot Tip 204696, 「퇴직금 운용중인 개인형IRP이탈방어-비대면계좌 전환으로 수수료 0원 만들기」, 2026-02-28. [저장소 원문](https://github.com/09sunwoo-a/Pension_agent_code/blob/claude/demo-spec-migration/sources/corpus/03_%EC%8A%A4%ED%83%80%EB%9F%B0_%EC%98%81%EC%97%85%EC%A0%90_Hottip/posts/2026-02-28_204696_%ED%87%B4%EC%A7%81%EA%B8%88%20%EC%9A%B4%EC%9A%A9%EC%A4%91%EC%9D%B8%20%EA%B0%9C%EC%9D%B8%ED%98%95IRP%EC%9D%B4%ED%83%88%EB%B0%A9%EC%96%B4-%EB%B9%84%EB%8C%80%EB%A9%B4%EA%B3%84%EC%A2%8C%20%EC%A0%84%ED%99%98%EC%9C%BC%EB%A1%9C%20%EC%88%98%EC%88%98%EB%A3%8C%200%EC%9B%90%20%EB%A7%8C%EB%93%A4.md). 글 제목·본문의 특정 수수료조건과 타사 비교는 현행 고객별 조건으로 별도 확인합니다.
+[^tip204696]: Hot Tip 204696, 「퇴직금 운용중인 개인형IRP이탈방어-비대면계좌 전환으로 수수료 0원 만들기」, 2026-02-28. [저장소 원문](https://github.com/09sunwoo-a/Pension_Agent_V/blob/claude/demo-spec-migration/knowledge/corpus/03_%EC%8A%A4%ED%83%80%EB%9F%B0_%EC%98%81%EC%97%85%EC%A0%90_Hottip/posts/2026-02-28_204696_%ED%87%B4%EC%A7%81%EA%B8%88%20%EC%9A%B4%EC%9A%A9%EC%A4%91%EC%9D%B8%20%EA%B0%9C%EC%9D%B8%ED%98%95IRP%EC%9D%B4%ED%83%88%EB%B0%A9%EC%96%B4-%EB%B9%84%EB%8C%80%EB%A9%B4%EA%B3%84%EC%A2%8C%20%EC%A0%84%ED%99%98%EC%9C%BC%EB%A1%9C%20%EC%88%98%EC%88%98%EB%A3%8C%200%EC%9B%90%20%EB%A7%8C%EB%93%A4.md). 글 제목·본문의 특정 수수료조건과 타사 비교는 현행 고객별 조건으로 별도 확인합니다.
 
-[^tip205555]: Hot Tip 205555, 「퇴직연금 과세이연 영업점 후기」, 2026-04-16. [저장소 원문](https://github.com/09sunwoo-a/Pension_agent_code/blob/claude/demo-spec-migration/sources/corpus/03_%EC%8A%A4%ED%83%80%EB%9F%B0_%EC%98%81%EC%97%85%EC%A0%90_Hottip/posts/2026-04-16_205555_%ED%87%B4%EC%A7%81%EC%97%B0%EA%B8%88%20%EA%B3%BC%EC%84%B8%EC%9D%B4%EC%97%B0%20%EC%98%81%EC%97%85%EC%A0%90%20%ED%9B%84%EA%B8%B0.md). 직원 경험담의 처리기간을 모든 고객에게 동일하게 적용하지 않습니다.
+[^tip205555]: Hot Tip 205555, 「퇴직연금 과세이연 영업점 후기」, 2026-04-16. [저장소 원문](https://github.com/09sunwoo-a/Pension_Agent_V/blob/claude/demo-spec-migration/knowledge/corpus/03_%EC%8A%A4%ED%83%80%EB%9F%B0_%EC%98%81%EC%97%85%EC%A0%90_Hottip/posts/2026-04-16_205555_%ED%87%B4%EC%A7%81%EC%97%B0%EA%B8%88%20%EA%B3%BC%EC%84%B8%EC%9D%B4%EC%97%B0%20%EC%98%81%EC%97%85%EC%A0%90%20%ED%9B%84%EA%B8%B0.md). 직원 경험담의 처리기간을 모든 고객에게 동일하게 적용하지 않습니다.
 
-[^tip199713]: Hot Tip 199713, 「IRP 세액공제 미신청금액 계산기」, 2025-03-11. [저장소 원문](https://github.com/09sunwoo-a/Pension_agent_code/blob/claude/demo-spec-migration/sources/corpus/03_%EC%8A%A4%ED%83%80%EB%9F%B0_%EC%98%81%EC%97%85%EC%A0%90_Hottip/posts/2025-03-11_199713_IRP%20%EC%84%B8%EC%95%A1%EA%B3%B5%EC%A0%9C%20%EB%AF%B8%EC%8B%A0%EC%B2%AD%EA%B8%88%EC%95%A1%20%EA%B3%84%EC%82%B0%EA%B8%B0.md). 등록금액·산식은 당행 현행 업무기준으로 확인합니다.
+[^tip199713]: Hot Tip 199713, 「IRP 세액공제 미신청금액 계산기」, 2025-03-11. [저장소 원문](https://github.com/09sunwoo-a/Pension_Agent_V/blob/claude/demo-spec-migration/knowledge/corpus/03_%EC%8A%A4%ED%83%80%EB%9F%B0_%EC%98%81%EC%97%85%EC%A0%90_Hottip/posts/2025-03-11_199713_IRP%20%EC%84%B8%EC%95%A1%EA%B3%B5%EC%A0%9C%20%EB%AF%B8%EC%8B%A0%EC%B2%AD%EA%B8%88%EC%95%A1%20%EA%B3%84%EC%82%B0%EA%B8%B0.md). 등록금액·산식은 당행 현행 업무기준으로 확인합니다.
 
 [^kb-default]: [KB Think — 퇴직연금 디폴트옵션 안내](https://kbthink.com/retirement-pension/default-option.html). 앞선 대화에서 사용한 공식 공개자료 링크.
 

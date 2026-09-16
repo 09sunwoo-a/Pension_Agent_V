@@ -1,6 +1,6 @@
-# Sources
+# Knowledge
 
-`sources/`는 개인형IRP 사후관리 Agent가 판단 근거를 탐색하기 위한 Source Corpus 영역이다.
+`knowledge/`는 개인형IRP 사후관리 Agent가 판단 근거를 탐색하기 위한 Source Corpus 영역이다.
 
 ## Usage Rules
 

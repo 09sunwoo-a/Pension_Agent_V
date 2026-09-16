@@ -159,32 +159,32 @@
     {
       "id": "source-2",
       "title": "K04-01 · S2 운용공백 / S3 설정 / S4 디폴트옵션 응대 · 연금왕 찐천재 마스터북 Level 2·7주차 디폴트옵션 상품 · 행내 교육자료 · 기준일 미표기",
-      "description": "[요약·출처맵 경유] 입금 시 매수상품은 신규 입금에 맞춰 적용되는 설정이고, 디폴트옵션은 별도 운용지시가 없는 경우의 운용방법이다. 입금예정상품이 등록돼 있으면 그 상품의 자동매수가 먼저 적용된다는 설명을 사용했다.\n출처맵 후보 04 → 저장소 원천 · sources/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/03_영업화법_스크립트_연금왕찐천재/연금왕찐천재_마스터북_Level2_7주차_디폴트옵션상품.md · 비교표 L142–149, Q5 해설 L525–533",
-      "url": "https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/01_%ED%96%89%EB%82%B4%EA%B0%80%EC%9D%B4%EB%93%9C%EB%AC%B8%EC%84%9C_%EC%97%B0%EA%B8%88%EC%82%AC%EC%97%85%EB%B6%80_%EC%97%B0%EA%B8%88%EC%BB%A8%EC%84%A4%ED%8C%85%EB%B6%80/03_%EC%98%81%EC%97%85%ED%99%94%EB%B2%95_%EC%8A%A4%ED%81%AC%EB%A6%BD%ED%8A%B8_%EC%97%B0%EA%B8%88%EC%99%95%EC%B0%90%EC%B2%9C%EC%9E%AC/%EC%97%B0%EA%B8%88%EC%99%95%EC%B0%90%EC%B2%9C%EC%9E%AC_%EB%A7%88%EC%8A%A4%ED%84%B0%EB%B6%81_Level2_7%EC%A3%BC%EC%B0%A8_%EB%94%94%ED%8F%B4%ED%8A%B8%EC%98%B5%EC%85%98%EC%83%81%ED%92%88.md"
+      "description": "[요약·출처맵 경유] 입금 시 매수상품은 신규 입금에 맞춰 적용되는 설정이고, 디폴트옵션은 별도 운용지시가 없는 경우의 운용방법이다. 입금예정상품이 등록돼 있으면 그 상품의 자동매수가 먼저 적용된다는 설명을 사용했다.\n출처맵 후보 04 → 저장소 원천 · knowledge/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/03_영업화법_스크립트_연금왕찐천재/연금왕찐천재_마스터북_Level2_7주차_디폴트옵션상품.md · 비교표 L142–149, Q5 해설 L525–533",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/01_%ED%96%89%EB%82%B4%EA%B0%80%EC%9D%B4%EB%93%9C%EB%AC%B8%EC%84%9C_%EC%97%B0%EA%B8%88%EC%82%AC%EC%97%85%EB%B6%80_%EC%97%B0%EA%B8%88%EC%BB%A8%EC%84%A4%ED%8C%85%EB%B6%80/03_%EC%98%81%EC%97%85%ED%99%94%EB%B2%95_%EC%8A%A4%ED%81%AC%EB%A6%BD%ED%8A%B8_%EC%97%B0%EA%B8%88%EC%99%95%EC%B0%90%EC%B2%9C%EC%9E%AC/%EC%97%B0%EA%B8%88%EC%99%95%EC%B0%90%EC%B2%9C%EC%9E%AC_%EB%A7%88%EC%8A%A4%ED%84%B0%EB%B6%81_Level2_7%EC%A3%BC%EC%B0%A8_%EB%94%94%ED%8F%B4%ED%8A%B8%EC%98%B5%EC%85%98%EC%83%81%ED%92%88.md"
     },
     {
       "id": "source-3",
       "title": "K04-02 · S3 자동매수 후보 / S4 예금 응대 / S5 업무지식 · 연금왕 찐천재 마스터북 Level 2·8주차 상품운용 · 행내 교육자료 · 기준일 미표기, 본문 2026-08-14 공문 인용",
-      "description": "[요약] 입금 시 매수상품 지정은 정한 비율대로 자동매수하는 설정이며 만기 변경예약·디폴트옵션과 역할이 다르다〔출처맵 경유〕. 원리금보장상품 중 해당 설정이 가능한 상품군은 시중은행 정기예금으로 확인했다〔저장소 해당 절 열람〕.\n저장소 원천 · sources/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/03_영업화법_스크립트_연금왕찐천재/연금왕찐천재_마스터북_Level2_8주차_상품운용.md · §1-2 L68–96 열람 / 출처맵 후보 04 수록 L243–252 ‘3차 보호막’",
-      "url": "https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/01_%ED%96%89%EB%82%B4%EA%B0%80%EC%9D%B4%EB%93%9C%EB%AC%B8%EC%84%9C_%EC%97%B0%EA%B8%88%EC%82%AC%EC%97%85%EB%B6%80_%EC%97%B0%EA%B8%88%EC%BB%A8%EC%84%A4%ED%8C%85%EB%B6%80/03_%EC%98%81%EC%97%85%ED%99%94%EB%B2%95_%EC%8A%A4%ED%81%AC%EB%A6%BD%ED%8A%B8_%EC%97%B0%EA%B8%88%EC%99%95%EC%B0%90%EC%B2%9C%EC%9E%AC/%EC%97%B0%EA%B8%88%EC%99%95%EC%B0%90%EC%B2%9C%EC%9E%AC_%EB%A7%88%EC%8A%A4%ED%84%B0%EB%B6%81_Level2_8%EC%A3%BC%EC%B0%A8_%EC%83%81%ED%92%88%EC%9A%B4%EC%9A%A9.md"
+      "description": "[요약] 입금 시 매수상품 지정은 정한 비율대로 자동매수하는 설정이며 만기 변경예약·디폴트옵션과 역할이 다르다〔출처맵 경유〕. 원리금보장상품 중 해당 설정이 가능한 상품군은 시중은행 정기예금으로 확인했다〔저장소 해당 절 열람〕.\n저장소 원천 · knowledge/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/03_영업화법_스크립트_연금왕찐천재/연금왕찐천재_마스터북_Level2_8주차_상품운용.md · §1-2 L68–96 열람 / 출처맵 후보 04 수록 L243–252 ‘3차 보호막’",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/01_%ED%96%89%EB%82%B4%EA%B0%80%EC%9D%B4%EB%93%9C%EB%AC%B8%EC%84%9C_%EC%97%B0%EA%B8%88%EC%82%AC%EC%97%85%EB%B6%80_%EC%97%B0%EA%B8%88%EC%BB%A8%EC%84%A4%ED%8C%85%EB%B6%80/03_%EC%98%81%EC%97%85%ED%99%94%EB%B2%95_%EC%8A%A4%ED%81%AC%EB%A6%BD%ED%8A%B8_%EC%97%B0%EA%B8%88%EC%99%95%EC%B0%90%EC%B2%9C%EC%9E%AC/%EC%97%B0%EA%B8%88%EC%99%95%EC%B0%90%EC%B2%9C%EC%9E%AC_%EB%A7%88%EC%8A%A4%ED%84%B0%EB%B6%81_Level2_8%EC%A3%BC%EC%B0%A8_%EC%83%81%ED%92%88%EC%9A%B4%EC%9A%A9.md"
     },
     {
       "id": "source-4",
       "title": "K04-03 · S2 공제한도 / S3 증액 범위 / S4 납입과 상품 구분 / S5 납입조회 · 개인형IRP 마케팅 보물지도 Vol.1 · 본부 행내 가이드 · 2026.03",
-      "description": "[요약·출처맵 경유] 기본 세액공제 대상은 연금저축 포함 연간 납입액 최대 900만원이며, 납입현황 확인 후 자동이체 조정으로 연결하는 화법이 있다. 개인부담금 납입한도 조회와 거래내역 조회는 확인 수단으로 사용하되, 실제 공제 여력과 납입·운용상품 선택은 구분했다〔사례 적용〕.\n출처맵 후보 04의 추가납 행·납입한도 관련 수록 내용 → 저장소 원천 · sources/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/02_마케팅_캠페인/개인형IRP_마케팅_보물지도_Vol1.md · 납입·세액공제 L123–135, 추가납 L548–559",
-      "url": "https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/01_%ED%96%89%EB%82%B4%EA%B0%80%EC%9D%B4%EB%93%9C%EB%AC%B8%EC%84%9C_%EC%97%B0%EA%B8%88%EC%82%AC%EC%97%85%EB%B6%80_%EC%97%B0%EA%B8%88%EC%BB%A8%EC%84%A4%ED%8C%85%EB%B6%80/02_%EB%A7%88%EC%BC%80%ED%8C%85_%EC%BA%A0%ED%8E%98%EC%9D%B8/%EA%B0%9C%EC%9D%B8%ED%98%95IRP_%EB%A7%88%EC%BC%80%ED%8C%85_%EB%B3%B4%EB%AC%BC%EC%A7%80%EB%8F%84_Vol1.md"
+      "description": "[요약·출처맵 경유] 기본 세액공제 대상은 연금저축 포함 연간 납입액 최대 900만원이며, 납입현황 확인 후 자동이체 조정으로 연결하는 화법이 있다. 개인부담금 납입한도 조회와 거래내역 조회는 확인 수단으로 사용하되, 실제 공제 여력과 납입·운용상품 선택은 구분했다〔사례 적용〕.\n출처맵 후보 04의 추가납 행·납입한도 관련 수록 내용 → 저장소 원천 · knowledge/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/02_마케팅_캠페인/개인형IRP_마케팅_보물지도_Vol1.md · 납입·세액공제 L123–135, 추가납 L548–559",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/01_%ED%96%89%EB%82%B4%EA%B0%80%EC%9D%B4%EB%93%9C%EB%AC%B8%EC%84%9C_%EC%97%B0%EA%B8%88%EC%82%AC%EC%97%85%EB%B6%80_%EC%97%B0%EA%B8%88%EC%BB%A8%EC%84%A4%ED%8C%85%EB%B6%80/02_%EB%A7%88%EC%BC%80%ED%8C%85_%EC%BA%A0%ED%8E%98%EC%9D%B8/%EA%B0%9C%EC%9D%B8%ED%98%95IRP_%EB%A7%88%EC%BC%80%ED%8C%85_%EB%B3%B4%EB%AC%BC%EC%A7%80%EB%8F%84_Vol1.md"
     },
     {
       "id": "source-5",
       "title": "K04-04 · S4 공제효과·인출·투자위험 사전고지 · KBthink — IRP(개인형 퇴직연금)란? 계좌 개설부터 퇴직금 수령, 세액공제 혜택까지 · 저장소 MD 정리본 · 게시 2026-06-11, 작성 기준 2026-06-08",
-      "description": "[요약·저장소 해당 절 열람] 실제 공제액은 소득·공제할 세액 등에 따라 달라지며, 일부 인출은 법정 사유가 필요하다. 일반적인 중도해지·연금 외 수령 시 공제받은 원금·운용수익에 기타소득세 16.5%가 적용될 수 있고, 집합투자증권은 원금손실이 가능하며 예금자보호 대상이 아니라는 안내를 사용했다.\n저장소 MD · sources/corpus/04_KBthink_연금/01_IRP_개인형퇴직연금.md · L70, L87–88, L95–99〔저장소 해당 절 열람, KBthink 웹 원문 미열람〕",
-      "url": "https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/04_KBthink_%EC%97%B0%EA%B8%88/01_IRP_%EA%B0%9C%EC%9D%B8%ED%98%95%ED%87%B4%EC%A7%81%EC%97%B0%EA%B8%88.md"
+      "description": "[요약·저장소 해당 절 열람] 실제 공제액은 소득·공제할 세액 등에 따라 달라지며, 일부 인출은 법정 사유가 필요하다. 일반적인 중도해지·연금 외 수령 시 공제받은 원금·운용수익에 기타소득세 16.5%가 적용될 수 있고, 집합투자증권은 원금손실이 가능하며 예금자보호 대상이 아니라는 안내를 사용했다.\n저장소 MD · knowledge/corpus/04_KBthink_연금/01_IRP_개인형퇴직연금.md · L70, L87–88, L95–99〔저장소 해당 절 열람, KBthink 웹 원문 미열람〕",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/04_KBthink_%EC%97%B0%EA%B8%88/01_IRP_%EA%B0%9C%EC%9D%B8%ED%98%95%ED%87%B4%EC%A7%81%EC%97%B0%EA%B8%88.md"
     },
     {
       "id": "source-6",
       "title": "K04-05 · S5 설정·주문 관련 업무 · 퇴직연금 주요거래 화면번호 안내 · 업무화면 안내 · 기준일 미표기",
-      "description": "[요약·출처맵 경유] 06-12-610은 입금예정상품 등록/변경, 04-12-640은 운용지시·실행내역 조회, 06-12-611은 보유상품변경 화면이다. 증액 후의 계속성 설정과 기존 자금의 별도 주문을 나눠 연결했다.\n출처맵 후보 27·18 → 저장소 원천 · sources/corpus/06_퇴직연금_주요거래_화면번호_안내/퇴직연금_주요거래_화면번호_안내.md · 상품운용 표 L66–68",
-      "url": "https://github.com/09sunwoo-a/Pension_agent_code/blob/main/sources/corpus/06_%ED%87%B4%EC%A7%81%EC%97%B0%EA%B8%88_%EC%A3%BC%EC%9A%94%EA%B1%B0%EB%9E%98_%ED%99%94%EB%A9%B4%EB%B2%88%ED%98%B8_%EC%95%88%EB%82%B4/%ED%87%B4%EC%A7%81%EC%97%B0%EA%B8%88_%EC%A3%BC%EC%9A%94%EA%B1%B0%EB%9E%98_%ED%99%94%EB%A9%B4%EB%B2%88%ED%98%B8_%EC%95%88%EB%82%B4.md"
+      "description": "[요약·출처맵 경유] 06-12-610은 입금예정상품 등록/변경, 04-12-640은 운용지시·실행내역 조회, 06-12-611은 보유상품변경 화면이다. 증액 후의 계속성 설정과 기존 자금의 별도 주문을 나눠 연결했다.\n출처맵 후보 27·18 → 저장소 원천 · knowledge/corpus/06_퇴직연금_주요거래_화면번호_안내/퇴직연금_주요거래_화면번호_안내.md · 상품운용 표 L66–68",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/knowledge/corpus/06_%ED%87%B4%EC%A7%81%EC%97%B0%EA%B8%88_%EC%A3%BC%EC%9A%94%EA%B1%B0%EB%9E%98_%ED%99%94%EB%A9%B4%EB%B2%88%ED%98%B8_%EC%95%88%EB%82%B4/%ED%87%B4%EC%A7%81%EC%97%B0%EA%B8%88_%EC%A3%BC%EC%9A%94%EA%B1%B0%EB%9E%98_%ED%99%94%EB%A9%B4%EB%B2%88%ED%98%B8_%EC%95%88%EB%82%B4.md"
     },
     {
       "id": "source-7",
