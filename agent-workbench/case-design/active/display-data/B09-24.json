@@ -25,7 +25,10 @@
       "applicationStatus": "미적용"
     }
   },
-  "signals": [],
+  "signals": [
+    "8월 29일 적극투자형으로 변경",
+    "디폴트옵션은 지켜드림·현재 미적용"
+  ],
   "irpAccount": {
     "valuationAmountKrw": 80600000,
     "assetAllocation": [

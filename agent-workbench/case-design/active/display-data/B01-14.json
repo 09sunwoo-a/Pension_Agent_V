@@ -25,7 +25,12 @@
       "applicationStatus": "미적용"
     }
   },
-  "signals": [],
+  "signals": [
+    {
+      "label": "연금저축에 올해 520만원을 납입했지만, 당행 IRP에는 올해 개인부담금 납입이 없습니다.",
+      "source": "시연용 고객 원본 거래·이벤트"
+    }
+  ],
   "irpAccount": {
     "valuationAmountKrw": 31600000,
     "assetAllocation": [

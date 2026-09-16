@@ -25,7 +25,12 @@
       "applicationStatus": "미적용"
     }
   },
-  "signals": [],
+  "signals": [
+    {
+      "label": "연금개시를 준비하며 매월 같은 금액을 자동 수령하기를 원합니다. 희망 금액과 개시일은 미정입니다.",
+      "source": "시연용 고객 사건·상담"
+    }
+  ],
   "irpAccount": {
     "valuationAmountKrw": 86900000,
     "assetAllocation": [
@@ -36,13 +41,13 @@
       },
       {
         "assetType": "실적배당형",
-        "amountKrw": 86900000,
-        "weightPct": 100
+        "amountKrw": 60830000,
+        "weightPct": 70
       },
       {
         "assetType": "현금성자산",
-        "amountKrw": 0,
-        "weightPct": 0
+        "amountKrw": 26070000,
+        "weightPct": 30
       }
     ],
     "oneYearReturnPct": 26.9,
@@ -52,7 +57,7 @@
       "productId": "ETF-010",
       "productName": "SOL 미국배당다우존스",
       "openedAt": "2024-12-02",
-      "amountKrw": 86900000
+      "amountKrw": 60830000
     }
   },
   "holdings": [
@@ -63,10 +68,24 @@
       "assetType": "실적배당형",
       "productCategory": "ETF",
       "contractTerm": null,
-      "valuationAmountKrw": 86900000,
-      "weightPct": 100,
+      "valuationAmountKrw": 60830000,
+      "weightPct": 70,
       "oneYearReturnPct": 26.89,
       "openedAt": "2024-12-02",
+      "allocationBreakdown": null,
+      "flags": []
+    },
+    {
+      "holdingId": "H002",
+      "productId": null,
+      "productName": "현금성자산",
+      "assetType": "현금성자산",
+      "productCategory": "현금성자산",
+      "contractTerm": null,
+      "valuationAmountKrw": 26070000,
+      "weightPct": 30,
+      "oneYearReturnPct": null,
+      "openedAt": null,
       "allocationBreakdown": null,
       "flags": []
     }
@@ -94,7 +113,15 @@
     },
     "최근사건": [],
     "금융거래": [],
-    "상담이력": [],
+    "상담이력": [
+      {
+        "상담식별자": "CRM001",
+        "상담일시": "2026-09-11T14:00:00+09:00",
+        "상담채널": "영업점전화",
+        "상담메모": "배당 ETF는 계속 보유하면서 매월 같은 금액의 생활비를 받고 싶다고 문의. 금액·개시일·우선순위는 미정.",
+        "정보출처": "2026-09-16 추가한 시연용 가상 상담"
+      }
+    ],
     "외부계좌": [],
     "투자성향이력": [],
     "운용정책": {},
@@ -105,11 +132,15 @@
         "지표유형": "파생값",
         "지표명": "월분배형ETF비중",
         "대상참조": null,
-        "값": 100,
+        "값": 70,
         "단위": "%",
         "산출기준일": "2026-09-14"
       }
     ],
-    "확인된특이사항": []
+    "확인된특이사항": [],
+    "가상설정메모": [
+      "원본의 주식형 ETF 100% 보유를 기본 위험자산 한도에 맞는 시연 구성인 ETF 70%·현금성 30%로 수정. 총 잔액 유지.",
+      "ETF 유지 의향은 원문 브리핑에만 있어 9/11 가상 상담으로 입력에 명시."
+    ]
   }
 }

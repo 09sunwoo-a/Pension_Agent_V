@@ -25,7 +25,10 @@
       "applicationStatus": "미적용"
     }
   },
-  "signals": [],
+  "signals": [
+    "연간 사적연금 과세대상 예정액 합산 1,700만원",
+    "생활비 필요액 미확인"
+  ],
   "irpAccount": {
     "valuationAmountKrw": 183600000,
     "assetAllocation": [

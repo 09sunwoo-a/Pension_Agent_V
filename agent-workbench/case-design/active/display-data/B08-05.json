@@ -25,7 +25,10 @@
       "applicationStatus": "미적용"
     }
   },
-  "signals": [],
+  "signals": [
+    "8월 31일 연금저축보험 납입 완료",
+    "운용 선택지 확대 희망·직접 관리 부담"
+  ],
   "irpAccount": {
     "valuationAmountKrw": 64800000,
     "assetAllocation": [

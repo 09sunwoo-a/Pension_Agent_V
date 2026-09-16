@@ -21,7 +21,12 @@
       "applicationStatus": "미적용"
     }
   },
-  "signals": [],
+  "signals": [
+    {
+      "label": "8월 21일 일반통장으로 받은 퇴직급여 1억 5,420만원이 남아 있으며 수령 후 24일 지났습니다.",
+      "source": "시연용 고객 사건·상담"
+    }
+  ],
   "irpAccount": {
     "valuationAmountKrw": 0,
     "assetAllocation": [

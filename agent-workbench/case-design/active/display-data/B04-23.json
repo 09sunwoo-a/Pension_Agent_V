@@ -25,7 +25,12 @@
       "applicationStatus": "미적용"
     }
   },
-  "signals": [],
+  "signals": [
+    {
+      "label": "수수료 부담을 이유로 9월 8일 타사 이전을 신청했으며 현재 의사확인 대기 중입니다.",
+      "source": "시연용 고객 원본 이벤트·상담"
+    }
+  ],
   "irpAccount": {
     "valuationAmountKrw": 68700000,
     "assetAllocation": [

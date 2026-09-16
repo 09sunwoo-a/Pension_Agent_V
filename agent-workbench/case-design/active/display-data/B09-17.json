@@ -25,7 +25,10 @@
       "applicationStatus": "미적용"
     }
   },
-  "signals": [],
+  "signals": [
+    "2029년 9월 연금개시 계획",
+    "TDF2055 비중 78%·매수 후 방향변경 없음"
+  ],
   "irpAccount": {
     "valuationAmountKrw": 117200000,
     "assetAllocation": [
@@ -59,13 +62,13 @@
     {
       "holdingId": "H001",
       "productId": "MF-001",
-      "productName": "KB 온국민 TDF 시리즈",
+      "productName": "KB 온국민 TDF 2055 (시연 보유설정·클래스 미확인)",
       "assetType": "실적배당형",
       "productCategory": "TDF",
       "contractTerm": null,
       "valuationAmountKrw": 91416000,
       "weightPct": 78,
-      "oneYearReturnPct": 15.27,
+      "oneYearReturnPct": null,
       "openedAt": "2024-02-19",
       "allocationBreakdown": null,
       "flags": []
@@ -167,6 +170,8 @@
         "산출기준일": "2026-09-14"
       }
     ],
-    "확인된특이사항": []
+    "확인된특이사항": [
+      "시연 보유 설정의 TDF2055를 상품명에 명시. MF-001은 시리즈 참조 ID이며 실거래 코드가 아님. 다른 빈티지 자료에서 유래한 1년 수익률15.27%는 삭제. 계좌 수익률은 시연용 가상값."
+    ]
   }
 }

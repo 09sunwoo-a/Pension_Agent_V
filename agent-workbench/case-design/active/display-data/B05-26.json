@@ -25,7 +25,12 @@
       "applicationStatus": "미적용"
     }
   },
-  "signals": [],
+  "signals": [
+    {
+      "label": "9월 9일 IRP 2억 340만원 전액해지를 요청했지만, 확인된 목돈 필요액은 1,000만원입니다.",
+      "source": "시연용 고객 사건·상담"
+    }
+  ],
   "irpAccount": {
     "valuationAmountKrw": 203400000,
     "assetAllocation": [

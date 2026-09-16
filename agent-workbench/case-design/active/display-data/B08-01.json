@@ -25,7 +25,18 @@
       "applicationStatus": "미적용"
     }
   },
-  "signals": [],
+  "signals": [
+    {
+      "label": "현금성 5,180만원 · 122일 대기",
+      "date": "2026-09-14",
+      "source": "가상 계좌거래"
+    },
+    {
+      "label": "최근 일반펀드 680만원 매수",
+      "date": "2026-09-03",
+      "source": "가상 일반펀드 거래"
+    }
+  ],
   "irpAccount": {
     "valuationAmountKrw": 89200000,
     "assetAllocation": [

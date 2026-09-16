@@ -25,7 +25,12 @@
       "applicationStatus": "미적용"
     }
   },
-  "signals": [],
+  "signals": [
+    {
+      "label": "농협은행 정기예금 4,862만원이 10월 2일 만기 예정이며, 만기까지 18일 남았습니다.",
+      "source": "시연용 고객 원본 이벤트·상담"
+    }
+  ],
   "irpAccount": {
     "valuationAmountKrw": 74800000,
     "assetAllocation": [

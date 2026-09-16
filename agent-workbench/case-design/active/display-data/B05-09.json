@@ -25,7 +25,12 @@
       "applicationStatus": "미적용"
     }
   },
-  "signals": [],
+  "signals": [
+    {
+      "label": "9월 9일 몇 주 뒤 주택 수리비를 마련하려고 IRP 전액해지를 문의했습니다. 필요액과 최종 지급일은 아직 미정입니다.",
+      "source": "시연용 고객 사건·상담"
+    }
+  ],
   "irpAccount": {
     "valuationAmountKrw": 198600000,
     "assetAllocation": [

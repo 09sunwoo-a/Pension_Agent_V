@@ -25,7 +25,12 @@
       "applicationStatus": "미적용"
     }
   },
-  "signals": [],
+  "signals": [
+    {
+      "label": "퇴직 후 다른 소득만으로 생활비 충당이 어려워 IRP 정기수령이 필요한 고객입니다. 월 필요액과 수령주기는 미정입니다.",
+      "source": "시연용 고객 사건·상담"
+    }
+  ],
   "irpAccount": {
     "valuationAmountKrw": 237800000,
     "assetAllocation": [
