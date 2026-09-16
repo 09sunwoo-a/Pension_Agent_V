@@ -14,6 +14,7 @@
 | 응답 필드 | `frontend/src/briefing/briefing-contract.js`, `fabrix-briefing-contract.js` |
 | 고객별 상태·기존 화면 연결 | `frontend/src/briefing/pensionBriefingStore.js`, `pensionBriefingAdapter.js` |
 | API 호출·설정 | `frontend/src/briefing/fabrix-transport.js`, `pensionFabrix.js` |
+| 실시간 상담(대화 Agent) 호출·패널 | `frontend/src/briefing/fabrix-chat-transport.js`, `pensionChat.js`, [규격](integration/contracts/CHAT_AGENT_CONTRACT.md) |
 | 기존 Vanilla 화면 동작 | `frontend/src/briefing/pensionAgentDemo.js` |
 | 내일 사내 반입·Agent 배포·연동 확인 | [COMPANY_DEPLOY_CHECKLIST.md](COMPANY_DEPLOY_CHECKLIST.md), 필요한 [플랫폼 문서](docs/platform/README.md) |
 | 지식 검색 | [색인](knowledge/source_registry.md)으로 관련 자료만 선택 |
@@ -41,7 +42,7 @@ node tools/briefing/build.js --preview
 
 미리보기는 `http://127.0.0.1:8765`, 종료는 Ctrl+C입니다. 별도 모의 Agent/API 서버는 없습니다.
 
-사내 반입은 **[frontend/briefing-fabrix/](frontend/briefing-fabrix)의 HTML·JS·CSS 세 파일만** 합니다. Node나 원본 모듈은 WAS 실행에 필요하지 않습니다. 실제 파일코드 반영: `node tools/briefing/build.js <숫자파일코드>`.
+사내 반입은 **[frontend/briefing-fabrix/](frontend/briefing-fabrix)의 HTML·JS·CSS 세 파일만** 합니다. Node나 원본 모듈은 WAS 실행에 필요하지 않습니다. 반입본의 Starroot 파일코드는 빌드 기본값 `1288272`이며, 다른 코드는 `node tools/briefing/build.js <숫자파일코드>`로 생성합니다.
 
 사내 Agent 응답 검증: `node tools/briefing/check.js request.json response.json` (내부 요청/answer JSON만, 토큰·헤더·실제 고객 정보 반입 금지). cfg 다섯 항목은 화면 진입 시 `onParam(params).fabrix` 또는 `window.__PENSION_FABRIX_CONFIG`로 주입하며 소스에 넣지 않습니다.
 
@@ -52,5 +53,5 @@ node tools/briefing/build.js --preview
 - 브리핑 내용: 모두 draft, 대표 3건만 1차 개선. 검토 이슈는 각 JSON의 `reviewNotes`와 사례 색인.
 - **LLM 없는 고정 Agent 구현 완료**: 선택한 사례의 저장된 S1–S5를 반환하며 요청 식별값/고객 스냅샷이 다르면 오류. Python 응답은 프론트 계약으로 검증했습니다.
 - **로컬 FastAPI/Pydantic 미설치로 앱 기동은 미검증. 실제 사내 E2E, LLM 기반 생성, 운영 인증 방식은 미완료.**
-- 우측 실시간 상담은 기존 데모이며 이번 S1–S5 API와 별개입니다.
+- 우측 실시간 상담은 31명 구조화 고객에서 대화 Agent(별도 Connector·토큰, 설정 블록의 `chat`)를 호출합니다. 실제 3턴 응답 샘플로 파싱·화면을 검증했고, `customer_id`는 상담 시작 시 직원이 채팅으로 입력합니다(대화 Agent 시연 고객 `198734-1205842`). 기존 데모 3명은 mock 상담을 유지합니다.
 - Secret과 실제 고객 데이터를 올리지 마세요.

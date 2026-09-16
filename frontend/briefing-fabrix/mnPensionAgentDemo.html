@@ -11,14 +11,21 @@
 <body>
   <!-- FabriX 연결 설정: 사내 배포본에서만 값을 채웁니다. Git 원본에는 항상 빈 값으로 둡니다.
        Starroot는 이 인라인 스크립트를 pensionAgentDemo.js 다음, PG_<파일코드>.onParam() 전에 실행합니다.
-       WAS가 서버에서 값을 채워 넣거나, onParam(params).fabrix로 전달하는 경우 이 블록은 비워 둡니다. -->
+       WAS가 이 페이지보다 먼저 window.__PENSION_FABRIX_CONFIG 를 채워 두었다면 그 값을 유지하고(덮어쓰지 않음),
+       onParam(params).fabrix 가 있으면 그쪽이 우선합니다. -->
   <script>
-    window.__PENSION_FABRIX_CONFIG = {
-      endpointUrl: '',        // Connector URL: https://…/prod/kb0/<connector-id>/1  (/openapi/… 뒤는 프론트가 붙임)
-      agentId: 0,             // 실제 Agent ID (양의 정수)
-      xClientUser: '',        // 직원 ID
+    window.__PENSION_FABRIX_CONFIG = window.__PENSION_FABRIX_CONFIG || {
+      endpointUrl: '',        // 브리핑 Agent Connector URL: https://…/prod/kb0/<connector-id>/1  (/openapi/… 뒤는 프론트가 붙임)
+      agentId: 0,             // 브리핑 Agent ID (양의 정수)
+      xClientUser: '',        // 직원 ID. 7자리 사번으로 시작 (예: 3902172 또는 3902172-…). 두 Agent 공통
       openapiToken: '',       // Secret: x-openapi-token (Bearer 는 붙여도, 빼도 됨)
-      generativeAiClient: ''  // Secret: x-generative-ai-client
+      generativeAiClient: '', // Secret: x-generative-ai-client
+      chat: {                 // 우측 실시간 상담(대화 Agent). 비워 두면 패널에 미설정 안내만 표시
+        endpointUrl: '',      // 대화 Agent Connector URL
+        agentId: '',          // 대화 Agent assetId (문자열)
+        openapiToken: '',     // Secret. 브리핑 Agent와 다른 토큰
+        generativeAiClient: '' // Secret
+      }
     };
   </script>
   <div id="pensionAgentDemo">
@@ -576,7 +583,10 @@
 <span class="pad-t-13-muted">· {{ agName }}</span>
 
 </div>
+<div class="pad-row pad-g6">
+<sc-if value="{{ agResetOn }}"><button sc-camel-on-click="{{ agReset }}" class="pad-btn-sm">고객 변경</button></sc-if>
 <button sc-camel-on-click="{{ togglePanel }}" title="패널 접기" class="pad-icon-btn"><svg height="15" sc-camel-view-box="0 0 16 16" width="15"><polyline fill="none" points="5,3 10,8 5,13" stroke="#9298A2" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7"></polyline><line stroke="#9298A2" stroke-linecap="round" stroke-width="1.7" x1="13" x2="13" y1="3.5" y2="12.5"></line></svg></button>
+</div>
 </div>
 </div>
 <div data-scroll-key="agent-chat" class="chat-scroll pad-chat">
@@ -732,9 +742,16 @@
 <sc-if value="{{ m.hasFollow }}">
 <div class="pad-mt11 pad-in">
 <div class="pad-t-11b-muted">이어서 물어보실 수 있어요</div>
+<sc-if value="{{ m.followChips }}">
+<div class="pad-flex pad-wrap pad-g6 pad-mt8">
+<sc-for as="fo" list="{{ m.follow }}"><button sc-camel-on-click="{{ fo.onTap }}" class="pad-sugg">{{ fo.t }}</button></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ m.followPlain }}">
 <sc-for as="fo" list="{{ m.follow }}">
 <div class="pad-t-13-sub pad-mt5 pad-keep">· {{ fo.t }}</div>
 </sc-for>
+</sc-if>
 </div>
 </sc-if>
 <sc-if value="{{ m.ctaOn }}">
@@ -746,13 +763,21 @@
 </div>
 </div>
 </sc-if>
+<sc-if value="{{ m.clarifyOn }}">
+<div class="pad-cta pad-in">
+<div class="pad-cta__ask">{{ m.clarifyQuestion }}</div>
+<div class="pad-flex pad-wrap pad-g6 pad-mt9">
+<sc-for as="op" list="{{ m.clarify }}"><button sc-camel-on-click="{{ op.onTap }}" class="pad-sugg">{{ op.label }}</button></sc-for>
+</div>
+</div>
+</sc-if>
 </div>
 </sc-if>
 </div>
 </sc-for>
 <sc-if value="{{ agChipsOn }}">
 <div class="pad-in-late">
-<div class="pad-t-11b-muted pad-mb7">이런 걸 물어보세요</div>
+<div class="pad-t-11b-muted pad-mb7">{{ agChipsTitle }}</div>
 <div class="pad-flex pad-wrap pad-g6">
 <sc-for as="ac" list="{{ agChips }}">
 <button sc-camel-on-click="{{ ac.onTap }}" class="pad-sugg">{{ ac.label }}</button>
