@@ -16,7 +16,7 @@
 | API 호출·설정 | `frontend/src/briefing/fabrix-transport.js`, `pensionFabrix.js` |
 | 기존 Vanilla 화면 동작 | `frontend/src/briefing/pensionAgentDemo.js` |
 | 내일 사내 반입·Agent 배포·연동 확인 | [COMPANY_DEPLOY_CHECKLIST.md](COMPANY_DEPLOY_CHECKLIST.md), 필요한 [플랫폼 문서](docs/platform/README.md) |
-| 지식 검색 | [색인](knowledge/registry/source_registry.md)으로 관련 자료만 선택 |
+| 지식 검색 | [색인](knowledge/source_registry.md)으로 관련 자료만 선택 |
 | 변경·미완료 기록 | [WORK_LOG.md](docs/handover/WORK_LOG.md) |
 
 ## 수정 원칙
@@ -43,11 +43,12 @@ node tools/briefing/build.js --preview
 
 사내 반입은 **[frontend/briefing-fabrix/](frontend/briefing-fabrix)의 HTML·JS·CSS 세 파일만** 합니다. Node나 원본 모듈은 WAS 실행에 필요하지 않습니다. 실제 파일코드 반영: `node tools/briefing/build.js <숫자파일코드>`.
 
-사내 Agent 응답 검증: `node tools/briefing/check.js request.json response.json` (내부 요청/answer JSON만, 토큰·헤더·실제 고객 정보 반입 금지). cfg 다섯 항목은 실행 시 연결 설정에서 입력하며 소스에 넣지 않습니다.
+사내 Agent 응답 검증: `node tools/briefing/check.js request.json response.json` (내부 요청/answer JSON만, 토큰·헤더·실제 고객 정보 반입 금지). cfg 다섯 항목은 화면 진입 시 `onParam(params).fabrix` 또는 `window.__PENSION_FABRIX_CONFIG`로 주입하며 소스에 넣지 않습니다.
 
 ## 현재 단계
 
 - 프론트·브리핑 규격·31건 구조 연결: 로컬 검증.
+- 브리핑 화면은 고객 선택 시 FabriX를 자동 호출하고 API 응답만 표시합니다. 반입 JS에 더미 브리핑 문장은 없습니다(고객 스냅샷만 포함). 자동 호출 경로는 `check.js`와 로컬 브라우저·가짜 SSE 서버로 확인했고, 사내 WAS의 설정 주입과 실제 Origin 호출은 미검증입니다.
 - 브리핑 내용: 모두 draft, 대표 3건만 1차 개선. 검토 이슈는 각 JSON의 `reviewNotes`와 사례 색인.
 - **LLM 없는 고정 Agent 구현 완료**: 선택한 사례의 저장된 S1–S5를 반환하며 요청 식별값/고객 스냅샷이 다르면 오류. Python 응답은 프론트 계약으로 검증했습니다.
 - **로컬 FastAPI/Pydantic 미설치로 앱 기동은 미검증. 실제 사내 E2E, LLM 기반 생성, 운영 인증 방식은 미완료.**
