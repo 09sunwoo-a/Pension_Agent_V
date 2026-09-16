@@ -26,7 +26,7 @@
     ABORTED: '요청을 취소했습니다.'
   };
   var EMPTY = { lead: '', hasLeadSub: false, leadSub: '', streaming: false, blocks: [], footOn: false, srcBadges: [], hasGuard: false, guardSummary: '',
-    evidN: 0, evidOpen: false, evid: [], guardN: 0, guardOpen: false, guard: [], hasFollow: false, follow: [], ctaOn: false, ctaAsk: '', ctaYes: '',
+    evidN: 0, evidOpen: false, evid: [], guardN: 0, guardOpen: false, guard: [], hasFollow: false, followChips: false, follow: [], ctaOn: false, ctaAsk: '', ctaYes: '',
     clarifyOn: false, clarifyQuestion: '', clarify: [], typeLabel: '', typeBg: 'transparent', typeFg: 'transparent' };
   function noop() {}
   function refresh() {
@@ -77,13 +77,14 @@
     if (s) { s.items = s.items.filter(notStatus); s.items.push({ k: 'sys', text: messages.ABORTED }); }
     refresh();
   }
+  // Returns true when the text was consumed (sent, or kept with a config note).
   function send(caseId, text) {
     var customer = bridge.getCustomerForRequest(caseId);
     text = wellFormed(String(text == null ? '' : text)).trim().slice(0, 1000);
-    if (!customer || !text || (active && active.caseId === caseId)) return;
+    if (!customer || !text || (active && active.caseId === caseId)) return false;
     var s = session(caseId, customer);
     s.items.push({ k: 'user', text: text });
-    if (!cfg) { s.items.push({ k: 'sys', text: messages[configCode] }); refresh(); return; }
+    if (!cfg) { s.items.push({ k: 'sys', text: messages[configCode] }); refresh(); return true; }
     cancel();
     var status = { k: 'status', text: '질문 내용을 파악하고 있어요' };
     s.items.push(status);
@@ -95,6 +96,7 @@
       if (event.type === 'progress') { status.text = String(event.text || '').trim() || status.text; refresh(); }
       else pending.events.push(event);
     } }).then(function () { finish(pending, null); }, function (error) { finish(pending, error); });
+    return true;
   }
   function finish(pending, error) {
     if (active !== pending) return;
@@ -194,8 +196,8 @@
     out.evidN = a.evidence.length; out.evidOpen = !!S.agEvidOpen[i]; out.onEvid = toggle('agEvidOpen');
     out.evid = a.evidence.map(function (e) { return { doc: e.doc, meta: e.meta, points: e.points.map(function (p) { return { t: p }; }), hasUrl: !!e.url, url: e.url }; });
     out.hasGuard = a.guard.length > 0; out.guardN = a.guard.length; out.guardOpen = !!S.agGuardOpen[i]; out.onGuard = toggle('agGuardOpen'); out.guard = a.guard;
-    out.hasFollow = a.follow.length > 0;
-    out.follow = a.follow.map(function (f) { return { t: f, cls: 'pad-follow', onTap: function () { send(id, f); } }; });
+    out.hasFollow = a.follow.length > 0; out.followChips = true;
+    out.follow = a.follow.map(function (f) { return { t: f, onTap: function () { send(id, f); } }; });
     out.ctaOn = offers && !busy && !!a.action;
     out.ctaAsk = a.action ? String(a.action.label || a.action.prompt || '연계해드릴까요?') : ''; out.ctaYes = '네';
     out.onCtaYes = function () { send(id, '네'); }; out.onCtaNo = function () { send(id, '아니오'); };
@@ -220,21 +222,42 @@
     base.agChips = STARTERS.map(function (q) { return { label: q, onTap: function () { send(id, q); } }; });
     base.agInput = S.agInput || ''; base.agBusy = busy; base.agNotBusy = !busy;
     base.agOnInput = function (e) { component.setState({ agInput: e.target.value }); };
-    // Enter fires before the input's change event updates state, so read the live value.
-    var submit = function (text) { if (text == null) text = component.state.agInput; component.setState({ agInput: '' }); send(id, text); };
-    base.agOnKey = function (e) { if (e.key === 'Enter') submit(e.target && e.target.value); };
+    // Enter's keydown fires before the input's change event, so read the live value and
+    // clear the element itself; otherwise the late change event refills the box.
+    var submit = function (input) {
+      var text = input ? input.value : component.state.agInput;
+      if (!send(id, text)) return;
+      if (input) input.value = '';
+      component.setState({ agInput: '' });
+    };
+    base.agOnKey = function (e) { if (e.key === 'Enter') { e.preventDefault(); submit(e.target); } };
     base.agSendTap = function () {
-      var input = typeof document !== 'undefined' && document.querySelector ? document.querySelector('#pensionAgentDemo .pad-inputbar__input') : null;
-      submit(input ? input.value : undefined);
+      submit(typeof document !== 'undefined' && document.querySelector ? document.querySelector('#pensionAgentDemo .pad-inputbar__input') : null);
     };
     return base;
+  }
+  // Bring the latest turn into view: the top of a new answer, otherwise the bottom.
+  function scrollChat(component, previousState) {
+    if (!previousState || previousState.chatRevision === component.state.chatRevision) return;
+    if (typeof document === 'undefined' || !document.querySelector) return;
+    var el = document.querySelector('#pensionAgentDemo [data-scroll-key="agent-chat"]');
+    if (!el) return;
+    var s = sessions.get(component.state.sel), last = s && s.items[s.items.length - 1];
+    var answers = el.querySelectorAll('.pad-ans'), target = answers[answers.length - 1];
+    if (last && last.k === 'ans' && target) el.scrollTop += target.getBoundingClientRect().top - el.getBoundingClientRect().top - 8;
+    else el.scrollTop = el.scrollHeight;
   }
   function install(Component) {
     var originalRender = Component.prototype.renderVals, originalSelect = Component.prototype.select;
     var originalMount = Component.prototype.componentDidMount, originalUnmount = Component.prototype.componentWillUnmount;
+    var originalUpdate = Component.prototype.componentDidUpdate;
     Component.prototype.componentDidMount = function () {
       if (originalMount) originalMount.apply(this, arguments);
       configure(runtimeConfig(this.props.starrootParams));
+    };
+    Component.prototype.componentDidUpdate = function (previousProps, previousState) {
+      if (originalUpdate) originalUpdate.apply(this, arguments);
+      scrollChat(this, previousState);
     };
     Component.prototype.select = function (id) {
       if (this.state.sel !== id) cancel();

@@ -465,5 +465,3 @@
 #pensionAgentDemo .pad-fabrix {padding:10px 16px;background:#fff;border:1px solid #E2E4E8;border-radius:12px;margin-bottom:16px}
 #pensionAgentDemo .pad-fabrix__bar {display:flex;align-items:center;flex-wrap:wrap;gap:8px}
 #pensionAgentDemo .pad-fabrix__diagnostic {flex:1;min-width:0;font-size:12px;line-height:1.6;color:#60584C;overflow-wrap:anywhere}
-#pensionAgentDemo .pad-follow {cursor:pointer}
-#pensionAgentDemo .pad-follow:hover {color:#26282C;text-decoration:underline}

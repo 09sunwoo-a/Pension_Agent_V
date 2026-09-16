@@ -739,9 +739,16 @@
 <sc-if value="{{ m.hasFollow }}">
 <div class="pad-mt11 pad-in">
 <div class="pad-t-11b-muted">이어서 물어보실 수 있어요</div>
+<sc-if value="{{ m.followChips }}">
+<div class="pad-flex pad-wrap pad-g6 pad-mt8">
+<sc-for as="fo" list="{{ m.follow }}"><button sc-camel-on-click="{{ fo.onTap }}" class="pad-sugg">{{ fo.t }}</button></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ m.followPlain }}">
 <sc-for as="fo" list="{{ m.follow }}">
-<div sc-camel-on-click="{{ fo.onTap }}" class="pad-t-13-sub pad-mt5 pad-keep {{ fo.cls }}">· {{ fo.t }}</div>
+<div class="pad-t-13-sub pad-mt5 pad-keep">· {{ fo.t }}</div>
 </sc-for>
+</sc-if>
 </div>
 </sc-if>
 <sc-if value="{{ m.ctaOn }}">

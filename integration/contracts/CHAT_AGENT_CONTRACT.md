@@ -49,7 +49,7 @@ SSE `data:` 줄마다 게이트웨이 객체 하나, 그 `content` 문자열 안
 | `answer.intent` | 현재 값 목록이 확인되지 않아 배지에 쓰지 않음(항상 `AI 답변`) |
 | `sources.items` role `근거` | "▸ 근거 N건": 같은 `doc`끼리 묶어 문서명·괄호 안 부서/일자·사용한 `title` 목록. `score`는 `관련도 n`, `url`은 HTTPS일 때만 링크 |
 | `sources.items` role `주의` | "▸ 적용 중인 상담 원칙 N건" |
-| `followups.items` | "이어서 물어보실 수 있어요" — 클릭하면 그 문장을 다음 턴으로 전송 |
+| `followups.items` | "이어서 물어보실 수 있어요" 아래 칩 버튼(첫 화면의 추천 질문과 같은 모양). 누르면 그 문장을 다음 턴으로 전송 |
 | `action` | 마지막 답변 아래 **네 / 아니오** 버튼(`label` 또는 `prompt`를 질문으로). 쪽지(`title`,`text`,`to`)면 받는 사람·제목·본문 박스와 복사 버튼 |
 | `clarify` | `question`과 `options[]` 버튼. 누른 값을 다음 턴으로 전송 |
 | `error.text` | 회색 시스템 말풍선 "답변에 실패했습니다. …"(300자). 이전 답변은 유지 |

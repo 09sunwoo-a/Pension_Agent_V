@@ -758,7 +758,7 @@ class Component {
         guardOpen: !!S.agGuardOpen[i],
         onGuard: () => this.setState(s => ({ agGuardOpen: { ...s.agGuardOpen, [i]: !s.agGuardOpen[i] } })),
         guard: (AGQ.guard || []).map(g => ({ doc: g.doc, meta: [g.org, g.date].filter(Boolean).join(' · '), point: g.point })),
-        hasFollow: !!(a.follow && a.follow.length) && footOn,
+        hasFollow: !!(a.follow && a.follow.length) && footOn, followPlain: true,
         follow: (a.follow || []).map(f => ({ t: f })),
         ctaOn: footOn && !!a.cta && !!S.agCta && anim,
         ctaAsk: a.cta ? a.cta.ask : '', ctaYes: a.cta ? a.cta.yes : '',
