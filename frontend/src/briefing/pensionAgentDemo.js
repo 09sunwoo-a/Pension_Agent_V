@@ -1697,6 +1697,7 @@ class Component {
 
   if (window.PensionBriefingAdapter) window.PensionBriefingAdapter.install(Component);
   if (window.PensionFabrix) window.PensionFabrix.install(Component);
+  if (window.PensionChat) window.PensionChat.install(Component);
 
   // Starroot adapter
   // 아래 문자열 값만 실제 '파일코드' 숫자로 교체하세요.

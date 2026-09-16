@@ -15,11 +15,17 @@
        onParam(params).fabrix 가 있으면 그쪽이 우선합니다. -->
   <script>
     window.__PENSION_FABRIX_CONFIG = window.__PENSION_FABRIX_CONFIG || {
-      endpointUrl: '',        // Connector URL: https://…/prod/kb0/<connector-id>/1  (/openapi/… 뒤는 프론트가 붙임)
-      agentId: 0,             // 실제 Agent ID (양의 정수)
-      xClientUser: '',        // 직원 ID
+      endpointUrl: '',        // 브리핑 Agent Connector URL: https://…/prod/kb0/<connector-id>/1  (/openapi/… 뒤는 프론트가 붙임)
+      agentId: 0,             // 브리핑 Agent ID (양의 정수)
+      xClientUser: '',        // 직원 ID. 7자리 사번으로 시작 (예: 3902172 또는 3902172-…). 두 Agent 공통
       openapiToken: '',       // Secret: x-openapi-token (Bearer 는 붙여도, 빼도 됨)
-      generativeAiClient: ''  // Secret: x-generative-ai-client
+      generativeAiClient: '', // Secret: x-generative-ai-client
+      chat: {                 // 우측 실시간 상담(대화 Agent). 비워 두면 패널에 미설정 안내만 표시
+        endpointUrl: '',      // 대화 Agent Connector URL
+        agentId: '',          // 대화 Agent assetId (문자열)
+        openapiToken: '',     // Secret. 브리핑 Agent와 다른 토큰
+        generativeAiClient: '' // Secret
+      }
     };
   </script>
   <div id="pensionAgentDemo">
@@ -734,7 +740,7 @@
 <div class="pad-mt11 pad-in">
 <div class="pad-t-11b-muted">이어서 물어보실 수 있어요</div>
 <sc-for as="fo" list="{{ m.follow }}">
-<div class="pad-t-13-sub pad-mt5 pad-keep">· {{ fo.t }}</div>
+<div sc-camel-on-click="{{ fo.onTap }}" class="pad-t-13-sub pad-mt5 pad-keep {{ fo.cls }}">· {{ fo.t }}</div>
 </sc-for>
 </div>
 </sc-if>
@@ -744,6 +750,14 @@
 <div class="pad-flex pad-g8 pad-mt9">
 <button sc-camel-on-click="{{ m.onCtaYes }}" class="pad-btn pad-btn--brand pad-p-7-16">{{ m.ctaYes }}</button>
 <button sc-camel-on-click="{{ m.onCtaNo }}" class="pad-btn pad-btn--line pad-p-7-16">아니오</button>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ m.clarifyOn }}">
+<div class="pad-cta pad-in">
+<div class="pad-cta__ask">{{ m.clarifyQuestion }}</div>
+<div class="pad-flex pad-wrap pad-g6 pad-mt9">
+<sc-for as="op" list="{{ m.clarify }}"><button sc-camel-on-click="{{ op.onTap }}" class="pad-sugg">{{ op.label }}</button></sc-for>
 </div>
 </div>
 </sc-if>

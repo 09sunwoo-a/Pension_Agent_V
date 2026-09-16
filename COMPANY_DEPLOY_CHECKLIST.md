@@ -110,6 +110,18 @@ Node·개별 고객 JSON·프론트 원본 모듈은 WAS에 올리지 않습니�
 
 Agent는 `event: CHUNK`, 문자열 `content`, 빈 `references/recommend_queries/actions`를 전송합니다. 브라우저에서는 FabriX의 `event_status: CHUNK` 포장 안에 `event: answer` 논리 객체가 있어야 합니다. 완성된 이벤트 하나 후 스트림이 종료되어야 합니다. 상세 필드는 [입출력 명세](integration/contracts/AGENT_FRONTEND_CONTRACT.md)를 따릅니다.
 
+### 5-2. 실시간 상담(대화 Agent) 연결
+
+- [ ] 배포본 HTML 설정 블록의 `chat: { endpointUrl, agentId, openapiToken, generativeAiClient }`에 **대화 Agent 전용** 값을 채웁니다(브리핑 토큰과 다름). `agentId`는 assetId 문자열. 최상위 `xClientUser`는 7자리 사번으로 시작해야 합니다.
+- [ ] 구조화 고객을 선택하면 우측 **실시간 상담** 패널이 열리고 첫 안내문에 "시연 고객(198734-1205842) 기준으로 답합니다"가 보이는지 확인합니다. `chat`을 비워 두면 질문 시 미설정 안내만 나오고 호출하지 않습니다.
+- [ ] 추천 질문 **이 고객 지금 현황은 어때?**를 누릅니다. 상태 말풍선 문구가 바뀌다가(5~9단계) 답변·목록·"▸ 근거 N건"·추천질문이 표시되는지 확인합니다. Network에는 대화 Connector로 POST 1건, `contents[0]` 안 `customer_id`가 `198734-1205842`, `session_id`가 UUID인지 봅니다.
+- [ ] 추천질문 하나를 눌러 2턴째가 **같은 `session_id`**로 나가는지 확인합니다(Agent 로그 `맥락=N턴`).
+- [ ] `이 고객 IRP 해지한대 ㅜ` 입력 → 큰따옴표 화법이 복사 버튼과 함께 표시되는지, "참고한 자료" 배지가 붙는지 확인합니다.
+- [ ] 연계 제안이 나오면 **네** 버튼으로 다음 턴이 나가는지, 되묻기가 나오면 선택지 버튼으로 나가는지 확인합니다(실제 응답 형태는 [규격](integration/contracts/CHAT_AGENT_CONTRACT.md)과 대조).
+- [ ] 다른 고객으로 바꾸면 새 세션·새 대화가 시작되고, 원래 고객으로 돌아오면 이전 대화가 유지되는지 확인합니다.
+
+우리 고객 ID로 답하게 하려면 대화 Agent의 고객 저장소에 `agent/briefing_data.json`의 `customer_data` 31건이 같은 `customerId`로 들어가야 합니다. 정렬되면 `pensionChat.js`의 `PINNED_CUSTOMER_ID`를 비우고 재빌드합니다.
+
 ## 6. 오류·화면 수명 확인
 
 - [ ] 다른 고객 선택/요청 취소/화면 이동 시 늦은 응답이 현재 고객을 덮어쓰지 않습니다.

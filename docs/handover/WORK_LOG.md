@@ -38,3 +38,12 @@
 - 반입 JS에서 브리핑 문장 31건을 제거했습니다(`PensionBriefingFixtures.customers`만 포함). 요청 스냅샷과 Agent SNAPSHOT 검증에 필요한 고객 데이터는 유지하며 `agent/briefing_data.json`은 같은 빌드로 계속 생성합니다. 사용처가 없어진 store의 `setOutput`/`status`도 제거했습니다.
 - `check.js`에 반입본 수준 검사를 추가했습니다: 주입 설정 → 선택 시 자동 요청 → 가짜 fetch의 SSE 1프레임 → 화면 반영, 수신 고객 재요청 없음, 잘못된/누락 설정 시 미호출. 로컬 Chromium + 가짜 SSE 서버(loopback endpoint)로 `NOCONFIG`·자동 호출·고객 전환·다시 요청 화면 동작도 확인했습니다.
 - 사내 확인 항목은 [체크리스트](../../COMPANY_DEPLOY_CHECKLIST.md) 5단계입니다. WAS 쪽 설정 주입과 실제 Origin에서의 자동 호출은 미검증입니다. 토큰이 브라우저에 내려가는 구조는 그대로이므로 운영 전 WAS 프록시 등 인증 방식 검토가 남아 있습니다.
+
+## 실시간 상담 패널 — 대화 Agent 연결
+
+- 사내 브리핑 화면 콘솔에서 대화 Agent Connector로 브라우저 직접 호출이 되는 것을 확인했고, 실제 3턴 응답을 `integration/contracts/chat.example.json`으로 보관했습니다. 규격·매핑은 `CHAT_AGENT_CONTRACT.md`.
+- `fabrix-chat-transport.js`(이벤트 스트림, 연속 JSON·CHUNK 포장·오류 문구 속 CHUNK 처리)와 `pensionChat.js`(고객별 세션·대화 기록, 답변 파싱, 패널 매핑)를 추가했습니다. 31명 구조화 고객에서 패널을 켜고, 기존 데모 3명은 mock을 유지합니다.
+- 설정 블록에 `chat: { endpointUrl, agentId(assetId 문자열), openapiToken, generativeAiClient }`를 추가했습니다(브리핑과 다른 토큰). `xClientUser`는 공유하며 7자리 사번으로 시작해야 합니다.
+- 실제 샘플에서 우리 `customerId`를 보내도 Agent가 자기 시연 고객(이준호, 198734-1205842)으로 답해, 당분간 `PINNED_CUSTOMER_ID`로 고정하고 패널 안내문에 표시합니다. Agent 고객 저장소에 우리 31건이 들어가면 상수를 비웁니다.
+- 답변 본문 규칙(실측): 첫 문단 lead, `- ` 줄 목록, 큰따옴표 문단은 복사 가능한 화법, 꼬리 `── 참고한 자료 / · 유형`은 배지. 근거는 `doc`별로 묶어 표시. `progress`는 마지막 문구만 표시. Enter 전송은 change 이벤트보다 먼저 오는 keydown이라 입력값을 직접 읽도록 했습니다.
+- `check.js`에 이벤트 추출·설정·샘플 파싱·반입본 수준 패널 재생 검사를 추가했고, 로컬 Chromium + 샘플 재생 서버로 진행 문구·목록·근거·추천질문·화법 복사·네/아니오·선택지·오류·고객 전환·대화 유지를 확인했습니다. `action`·`clarify`·`error`·`주의` role은 문서 기준 구현이며 실제 응답은 미확인입니다.

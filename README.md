@@ -14,6 +14,7 @@
 | 응답 필드 | `frontend/src/briefing/briefing-contract.js`, `fabrix-briefing-contract.js` |
 | 고객별 상태·기존 화면 연결 | `frontend/src/briefing/pensionBriefingStore.js`, `pensionBriefingAdapter.js` |
 | API 호출·설정 | `frontend/src/briefing/fabrix-transport.js`, `pensionFabrix.js` |
+| 실시간 상담(대화 Agent) 호출·패널 | `frontend/src/briefing/fabrix-chat-transport.js`, `pensionChat.js`, [규격](integration/contracts/CHAT_AGENT_CONTRACT.md) |
 | 기존 Vanilla 화면 동작 | `frontend/src/briefing/pensionAgentDemo.js` |
 | 내일 사내 반입·Agent 배포·연동 확인 | [COMPANY_DEPLOY_CHECKLIST.md](COMPANY_DEPLOY_CHECKLIST.md), 필요한 [플랫폼 문서](docs/platform/README.md) |
 | 지식 검색 | [색인](knowledge/source_registry.md)으로 관련 자료만 선택 |
@@ -52,5 +53,5 @@ node tools/briefing/build.js --preview
 - 브리핑 내용: 모두 draft, 대표 3건만 1차 개선. 검토 이슈는 각 JSON의 `reviewNotes`와 사례 색인.
 - **LLM 없는 고정 Agent 구현 완료**: 선택한 사례의 저장된 S1–S5를 반환하며 요청 식별값/고객 스냅샷이 다르면 오류. Python 응답은 프론트 계약으로 검증했습니다.
 - **로컬 FastAPI/Pydantic 미설치로 앱 기동은 미검증. 실제 사내 E2E, LLM 기반 생성, 운영 인증 방식은 미완료.**
-- 우측 실시간 상담은 기존 데모이며 이번 S1–S5 API와 별개입니다.
+- 우측 실시간 상담은 31명 구조화 고객에서 대화 Agent(별도 Connector·토큰, 설정 블록의 `chat`)를 호출합니다. 실제 3턴 응답 샘플로 파싱·화면을 검증했고, `customer_id`는 Agent 고객 데이터가 정렬될 때까지 `198734-1205842`로 고정합니다. 기존 데모 3명은 mock 상담을 유지합니다.
 - Secret과 실제 고객 데이터를 올리지 마세요.
