@@ -9,6 +9,18 @@
   <script id="PENSION_AGENT_DEMO" src="/mnbank/app/js/bfe/pension/pensionAgentDemo.js"></script>
 </head>
 <body>
+  <!-- FabriX 연결 설정: 사내 배포본에서만 값을 채웁니다. Git 원본에는 항상 빈 값으로 둡니다.
+       Starroot는 이 인라인 스크립트를 pensionAgentDemo.js 다음, PG_<파일코드>.onParam() 전에 실행합니다.
+       WAS가 서버에서 값을 채워 넣거나, onParam(params).fabrix로 전달하는 경우 이 블록은 비워 둡니다. -->
+  <script>
+    window.__PENSION_FABRIX_CONFIG = {
+      endpointUrl: '',        // Connector URL: https://…/prod/kb0/<connector-id>/1  (/openapi/… 뒤는 프론트가 붙임)
+      agentId: 0,             // 실제 Agent ID (양의 정수)
+      xClientUser: '',        // 직원 ID
+      openapiToken: '',       // Secret: x-openapi-token (Bearer 는 붙여도, 빼도 됨)
+      generativeAiClient: ''  // Secret: x-generative-ai-client
+    };
+  </script>
   <div id="pensionAgentDemo">
     <template id="pensionAgentTemplate">
 <div class="pad-root">

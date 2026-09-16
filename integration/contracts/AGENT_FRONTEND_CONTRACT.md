@@ -37,7 +37,7 @@ HTML의 리소스 경로는 검증본과 같습니다.
 연결 설정 다섯 값은 화면 진입 시 런타임으로 주입합니다. 정적 배포 파일·소스·Git에는 넣지 않습니다.
 
 1. Starroot가 `PG_<파일코드>.onParam(params)`를 호출할 때 `params.fabrix`로 전달하거나,
-2. 업무 페이지 JS가 실행되기 전에 WAS가 `window.__PENSION_FABRIX_CONFIG`를 설정합니다. `params.fabrix`가 있으면 그 값을 우선합니다.
+2. `mnPensionAgentDemo.html` `<body>` 첫머리의 `window.__PENSION_FABRIX_CONFIG` 블록에 값을 채웁니다. 저장소 원본은 항상 빈 값이며(빌드가 검사), **배포본에서만** 채우거나 WAS가 서버에서 채워 넣습니다. `params.fabrix`가 있으면 그 값을 우선합니다.
 
 ```js
 // params.fabrix 또는 window.__PENSION_FABRIX_CONFIG

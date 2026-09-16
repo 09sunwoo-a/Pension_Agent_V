@@ -47,10 +47,16 @@
     refresh();
     return cfg ? { ok: true } : { ok: false, code: configCode };
   }
+  // The shipped HTML carries an all-empty config block; that counts as not injected.
+  function filled(input) {
+    return !!input && typeof input === 'object' && Object.keys(input).some(function (key) {
+      return input[key] != null && input[key] !== '' && input[key] !== 0;
+    });
+  }
   function runtimeConfig(params) {
     var injected = params && typeof params === 'object' ? params.fabrix : undefined;
-    if (injected == null) injected = window.__PENSION_FABRIX_CONFIG;
-    return injected == null ? null : injected;
+    if (!filled(injected)) injected = window.__PENSION_FABRIX_CONFIG;
+    return filled(injected) ? injected : null;
   }
   function destroy() { cancel(); cfg = null; configCode = 'NOCONFIG'; diagnostics.clear(); loaded.clear(); }
   function requestId() {

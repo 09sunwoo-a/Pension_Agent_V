@@ -87,7 +87,7 @@ Node·개별 고객 JSON·프론트 원본 모듈은 WAS에 올리지 않습니�
 ## 5. FabriX Connector 설정과 실제 호출
 
 - [ ] Connector가 새 배포 Agent를 가리키는지 확인하고 해당 환경의 Connector URL과 Agent ID를 준비합니다.
-- [ ] WAS에서 업무화면 진입 시 아래 다섯 값을 주입합니다. `PG_<파일코드>.onParam(params)`의 `params.fabrix`, 또는 업무 페이지 JS 실행 전에 설정하는 `window.__PENSION_FABRIX_CONFIG`. 정적 JS/HTML/Git에는 값을 넣지 않습니다.
+- [ ] **배포본** `mnPensionAgentDemo.html`의 `<body>` 첫머리 `window.__PENSION_FABRIX_CONFIG = {...}` 블록에 아래 다섯 값을 채웁니다(Git 원본은 빈 값 유지, 빌드가 검사함). WAS가 서버에서 채우거나 `PG_<파일코드>.onParam(params)`의 `params.fabrix`로 넘기는 경우에는 블록을 비워 둡니다. 파일코드처럼 재빌드 후 다시 채워야 합니다.
 
 | cfg 키 | 준비할 값 |
 |---|---|

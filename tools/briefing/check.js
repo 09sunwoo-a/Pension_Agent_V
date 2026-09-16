@@ -122,8 +122,13 @@ async function autoRequestCheck() {
   invalid.select('DEMO-01', true);
   assert.deepEqual([invalid.renderVals().fabrixDiagnosticCode, invalid.renderVals().fabrixCanRequest], ['CONFIG', false]);
   invalid.componentWillUnmount();
+  ctx.window.__PENSION_FABRIX_CONFIG = { endpointUrl: '', agentId: 0, xClientUser: '', openapiToken: '', generativeAiClient: '' };
+  const empty = mount({ starrootParams: {} });
+  empty.select('DEMO-01', true);
+  assert.equal(empty.renderVals().fabrixDiagnosticCode, 'NOCONFIG', 'Shipped empty config block counts as not injected');
+  empty.componentWillUnmount(); delete ctx.window.__PENSION_FABRIX_CONFIG;
   await settle();
-  assert.equal(calls.length, 3, 'Invalid or missing config never sends a request');
+  assert.equal(calls.length, 3, 'Invalid, empty or missing config never sends a request');
   delete ctx.fetch;
 }
 autoRequestCheck().then(

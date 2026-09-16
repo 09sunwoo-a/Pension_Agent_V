@@ -52,7 +52,12 @@ function artifacts(fileCode = 'REPLACE_WITH_FILE_CODE') {
       .replace("var STARROOT_FILE_CODE = 'REPLACE_WITH_FILE_CODE';", "var STARROOT_FILE_CODE = '" + fileCode + "';") +
     '\n})(window, document);\n';
   const html = read(path.join(SRC, 'mnPensionAgentDemo.html'));
-  if ((html.match(/<script\b/g) || []).length !== 1 || (html.match(/<link\b/g) || []).length !== 1) throw new Error('HTML must reference one JS and one CSS');
+  if ((html.match(/<script\b[^>]*\bsrc=/g) || []).length !== 1 || (html.match(/<link\b/g) || []).length !== 1) throw new Error('HTML must reference one JS and one CSS');
+  // The config block ships empty; credentials are filled only in the deployed copy.
+  for (const key of ['endpointUrl', 'xClientUser', 'openapiToken', 'generativeAiClient']) {
+    if (!new RegExp(key + ": ''").test(html)) throw new Error('FabriX config block must stay empty in source: ' + key);
+  }
+  if (!/agentId: 0\b/.test(html)) throw new Error('FabriX config block must stay empty in source: agentId');
   return { 'mnPensionAgentDemo.html': html, 'pensionAgentDemo.js': js, 'pensionAgentDemo.css': read(path.join(SRC, 'pensionAgentDemo.css')) };
 }
 
