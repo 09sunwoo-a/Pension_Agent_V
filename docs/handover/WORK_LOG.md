@@ -30,3 +30,11 @@
 - `check.js --agent`: 31건 Python 응답/SSE와 프론트 규격 일치, 오류 입력/스냅샷, 응답 객체 격리, Python 3.10 문법, LLM import 없음 확인.
 - 로컬 FastAPI/Pydantic 미설치로 HTTP 앱 기동 검사는 SKIP입니다. 실제 사내 기동·배포·연동까지 완료했다고 보지 않습니다.
 - 루트 `COMPANY_DEPLOY_CHECKLIST.md`에 내일 반입할 파일, 파일코드/cfg, 사내 flat repo/tag/Portal, health/API/오류 확인 순서를 통합했습니다.
+
+## 브리핑 화면 실제 API 전환 (사내 체크리스트 통과 후)
+
+- 연결 설정 입력 폼·실제 브리핑 호출 버튼·더미로 복원을 제거했습니다. 설정 다섯 값은 `PG_<파일코드>.onParam(params).fabrix` 또는 `window.__PENSION_FABRIX_CONFIG`로 화면 진입 시 주입하며 메모리에만 보관합니다. 주입이 없으면 `NOCONFIG`, 형식 오류면 `CONFIG`로 표시하고 호출하지 않습니다.
+- 구조화 고객을 선택하면 즉시 FabriX를 호출합니다. 같은 화면 세션에서 수신한 고객은 재선택 시 재요청하지 않고 **다시 요청**으로만 갱신합니다. 취소·늦은 응답·오류 처리와 transport·계약·Agent는 그대로입니다.
+- 반입 JS에서 브리핑 문장 31건을 제거했습니다(`PensionBriefingFixtures.customers`만 포함). 요청 스냅샷과 Agent SNAPSHOT 검증에 필요한 고객 데이터는 유지하며 `agent/briefing_data.json`은 같은 빌드로 계속 생성합니다. 사용처가 없어진 store의 `setOutput`/`status`도 제거했습니다.
+- `check.js`에 반입본 수준 검사를 추가했습니다: 주입 설정 → 선택 시 자동 요청 → 가짜 fetch의 SSE 1프레임 → 화면 반영, 수신 고객 재요청 없음, 잘못된/누락 설정 시 미호출. 로컬 Chromium + 가짜 SSE 서버(loopback endpoint)로 `NOCONFIG`·자동 호출·고객 전환·다시 요청 화면 동작도 확인했습니다.
+- 사내 확인 항목은 [체크리스트](../../COMPANY_DEPLOY_CHECKLIST.md) 5단계입니다. WAS 쪽 설정 주입과 실제 Origin에서의 자동 호출은 미검증입니다. 토큰이 브라우저에 내려가는 구조는 그대로이므로 운영 전 WAS 프록시 등 인증 방식 검토가 남아 있습니다.

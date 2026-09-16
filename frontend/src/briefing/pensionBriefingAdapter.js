@@ -1,5 +1,5 @@
-/* Thin composition layer: local customer facts + replaceable briefing content.
- * No network requests. Keep legacy demo rendering independent.
+/* Thin composition layer: local customer facts + briefing content received from
+ * the Agent. No network requests here. Keep legacy demo rendering independent.
  */
 (function (window) {
   'use strict';
@@ -14,8 +14,6 @@
     if (contentChanged) Object.assign(patch, { bfSol: null, bfReact: null, briefingSourcesOpen: false });
     instance.setState(patch);
   });
-  // Fixture import uses the same validation/normalization path as receive().
-  fixtures.briefings.forEach(function (output) { store.setOutput(output); });
   var records = store.customers();
   var sampleLabels = { 'DEMO-01': '대표 · 상품 제안', 'B01-22': '대표 · 업무 제안', 'B06-13': '대표 · 미확인 정보' };
   function view(component, base) {
@@ -45,7 +43,7 @@
     base.briefingStateText = entry.phase === 'loading'
       ? '브리핑을 불러오는 중입니다.' + (entry.content ? ' 이전 브리핑을 표시합니다.' : '')
       : '브리핑을 불러오지 못했습니다.' + (entry.content ? ' 이전 브리핑을 유지합니다.' : ' 다시 요청해 주세요.');
-    base.briefingAnalysisLabel = record.briefingMeta.asOfDate.replace(/-/g, '.') + ' 기준 · ' + (entry.status === 'ready' ? '브리핑' : '브리핑 초안');
+    base.briefingAnalysisLabel = record.briefingMeta.asOfDate.replace(/-/g, '.') + ' 기준 · 브리핑 초안';
     base.bfName = record.customer.name;
     if (entry.content) Object.assign(base, BriefingView.build(entry.content, component));
     return base;
@@ -72,8 +70,6 @@
     install: install,
     // Retain the exact local ticket until response arrival. No customer payload.
     begin: store.begin, receive: store.receive, fail: store.fail, cancel: store.cancel,
-    clear: store.clear, getContext: store.context, getCustomerForRequest: store.customer,
-    // Compatibility for v2 fixture documents, not the future API wire format.
-    setOutput: store.setOutput
+    clear: store.clear, getContext: store.context, getCustomerForRequest: store.customer
   };
 })(window);

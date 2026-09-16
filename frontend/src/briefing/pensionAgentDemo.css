@@ -462,11 +462,6 @@
 */
 
 /* Included in the single deployment CSS. All selectors stay under the page root. */
-#pensionAgentDemo .pad-fabrix {padding:12px 16px;background:#fff;border:1px solid #E2E4E8;border-radius:12px;margin-bottom:16px}
+#pensionAgentDemo .pad-fabrix {padding:10px 16px;background:#fff;border:1px solid #E2E4E8;border-radius:12px;margin-bottom:16px}
 #pensionAgentDemo .pad-fabrix__bar {display:flex;align-items:center;flex-wrap:wrap;gap:8px}
-#pensionAgentDemo .pad-fabrix__diagnostic {font-size:12px;line-height:1.6;margin-top:8px;color:#60584C;overflow-wrap:anywhere}
-#pensionAgentDemo .pad-fabrix__settings {display:flex;flex-direction:column;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid #ECEDF0}
-#pensionAgentDemo .pad-fabrix__fields {display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr);gap:12px}
-#pensionAgentDemo .pad-fabrix__fields label {display:flex;flex-direction:column;gap:5px;font-size:12px;color:#4E545C;min-width:0}
-#pensionAgentDemo .pad-fabrix__fields input {width:100%;box-sizing:border-box;border:1px solid #D2D5DA;border-radius:6px;padding:8px;font-size:13px;min-width:0;background:#fff;color:#26282C}
-@media (max-width:760px) {#pensionAgentDemo .pad-fabrix__fields {grid-template-columns:minmax(0,1fr)}}
+#pensionAgentDemo .pad-fabrix__diagnostic {flex:1;min-width:0;font-size:12px;line-height:1.6;color:#60584C;overflow-wrap:anywhere}

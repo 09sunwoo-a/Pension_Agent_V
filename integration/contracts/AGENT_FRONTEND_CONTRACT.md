@@ -14,7 +14,7 @@
 
 규격 수정 원본은 [briefing-contract.js](../../frontend/src/briefing/briefing-contract.js)의 S1–S5 공통 스키마와 [fabrix-briefing-contract.js](../../frontend/src/briefing/fabrix-briefing-contract.js)의 API envelope입니다. 별도 수정용 JSON 스키마는 두지 않습니다. 빌드가 같은 스키마와 고객·브리핑을 `agent/briefing_data.json`에 포함하므로 Python에서도 검사합니다. 응답 예시와 Agent 묶음은 직접 수정하지 않습니다. [수정 위치와 명령](../../README.md)을 참조하세요.
 
-## 2. 사내에서 테스트하는 방법
+## 2. 사내 배포와 연결 설정
 
 다음 세 파일만 배포합니다. 별도 JSON·JS 의존 파일, npm, 외부 CDN, React, 런타임 빌드는 필요하지 않습니다.
 
@@ -34,11 +34,24 @@ HTML의 리소스 경로는 검증본과 같습니다.
 
 최초 배포 시 `pensionAgentDemo.js`의 `STARROOT_FILE_CODE = 'REPLACE_WITH_FILE_CODE'`를 실제 파일코드로 바꿉니다. 이후 `PG_<파일코드>.onParam()` 초기화, `onBeforeUnload()` 정리를 사용합니다. `DOMContentLoaded`에 의존하지 않습니다. 파일 경로·파일코드 설정은 최초 배포 작업이며 FabriX 인증 설정과 별개입니다.
 
-1. 고객별 브리핑 목록에서 대표 사례 또는 30개 고객 중 하나를 선택합니다.
-2. **연결 설정**에서 아래 다섯 값을 입력하고 **설정 적용**을 누릅니다.
-3. **실제 브리핑 호출 / 재요청**을 누릅니다.
-4. 화면의 수신 상태와 S1~S5를 확인합니다. 상단 고객정보·IRP 계좌·보유상품은 바뀌지 않습니다.
-5. **요청 취소**, **더미로 복원**, **설정 삭제**를 사용할 수 있습니다.
+연결 설정 다섯 값은 화면 진입 시 런타임으로 주입합니다. 정적 배포 파일·소스·Git에는 넣지 않습니다.
+
+1. Starroot가 `PG_<파일코드>.onParam(params)`를 호출할 때 `params.fabrix`로 전달하거나,
+2. 업무 페이지 JS가 실행되기 전에 WAS가 `window.__PENSION_FABRIX_CONFIG`를 설정합니다. `params.fabrix`가 있으면 그 값을 우선합니다.
+
+```js
+// params.fabrix 또는 window.__PENSION_FABRIX_CONFIG
+{ endpointUrl: 'https://…/prod/kb0/<connector-id>/1', agentId: 1234, xClientUser: '<직원ID>',
+  openapiToken: '<OpenAPI 토큰>', generativeAiClient: '<인증용 클라이언트 값>' }
+```
+
+화면 동작:
+
+1. 고객별 브리핑 목록에서 대표 사례 또는 30개 고객 중 하나를 선택하면 즉시 FabriX 요청을 보냅니다. 반입본에 저장된 브리핑 문장은 없으며 S1~S5에는 API 응답만 표시합니다.
+2. 같은 화면 세션에서 이미 수신한 고객을 다시 선택하면 재요청하지 않습니다. **다시 요청**으로 명시적으로 갱신합니다.
+3. 호출 중에는 **요청 취소**를 쓸 수 있고, 다른 고객 선택·목록 복귀·화면 종료 시 자동으로 취소합니다.
+4. 상단 고객정보·IRP 계좌·보유상품은 응답과 무관하게 로컬 스냅샷을 표시합니다.
+5. 설정이 주입되지 않았으면 `NOCONFIG`, 형식이 틀리면 `CONFIG`를 표시하고 요청하지 않습니다.
 
 | 설정 필드 | 내용 |
 |---|---|
@@ -48,7 +61,7 @@ HTML의 리소스 경로는 검증본과 같습니다.
 | `agentId` | 양의 정수. 예시의 0은 실제 설정으로 허용하지 않음 |
 | `xClientUser` | 직원 ID. 요청의 `x_client_user`로 전달 |
 
-호출 코드로 설정할 때도 동일한 필드를 사용합니다. 아래 `cfg`는 승인된 런타임 설정 경로에서 받은 객체이며, 실제 값을 정적 배포 파일에 넣지 않습니다.
+주입 대신 호출 코드로 설정할 때도 동일한 필드를 사용합니다(로컬 확인 등). 설정 후에는 다음 고객 선택부터 자동 요청하며, `request`로 바로 호출할 수도 있습니다. 실제 값을 정적 배포 파일에 넣지 않습니다.
 
 ```js
 var configured = window.PensionFabrix.configure(cfg);
@@ -60,7 +73,7 @@ if (configured.ok) {
 }
 ```
 
-설정은 JS 메모리에만 보관하며 저장소·쿠키·파일·로그에 기록하지 않습니다. 화면 종료/설정 삭제 시 제거합니다. 설정 입력값은 Component 상태나 HTML value 속성에 보관하지 않으며 적용 후 입력창을 비웁니다. 다만 브라우저 직접 호출 특성상 Network 탭에는 인증 헤더가 보입니다. **승인된 사내 테스트 환경에서만 사용하고, 운영 적용 시 서버 프록시 등 인증 방식을 별도로 검토해야 합니다.** 개발자 도구 콘솔 기록에도 실제 토큰을 붙여넣지 않는 것을 권장합니다.
+설정은 JS 메모리에만 보관하며 저장소·쿠키·파일·로그에 기록하지 않습니다. 화면 종료(`onBeforeUnload`) 시 제거하므로 화면 진입마다 다시 주입되어야 합니다. Component 상태나 HTML에는 보관하지 않습니다. 다만 브라우저 직접 호출 특성상 Network 탭에는 인증 헤더가 보입니다. **승인된 사내 환경에서만 사용하고, 운영 적용 시 WAS 프록시 등 토큰을 브라우저에 내리지 않는 방식을 별도로 검토해야 합니다.** 개발자 도구 콘솔 기록에도 실제 토큰을 붙여넣지 않는 것을 권장합니다.
 
 `기존 데모 · 김서연`은 원래 화면을 보존하므로 API 호출 대상이 아닙니다. 김서연 실제 연결 테스트는 `대표 · 상품 제안 · 김서연`(`DEMO-01`)을 선택합니다. 데이터는 시연용이며, 원천 내용의 검토 완료를 뜻하지 않습니다.
 
@@ -242,11 +255,11 @@ FabriX를 거쳐 브라우저가 받는 포장은 다음과 같습니다. 바깥
 
 ## 7. 상태·실패 처리
 
-화면은 데이터 출처를 `더미 브리핑` / `실제 API 응답 · 내용 검토 전`으로 구분합니다. 오류 시 자동으로 더미를 성공 결과처럼 대체하지 않습니다. 표시할 기존 내용이 있으면 이전 브리핑임을 함께 안내합니다.
+S1~S5에는 API 응답만 표시하며 반입본에 더미 브리핑 문장을 포함하지 않습니다. 정상 수신도 `내용 검토 전 초안`으로 표시합니다. 오류 시 같은 화면 세션에서 이전에 수신한 브리핑이 있으면 유지하고 이전 브리핑임을 함께 안내합니다.
 
-진단 코드: `CONFIG`, `AUTH`, `HTTP`, `NETWORK`, `CONTENT_TYPE`, `STREAM`, `SSE`, `JSON`, `SCHEMA`, `VERSION`, `IDENTITY`, `AGENT`, `EMPTY`, `TRUNCATED`, `MULTIPLE`, `LIMIT`, `GATEWAY`, `TIMEOUT`, `ABORTED`.
+진단 코드: `NOCONFIG`, `CONFIG`, `AUTH`, `HTTP`, `NETWORK`, `CONTENT_TYPE`, `STREAM`, `SSE`, `JSON`, `SCHEMA`, `VERSION`, `IDENTITY`, `AGENT`, `EMPTY`, `TRUNCATED`, `MULTIPLE`, `LIMIT`, `GATEWAY`, `TIMEOUT`, `ABORTED`.
 
-요청 취소·다른 고객 선택·목록으로 복귀·화면 종료·설정 교체/삭제 시 진행 중인 fetch를 중단합니다. 이미 도착했더라도 무효화된 요청은 반영하지 않습니다. 재시도는 호출 버튼으로 명시적으로 실행하며 자동 반복 호출하지 않습니다.
+요청 취소·다른 고객 선택·목록으로 복귀·화면 종료·설정 교체 시 진행 중인 fetch를 중단합니다. 이미 도착했더라도 무효화된 요청은 반영하지 않습니다. 재시도는 **다시 요청**으로 명시적으로 실행하며 자동 반복 호출하지 않습니다. 같은 화면 세션에서 이미 수신한 고객은 재선택해도 재요청하지 않습니다.
 
 ## 8. 응답 규격을 나중에 변경할 때
 
@@ -266,8 +279,8 @@ node tools/briefing/check.js
 
 ## 9. 로컬 확인과 실제 응답 검증
 
-`node tools/briefing/build.js --preview` 후 `http://127.0.0.1:8765`를 엽니다. 반입 세 파일을 표시하는 정적 미리보기이며 모의 API는 없습니다. 실 API 호출은 승인된 사내 Origin에서 검증합니다.
+`node tools/briefing/build.js --preview` 후 `http://127.0.0.1:8765`를 엽니다. 반입 세 파일을 표시하는 정적 미리보기이며 모의 API는 없습니다. 설정이 주입되지 않으므로 고객 선택 시 S1~S5 영역은 `NOCONFIG` 상태로 비어 있습니다. 로컬 FabriX 호환 서버가 있다면 콘솔에서 `window.PensionFabrix.configure({...})`(`http://127.0.0.1` endpoint 허용) 후 다른 고객을 선택해 확인할 수 있습니다. 실 API 호출은 승인된 사내 Origin에서 검증합니다.
 
 사내에서 비밀값을 제거한 논리적 요청 객체와 Agent answer 객체를 준비하면 `node tools/briefing/check.js request.json response.json`으로 계약 일치를 검사할 수 있습니다. 입력은 FabriX envelope/HAR가 아니라 위 명세의 내부 요청과 최종 answer JSON입니다. 토큰·전체 헤더·실제 고객 데이터는 저장소에 넣지 않습니다.
 
-기본 검사는 현재 JSON/반입본 일치, 31건 렌더링 매핑, 상단 고객 격리, 선택 필드, 요청 식별값과 SSE parser를 확인합니다. `node tools/briefing/check.js --agent`는 Python 고정 응답/SSE와 프론트 규격의 일치도 검사합니다. FastAPI/Pydantic이 있으면 ASGI 경로도 검사하며, 없으면 명시적으로 SKIP합니다. 실제 인증·CORS·Gateway·Starroot/WebView·추천 내용의 적합성은 [사내 체크리스트](../../COMPANY_DEPLOY_CHECKLIST.md)에서 별도로 검증합니다.
+기본 검사는 현재 JSON/반입본 일치, 31건 렌더링 매핑, 상단 고객 격리, 선택 필드, 요청 식별값, SSE parser, 그리고 반입본 수준의 자동 호출 경로(설정 주입 → 고객 선택 시 요청 → SSE answer 반영, 잘못된/누락 설정 시 미호출)를 확인합니다. `node tools/briefing/check.js --agent`는 Python 고정 응답/SSE와 프론트 규격의 일치도 검사합니다. FastAPI/Pydantic이 있으면 ASGI 경로도 검사하며, 없으면 명시적으로 SKIP합니다. 실제 인증·CORS·Gateway·Starroot/WebView·추천 내용의 적합성은 [사내 체크리스트](../../COMPANY_DEPLOY_CHECKLIST.md)에서 별도로 검증합니다.

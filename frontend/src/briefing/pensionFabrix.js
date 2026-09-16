@@ -1,14 +1,17 @@
-/* Live test controller. All credential values remain in memory until cleared or
- * the Starroot page is destroyed. Never persist/log cfg or response/customer data.
+/* FabriX briefing controller. The connection config is injected at runtime by
+ * Starroot (PG_<code>.onParam(params).fabrix) or window.__PENSION_FABRIX_CONFIG.
+ * It stays in JS memory until the page is destroyed; never persist or log cfg,
+ * responses or customer data. Each structured case is requested once per mount.
  */
 (function (window) {
   'use strict';
   if (window.PensionFabrix && window.PensionFabrix.destroy) window.PensionFabrix.destroy();
   var transport = window.PensionFabrixTransport, wire = window.PensionFabrixContract;
-  var bridge = window.PensionBriefingAdapter, cfg = null, active = null, serial = 0;
-  var diagnostics = new Map(), origins = new Map(), settingsError = '';
+  var bridge = window.PensionBriefingAdapter, cfg = null, configCode = 'NOCONFIG', active = null, serial = 0;
+  var diagnostics = new Map(), loaded = new Set();
   var messages = {
-    CONFIG: '설정 오류: endpoint·인증값·Agent ID(양의 정수)·직원 ID를 확인해 주세요.',
+    NOCONFIG: '연결 설정 없음: 화면 진입 시 onParam params.fabrix 또는 window.__PENSION_FABRIX_CONFIG로 설정을 주입해 주세요.',
+    CONFIG: '설정 오류: 주입된 endpoint·인증값·Agent ID(양의 정수)·직원 ID를 확인해 주세요.',
     AUTH: '인증 실패: 토큰·클라이언트 값과 호출 권한을 확인해 주세요.',
     HTTP: 'HTTP 오류: 사내 Network 탭에서 응답 상태를 확인해 주세요.',
     NETWORK: '연결 실패: 네트워크·Origin/CORS·인증서 정책을 확인해 주세요.',
@@ -38,26 +41,25 @@
     diagnostics.set(pending.caseId, { code: 'ABORTED' }); refresh();
   }
   function configure(input) {
-    var checked;
-    try { checked = transport.config(input); } catch (_) {
-      settingsError = messages.CONFIG; refresh(); return { ok: false, code: 'CONFIG' };
-    }
-    cancel(); cfg = checked; settingsError = ''; refresh();
-    return { ok: true };
+    cancel();
+    try { cfg = transport.config(input); configCode = ''; }
+    catch (_) { cfg = null; configCode = input == null ? 'NOCONFIG' : 'CONFIG'; }
+    refresh();
+    return cfg ? { ok: true } : { ok: false, code: configCode };
   }
-  function clearConfig() { cancel(); cfg = null; settingsError = ''; refresh(); }
-  // The briefing store survives an onParam remount of the same script. Preserve
-  // origin labels with those cached contents, but clear credentials/diagnostics.
-  function destroy() { clearConfig(); diagnostics.clear(); }
+  function runtimeConfig(params) {
+    var injected = params && typeof params === 'object' ? params.fabrix : undefined;
+    if (injected == null) injected = window.__PENSION_FABRIX_CONFIG;
+    return injected == null ? null : injected;
+  }
+  function destroy() { cancel(); cfg = null; configCode = 'NOCONFIG'; diagnostics.clear(); loaded.clear(); }
   function requestId() {
     return window.crypto && window.crypto.randomUUID ? window.crypto.randomUUID() : 'brief-' + Date.now() + '-' + (++serial);
   }
   async function request(caseId) {
     var customer = bridge.getCustomerForRequest(caseId);
     if (!customer) return { ok: false, code: 'CUSTOMER' };
-    if (!cfg) {
-      diagnostics.set(caseId, { code: 'CONFIG' }); refresh(); return { ok: false, code: 'CONFIG' };
-    }
+    if (!cfg) return { ok: false, code: configCode };
     cancel();
     var requestCfg = cfg, req = wire.request(customer, requestId(), requestCfg.xClientUser);
     var pending = { caseId: caseId, ticket: bridge.begin(caseId), controller: new AbortController() };
@@ -70,7 +72,7 @@
       var result = bridge.receive(pending.ticket, checked.content);
       if (result.stale) return result;
       if (!result.ok) throw { code: 'SCHEMA' };
-      origins.set(caseId, 'API'); diagnostics.set(caseId, { code: 'SUCCESS' });
+      loaded.add(caseId); diagnostics.set(caseId, { code: 'SUCCESS' });
       return { ok: true };
     } catch (error) {
       if (active !== pending) return { ok: false, stale: true };
@@ -81,49 +83,36 @@
       if (active === pending) { active = null; refresh(); }
     }
   }
-  function mock(caseId) {
-    cancel();
-    var output = window.PensionBriefingFixtures.briefings.find(function (b) { return b.caseId === caseId; });
-    if (!output) return;
-    bridge.setOutput(output); origins.set(caseId, 'MOCK'); diagnostics.delete(caseId); refresh();
+  function ensure(caseId) {
+    if (!cfg || loaded.has(caseId) || (active && active.caseId === caseId)) return;
+    request(caseId);
   }
   function view(component, base) {
-    var id = component.state.sel, diagnostic = diagnostics.get(id), busy = !!active && active.caseId === id;
-    base.fabrixEnabled = true;
-    base.fabrixSettingsOpen = !!component.state.fabrixSettingsOpen;
+    var id = component.state.sel, busy = !!active && active.caseId === id;
+    var diagnostic = cfg ? diagnostics.get(id) : { code: configCode };
+    base.fabrixEnabled = !!base.structuredBrief;
     base.fabrixConfigured = !!cfg;
-    base.fabrixConfigLabel = cfg ? '설정됨 · 메모리에만 보관' : '미설정';
-    base.fabrixSettingsError = settingsError;
-    base.fabrixToggleSettings = function () { component.setState({ fabrixSettingsOpen: !component.state.fabrixSettingsOpen }); };
-    base.fabrixApplySettings = function () {
-      var root = document.getElementById('pensionAgentDemo');
-      var input = function (key) { return root.querySelector('[data-fabrix-config="' + key + '"]').value; };
-      var result = configure({ endpointUrl: input('endpointUrl'), openapiToken: input('openapiToken'),
-        generativeAiClient: input('generativeAiClient'), agentId: Number(input('agentId')), xClientUser: input('xClientUser') });
-      if (result.ok) {
-        root.querySelectorAll('[data-fabrix-config]').forEach(function (el) { el.value = ''; });
-        component.setState({ fabrixSettingsOpen: false });
-      }
-    };
-    base.fabrixClearConfig = clearConfig;
-    base.fabrixCanRequest = base.structuredBrief && !busy;
+    base.fabrixCanRequest = !!base.structuredBrief && !!cfg && !busy;
     base.fabrixBusy = busy;
     base.fabrixRequest = function () { request(component.state.sel); };
     base.fabrixCancel = cancel;
-    base.fabrixMock = function () { mock(component.state.sel); };
-    base.fabrixOrigin = origins.get(id) === 'API' ? '실제 API 응답 · 내용 검토 전' : '더미 브리핑';
-    base.fabrixDiagnostic = diagnostic ? diagnostic.code === 'LOADING' ? '호출 중 · 최종 응답을 기다립니다.'
-      : diagnostic.code === 'SUCCESS' ? '정상 수신 · JSON 검증 및 화면 반영 완료' : messages[diagnostic.code] : '';
+    base.fabrixDiagnostic = !diagnostic ? '' : diagnostic.code === 'LOADING' ? '호출 중 · 최종 응답을 기다립니다.'
+      : diagnostic.code === 'SUCCESS' ? '정상 수신 · 내용 검토 전 초안입니다.' : messages[diagnostic.code];
     base.fabrixDiagnosticCode = diagnostic ? diagnostic.code : '';
-    base.fabrixLegacyNote = !base.structuredBrief;
     return base;
   }
   function install(Component) {
     var originalRender = Component.prototype.renderVals, originalSelect = Component.prototype.select;
-    var originalUnmount = Component.prototype.componentWillUnmount;
+    var originalMount = Component.prototype.componentDidMount, originalUnmount = Component.prototype.componentWillUnmount;
+    Component.prototype.componentDidMount = function () {
+      if (originalMount) originalMount.apply(this, arguments);
+      configure(runtimeConfig(this.props.starrootParams));
+    };
     Component.prototype.select = function (id) {
       if (this.state.sel !== id) cancel();
-      return originalSelect.apply(this, arguments);
+      var result = originalSelect.apply(this, arguments);
+      if (this.state.sel === id) ensure(id);
+      return result;
     };
     Component.prototype.renderVals = function () {
       var base = view(this, originalRender.call(this)), back = base.goBack;
@@ -132,5 +121,5 @@
     };
     Component.prototype.componentWillUnmount = function () { destroy(); return originalUnmount.apply(this, arguments); };
   }
-  window.PensionFabrix = { configure: configure, clearConfig: clearConfig, request: request, cancel: cancel, destroy: destroy, install: install };
+  window.PensionFabrix = { configure: configure, request: request, cancel: cancel, destroy: destroy, install: install };
 })(window);

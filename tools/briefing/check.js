@@ -17,12 +17,14 @@ const code = js.match(/^\s*var STARROOT_FILE_CODE = '([^']+)'/m)[1];
 const expected = artifacts(code);
 assert.deepEqual(fs.readdirSync(OUT).sort(), Object.keys(expected).sort());
 for (const [name, body] of Object.entries(expected)) assert.equal(fs.readFileSync(path.join(OUT, name), 'utf8'), body, 'Rebuild required: ' + name);
-const ctx = { window: {}, document: {}, console, setTimeout, clearTimeout, setInterval, clearInterval, URL, AbortController };
+const ctx = { window: {}, document: {}, console, setTimeout, clearTimeout, setInterval, clearInterval, URL, AbortController, TextDecoder };
 vm.runInNewContext(js.replace('  // Starroot adapter', '  window.TestComponent = Component;\n  // Starroot adapter'), ctx);
 assert.equal(typeof ctx.window['PG_' + code].onParam, 'function');
 assert.equal(typeof ctx.window.PensionFabrix.configure, 'function');
+assert.equal(ctx.window.PensionBriefingFixtures.briefings, undefined, 'Briefing text must not ship in the frontend bundle');
 const app = new ctx.window.TestComponent({});
 app.setState = patch => Object.assign(app.state, typeof patch === 'function' ? patch(app.state) : patch);
+const bridge = ctx.window.PensionBriefingAdapter;
 for (const [i, c] of customers.entries()) {
   const id = c.briefingMeta.caseId, b = briefings[i];
   assert.deepEqual(contract.validateContent(contract.contentOf(b), c), [], id);
@@ -30,6 +32,8 @@ for (const [i, c] of customers.entries()) {
   assert.equal(c.irpAccount.assetAllocation.reduce((sum, x) => sum + x.amountKrw, 0), c.irpAccount.valuationAmountKrw, id);
   if (c.irpAccount.valuationAmountKrw) for (const rows of [c.holdings, c.irpAccount.assetAllocation]) assert.ok(Math.abs(rows.reduce((sum, x) => sum + x.weightPct, 0) - 100) < 0.001, id);
   app.select(id, true);
+  assert.equal(app.renderVals().hasAiBrief, false, id + ': no briefing before the Agent answer');
+  assert.equal(bridge.receive(bridge.begin(id), contract.contentOf(b)).ok, true, id);
   const v = app.renderVals(), normalized = contract.normalizeContent(contract.contentOf(b));
   assert.equal(v.selName, c.customer.name, id);
   assert.equal(v.pfAmt, contract.money(c.irpAccount.valuationAmountKrw), id);
@@ -55,7 +59,7 @@ assert.equal(store.receive(cancelled, content).stale, true);
 const minimal = { s1: { items: [{ text: '고객 사실', dataRefs: ['/customer/name'] }] }, s2: { lead: '상담 목적' }, s3: { lead: '제안 방향' }, s4: null, s5: null };
 assert.deepEqual(contract.validateContent(minimal, kim), []);
 app.select('DEMO-01', true);
-const bridge = ctx.window.PensionBriefingAdapter, before = app.renderVals().pfAmt;
+const before = app.renderVals().pfAmt;
 assert.equal(bridge.receive(bridge.begin('DEMO-01'), minimal).ok, true);
 assert.equal(app.renderVals().pfAmt, before);
 assert.equal(app.renderVals().hasS4, false); assert.equal(app.renderVals().hasS5, false);
@@ -70,6 +74,61 @@ parser.finish(); assert.deepEqual(JSON.parse(events[0].content), answer);
 assert.deepEqual(JSON.parse(fs.readFileSync(path.join(ROOT, 'integration/contracts/response.example.json'), 'utf8')), wire.answer(wire.request(kim, 'example-request-001', 'TEST_EMPLOYEE'), content));
 assert.deepEqual(JSON.parse(fs.readFileSync(path.join(ROOT, 'agent/briefing_data.json'), 'utf8')), agentData({ customers, briefings }), 'Rebuild Agent data together with the frontend');
 console.log('PASS: 31 customer/briefing pairs, totals, render mappings, optional fields, customer isolation, request identity, SSE parser, current three-file build.');
+
+// Bundle-level run of the real path: injected config -> auto request on select ->
+// fake fetch answering one SSE frame -> answer rendered. No network, no secrets.
+async function autoRequestCheck() {
+  const calls = [], settle = () => new Promise(resolve => setImmediate(resolve));
+  ctx.fetch = async (url, init) => {
+    calls.push({ url, init });
+    const inner = JSON.parse(JSON.parse(init.body).contents[0]);
+    const briefing = briefings[customers.findIndex(c => c.briefingMeta.caseId === inner.case_id)];
+    const bytes = new TextEncoder().encode('data: ' + JSON.stringify({ event_status: 'CHUNK', status: 'SUCCESS', content: JSON.stringify(wire.answer(inner, contract.contentOf(briefing))) }) + '\n\n');
+    let sent = false;
+    return { ok: true, status: 200, headers: { get: () => 'text/event-stream' }, body: { getReader: () => ({
+      read: async () => (sent ? { done: true } : { done: !(sent = true), value: bytes }), cancel: async () => {}, releaseLock() {} }) } };
+  };
+  const cfg = { endpointUrl: 'https://fabrix.example/prod/kb0/connector/1', openapiToken: 'test-token', generativeAiClient: 'test-client', agentId: 7, xClientUser: 'TEST_EMPLOYEE' };
+  const mount = props => {
+    const c = new ctx.window.TestComponent(props);
+    c.setState = patch => Object.assign(c.state, typeof patch === 'function' ? patch(c.state) : patch);
+    c.componentDidMount(); return c;
+  };
+  const live = mount({ starrootParams: { fabrix: cfg } });
+  live.select('DEMO-01', true);
+  assert.equal(live.renderVals().fabrixBusy, true, 'Selecting a case requests it immediately');
+  await settle();
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, cfg.endpointUrl + '/openapi/agent-chat/v1/agent-messages');
+  assert.equal(calls[0].init.headers['x-openapi-token'], 'Bearer test-token');
+  const sent = JSON.parse(calls[0].init.body), inner = JSON.parse(sent.contents[0]);
+  assert.deepEqual([sent.agentId, sent.isStream, inner.case_id, inner.x_client_user], [7, true, 'DEMO-01', 'TEST_EMPLOYEE']);
+  assert.deepEqual(inner.customer_data, kim);
+  const v = live.renderVals();
+  assert.deepEqual([v.fabrixDiagnosticCode, v.hasAiBrief, v.bfS1Lines.length], ['SUCCESS', true, content.s1.items.length]);
+  v.goBack(); live.select('DEMO-01', true);
+  assert.equal(calls.length, 1, 'A loaded case is not requested again in the same mount');
+  live.select('B01-22', true);
+  assert.equal(calls.length, 2, 'Another case is requested');
+  live.componentWillUnmount();
+  await settle();
+  assert.equal(live.renderVals().fabrixDiagnosticCode, 'NOCONFIG', 'Destroy clears the injected config');
+  ctx.window.__PENSION_FABRIX_CONFIG = cfg;
+  const viaGlobal = mount({ starrootParams: {} });
+  viaGlobal.select('B06-13', true);
+  assert.equal(viaGlobal.renderVals().fabrixBusy, true, 'window.__PENSION_FABRIX_CONFIG fallback');
+  viaGlobal.componentWillUnmount(); delete ctx.window.__PENSION_FABRIX_CONFIG;
+  const invalid = mount({ starrootParams: { fabrix: { ...cfg, endpointUrl: 'http://fabrix.example/prod' } } });
+  invalid.select('DEMO-01', true);
+  assert.deepEqual([invalid.renderVals().fabrixDiagnosticCode, invalid.renderVals().fabrixCanRequest], ['CONFIG', false]);
+  invalid.componentWillUnmount();
+  await settle();
+  assert.equal(calls.length, 3, 'Invalid or missing config never sends a request');
+  delete ctx.fetch;
+}
+autoRequestCheck().then(
+  () => console.log('PASS: injected FabriX config (onParam params / window global), auto request on case select, one request per loaded case, SSE answer rendered, invalid or missing config never calls.'),
+  error => { console.error(error); process.exitCode = 1; });
 
 if (process.argv[2] === '--agent') {
   const requests = customers.map(c => wire.request(c, 'agent-check-' + c.briefingMeta.caseId, 'TEST_EMPLOYEE'));

@@ -238,30 +238,11 @@
 <sc-if value="{{ fabrixEnabled }}">
 <div class="pad-fabrix">
   <div class="pad-fabrix__bar">
-    <span class="pad-t-13b">FabriX 연결 테스트</span>
-    <span class="pad-t-12-muted">{{ fabrixConfigLabel }}</span>
-    <button class="pad-btn-sm" data-fabrix-action="settings" sc-camel-on-click="{{ fabrixToggleSettings }}">연결 설정</button>
-    <sc-if value="{{ fabrixCanRequest }}"><button class="pad-btn-sm" data-fabrix-action="request" sc-camel-on-click="{{ fabrixRequest }}">실제 브리핑 호출 / 재요청</button></sc-if>
+    <span class="pad-t-13b">브리핑 수신</span>
+    <sc-if value="{{ fabrixDiagnostic }}"><span class="pad-fabrix__diagnostic" role="status" aria-live="polite">{{ fabrixDiagnosticCode }} · {{ fabrixDiagnostic }}</span></sc-if>
+    <sc-if value="{{ fabrixCanRequest }}"><button class="pad-btn-sm" data-fabrix-action="request" sc-camel-on-click="{{ fabrixRequest }}">다시 요청</button></sc-if>
     <sc-if value="{{ fabrixBusy }}"><button class="pad-btn-sm" data-fabrix-action="cancel" sc-camel-on-click="{{ fabrixCancel }}">요청 취소</button></sc-if>
-    <sc-if value="{{ structuredBrief }}"><button class="pad-btn-sm" data-fabrix-action="mock" sc-camel-on-click="{{ fabrixMock }}">더미로 복원</button><span class="pad-t-12b-sub">{{ fabrixOrigin }}</span></sc-if>
   </div>
-  <sc-if value="{{ fabrixLegacyNote }}"><div class="pad-t-12-muted">기존 데모는 보존됩니다. 실제 호출은 위 목록에서 대표 사례 또는 30개 고객 중 선택해 주세요.</div></sc-if>
-  <sc-if value="{{ fabrixDiagnostic }}"><div class="pad-fabrix__diagnostic" role="status" aria-live="polite">{{ fabrixDiagnosticCode }} · {{ fabrixDiagnostic }}</div></sc-if>
-  <sc-if value="{{ fabrixSettingsOpen }}">
-  <div class="pad-fabrix__settings">
-    <div class="pad-t-12-muted">설정은 현재 화면 메모리에만 보관합니다. 화면 종료·설정 삭제 시 제거됩니다. 실제 호출 시 선택 고객의 시연용 데이터가 전송됩니다.</div>
-    <div class="pad-fabrix__fields">
-      <label>Endpoint URL<input data-fabrix-config="endpointUrl" type="url" autocomplete="off" placeholder="https://…/prod/kb0/connector-id/1"/></label>
-      <label>Agent ID<input data-fabrix-config="agentId" type="number" min="1" autocomplete="off" placeholder="양의 정수"/></label>
-      <label>직원 ID<input data-fabrix-config="xClientUser" type="text" autocomplete="off"/></label>
-      <label>OpenAPI Token<input data-fabrix-config="openapiToken" type="password" autocomplete="new-password" spellcheck="false"/></label>
-      <label>Generative AI Client<input data-fabrix-config="generativeAiClient" type="password" autocomplete="new-password" spellcheck="false"/></label>
-    </div>
-    <sc-if value="{{ fabrixSettingsError }}"><div class="pad-warn-note">{{ fabrixSettingsError }}</div></sc-if>
-    <div class="pad-fabrix__bar"><button class="pad-btn-sm" data-fabrix-action="apply" sc-camel-on-click="{{ fabrixApplySettings }}">설정 적용</button><button class="pad-btn-sm" data-fabrix-action="clear-config" sc-camel-on-click="{{ fabrixClearConfig }}">설정 삭제</button></div>
-    <div class="pad-t-12-muted">브라우저 직접 호출에서는 Network 탭에 인증 헤더가 노출됩니다. 승인된 사내 테스트 환경에서만 사용하고, 운영 적용 전 인증 방식을 별도 검토하세요.</div>
-  </div>
-  </sc-if>
 </div>
 </sc-if>
 
