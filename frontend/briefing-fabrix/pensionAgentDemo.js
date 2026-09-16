@@ -920,11 +920,8 @@ window.PensionBriefingFixtures = {"customers":[{"schemaVersion":"customer-briefi
   if (window.PensionChat && window.PensionChat.destroy) window.PensionChat.destroy();
   var transport = window.PensionChatTransport, bridge = window.PensionBriefingAdapter;
   var cfg = null, configCode = 'NOCONFIG', active = null, serial = 0, sessions = new Map();
-  var STARTERS = ['이 고객 지금 현황은 어때?', '왜 오늘 타겟이야?', '이 고객한테 제안할 만한 게 뭐야?'];
-  // Customers the chat agent currently knows; offered as chips when a consultation starts.
-  var KNOWN_CUSTOMER_IDS = ['198734-1205842'];
   var ID_PATTERN = /^[A-Za-z0-9._-]{3,40}$/;
-  var ASK_ID = '상담할 고객 식별자를 입력하거나 아래에서 선택해 주세요. 대화 Agent는 이 식별자로 고객을 찾습니다.';
+  var ASK_ID = '고객 식별자를 입력해 주세요.';
   var SOURCE_COLORS = { '본부 공식 자료': ['#FFF3C2', '#7A6108'], '직원 교육자료': ['#E8ECF3', '#3D4A5C'], '영업점 현장 노하우': ['#F9EFD8', '#A96A00'],
     '상담 이력': ['#F2F3F5', '#696E76'], '이번 상담 기록': ['#F2F3F5', '#696E76'], '안내 콘텐츠': ['#E6F6EF', '#047857'] };
   var messages = {
@@ -976,13 +973,12 @@ window.PensionBriefingFixtures = {"customers":[{"schemaVersion":"customer-briefi
   // A consultation starts once the employee names the customer; that also starts a new session id.
   function session(caseId) {
     var s = sessions.get(caseId);
-    if (!s) { s = { id: uuid(), customerId: null, turnStart: 1, items: [{ k: 'sys', text: ASK_ID }] }; sessions.set(caseId, s); }
+    if (!s) { s = { id: uuid(), customerId: null, items: [{ k: 'sys', text: ASK_ID }] }; sessions.set(caseId, s); }
     return s;
   }
   function startCustomer(s, customerId) {
     s.customerId = customerId; s.id = uuid();
-    s.items.push({ k: 'sys', text: '고객 ' + customerId + ' 기준으로 상담을 시작합니다. 궁금한 점을 입력하거나 아래 질문으로 시작해 보세요.' });
-    s.turnStart = s.items.length;
+    s.items.push({ k: 'sys', text: '고객 ' + customerId + ' 기준으로 상담을 시작합니다. 궁금한 점을 입력해 주세요.' });
   }
   function resetCustomer(caseId) {
     var s = sessions.get(caseId);
@@ -1010,7 +1006,7 @@ window.PensionBriefingFixtures = {"customers":[{"schemaVersion":"customer-briefi
     s.items.push({ k: 'user', text: text });
     if (!s.customerId) {
       if (ID_PATTERN.test(text)) startCustomer(s, text);
-      else s.items.push({ k: 'sys', text: '고객 식별자 형식을 확인해 주세요. 예: ' + KNOWN_CUSTOMER_IDS[0] });
+      else s.items.push({ k: 'sys', text: '고객 식별자 형식을 확인해 주세요. 예: 198734-1205842' });
       refresh(); return true;
     }
     if (!cfg) { s.items.push({ k: 'sys', text: messages[configCode] }); refresh(); return true; }
@@ -1143,21 +1139,14 @@ window.PensionBriefingFixtures = {"customers":[{"schemaVersion":"customer-briefi
     if (!customer) return base;
     var S = component.state, busy = !!active && active.caseId === id;
     var s = sessions.get(id), items = s ? s.items : [{ k: 'sys', text: ASK_ID }], lastAnswer = -1;
-    var customerId = s ? s.customerId : null, turnStart = s ? s.turnStart : 1;
+    var customerId = s ? s.customerId : null;
     items.forEach(function (m, i) { if (m.k === 'ans') lastAnswer = i; });
     base.agentOn = true; base.agentOff = false;
     base.agName = customerId ? customer.customer.name + ' · ' + customerId : customer.customer.name;
     base.agResetOn = !!customerId && !busy; base.agReset = function () { resetCustomer(id); };
     base.panelOpen = !!S.panelOpen; base.panelClosed = !S.panelOpen;
     base.agMsgs = items.map(function (m, i) { return message(component, id, m, i, i === lastAnswer && lastAnswer === items.length - 1, busy); });
-    if (!customerId) {
-      base.agChipsOn = !busy; base.agChipsTitle = '고객 식별자 선택';
-      base.agChips = KNOWN_CUSTOMER_IDS.map(function (cid) { return { label: cid + ' · 시연 고객', onTap: function () { send(id, cid); } }; })
-        .concat([{ label: '이 화면 고객 · ' + customer.customer.customerId, onTap: function () { send(id, customer.customer.customerId); } }]);
-    } else {
-      base.agChipsOn = !busy && lastAnswer < turnStart; base.agChipsTitle = '이런 걸 물어보세요';
-      base.agChips = STARTERS.map(function (q) { return { label: q, onTap: function () { send(id, q); } }; });
-    }
+    base.agChipsOn = false; base.agChips = []; base.agChipsTitle = '';
     base.agInput = S.agInput || ''; base.agBusy = busy; base.agNotBusy = !busy;
     base.agOnInput = function (e) { component.setState({ agInput: e.target.value }); };
     // Enter's keydown fires before the input's change event, so read the live value and
@@ -1209,7 +1198,7 @@ window.PensionBriefingFixtures = {"customers":[{"schemaVersion":"customer-briefi
     Component.prototype.componentWillUnmount = function () { destroy(); return originalUnmount.apply(this, arguments); };
   }
   window.PensionChat = { configure: configure, send: send, cancel: cancel, resetCustomer: resetCustomer, destroy: destroy, install: install,
-    parseAnswer: parseAnswer, compose: compose, knownCustomerIds: KNOWN_CUSTOMER_IDS.slice() };
+    parseAnswer: parseAnswer, compose: compose };
 })(window);
 
 ;
