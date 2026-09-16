@@ -311,6 +311,8 @@ selectionStart / selectionEnd
 
 ## 13. 상단 Header 오프셋 / 높이
 
+> 2026-09-16: 아래 자동 보정(`--starroot-top-offset`)은 실제 사내 화면에서 불필요한 상단 여백을 만들어 **제거했습니다.** 현재 화면은 padding-top 없이 `100vh` 기준으로만 높이를 잡습니다. 아래는 이력입니다.
+
 브라우저 테스트 환경에는 실제 앱에 없는 `.browserHeader.on` 이 있고 업무 화면을 덮을 수 있다.
 고정 padding 대신 **실제 겹치는 높이를 계산**한다.
 

@@ -583,7 +583,10 @@
 <span class="pad-t-13-muted">· {{ agName }}</span>
 
 </div>
+<div class="pad-row pad-g6">
+<sc-if value="{{ agResetOn }}"><button sc-camel-on-click="{{ agReset }}" class="pad-btn-sm">고객 변경</button></sc-if>
 <button sc-camel-on-click="{{ togglePanel }}" title="패널 접기" class="pad-icon-btn"><svg height="15" sc-camel-view-box="0 0 16 16" width="15"><polyline fill="none" points="5,3 10,8 5,13" stroke="#9298A2" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7"></polyline><line stroke="#9298A2" stroke-linecap="round" stroke-width="1.7" x1="13" x2="13" y1="3.5" y2="12.5"></line></svg></button>
+</div>
 </div>
 </div>
 <div data-scroll-key="agent-chat" class="chat-scroll pad-chat">
@@ -774,7 +777,7 @@
 </sc-for>
 <sc-if value="{{ agChipsOn }}">
 <div class="pad-in-late">
-<div class="pad-t-11b-muted pad-mb7">이런 걸 물어보세요</div>
+<div class="pad-t-11b-muted pad-mb7">{{ agChipsTitle }}</div>
 <div class="pad-flex pad-wrap pad-g6">
 <sc-for as="ac" list="{{ agChips }}">
 <button sc-camel-on-click="{{ ac.onTap }}" class="pad-sugg">{{ ac.label }}</button>

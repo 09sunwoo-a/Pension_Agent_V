@@ -44,7 +44,8 @@
 - 사내 브리핑 화면 콘솔에서 대화 Agent Connector로 브라우저 직접 호출이 되는 것을 확인했고, 실제 3턴 응답을 `integration/contracts/chat.example.json`으로 보관했습니다. 규격·매핑은 `CHAT_AGENT_CONTRACT.md`.
 - `fabrix-chat-transport.js`(이벤트 스트림, 연속 JSON·CHUNK 포장·오류 문구 속 CHUNK 처리)와 `pensionChat.js`(고객별 세션·대화 기록, 답변 파싱, 패널 매핑)를 추가했습니다. 31명 구조화 고객에서 패널을 켜고, 기존 데모 3명은 mock을 유지합니다.
 - 설정 블록에 `chat: { endpointUrl, agentId(assetId 문자열), openapiToken, generativeAiClient }`를 추가했습니다(브리핑과 다른 토큰). `xClientUser`는 공유하며 7자리 사번으로 시작해야 합니다.
-- 실제 샘플에서 우리 `customerId`를 보내도 Agent가 자기 시연 고객(이준호, 198734-1205842)으로 답해, 당분간 `PINNED_CUSTOMER_ID`로 고정하고 패널 안내문에 표시합니다. Agent 고객 저장소에 우리 31건이 들어가면 상수를 비웁니다.
+- 실제 샘플에서 우리 `customerId`를 보내도 Agent가 자기 시연 고객(이준호, 198734-1205842)으로 답합니다. 그래서 상담 시작 시 고객 식별자를 채팅에서 먼저 받도록 했습니다(칩: `KNOWN_CUSTOMER_IDS`의 시연 고객, 이 화면 고객 / 직접 입력 가능). 식별자를 정하면 새 `session_id`, 헤더 **고객 변경**으로 재시작. Agent 고객 저장소에 우리 31건이 들어가면 칩 목록을 정리합니다.
 - 답변 본문 규칙(실측): 첫 문단 lead, `- ` 줄 목록, 큰따옴표 문단은 복사 가능한 화법, 꼬리 `── 참고한 자료 / · 유형`은 배지. 근거는 `doc`별로 묶어 표시. `progress`는 마지막 문구만 표시. Enter 전송은 change 이벤트보다 먼저 오는 keydown이라 입력값을 직접 읽도록 했습니다.
 - `check.js`에 이벤트 추출·설정·샘플 파싱·반입본 수준 패널 재생 검사를 추가했고, 로컬 Chromium + 샘플 재생 서버로 진행 문구·목록·근거·추천질문·화법 복사·네/아니오·선택지·오류·고객 전환·대화 유지를 확인했습니다. `action`·`clarify`·`error`·`주의` role은 문서 기준 구현이며 실제 응답은 미확인입니다.
 - 사내 실제 응답 확인 후 UI 보완: 추천질문을 첫 화면과 같은 칩 버튼으로, Enter 전송 시 늦게 오는 change 이벤트가 입력창을 다시 채우던 문제(입력 요소 값을 직접 비움), 새 답변이 오면 대화창을 답변 시작 위치로 스크롤(진행 중에는 맨 아래).
+- 사내 화면에서 상단에 불필요한 여백을 만들던 `.browserHeader.on` 겹침 자동 보정(`--starroot-top-offset` padding-top)을 제거했습니다.

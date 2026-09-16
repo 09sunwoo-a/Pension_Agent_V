@@ -189,26 +189,32 @@ async function chatPanelCheck() {
     c.setState = patch => Object.assign(c.state, typeof patch === 'function' ? patch(c.state) : patch);
     c.componentDidMount(); return c;
   };
+  const kinds = msgs => [...msgs].map(m => m.isUser ? 'user' : m.isStatus ? 'status' : m.isSys ? 'sys' : 'ans');
+  const blockKinds = blocks => [...blocks].map(b => b.isP ? 'p' : b.isList ? 'list' : b.isQuote ? 'quote' : b.isMsg ? 'msg' : '?');
+  const demoId = ctx.window.PensionChat.knownCustomerIds[0];
   const briefingCfg = { endpointUrl: 'https://fabrix.example/prod/kb0/briefing/1', agentId: 7, xClientUser: '3902172-test', openapiToken: 'brief-token', generativeAiClient: 'brief-client' };
   ctx.window.__PENSION_FABRIX_CONFIG = { ...briefingCfg, chat: { endpointUrl: 'https://chat.example/prod/kb0/chat/1', agentId: 'asset-test-01', openapiToken: 'chat-token', generativeAiClient: 'chat-client' } };
   ctx.window.PensionFabrix.destroy(); // keep the briefing controller quiet: no briefing config for this component
   const live = mount({ starrootParams: { fabrix: { ...ctx.window.__PENSION_FABRIX_CONFIG, endpointUrl: '' } } });
   live.state.sel = 'DEMO-01';
   let v = live.renderVals();
-  assert.deepEqual([v.agentOn, v.panelOpen, v.agChipsOn, v.agChips.length, v.agMsgs.length, v.agMsgs[0].isSys], [true, true, true, 3, 1, true], 'Panel enabled and open for a structured customer with an intro and starter chips');
-  const kinds = msgs => [...msgs].map(m => m.isUser ? 'user' : m.isStatus ? 'status' : m.isSys ? 'sys' : 'ans');
-  const blockKinds = blocks => [...blocks].map(b => b.isP ? 'p' : b.isList ? 'list' : b.isQuote ? 'quote' : b.isMsg ? 'msg' : '?');
-  const chatCustomer = id => ctx.window.PensionChat.pinnedCustomerId || customers.find(c => c.briefingMeta.caseId === id).customer.customerId;
+  assert.deepEqual([v.agentOn, v.panelOpen, v.agChipsOn, v.agChipsTitle, v.agChips.length, kinds(v.agMsgs), v.agResetOn, v.agName], [true, true, true, '고객 식별자 선택', 2, ['sys'], false, kim.customer.name], 'Panel first asks for the customer id: known demo id + this screen customer');
+  live.state.agInput = 'bad id!'; v.agSendTap();
+  v = live.renderVals();
+  assert.ok(/형식/.test(v.agMsgs[v.agMsgs.length - 1].text) && calls.length === 0, 'Malformed id is rejected without calling the agent');
+  v.agChips[0].onTap();
+  v = live.renderVals();
+  assert.deepEqual([kinds(v.agMsgs).slice(-2), v.agChipsTitle, v.agChips.length, v.agResetOn, v.agName, calls.length], [['user', 'sys'], '이런 걸 물어보세요', 3, true, kim.customer.name + ' · ' + demoId, 0], 'Choosing the id starts the consultation with starter questions, no agent call');
   live.state.agInput = turnFact.message; v.agSendTap();
   v = live.renderVals();
-  assert.deepEqual([v.agBusy, v.agChipsOn, kinds(v.agMsgs), live.state.agInput], [true, false, ['sys', 'user', 'status'], ''], 'Question sent: busy, status bubble, input cleared');
+  assert.deepEqual([v.agBusy, v.agChipsOn, v.agResetOn, kinds(v.agMsgs).slice(-2), live.state.agInput], [true, false, false, ['user', 'status'], ''], 'Question sent: busy, status bubble, input cleared');
   await settle();
   v = live.renderVals();
   assert.equal(calls.length, 1);
-  assert.deepEqual([calls[0].agentId, calls[0].headers['x-openapi-token'], calls[0].inner.x_client_user, calls[0].inner.customer_id, typeof calls[0].inner.session_id], ['asset-test-01', 'Bearer chat-token', '3902172-test', chatCustomer('DEMO-01'), 'string'], 'Chat request carries the chat credentials, assetId, employee and customer id');
+  assert.deepEqual([calls[0].agentId, calls[0].headers['x-openapi-token'], calls[0].inner.x_client_user, calls[0].inner.customer_id, typeof calls[0].inner.session_id], ['asset-test-01', 'Bearer chat-token', '3902172-test', demoId, 'string'], 'Chat request carries the chat credentials, assetId, employee and the entered customer id');
   let ans = v.agMsgs[v.agMsgs.length - 1];
-  assert.deepEqual([v.agBusy, v.agMsgs.length, ans.isAns, ans.lead, blockKinds(ans.blocks), [...ans.srcBadges].map(b => b.t), ans.evidN, ans.evid[0].points.length, ans.hasFollow, ans.follow.length, ans.ctaOn, ans.clarifyOn],
-    [false, 3, true, answerText(turnFact).split('\n\n')[0], ['p'], ['본부 공식 자료'], 1, 3, true, 1, false, false], 'Answer rendered from the real sample');
+  assert.deepEqual([v.agBusy, ans.isAns, ans.lead, blockKinds(ans.blocks), [...ans.srcBadges].map(b => b.t), ans.evidN, ans.evid[0].points.length, ans.hasFollow, ans.followChips, ans.follow.length, ans.ctaOn, ans.clarifyOn],
+    [false, true, answerText(turnFact).split('\n\n')[0], ['p'], ['본부 공식 자료'], 1, 3, true, true, 1, false, false], 'Answer rendered from the real sample');
   ans.follow[0].onTap();
   await settle();
   assert.equal(calls.length, 2); assert.equal(calls[1].inner.message, '고객이 앱에서 직접 할 수 있어?'); assert.equal(calls[1].inner.session_id, calls[0].inner.session_id, 'Same session across turns');
@@ -217,18 +223,30 @@ async function chatPanelCheck() {
   live.state.agInput = turnCustomer.message; v.agSendTap(); await settle();
   ans = live.renderVals().agMsgs.pop();
   assert.deepEqual([blockKinds(ans.blocks), ans.blocks[1].items.length, ans.evidN, ans.follow.length], [['p', 'list'], 9, 5, 3]);
-  live.select('B01-22', true); live.state.agInput = turnPitch.message; live.renderVals().agSendTap(); await settle();
+  const demoTranscript = live.renderVals().agMsgs.length;
+  live.select('B01-22', true);
+  v = live.renderVals();
+  assert.deepEqual([kinds(v.agMsgs), v.agChips.length, v.agResetOn], [['sys'], 2, false], 'Another customer starts by asking for its id');
+  v.agChips[1].onTap(); // this screen's customer
+  live.state.agInput = turnPitch.message; live.renderVals().agSendTap(); await settle();
+  assert.equal(calls[3].inner.customer_id, customers.find(c => c.briefingMeta.caseId === 'B01-22').customer.customerId, 'Screen customer chip sends that customerId');
   assert.notEqual(calls[3].inner.session_id, calls[0].inner.session_id, 'New customer, new session');
-  assert.equal(calls[3].inner.customer_id, chatCustomer('B01-22'));
   ans = live.renderVals().agMsgs.pop();
   assert.deepEqual([blockKinds(ans.blocks), ans.blocks[0].copyLabel, ans.srcBadges.length], [['quote', 'quote'], '복사', 1]);
   live.select('DEMO-01', true);
-  assert.equal(live.renderVals().agMsgs.length, 7, 'Transcript kept per customer within the page');
+  v = live.renderVals();
+  assert.equal(v.agMsgs.length, demoTranscript, 'Transcript kept per customer within the page');
+  v.agReset();
+  v = live.renderVals();
+  assert.deepEqual([v.agResetOn, v.agChipsTitle, v.agChips.length, kinds(v.agMsgs).pop(), v.agName], [false, '고객 식별자 선택', 2, 'sys', kim.customer.name], '고객 변경 asks for a new id');
+  v.agChips[0].onTap(); live.state.agInput = turnFact.message; live.renderVals().agSendTap(); await settle();
+  assert.notEqual(calls[4].inner.session_id, calls[0].inner.session_id, 'Re-entering an id starts a new session');
   live.componentWillUnmount();
   const bare = mount({ starrootParams: { fabrix: { ...briefingCfg, chat: { endpointUrl: '', agentId: '', openapiToken: '', generativeAiClient: '' } } } });
-  bare.state.sel = 'DEMO-01'; bare.state.agInput = '질문'; bare.renderVals().agSendTap();
+  bare.state.sel = 'DEMO-01'; bare.renderVals().agChips[0].onTap();
+  bare.state.agInput = '질문'; bare.renderVals().agSendTap();
   const note = bare.renderVals().agMsgs.pop();
-  assert.ok(note.isSys && /주입되지 않아/.test(note.text) && calls.length === 4, 'Empty chat block: question kept, no call, NOCONFIG note');
+  assert.ok(note.isSys && /주입되지 않아/.test(note.text) && calls.length === 5, 'Empty chat block: question kept, no call, NOCONFIG note');
   bare.componentWillUnmount(); delete ctx.window.__PENSION_FABRIX_CONFIG; delete ctx.fetch;
 }
 autoRequestCheck().then(

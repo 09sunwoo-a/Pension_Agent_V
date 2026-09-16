@@ -34,7 +34,7 @@ x-generative-ai-client: <chat.generativeAiClient>
 ```
 
 - `session_id`: 고객(케이스)마다 첫 질문 때 UUID를 만들고 같은 고객의 모든 턴에 같은 값을 보냅니다. 다른 고객은 다른 세션이며, 대화 기록은 화면이 살아 있는 동안 고객별로 유지되고 화면 종료 시 사라집니다.
-- `customer_id`: 원칙은 선택한 고객의 `customer.customerId`입니다. **현재는 `pensionChat.js`의 `PINNED_CUSTOMER_ID`로 `198734-1205842`에 고정**되어 있습니다 — 대화 Agent의 고객 저장소에 아직 우리 31명 고객이 없어서, 실제 수신 샘플에서 우리 ID를 보내도 이 시연 고객으로 답했기 때문입니다. Agent 쪽 데이터가 정렬되면 상수를 빈 문자열로 바꿉니다. 패널 첫 안내문에 이 사실을 표시합니다.
+- `customer_id`: **상담을 시작할 때 직원이 입력·선택한 고객 식별자**입니다. 패널이 열리면 식별자를 묻고, 칩으로 대화 Agent가 아는 시연 고객(`pensionChat.js`의 `KNOWN_CUSTOMER_IDS`, 현재 `198734-1205842`)과 이 화면 고객의 `customerId`를 제안합니다. 직접 입력도 되며 형식은 `[A-Za-z0-9._-]{3,40}`. 식별자를 정하면 그때 새 `session_id`를 만들고, 헤더의 **고객 변경**으로 다른 식별자와 새 세션으로 다시 시작합니다. 대화 Agent의 고객 저장소에 우리 31명이 들어가면 `KNOWN_CUSTOMER_IDS`를 비우거나 화면 고객 칩만 남깁니다.
 - `message`는 1,000자에서 자르고, 잘못된 대리 문자는 U+FFFD로 치환합니다(게이트웨이가 `input_value`를 깨뜨려 500을 내는 경우 방지).
 - `action`의 네/아니오, `clarify`의 선택지, `followups`의 문장은 모두 **다음 턴의 `message`**로 보냅니다. 별도 API가 없습니다.
 

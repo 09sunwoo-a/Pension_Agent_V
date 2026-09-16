@@ -7,7 +7,6 @@
   var templateHtml = '';
   var scheduled = false;
   var lastRenderedState = null;
-  var viewportOffsetHandler = null;
 
   function SafeHtml(value) { this.value = String(value == null ? '' : value); }
   function safeHtml(value) { return new SafeHtml(value); }
@@ -277,29 +276,6 @@
     };
   }
 
-  // Starroot 브라우저 테스트 상단바가 실제 화면 위를 덮는 경우에만
-  // 겹치는 높이만큼 자동으로 padding-top을 준다.
-  // 실제 앱/상단바가 없는 환경에서는 자동으로 0px가 된다.
-  function applyStarrootTopOffset() {
-    var root = document.getElementById('pensionAgentDemo');
-    if (!root) return;
-
-    var browserHeader = document.querySelector('.browserHeader.on');
-    if (!browserHeader) {
-      root.style.setProperty('--starroot-top-offset', '0px');
-      return;
-    }
-
-    var rootRect = root.getBoundingClientRect();
-    var headerRect = browserHeader.getBoundingClientRect();
-
-    var overlap = Math.max(0, Math.ceil(headerRect.bottom - rootRect.top));
-    // 비정상적인 shell 높이까지 밀리는 것을 방지
-    overlap = Math.min(overlap, 96);
-
-    root.style.setProperty('--starroot-top-offset', overlap + 'px');
-  }
-
   function init(params) {
     if (instance) return;
     var t = document.getElementById(TEMPLATE_ID);
@@ -318,15 +294,6 @@
     installSetState(instance);
     renderNow();
 
-    // SPA shell DOM과 실제 겹침을 측정한 뒤 화면을 아래로 보정
-    applyStarrootTopOffset();
-    setTimeout(applyStarrootTopOffset, 0);
-
-    if (!viewportOffsetHandler) {
-      viewportOffsetHandler = function () { applyStarrootTopOffset(); };
-      window.addEventListener('resize', viewportOffsetHandler);
-    }
-
     if (typeof instance.componentDidMount === 'function') {
       try { instance.componentDidMount(); } catch (err) { console.error(err); }
     }
@@ -342,14 +309,6 @@
     instance = null;
     lastRenderedState = null;
     scheduled = false;
-
-    if (viewportOffsetHandler) {
-      window.removeEventListener('resize', viewportOffsetHandler);
-      viewportOffsetHandler = null;
-    }
-
-    var root = document.getElementById('pensionAgentDemo');
-    if (root) root.style.removeProperty('--starroot-top-offset');
 
     var mount = document.getElementById(MOUNT_ID);
     if (mount) mount.innerHTML = '';
@@ -768,7 +727,7 @@ class Component {
     });
     return {
       agentOn: true, agentOff: false, agName: c.name, agMsgs,
-      agChipsOn: !S.agBusy && remaining.length > 0,
+      agChipsOn: !S.agBusy && remaining.length > 0, agChipsTitle: '이런 걸 물어보세요',
       agChips: remaining.map(ch => ({ label: ch.q, onTap: () => this.agSend(ch.q, ch.aid) })),
       agInput: S.agInput, agBusy: !!S.agBusy, agNotBusy: !S.agBusy,
       agOnInput: e => this.setState({ agInput: e.target.value }),

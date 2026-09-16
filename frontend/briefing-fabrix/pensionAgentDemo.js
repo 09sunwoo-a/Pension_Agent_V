@@ -921,9 +921,10 @@ window.PensionBriefingFixtures = {"customers":[{"schemaVersion":"customer-briefi
   var transport = window.PensionChatTransport, bridge = window.PensionBriefingAdapter;
   var cfg = null, configCode = 'NOCONFIG', active = null, serial = 0, sessions = new Map();
   var STARTERS = ['이 고객 지금 현황은 어때?', '왜 오늘 타겟이야?', '이 고객한테 제안할 만한 게 뭐야?'];
-  // The chat agent only knows its own demo customer so far; send that id for every
-  // screen until its customer store is aligned with our 31 snapshots, then clear this.
-  var PINNED_CUSTOMER_ID = '198734-1205842';
+  // Customers the chat agent currently knows; offered as chips when a consultation starts.
+  var KNOWN_CUSTOMER_IDS = ['198734-1205842'];
+  var ID_PATTERN = /^[A-Za-z0-9._-]{3,40}$/;
+  var ASK_ID = '상담할 고객 식별자를 입력하거나 아래에서 선택해 주세요. 대화 Agent는 이 식별자로 고객을 찾습니다.';
   var SOURCE_COLORS = { '본부 공식 자료': ['#FFF3C2', '#7A6108'], '직원 교육자료': ['#E8ECF3', '#3D4A5C'], '영업점 현장 노하우': ['#F9EFD8', '#A96A00'],
     '상담 이력': ['#F2F3F5', '#696E76'], '이번 상담 기록': ['#F2F3F5', '#696E76'], '안내 콘텐츠': ['#E6F6EF', '#047857'] };
   var messages = {
@@ -972,14 +973,24 @@ window.PensionBriefingFixtures = {"customers":[{"schemaVersion":"customer-briefi
     if (typeof text.toWellFormed === 'function') return text.toWellFormed();
     return text.replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/g, function (_, before) { return (before || '') + '�'; });
   }
-  function intro(customer) {
-    return { k: 'sys', text: customer.customer.name + ' 고객님 상담을 도와드릴게요. 궁금한 점을 입력하거나 아래 질문으로 시작해 보세요.'
-      + (PINNED_CUSTOMER_ID ? ' ※ 지금은 대화 Agent가 시연 고객(' + PINNED_CUSTOMER_ID + ') 기준으로 답합니다.' : '') };
-  }
-  function session(caseId, customer) {
+  // A consultation starts once the employee names the customer; that also starts a new session id.
+  function session(caseId) {
     var s = sessions.get(caseId);
-    if (!s) { s = { id: uuid(), items: [intro(customer)] }; sessions.set(caseId, s); }
+    if (!s) { s = { id: uuid(), customerId: null, turnStart: 1, items: [{ k: 'sys', text: ASK_ID }] }; sessions.set(caseId, s); }
     return s;
+  }
+  function startCustomer(s, customerId) {
+    s.customerId = customerId; s.id = uuid();
+    s.items.push({ k: 'sys', text: '고객 ' + customerId + ' 기준으로 상담을 시작합니다. 궁금한 점을 입력하거나 아래 질문으로 시작해 보세요.' });
+    s.turnStart = s.items.length;
+  }
+  function resetCustomer(caseId) {
+    var s = sessions.get(caseId);
+    if (!s || !s.customerId) return;
+    if (active && active.caseId === caseId) cancel();
+    s.customerId = null; s.id = uuid();
+    s.items.push({ k: 'sys', text: '다른 고객으로 상담을 시작합니다. ' + ASK_ID });
+    refresh();
   }
   function notStatus(m) { return m.k !== 'status'; }
   function cancel() {
@@ -990,20 +1001,25 @@ window.PensionBriefingFixtures = {"customers":[{"schemaVersion":"customer-briefi
     if (s) { s.items = s.items.filter(notStatus); s.items.push({ k: 'sys', text: messages.ABORTED }); }
     refresh();
   }
-  // Returns true when the text was consumed (sent, or kept with a config note).
+  // Returns true when the text was consumed (customer id taken, sent, or kept with a note).
   function send(caseId, text) {
     var customer = bridge.getCustomerForRequest(caseId);
     text = wellFormed(String(text == null ? '' : text)).trim().slice(0, 1000);
     if (!customer || !text || (active && active.caseId === caseId)) return false;
-    var s = session(caseId, customer);
+    var s = session(caseId);
     s.items.push({ k: 'user', text: text });
+    if (!s.customerId) {
+      if (ID_PATTERN.test(text)) startCustomer(s, text);
+      else s.items.push({ k: 'sys', text: '고객 식별자 형식을 확인해 주세요. 예: ' + KNOWN_CUSTOMER_IDS[0] });
+      refresh(); return true;
+    }
     if (!cfg) { s.items.push({ k: 'sys', text: messages[configCode] }); refresh(); return true; }
     cancel();
     var status = { k: 'status', text: '질문 내용을 파악하고 있어요' };
     s.items.push(status);
     var pending = { caseId: caseId, controller: new AbortController(), events: [] };
     active = pending; refresh();
-    var inner = { message: text, x_client_user: cfg.xClientUser, customer_id: PINNED_CUSTOMER_ID || customer.customer.customerId, session_id: s.id };
+    var inner = { message: text, x_client_user: cfg.xClientUser, customer_id: s.customerId, session_id: s.id };
     transport.call(cfg, inner, { signal: pending.controller.signal, onEvent: function (event) {
       if (active !== pending) return;
       if (event.type === 'progress') { status.text = String(event.text || '').trim() || status.text; refresh(); }
@@ -1126,13 +1142,22 @@ window.PensionBriefingFixtures = {"customers":[{"schemaVersion":"customer-briefi
     var id = component.state.sel, customer = id ? bridge.getCustomerForRequest(id) : null;
     if (!customer) return base;
     var S = component.state, busy = !!active && active.caseId === id;
-    var s = sessions.get(id), items = s ? s.items : [intro(customer)], lastAnswer = -1;
+    var s = sessions.get(id), items = s ? s.items : [{ k: 'sys', text: ASK_ID }], lastAnswer = -1;
+    var customerId = s ? s.customerId : null, turnStart = s ? s.turnStart : 1;
     items.forEach(function (m, i) { if (m.k === 'ans') lastAnswer = i; });
-    base.agentOn = true; base.agentOff = false; base.agName = customer.customer.name;
+    base.agentOn = true; base.agentOff = false;
+    base.agName = customerId ? customer.customer.name + ' · ' + customerId : customer.customer.name;
+    base.agResetOn = !!customerId && !busy; base.agReset = function () { resetCustomer(id); };
     base.panelOpen = !!S.panelOpen; base.panelClosed = !S.panelOpen;
     base.agMsgs = items.map(function (m, i) { return message(component, id, m, i, i === lastAnswer && lastAnswer === items.length - 1, busy); });
-    base.agChipsOn = !busy && lastAnswer < 0;
-    base.agChips = STARTERS.map(function (q) { return { label: q, onTap: function () { send(id, q); } }; });
+    if (!customerId) {
+      base.agChipsOn = !busy; base.agChipsTitle = '고객 식별자 선택';
+      base.agChips = KNOWN_CUSTOMER_IDS.map(function (cid) { return { label: cid + ' · 시연 고객', onTap: function () { send(id, cid); } }; })
+        .concat([{ label: '이 화면 고객 · ' + customer.customer.customerId, onTap: function () { send(id, customer.customer.customerId); } }]);
+    } else {
+      base.agChipsOn = !busy && lastAnswer < turnStart; base.agChipsTitle = '이런 걸 물어보세요';
+      base.agChips = STARTERS.map(function (q) { return { label: q, onTap: function () { send(id, q); } }; });
+    }
     base.agInput = S.agInput || ''; base.agBusy = busy; base.agNotBusy = !busy;
     base.agOnInput = function (e) { component.setState({ agInput: e.target.value }); };
     // Enter's keydown fires before the input's change event, so read the live value and
@@ -1183,7 +1208,8 @@ window.PensionBriefingFixtures = {"customers":[{"schemaVersion":"customer-briefi
     };
     Component.prototype.componentWillUnmount = function () { destroy(); return originalUnmount.apply(this, arguments); };
   }
-  window.PensionChat = { configure: configure, send: send, cancel: cancel, destroy: destroy, install: install, parseAnswer: parseAnswer, compose: compose, pinnedCustomerId: PINNED_CUSTOMER_ID };
+  window.PensionChat = { configure: configure, send: send, cancel: cancel, resetCustomer: resetCustomer, destroy: destroy, install: install,
+    parseAnswer: parseAnswer, compose: compose, knownCustomerIds: KNOWN_CUSTOMER_IDS.slice() };
 })(window);
 
 ;
@@ -1198,7 +1224,6 @@ window.PensionBriefingFixtures = {"customers":[{"schemaVersion":"customer-briefi
   var templateHtml = '';
   var scheduled = false;
   var lastRenderedState = null;
-  var viewportOffsetHandler = null;
 
   function SafeHtml(value) { this.value = String(value == null ? '' : value); }
   function safeHtml(value) { return new SafeHtml(value); }
@@ -1468,29 +1493,6 @@ window.PensionBriefingFixtures = {"customers":[{"schemaVersion":"customer-briefi
     };
   }
 
-  // Starroot 브라우저 테스트 상단바가 실제 화면 위를 덮는 경우에만
-  // 겹치는 높이만큼 자동으로 padding-top을 준다.
-  // 실제 앱/상단바가 없는 환경에서는 자동으로 0px가 된다.
-  function applyStarrootTopOffset() {
-    var root = document.getElementById('pensionAgentDemo');
-    if (!root) return;
-
-    var browserHeader = document.querySelector('.browserHeader.on');
-    if (!browserHeader) {
-      root.style.setProperty('--starroot-top-offset', '0px');
-      return;
-    }
-
-    var rootRect = root.getBoundingClientRect();
-    var headerRect = browserHeader.getBoundingClientRect();
-
-    var overlap = Math.max(0, Math.ceil(headerRect.bottom - rootRect.top));
-    // 비정상적인 shell 높이까지 밀리는 것을 방지
-    overlap = Math.min(overlap, 96);
-
-    root.style.setProperty('--starroot-top-offset', overlap + 'px');
-  }
-
   function init(params) {
     if (instance) return;
     var t = document.getElementById(TEMPLATE_ID);
@@ -1509,15 +1511,6 @@ window.PensionBriefingFixtures = {"customers":[{"schemaVersion":"customer-briefi
     installSetState(instance);
     renderNow();
 
-    // SPA shell DOM과 실제 겹침을 측정한 뒤 화면을 아래로 보정
-    applyStarrootTopOffset();
-    setTimeout(applyStarrootTopOffset, 0);
-
-    if (!viewportOffsetHandler) {
-      viewportOffsetHandler = function () { applyStarrootTopOffset(); };
-      window.addEventListener('resize', viewportOffsetHandler);
-    }
-
     if (typeof instance.componentDidMount === 'function') {
       try { instance.componentDidMount(); } catch (err) { console.error(err); }
     }
@@ -1533,14 +1526,6 @@ window.PensionBriefingFixtures = {"customers":[{"schemaVersion":"customer-briefi
     instance = null;
     lastRenderedState = null;
     scheduled = false;
-
-    if (viewportOffsetHandler) {
-      window.removeEventListener('resize', viewportOffsetHandler);
-      viewportOffsetHandler = null;
-    }
-
-    var root = document.getElementById('pensionAgentDemo');
-    if (root) root.style.removeProperty('--starroot-top-offset');
 
     var mount = document.getElementById(MOUNT_ID);
     if (mount) mount.innerHTML = '';
@@ -1959,7 +1944,7 @@ class Component {
     });
     return {
       agentOn: true, agentOff: false, agName: c.name, agMsgs,
-      agChipsOn: !S.agBusy && remaining.length > 0,
+      agChipsOn: !S.agBusy && remaining.length > 0, agChipsTitle: '이런 걸 물어보세요',
       agChips: remaining.map(ch => ({ label: ch.q, onTap: () => this.agSend(ch.q, ch.aid) })),
       agInput: S.agInput, agBusy: !!S.agBusy, agNotBusy: !S.agBusy,
       agOnInput: e => this.setState({ agInput: e.target.value }),
