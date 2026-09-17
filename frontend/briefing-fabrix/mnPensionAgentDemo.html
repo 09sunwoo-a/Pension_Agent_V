@@ -87,15 +87,15 @@
 <div class="pad-dash">
 <div class="pad-dash__top">
 <div class="pad-brief-card">
-<div class="pad-rowb pad-between pad-g10 pad-mb6"><span class="pad-t-kicker">오늘의 부점 브리핑 · 9월 4일 금요일</span></div>
-<div class="pad-brief-card__body pad-in">전일 대비 <span class="pad-b">ISA 만기 예정 고객</span> <span sc-camel-on-click="{{ filterNew }}" class="pad-hl-link">3명이 신규 관리대상</span>으로 선정됐습니다.<br/>현재 KB스타뱅킹에서 <span class="pad-b">ISA 만기자금의 IRP 전환 관련 이벤트</span>가 진행 중인 만큼,<br/>해당 고객군을 우선 확인해 만기자금 활용계획을 점검하고 이벤트를 함께 안내해 보세요.</div>
-<div class="pad-t-13-muted pad-mt8 pad-keep">전일·금일 고객상태 및 관리신호 분석 · 09.04 07:30 기준</div>
+<div class="pad-rowb pad-between pad-g10 pad-mb6"><span class="pad-t-kicker">오늘의 부점 브리핑 · {{ dashDateLabel }}</span></div>
+<div class="pad-brief-card__body pad-in">전일 대비 <span class="pad-b">ISA 만기 예정 고객</span> <span sc-camel-on-click="{{ filterIsa }}" class="pad-hl-link">{{ isaCount }}명이 신규 관리대상</span>으로 선정됐습니다.<br/>현재 KB스타뱅킹에서 <span class="pad-b">ISA 만기자금의 IRP 전환 관련 이벤트</span>가 진행 중인 만큼,<br/>해당 고객군을 우선 확인해 만기자금 활용계획을 점검하고 이벤트를 함께 안내해 보세요.</div>
+<div class="pad-t-13-muted pad-mt8 pad-keep">전일·금일 고객상태 및 관리신호 분석 · {{ dashAsOfLabel }} 07:30 기준</div>
 </div><div class="pad-progress-card">
 <div class="pad-t-kicker">오늘의 사후관리 현황</div>
 <div class="pad-col pad-g4">
 <div class="pad-rowb pad-between pad-g8">
 <span class="pad-t-12b-sub">부점 전체</span>
-<span class="pad-t-12-muted"><span class="pad-t-14b-dark">{{ branchDone }}</span> / 15명 관리완료</span>
+<span class="pad-t-12-muted"><span class="pad-t-14b-dark">{{ branchDone }}</span> / {{ branchTotal }}명 관리완료</span>
 </div>
 <div class="pad-bar"><div class="pad-bar__fill pad-bar__fill--gray" style="width:{{ branchPct }}"></div></div>
 </div>
@@ -115,26 +115,26 @@
 <div class="pad-row pad-g6"><span class="pad-kpi__dot"></span><span class="pad-t-13b-dark">신규 선정</span><sc-if value="{{ kNewOn }}"><span class="pad-t-11b-dark">✓ 필터 적용 중</span></sc-if></div>
 <div class="pad-t-12-muted pad-mt3 pad-keep">오늘 새롭게 우선관리</div>
 </div>
-<span class="pad-kpi__num pad-c-dark">15명</span>
+<span class="pad-kpi__num pad-c-dark">{{ kNewN }}명</span>
 </button>
 <button sc-camel-on-click="{{ kOnTap }}" class="pad-kpi" style="--pad-bd:{{ kOnBd }}">
 <div class="pad-min0">
 <div class="pad-row pad-g6"><span class="pad-t-13b-dark">지속 관리</span><sc-if value="{{ kOnOn }}"><span class="pad-t-11b-dark">✓ 필터 적용 중</span></sc-if></div>
 <div class="pad-t-12-muted pad-mt3 pad-keep">오늘도 관리 필요</div>
 </div>
-<span class="pad-kpi__num pad-c-dark">12명</span>
+<span class="pad-kpi__num pad-c-dark">{{ kOnN }}명</span>
 </button>
 <button sc-camel-on-click="{{ kResTap }}" class="pad-kpi" style="--pad-bd:{{ kResBd }}">
 <div class="pad-min0">
 <div class="pad-row pad-g6"><span class="pad-t-13b-dark">오늘 방문 예정</span><sc-if value="{{ kResOn }}"><span class="pad-t-11b-ok">✓ 필터 적용 중</span></sc-if></div>
 <div class="pad-t-12-muted pad-mt3 pad-keep">금일 영업점 방문 예정</div>
 </div>
-<span class="pad-kpi__num pad-c-ok">2명</span>
+<span class="pad-kpi__num pad-c-ok">{{ kResN }}명</span>
 </button>
 </div>
 <div class="pad-section-head">
 <div class="pad-rowb pad-g10">
-<div class="pad-h2">오늘의 중점관리 고객 · 15명</div>
+<div class="pad-h2">오늘의 중점관리 고객 · {{ queueTotal }}명</div>
 <sc-if value="{{ hasCaseLibrary }}"><button class="pad-btn-sm" sc-camel-on-click="{{ openCaseLibrary }}">고객별 브리핑 · 30 케이스</button></sc-if>
 <div class="pad-t-12-muted">관리 필요도 순</div>
 </div>

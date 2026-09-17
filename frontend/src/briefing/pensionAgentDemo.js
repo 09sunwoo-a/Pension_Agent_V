@@ -753,7 +753,7 @@ class Component {
       { n: '시중은행 정기예금 1년제', stat: '연 3.20~3.70% · 2026.08 기준' }];
     this._bf = {
       ksy: {
-        badges: [B('타행 ISA 만기 D-3', 'am'), B('ETF 조회', 'bl')],
+        badges: [B('ISA 만기 D-3', 'am'), B('ETF 상품조회', 'bl')],
         s1: { main: '**신한은행 ISA 약 8,000만원이 9월 7일 만기 예정**입니다.', sub: '당행 IRP 4,500만원은 **정기예금·채권형 펀드 중심**으로 운용 중입니다. 최근에는 스타뱅킹에서 **IRP ETF 상품을 조회**했습니다.' },
         s2: { lead: 'ISA 만기자금 8,000만원의 **사용계획을 확인하고, 남는 자금의 IRP 전환 여부와 향후 운용방향을 함께 점검합니다.**',
           why: 'ISA 만기 후 **60일 이내**에만 IRP로 전환할 수 있으며, 전환금액의 10% 범위에서 **최대 300만원의 추가 세액공제 한도**가 적용됩니다.',
@@ -777,7 +777,7 @@ class Component {
           exec: [{ chip: '01-12-213', name: '입금/입금예약', desc: 'ISA 만기자금의 전환 가능금액 확인 및 IRP 입금 처리' }] }
       },
       lsm: {
-        badges: [B('정기예금 만기 D-22', 'am'), B('현금성 1,000만원 대기', 'am')],
+        badges: [B('정기예금 만기 D-22', 'am'), B('현금성 장기대기', 'am'), B('DO 미등록', 'bl')],
         s1: { main: '**IRP 정기예금 7,000만원이 9월 26일 만기 예정**입니다.', sub: '지난 6월 만기된 **1,000만원은 약 10주간 운용지시 없이 현금성자산**으로 남아 있으며, 최근 스타뱅킹에서 **IRP 수익률과 정기예금 금리를 조회**했습니다.' },
         s2: { lead: '만기 예정인 7,000만원과 기존 대기자금 1,000만원의 **향후 운용방향을 정하고, 만기 후 현금성자산으로 대기하는 상황이 반복되지 않도록 함께 점검합니다.**',
           why: '정기예금은 자동 재예치가 폐지되어 만기 시 운용지시가 없으면 현금성자산으로 상환되며, **만기상품 예약변경은 만기 1개월 전부터 가능해 지금부터 만기 이후의 운용방향을 미리 정할 수 있습니다.**',
@@ -806,7 +806,7 @@ class Component {
             { chip: '06-12-918', name: '디폴트옵션 대기자금 관리', desc: '디폴트옵션 등록 후에도 남아 있는 대기자금 1,000만원 직접 처리' }] }
       },
       pjh: {
-        badges: [B('퇴직급여 1억 5,000만원 입금', 'gr'), B('퇴직연금 입금 메뉴 조회', 'bl')],
+        badges: [B('퇴직금 재입금기한 D-39', 'am'), B('퇴직연금 관리화면 방문', 'bl')],
         s1: { main: '**8월 14일 퇴직급여 1억 5,000만원이 당행 입출금계좌로 입금**된 뒤 그대로 남아 있습니다.', sub: '고객은 올해 8월 퇴직했으며, 상담에서 "당장 쓸 계획은 없는데 어디 넣어둘지 고민"이라고 언급한 이후 **퇴직연금 입금 메뉴와 관련 콘텐츠를 조회**했습니다.' },
         s2: { lead: '퇴직급여 1억 5,000만원의 **사용계획과 IRP 재입금 여부를 확인하고, 재입금 시 필요한 과세이연 절차와 이후 운용방향을 함께 점검합니다.**',
           why: '퇴직금은 지급일로부터 **60일 이내 IRP로 재입금하면 이미 차감된 퇴직소득세를 환급**받을 수 있으며, 현재 입금 후 약 3주가 지나 해당 시한이 진행 중입니다.',
@@ -1442,47 +1442,67 @@ class Component {
   renderVals() {
     const S = this.state, C = this.C, DATA = this.DATA;
     const isDone = c => !!S.done[c.id];
+    // Legacy demo rows keep their mock facts; the badge wording follows the Dynamic Segment
+    // catalog used by the 30 case customers (colors: red 이탈·상품, am 일정·운용공백, gr 연금·납입·외부자산, bl 구성·DO·디지털).
+    // 홍성우(세액공제 여력·상여 입금)와 서정화(리밸런싱 완료)는 카탈로그에 해당 Segment가 없어 뱃지를 비웠습니다.
     const QMETA = {
-      ksy: { club: 'VIP', mg: 'new', sig: [['타행 ISA 만기 D-3', 'am'], ['ETF 조회', 'bl']], bal: '4,500만원', ret: '+3.1%' },
-      lsm: { club: '그랜드', mg: 'new', sig: [['정기예금 만기 D-22', 'am'], ['현금성 장기대기', 'am']], bal: '8,000만원', ret: '+2.8%' },
-      pjh: { club: 'VVIP', mg: 'new', sig: [['퇴직급여 수령', 'gr'], ['과세이연 시한', 'am']], bal: '2,000만원', ret: '+2.9%' },
-      khj: { club: 'VVIP', mg: 'on', sig: [['정기예금 만기 임박', 'am'], ['원리금보장 편중', 'am']], bal: '4.3억원', ret: '+3.0%' },
-      pey: { club: 'VIP', mg: 'on', sig: [['수익률 부진', 'red'], ['수익률 문의 증가', 'red']], bal: '1.8억원', ret: '−6.8%' },
-      lsc: { club: 'VVIP', mg: 'on', sig: [['타행 IRP 개설', 'red'], ['이탈징후', 'red']], bal: '2.1억원', ret: '+4.1%' },
-      jmr: { club: '베스트', mg: 'on', sig: [['현금성 장기대기', 'am'], ['DO 미등록', 'am']], bal: '7,000만원', ret: '+0.8%' },
-      kdy: { club: '그랜드', mg: 'on', sig: [['수익률 부진', 'red'], ['앱 조회 증가', 'am']], bal: '1.1억원', ret: '−4.2%' },
-      cjh: { club: 'VIP', mg: 'on', sig: [['정기예금 만기 임박', 'am']], bal: '1.2억원', ret: '+3.1%' },
-      hsw: { club: 'VVIP', mg: 'on', sig: [['추가납입 기회', 'gr'], ['세액공제 한도', 'gr']], bal: '2.6억원', ret: '+5.2%' },
-      ysr: { club: 'VIP', mg: 'on', sig: [['리밸런싱 점검', 'bl'], ['TDF 빈티지', 'bl']], bal: '1.5억원', ret: '+3.8%' },
-      jmj: { club: '그랜드', mg: 'on', sig: [['현금성 장기대기', 'am']], bal: '9,000만원', ret: '+0.4%' },
-      msy: { club: 'VIP', mg: 'on', sig: [['판매중단 펀드 보유', 'am'], ['성과부진', 'red']], bal: '1.6억원', ret: '−3.4%' },
-      bjh: { club: 'VVIP', mg: 'on', sig: [['원리금보장 100%', 'am']], bal: '2.2억원', ret: '+3.3%' },
-      oks: { club: 'VVIP', mg: 'on', sig: [['연금개시 시점', 'gr']], bal: '3.4억원', ret: '+3.0%' },
-      sjh: { club: '그랜드', mg: 'done', sig: [['리밸런싱 완료', 'gr']], bal: '1.4억원', ret: '+3.6%' },
-      lth: { club: 'VVIP', mg: 'done', sig: [['후속상담 예약', 'bl']], bal: '3.2억원', ret: '−5.1%' },
-      hkg: { club: '베스트', mg: 'done', sig: [['추가납입 완료', 'gr']], bal: '5,000만원', ret: '+3.1%' }
+      ksy: { club: 'VIP', mg: 'new', sig: [['ISA 만기 D-3', 'am'], ['ETF 상품조회', 'bl']], bal: '4,500만원', ret: '+3.1%' },
+      lsm: { club: '그랜드', mg: 'new', sig: [['정기예금 만기 D-22', 'am'], ['현금성 장기대기', 'am'], ['DO 미등록', 'bl']], bal: '8,000만원', ret: '+2.8%' },
+      pjh: { club: 'VVIP', mg: 'new', sig: [['퇴직금 재입금기한 D-39', 'am'], ['퇴직연금 관리화면 방문', 'bl']], bal: '2,000만원', ret: '+2.9%' },
+      khj: { club: 'VVIP', mg: 'on', sig: [['정기예금 만기 D-7', 'am'], ['원리금보장 편중', 'bl'], ['DO 미등록', 'bl']], bal: '4.3억원', ret: '+3.0%' },
+      pey: { club: 'VIP', mg: 'on', sig: [['수익률 부진', 'red'], ['환매추천 펀드 보유', 'red'], ['보유상품 수익률 조회', 'bl']], bal: '1.8억원', ret: '−6.8%' },
+      lsc: { club: 'VVIP', mg: 'on', sig: [['이탈징후', 'red'], ['타행 IRP 보유', 'gr']], bal: '2.1억원', ret: '+4.1%' },
+      jmr: { club: '베스트', mg: 'on', sig: [['현금성 장기대기', 'am'], ['DO 미등록', 'bl']], bal: '7,000만원', ret: '+0.8%' },
+      kdy: { club: '그랜드', mg: 'on', sig: [['수익률 부진', 'red'], ['보유상품 수익률 조회', 'bl']], bal: '1.1억원', ret: '−4.2%' },
+      cjh: { club: 'VIP', mg: 'on', sig: [['정기예금 만기 D-14', 'am']], bal: '1.2억원', ret: '+3.1%' },
+      hsw: { club: 'VVIP', mg: 'on', sig: [], bal: '2.6억원', ret: '+5.2%' },
+      ysr: { club: 'VIP', mg: 'on', sig: [['투자성향-DO불일치', 'bl']], bal: '1.5억원', ret: '+3.8%' },
+      jmj: { club: '그랜드', mg: 'on', sig: [['만기자금 미운용', 'am'], ['현금성 장기대기', 'am']], bal: '9,000만원', ret: '+0.4%' },
+      msy: { club: 'VIP', mg: 'on', sig: [['환매추천 펀드 보유', 'red'], ['수익률 부진', 'red']], bal: '1.6억원', ret: '−3.4%' },
+      bjh: { club: 'VVIP', mg: 'on', sig: [['원리금보장 편중', 'bl']], bal: '2.2억원', ret: '+3.3%' },
+      oks: { club: 'VVIP', mg: 'on', sig: [['연금개시 D-30', 'am']], bal: '3.4억원', ret: '+3.0%' },
+      sjh: { club: '그랜드', mg: 'done', sig: [], bal: '1.4억원', ret: '+3.6%' },
+      lth: { club: 'VVIP', mg: 'done', sig: [['환매추천 펀드 보유', 'red'], ['수익률 부진', 'red']], bal: '3.2억원', ret: '−5.1%' },
+      hkg: { club: '베스트', mg: 'done', sig: [['추가납입 200만원', 'gr']], bal: '5,000만원', ret: '+3.1%' }
     };
+    const metaOf = c => QMETA[c.id] || c.qm || { club: '', mg: 'on', sig: [], bal: c.deposit + '원', ret: '' };
+    const sigOf = c => metaOf(c).sig.map(p => p[0]);
+    const hasIsa = c => sigOf(c).some(l => /^ISA 만기 D-\d+$/.test(l));
     const RESOLVED = [
       { name: '김나연', club: '그랜드', sig: [['운용지시 완료', 'gr']], bal: '1.3억원', ret: '+2.6%' },
       { name: '이혜림', club: '베스트', sig: [['만기 재예치 완료', 'gr']], bal: '6,000만원', ret: '+3.0%' }
     ];
     const match = c => {
-      const qm = QMETA[c.id] || {};
+      const qm = metaOf(c);
       if (S.filter === 'all') return true;
       if (S.filter === 'new') return qm.mg === 'new';
       if (S.filter === 'ongoing') return qm.mg === 'on';
+      if (S.filter === 'isa') return hasIsa(c);
       if (S.filter === 'resolved') return false;
       return S.filter === 'risk' ? c.risk : S.filter === 'mat' ? c.mat : S.filter === 'imp' ? c.imp : S.filter === 'opp' ? c.opp : S.filter === 'perf' ? c.perf : S.filter === 'brief' ? c.brief : true;
     };
     const TAX = { ksy: 400, pjh: 300, pey: 520, lsc: 240, jmr: 180, cjh: 900, ysr: 420, msy: 700, hsw: 600, oks: 360, sjh: 900, hkg: 800 };
+    const taxPaidOf = c => TAX[c.id] != null ? TAX[c.id] : c.taxPaid;
+    const depositEok = c => c.depositEok != null ? c.depositEok : parseFloat(c.deposit);
     const INVG = p => (p === '안정형' || p === '안정추구형') ? 'st' : p === '위험중립형' ? 'nu' : 'ag';
     const extMatch = (c, E) => !E ? true :
       (E.prod === 'all' || c.product === E.prod) &&
-      (E.dep === 'all' || (E.dep === 'lt1' ? parseFloat(c.deposit) < 1 : E.dep === '1to2' ? (parseFloat(c.deposit) >= 1 && parseFloat(c.deposit) < 2) : parseFloat(c.deposit) >= 2)) &&
+      (E.dep === 'all' || (E.dep === 'lt1' ? depositEok(c) < 1 : E.dep === '1to2' ? (depositEok(c) >= 1 && depositEok(c) < 2) : depositEok(c) >= 2)) &&
       (E.inv === 'all' || INVG(c.profile) === E.inv) &&
-      (!E.taxOnly || (TAX[c.id] != null && TAX[c.id] < 900));
-    const ORD = ['ksy', 'lsm', 'pjh', 'khj', 'pey', 'lsc', 'jmr', 'kdy', 'cjh', 'hsw', 'ysr', 'jmj', 'msy', 'bjh', 'oks', 'sjh', 'lth', 'hkg'];
-    const rank = c => { const i = ORD.indexOf(c.id); return i < 0 ? 99 : i; };
+      (!E.taxOnly || (taxPaidOf(c) != null && taxPaidOf(c) < 900));
+    // 관리 필요도 순: D-day badge (closest first) -> 이탈·상품 문제 -> 운용 공백 -> the rest; ties keep list order.
+    const DDAY = / D-(\d+)$/;
+    const prio = c => {
+      if (c.prio != null) return c.prio;
+      const sig = metaOf(c).sig;
+      let days = null;
+      sig.forEach(p => { const m = p[0].match(DDAY); if (m && (days == null || +m[1] < days)) days = +m[1]; });
+      if (days != null) return days;
+      if (sig.some(p => p[1] === 'red')) return 1000;
+      if (sig.some(p => p[1] === 'am')) return 2000;
+      return sig.length ? 3000 : 4000;
+    };
+    const rank = c => prio(c) * 1000 + DATA.indexOf(c);
     const showCompleted = this.props.showCompleted ?? true;
     let visible = DATA.filter(match).filter(c => extMatch(c, S.extA)).filter(c => showCompleted || !isDone(c)).slice().sort((a, b) => rank(a) - rank(b));
     if (S.extA && S.extA.topN) visible = visible.slice(0, S.extA.topN);
@@ -1493,10 +1513,10 @@ class Component {
     const queue = S.filter === 'resolved'
       ? RESOLVED.map((r, i) => ({ name: r.name, club: r.club, mg: MGL.res[0], mgBg: MGL.res[1], mgFg: MGL.res[2], mgShow: true, tags: mkTags(r.sig), bal: r.bal, ret: r.ret, retC: retC(r.ret), bar: '#059669', op: '1', done: false, anim: rowAnim(i), taxOn: false, taxOff: true, onTap: () => this.toast('전일 관리사유가 해소된 고객이에요 — 오늘 조치는 필요 없어요'), onDone: e => e.stopPropagation(), ckBd: '#E2E4E8', ckBg: '#fff', ckOp: '0.25', ckStroke: '#9298A2' }))
       : [...visible.filter(c => !isDone(c)), ...visible.filter(isDone)].map((c, i) => {
-        const qm = QMETA[c.id] || { club: '', mg: 'on', sig: [], bal: c.deposit + '원', ret: '' };
+        const qm = metaOf(c);
         const ml = MGL[qm.mg];
-        const paid = TAX[c.id], has = paid != null, remain = has ? 900 - paid : 0, pct = has ? paid / 900 : 0;
-        return { name: c.name, club: qm.club, mg: ml[0], mgBg: ml[1], mgFg: ml[2], mgShow: qm.mg !== 'new' && qm.mg !== 'on', tags: mkTags(qm.sig), bal: qm.bal, ret: qm.ret, retC: retC(qm.ret),
+        const paid = taxPaidOf(c), has = paid != null, remain = has ? 900 - paid : 0, pct = has ? paid / 900 : 0;
+        return { id: c.id, name: c.name, club: qm.club, mg: ml[0], mgBg: ml[1], mgFg: ml[2], mgShow: qm.mg !== 'new' && qm.mg !== 'on', tags: mkTags(qm.sig), bal: qm.bal, ret: qm.ret, retC: retC(qm.ret),
           taxOn: has, taxOff: !has, taxColor: remain > 0 ? '#059669' : '#C9CDD3',
           taxDash: (pct * 72.3).toFixed(1) + ' 72.3', taxPctLabel: Math.round(pct * 100) + '%',
           taxRemainLabel: has ? (remain > 0 ? '잔여 ' + remain + '만' : '소진 완료') : '',
@@ -1504,9 +1524,16 @@ class Component {
           onDone: e => { e.stopPropagation(); this.setState(s => ({ done: { ...s.done, [c.id]: !s.done[c.id] } })); },
           ckBd: isDone(c) ? '#059669' : '#D2D5DA', ckBg: isDone(c) ? '#E6F6EF' : '#fff', ckOp: isDone(c) ? '1' : '0.4', ckStroke: isDone(c) ? '#059669' : '#9298A2' };
       });
-    const doneCount = DATA.filter(isDone).length;
-    const extraDone = Math.max(0, doneCount - 3);
+    const doneCount = DATA.filter(isDone).length, targetCount = DATA.length;
+    // 부점 전체 is a mock aggregate: three times my own list.
+    const branchTotal = targetCount * 3, branchDone = Math.min(branchTotal, doneCount * 3);
+    const mgCount = mg => DATA.filter(c => metaOf(c).mg === mg && !isDone(c)).length;
     const cnt = k => DATA.filter(c => c[k]).length;
+    // Dashboard date follows the case data's 기준일 (adapter sets asOfDate); the legacy demo alone used 2026-09-04.
+    const asOf = /^\d{4}-\d{2}-\d{2}$/.test(this.asOfDate || '') ? this.asOfDate : '2026-09-04';
+    const asOfParts = asOf.split('-').map(Number), asOfDay = new Date(Date.UTC(asOfParts[0], asOfParts[1] - 1, asOfParts[2])).getUTCDay();
+    const dashDateLabel = asOfParts[1] + '월 ' + asOfParts[2] + '일 ' + ['일', '월', '화', '수', '목', '금', '토'][asOfDay] + '요일';
+    const dashAsOfLabel = asOf.slice(5).replace('-', '.');
     const c = this.sel();
     const pf = this.profileOf(c);
     const selHoldings = (c && c.hold ? c.hold : []).map(h => ({ n: h.n, t: h.t, a: h.a, w: h.w, r: h.r, rc: (h.r || '').indexOf('−') === 0 ? '#B91C1C' : '#26282C', redeem: !!h.redeem }));
@@ -1553,8 +1580,11 @@ class Component {
       bridgeOn: !!S.bridge, bridgeOpacity: S.bridgeFade ? 0 : 1,
       bridgeName: (() => { const b = S.bridge && this.DIR.find(x => x.id === S.bridge); return b ? b.name : ''; })(),
       showDashboard: !S.sel, showBriefing: !!S.sel,
-      doneCount: Math.min(6, 2 + extraDone), targetCount: 6, remainCount: Math.max(0, 4 - extraDone), progressPct: Math.round(Math.min(6, 2 + extraDone) / 6 * 100) + '%',
-      branchDone: Math.min(15, 4 + extraDone), branchPct: Math.round(Math.min(15, 4 + extraDone) / 15 * 100) + '%',
+      doneCount, targetCount, remainCount: targetCount - doneCount, progressPct: Math.round(doneCount / (targetCount || 1) * 100) + '%',
+      branchDone, branchTotal, branchPct: Math.round(branchDone / (branchTotal || 1) * 100) + '%',
+      queueTotal: targetCount, kNewN: mgCount('new'), kOnN: mgCount('on'), kResN: RESOLVED.length,
+      isaCount: DATA.filter(c => hasIsa(c) && !isDone(c)).length, dashDateLabel, dashAsOfLabel,
+      filterIsa: () => this.setState(s => ({ filter: 'isa', listAnimK: s.listAnimK + 1 })),
       extOpen: !!S.extOpen,
       extBtnBd: S.extOpen || extChipL.length ? '#26282C' : '#E2E4E8', extBtnBg: S.extOpen || extChipL.length ? '#26282C' : '#fff', extBtnFg: S.extOpen || extChipL.length ? '#fff' : '#696E76',
       extToggle: () => this.setState(s => ({ extOpen: !s.extOpen, ext: s.ext || { ...DEFX, trig: ({ risk: 1, mat: 1, imp: 1, opp: 1 })[s.filter] ? s.filter : 'all' } })),
@@ -1598,8 +1628,8 @@ class Component {
       kNewOn: S.filter === 'new', kOnOn: S.filter === 'ongoing', kResOn: S.filter === 'resolved',
       kNewBd: S.filter === 'new' ? '#26282C' : '#ECEDF0', kOnBd: S.filter === 'ongoing' ? '#26282C' : '#ECEDF0', kResBd: S.filter === 'resolved' ? '#26282C' : '#ECEDF0',
       allBg: S.filter === 'all' ? '#26282C' : '#fff', allFg: S.filter === 'all' ? '#fff' : '#696E76', allBd: S.filter === 'all' ? '#26282C' : '#E2E4E8',
-      subChipOn: ['new', 'ongoing', 'resolved', 'perf', 'brief'].indexOf(S.filter) >= 0,
-      subChipLabel: S.filter === 'new' ? '신규 선정' : S.filter === 'ongoing' ? '지속 관리' : S.filter === 'resolved' ? '오늘 방문 예정' : S.filter === 'brief' ? '오늘 브리핑 대상 · ' + cnt('brief') + '명' : '환매추천펀드 보유 ' + cnt('perf'),
+      subChipOn: ['new', 'ongoing', 'resolved', 'isa', 'perf', 'brief'].indexOf(S.filter) >= 0,
+      subChipLabel: S.filter === 'new' ? '신규 선정' : S.filter === 'ongoing' ? '지속 관리' : S.filter === 'resolved' ? '오늘 방문 예정' : S.filter === 'isa' ? 'ISA 만기 예정' : S.filter === 'brief' ? '오늘 브리핑 대상 · ' + cnt('brief') + '명' : '환매추천펀드 보유 ' + cnt('perf'),
       searchQ: S.searchQ, onSearchInput: e => this.setState({ searchQ: e.target.value, searched: false }),
       doSearch: () => this.setState({ searched: S.searchQ.trim().length > 0 }),
       searchOpen: !!S.searched,
@@ -1648,7 +1678,8 @@ class Component {
       busy: !!S.busy, notBusy: !S.busy, inputVal: S.input, onInput: e => this.setState({ input: e.target.value }),
       onKeyEnter: e => { if (e.key === 'Enter') this.sendUser(S.input); }, onSend: () => this.sendUser(S.input),
       goBack: () => this.setState({ sel: null }),
-      goNext: () => { if (!c) return; const list = pending.filter(x => x.id !== c.id); if (!list.length) return; const idxAll = DATA.indexOf(c); const nxt = list.find(x => DATA.indexOf(x) > idxAll) || list[0]; this.select(nxt.id); },
+      // 다음 고객 follows the list order (관리 필요도 순), skipping completed rows.
+      goNext: () => { if (!c) return; const ordered = DATA.slice().sort((a, b) => rank(a) - rank(b)); const list = ordered.filter(x => !isDone(x) && x.id !== c.id); if (!list.length) return; const idxAll = ordered.indexOf(c); const nxt = list.find(x => ordered.indexOf(x) > idxAll) || list[0]; this.select(nxt.id); },
       chatRef: this.chatRef
     };
   }

@@ -16,6 +16,16 @@
   });
   var records = store.customers();
   var sampleLabels = { 'DEMO-01': '대표 · 상품 제안', 'B01-22': '대표 · 업무 제안', 'B06-13': '대표 · 미확인 정보' };
+  // The main list shows the 30 case customers next to the legacy demo rows. DEMO-01 is the
+  // structured twin of the legacy 김서연 (ksy) row, so it stays reachable from the case
+  // picker and search only, not as a second 김서연 row.
+  var QUEUE_EXCLUDED = { 'DEMO-01': true };
+  var queued = records.filter(function (r) { return !QUEUE_EXCLUDED[r.briefingMeta.caseId]; });
+  var asOfDate = (function () {
+    var count = {}, best = null;
+    queued.forEach(function (r) { var d = r.briefingMeta.asOfDate; count[d] = (count[d] || 0) + 1; if (best == null || count[d] > count[best]) best = d; });
+    return best;
+  })();
   function view(component, base) {
     var id = component.state.sel, record = store.customer(id), entry = store.read(id);
     base.briefingLabels = BriefingView.labels;
@@ -32,10 +42,13 @@
     if (!record) return base;
     Object.assign(base, CustomerView.build(record));
     base.panelOpen = false; base.panelClosed = false; base.showLegacyTip = false;
-    base.goNext = function () {
-      var index = records.findIndex(function (r) { return r.briefingMeta.caseId === id; });
-      component.select(records[(index + 1) % records.length].briefingMeta.caseId, true);
-    };
+    if (QUEUE_EXCLUDED[id]) {
+      // Not in the main list: 다음 고객 walks the structured cases instead of the queue order.
+      base.goNext = function () {
+        var index = records.findIndex(function (r) { return r.briefingMeta.caseId === id; });
+        component.select(records[(index + 1) % records.length].briefingMeta.caseId, true);
+      };
+    }
     base.hasAiBrief = !!entry.content; base.noAiBrief = !entry.content;
     base.hasBriefingError = false;
     base.hasBriefingState = entry.phase === 'loading' || entry.phase === 'error';
@@ -52,6 +65,7 @@
     var originalProfile = Component.prototype.profileOf, originalRender = Component.prototype.renderVals;
     var originalSelect = Component.prototype.select;
     var originalDir = Object.getOwnPropertyDescriptor(Component.prototype, 'DIR').get;
+    var originalData = Object.getOwnPropertyDescriptor(Component.prototype, 'DATA').get;
     Component.prototype.select = function (id) {
       if (this.state.sel !== id) store.cancel(this.state.sel);
       return originalSelect.apply(this, arguments);
@@ -60,10 +74,18 @@
       var record = c && store.customer(c.id);
       return record ? CustomerView.profile(record) : originalProfile.call(this, c);
     };
+    // Main-list rows: legacy demo rows first in their own order, then the case customers.
+    // The queue renderer sorts by 관리 필요도 across both sets.
+    Object.defineProperty(Component.prototype, 'DATA', { configurable: true, get: function () {
+      if (!this._queueRows) this._queueRows = originalData.call(this).concat(queued.map(CustomerView.row));
+      return this._queueRows;
+    } });
+    // The legacy directory already contains DATA; add only the cases kept out of the list.
     Object.defineProperty(Component.prototype, 'DIR', { configurable: true, get: function () {
-      if (!this._caseDirectory) this._caseDirectory = originalDir.call(this).concat(records.map(CustomerView.stub));
+      if (!this._caseDirectory) this._caseDirectory = originalDir.call(this).concat(records.filter(function (r) { return QUEUE_EXCLUDED[r.briefingMeta.caseId]; }).map(CustomerView.stub));
       return this._caseDirectory;
     } });
+    Component.prototype.asOfDate = asOfDate;
     Component.prototype.renderVals = function () { return view(this, originalRender.call(this)); };
   }
   window.PensionBriefingAdapter = {

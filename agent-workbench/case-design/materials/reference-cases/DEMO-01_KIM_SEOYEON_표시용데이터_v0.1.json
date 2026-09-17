@@ -27,12 +27,12 @@
   },
   "signals": [
     {
-      "label": "9/7 타행 ISA 만기",
+      "label": "ISA 만기 D-3",
       "date": "2026-09-07",
       "source": "마이데이터 가상정보"
     },
     {
-      "label": "최근 IRP ETF 3회 조회",
+      "label": "ETF 상품조회",
       "date": "2026-09-03",
       "source": "가상 행동로그"
     }

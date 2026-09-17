@@ -48,6 +48,41 @@ for (const [i, c] of customers.entries()) {
 app.select('ksy', true);
 assert.equal(app.renderVals().structuredBrief, false, 'Original Kim remains independent');
 assert.equal(app.renderVals().pfRet, '+3.1%');
+// Main list: legacy demo rows + the 30 case customers (DEMO-01 stays in the picker only).
+// Each case row's badges are its signals, colored the same way as the briefing header.
+const LEGACY_ROWS = 18, queued = customers.filter(c => c.briefingMeta.caseId !== 'DEMO-01');
+app.state.sel = null; app.state.filter = 'all'; app.state.extA = null;
+const dash = app.renderVals();
+assert.equal(dash.showDashboard, true);
+assert.equal(dash.queue.length, LEGACY_ROWS + queued.length, 'Main list = legacy rows + case customers');
+assert.equal(dash.queueTotal, LEGACY_ROWS + queued.length);
+assert.equal(dash.kNewN + dash.kOnN + dash.doneCount, dash.queueTotal, 'Every row is 신규 선정, 지속 관리 or 처리완료');
+assert.deepEqual([dash.dashDateLabel, dash.dashAsOfLabel], ['9월 14일 월요일', '09.14'], 'Dashboard date follows the case 기준일');
+assert.equal(dash.isaCount, dash.queue.filter(r => r.tags.some(t => /^ISA 만기 D-\d+$/.test(t.t))).length);
+const CATALOG = /^(정기예금 만기|GIC 만기|ISA 만기|ISA 전환기한|DO 실행|퇴직금 재입금기한|연금개시) D-\d+$|^추가납입 \d+만원$|^(퇴직금 운용 미지시|퇴직금 일부만 운용|현금성 장기대기|현금성 과다|만기자금 미운용|납입금 미운용|입금매수상품 미지정|원리금보장 편중|수익률 부진|환매추천 펀드 보유|판매중단 펀드 보유|저금리 예금 보유|DO 미등록|투자성향-DO불일치|타행 IRP 보유|타행 연금저축 보유|연금저축 보유|복수 IRP 보유|연금자산 분산보유|이탈징후|계약이전 신청|계약이전 페이지 방문|연금개시 가능|연금개시 예정|연금수령 중|올해 미납입|납입 중단|퇴직연금 관리화면 방문|ETF 상품조회|펀드 상품조회|보유상품 수익률 조회|장기 미운용)$/;
+for (const row of dash.queue) for (const t of row.tags) assert.ok(CATALOG.test(t.t), row.name + ': badge outside the Dynamic Segment catalog: ' + t.t);
+for (const c of customers) {
+  const id = c.briefingMeta.caseId, labels = c.signals.map(s => s.label);
+  assert.ok(labels.every(l => CATALOG.test(l)), id + ': signals outside the catalog');
+  assert.ok(labels.length <= 3, id + ': at most three badges');
+  app.select(id, true);
+  const header = app.renderVals().bfBadges;
+  // Arrays from the vm realm carry another Array prototype; compare main-realm copies.
+  assert.deepEqual(Array.from(header, b => b.t), labels, id + ': briefing header badges = signals');
+  const row = dash.queue.find(r => r.id === id);
+  if (id === 'DEMO-01') { assert.equal(row, undefined, 'DEMO-01 is not a second 김서연 row'); continue; }
+  assert.deepEqual(Array.from(row.tags, t => [t.t, t.bg, t.fg]), Array.from(header, b => [b.t, b.bg, b.fg]), id + ': main list badges and colors = briefing header');
+  assert.equal(row.bal, contract.money(c.irpAccount.valuationAmountKrw), id);
+  assert.equal(row.taxOn, c.irpAccount.taxDeductionRemainingKrw != null, id + ': tax ring only with a known 잔여한도');
+}
+app.state.filter = 'isa';
+assert.deepEqual(Array.from(app.renderVals().queue, r => r.name).sort(), Array.from(dash.queue).filter(r => r.tags.some(t => /^ISA 만기 D-\d+$/.test(t.t))).map(r => r.name).sort(), 'ISA 만기 filter');
+app.state.filter = 'all';
+const order = Array.from(dash.queue).filter(r => !r.done).map(r => Array.from(r.tags, t => t.t));
+const dday = tags => { const m = tags.map(t => t.match(/ D-(\d+)$/)).filter(Boolean).map(m => +m[1]); return m.length ? Math.min(...m) : null; };
+const ddays = order.map(dday).filter(d => d != null);
+assert.deepEqual(ddays, ddays.slice().sort((a, b) => a - b), 'D-day rows come first in ascending order');
+assert.ok(order.findIndex(t => dday(t) == null) > ddays.length - 1, 'No non-D-day row before the D-day rows');
 const kim = customers[0], content = contract.contentOf(briefings[0]), store = create(customers);
 const first = store.begin('DEMO-01'), second = store.begin('DEMO-01');
 assert.equal(store.receive(first, content).stale, true);
@@ -104,7 +139,7 @@ assert.deepEqual([withAction.blocks[withAction.blocks.length - 1], withAction.gu
   [{ t: 'msg', x: '받는 사람: 3902173\n제목: 안내\n\n본문' }, [{ doc: '상담 원칙', meta: '2026', point: '원금보장 오인 금지' }], 2, 1], 'Action memo, clarify and 주의 sources');
 assert.deepEqual(JSON.parse(fs.readFileSync(path.join(ROOT, 'integration/contracts/response.example.json'), 'utf8')), wire.answer(wire.request(kim, 'example-request-001', 'TEST_EMPLOYEE'), content));
 assert.deepEqual(JSON.parse(fs.readFileSync(path.join(ROOT, 'agent/briefing_data.json'), 'utf8')), agentData({ customers, briefings }), 'Rebuild Agent data together with the frontend');
-console.log('PASS: 31 customer/briefing pairs, totals, render mappings, optional fields, customer isolation, request identity, SSE parser, current three-file build.');
+console.log('PASS: 31 customer/briefing pairs, totals, render mappings, optional fields, customer isolation, request identity, SSE parser, current three-file build, main list = legacy rows + 30 cases with catalog badges.');
 
 // Bundle-level run of the real path: injected config -> auto request on select ->
 // fake fetch answering one SSE frame -> answer rendered. No network, no secrets.
