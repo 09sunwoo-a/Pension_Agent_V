@@ -19,7 +19,7 @@
       "registrationStatus": "등록",
       "designatedProduct": {
         "productId": "DO-006",
-        "productName": "불려드림II",
+        "productName": "뿔려드림II",
         "riskLevel": "중위험"
       },
       "applicationStatus": "운용중"
@@ -27,7 +27,8 @@
   },
   "signals": [
     {
-      "label": "타행 ISA가 10월 7일 만기 예정입니다. 7월 상담에서 “올해는 더 넣을 필요가 없겠네요”라고 말한 이력이 있습니다.",
+      "label": "ISA 만기 D-23",
+      "date": "2026-10-07",
       "source": "시연용 고객 원본 거래·이벤트"
     }
   ],
@@ -78,7 +79,7 @@
     {
       "holdingId": "H002",
       "productId": "DO-006",
-      "productName": "불려드림II",
+      "productName": "뿔려드림II",
       "assetType": "실적배당형",
       "productCategory": "디폴트옵션",
       "contractTerm": null,

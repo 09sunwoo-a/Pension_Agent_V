@@ -19,7 +19,7 @@
       "registrationStatus": "등록",
       "designatedProduct": {
         "productId": "DO-006",
-        "productName": "불려드림II",
+        "productName": "뿔려드림II",
         "riskLevel": "중위험"
       },
       "applicationStatus": "미적용"
@@ -27,7 +27,7 @@
   },
   "signals": [
     {
-      "label": "IRP에 월 60만원씩 자동이체 중이며, 최근 7개월간 입금은 7회·상품매수는 2회였습니다.",
+      "label": "입금매수상품 미지정",
       "source": "시연용 고객 원본 거래·이벤트"
     }
   ],

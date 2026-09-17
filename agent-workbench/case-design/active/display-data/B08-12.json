@@ -19,15 +19,21 @@
       "registrationStatus": "등록",
       "designatedProduct": {
         "productId": "DO-006",
-        "productName": "불려드림II",
+        "productName": "뿔려드림II",
         "riskLevel": "중위험"
       },
       "applicationStatus": "미적용"
     }
   },
   "signals": [
-    "은퇴까지 약 16.6년·예금만 보유",
-    "최근 TDF 안내 2회 조회"
+    {
+      "label": "원리금보장 편중"
+    },
+    {
+      "label": "펀드 상품조회",
+      "date": "2026-09-10",
+      "source": "시연용 가상 행동 로그"
+    }
   ],
   "irpAccount": {
     "valuationAmountKrw": 74600000,

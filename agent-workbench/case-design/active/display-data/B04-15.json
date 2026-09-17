@@ -19,18 +19,13 @@
       "registrationStatus": "등록",
       "designatedProduct": {
         "productId": "DO-006",
-        "productName": "불려드림II",
+        "productName": "뿔려드림II",
         "riskLevel": "중위험"
       },
       "applicationStatus": "미적용"
     }
   },
-  "signals": [
-    {
-      "label": "2016년 영업점에서 개설한 대면형 IRP를 약 10년째 유지하고 있으며 운용·자산관리수수료가 부과 중입니다.",
-      "source": "시연용 고객 원본 이벤트·상담"
-    }
-  ],
+  "signals": [],
   "irpAccount": {
     "valuationAmountKrw": 68400000,
     "assetAllocation": [

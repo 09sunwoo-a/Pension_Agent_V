@@ -19,16 +19,13 @@
       "registrationStatus": "등록",
       "designatedProduct": {
         "productId": "DO-006",
-        "productName": "불려드림II",
+        "productName": "뿔려드림II",
         "riskLevel": "중위험"
       },
       "applicationStatus": "미적용"
     }
   },
-  "signals": [
-    "기본 세액공제 잔여 0원",
-    "9월 8일 여유자금 1,200만원 발생"
-  ],
+  "signals": [],
   "irpAccount": {
     "valuationAmountKrw": 112700000,
     "assetAllocation": [

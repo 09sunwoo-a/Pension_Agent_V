@@ -19,7 +19,7 @@
       "registrationStatus": "등록",
       "designatedProduct": {
         "productId": "DO-006",
-        "productName": "불려드림II",
+        "productName": "뿔려드림II",
         "riskLevel": "중위험"
       },
       "applicationStatus": "미적용"
@@ -27,7 +27,11 @@
   },
   "signals": [
     {
-      "label": "IRP를 3개 기관에 합계 1억 2,070만원 보유 중입니다. 타기관 두 계좌는 각각 3,840만원·2,970만원입니다.",
+      "label": "복수 IRP 보유",
+      "source": "시연용 고객 원본 이벤트·상담"
+    },
+    {
+      "label": "타행 IRP 보유",
       "source": "시연용 고객 원본 이벤트·상담"
     }
   ],

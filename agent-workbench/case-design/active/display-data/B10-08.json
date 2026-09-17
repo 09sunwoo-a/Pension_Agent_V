@@ -25,10 +25,7 @@
       "applicationStatus": "미적용"
     }
   },
-  "signals": [
-    "8월 27일 스타뱅킹 ETF 3,000만원 매수",
-    "TDF가 계좌 전체를 관리한다고 인식"
-  ],
+  "signals": [],
   "irpAccount": {
     "valuationAmountKrw": 120000000,
     "assetAllocation": [
