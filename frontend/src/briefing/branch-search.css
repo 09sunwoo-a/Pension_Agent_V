@@ -1,98 +1,100 @@
-/* Branch AI styles: isolated under the existing app root; no CDN/fonts required. */
-#pensionAgentDemo .pad-branch-widget{position:relative;z-index:1000;font-family:inherit;font-size:13px;color:#26282c;line-height:1.6}
-#pensionAgentDemo .pad-branch-widget *{box-sizing:border-box}
-#pensionAgentDemo .pad-branch-widget [hidden]{display:none!important}
-#pensionAgentDemo .pad-branch-widget button,#pensionAgentDemo .pad-branch-widget textarea{font:inherit}
-#pensionAgentDemo .pad-branch-widget button{cursor:pointer;-webkit-appearance:none}
-#pensionAgentDemo .pad-branch-widget button:disabled{cursor:default;opacity:.45}
-#pensionAgentDemo .pad-branch-widget button:focus-visible,#pensionAgentDemo .pad-branch-widget textarea:focus-visible{outline:3px solid #867120;outline-offset:3px}
-#pensionAgentDemo .pad-branch-launcher{position:fixed;right:24px;bottom:24px;display:flex;align-items:center;gap:9px;height:52px;min-width:116px;padding:0 18px;border:1px solid #e6b800;border-radius:28px;background:#ffcc00;color:#26282c;font-size:14px;font-weight:700;box-shadow:0 6px 18px #47390024;transition:transform .16s,box-shadow .16s}
-#pensionAgentDemo .pad-branch-launcher:hover{transform:translateY(-2px);box-shadow:0 9px 23px #47390032}
-#pensionAgentDemo .pad-branch-launcher.is-open{background:#282a2e;border-color:#282a2e;color:#fff}
-#pensionAgentDemo .pad-branch-live-dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.6}
-#pensionAgentDemo .pad-branch-window{position:fixed;right:24px;bottom:88px;width:min(380px,calc(100vw - 32px));height:min(540px,calc(100dvh - 118px));height:min(540px,calc(100vh - 118px));display:flex;flex-direction:column;border:1px solid #dedfdc;border-radius:18px;background:#fff;box-shadow:0 18px 60px #20252b26,0 3px 12px #20252b12;overflow:hidden;transform-origin:bottom right;animation:padBranchOpen .18s ease-out}
-#pensionAgentDemo .pad-branch-header{height:66px;min-height:66px;display:flex;align-items:center;gap:10px;padding:12px 14px 12px 18px;border-bottom:1px solid #f0f0ed}
-#pensionAgentDemo .pad-branch-avatar{width:35px;height:35px;display:grid;place-items:center;border-radius:12px;background:#fff3c2;color:#766117;flex-shrink:0}
-#pensionAgentDemo .pad-branch-heading{flex:1;display:flex;flex-direction:column;gap:1px}
-#pensionAgentDemo .pad-branch-heading strong{font-size:15px;font-weight:700;letter-spacing:-.3px}
-#pensionAgentDemo .pad-branch-heading span{font-size:11px;color:#73776e;display:flex;align-items:center;gap:5px}
-#pensionAgentDemo .pad-branch-heading i{width:5px;height:5px;background:#769270;border-radius:50%}
-#pensionAgentDemo .pad-branch-icon{border:0;background:transparent;color:#70757d;width:30px;height:32px;display:grid;place-items:center;border-radius:8px;padding:4px}
-#pensionAgentDemo .pad-branch-icon:hover{background:#f2f3f4}
-#pensionAgentDemo .pad-branch-scope{display:flex;justify-content:space-between;gap:6px;font-size:10px;padding:8px 16px;background:#fafaf8;color:#787b75;border-bottom:1px solid #efefeb;white-space:nowrap}
-#pensionAgentDemo .pad-branch-scope span:first-child{color:#8b7130;font-weight:700}
-#pensionAgentDemo .pad-branch-context{padding:7px 16px;font-size:10px;color:#6c6f73;background:#fffdf4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-bottom:1px solid #f3edda}
-#pensionAgentDemo .pad-branch-body{position:relative;flex:1;min-height:60px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#d4d6d8 transparent;padding:18px 16px 20px}
-#pensionAgentDemo .pad-branch-welcome{padding:12px 2px 0}
-#pensionAgentDemo .pad-branch-welcome-icon{color:#8a7420;margin:0 0 10px}
-#pensionAgentDemo .pad-branch-welcome-icon svg{width:28px;height:28px}
-#pensionAgentDemo .pad-branch-welcome h3{font-size:18px;letter-spacing:-.6px;margin:0 0 7px;line-height:1.5}
-#pensionAgentDemo .pad-branch-welcome p{font-size:12px;color:#747980;line-height:1.8;margin:0 0 17px}
-#pensionAgentDemo .pad-branch-suggestions{display:flex;flex-direction:column;gap:7px}
-#pensionAgentDemo .pad-branch-suggestions button{width:100%;display:flex;align-items:center;justify-content:space-between;min-height:40px;text-align:left;padding:9px 13px;border:1px solid #e9e9e5;background:#fff;border-radius:10px;color:#4e545c;font-size:12px;transition:background .15s}
-#pensionAgentDemo .pad-branch-suggestions button:hover{background:#fffbee;border-color:#e7d88e}
-#pensionAgentDemo .pad-branch-suggestions span{color:#949996}
-#pensionAgentDemo .pad-branch-welcome .pad-branch-mock-note{font-size:10px;margin-top:12px;text-align:center;color:#949893}
-#pensionAgentDemo .pad-branch-messages{display:flex;flex-direction:column;gap:18px}
-#pensionAgentDemo .pad-branch-message{font-size:12px;line-height:1.8;max-width:100%;word-break:keep-all;overflow-wrap:anywhere;animation:padBranchMessage .16s ease-out}
-#pensionAgentDemo .pad-branch-message p{margin:0;white-space:pre-wrap}
-#pensionAgentDemo .pad-branch-message.is-user{align-self:flex-end;max-width:90%;background:#fff3bd;border-radius:13px 13px 3px 13px;padding:10px 13px;color:#403a28}
-#pensionAgentDemo .pad-branch-message.is-assistant{align-self:flex-start;max-width:100%;padding:0 2px 0}
-#pensionAgentDemo .pad-branch-author{font-size:11px;font-weight:700;color:#7a6a38;margin-bottom:7px}
-#pensionAgentDemo .pad-branch-message.is-system,#pensionAgentDemo .pad-branch-system{font-size:10px;text-align:center;align-self:center;color:#8c9094;padding:4px 6px}
-#pensionAgentDemo .pad-branch-answer-meta{font-size:10px;color:#9498a0;margin-top:8px}
-#pensionAgentDemo .pad-branch-result-action{border:1px solid #d9dad5;border-radius:8px;background:#fff;padding:7px 10px;color:#555b60;font-size:11px;margin-top:10px;font-weight:700}
-#pensionAgentDemo .pad-branch-result-action:hover{background:#f6f7f4}
-#pensionAgentDemo .pad-branch-typing{display:flex;gap:4px;margin-top:7px}
-#pensionAgentDemo .pad-branch-typing i{width:4px;height:4px;border-radius:100%;background:#9c9680;animation:padBranchDot 1s infinite}
-#pensionAgentDemo .pad-branch-typing i:nth-child(2){animation-delay:.13s}
-#pensionAgentDemo .pad-branch-typing i:nth-child(3){animation-delay:.26s}
-#pensionAgentDemo .pad-branch-footer{padding:8px 13px 10px;border-top:1px solid #f0f0ed;background:#fff;flex-shrink:0}
-#pensionAgentDemo .pad-branch-tools{display:flex;align-items:center;gap:10px;padding:0 3px 8px}
-#pensionAgentDemo .pad-branch-tools button{padding:0;border:0;background:none;color:#777d83;font-size:10px}
-#pensionAgentDemo .pad-branch-tools button:hover{color:#353a40;text-decoration:underline}
-#pensionAgentDemo .pad-branch-tools .pad-branch-cancel{margin-left:auto;color:#ad603f}
-#pensionAgentDemo .pad-branch-composer{display:flex;align-items:flex-end;gap:7px;padding:9px 8px 9px 12px;border:1px solid #dadcd9;border-radius:12px;background:#fff;margin:0}
-#pensionAgentDemo .pad-branch-composer:focus-within{border-color:#b8a252;box-shadow:0 0 0 2px #fff3c270}
-#pensionAgentDemo .pad-branch-composer textarea{width:100%;min-height:28px;max-height:92px;resize:none;border:0;background:none;outline:none!important;color:#26282c;font-size:12px;line-height:1.6;padding:4px 0;margin:0;overflow-y:auto}
-#pensionAgentDemo .pad-branch-composer textarea::placeholder{font-size:11px!important;font-weight:400!important;color:#9c9fa3!important;-webkit-text-fill-color:#9c9fa3!important;text-align:left!important}
-#pensionAgentDemo .pad-branch-send{width:30px;height:30px;flex-shrink:0;display:grid;place-items:center;border:0;border-radius:9px;background:#ffcc00;color:#282a2e;padding:4px}
-#pensionAgentDemo .pad-branch-disclaimer{font-size:9px;color:#9b9e9f;text-align:center;padding-top:7px}
-#pensionAgentDemo .pad-branch-examples{max-height:230px;overflow:auto;border-top:1px solid #e7e8e2;background:#fafbf8;padding:10px 14px;overscroll-behavior:contain}
-#pensionAgentDemo .pad-branch-examples-title{font-size:10px;color:#72776b;padding-bottom:9px}
-#pensionAgentDemo .pad-branch-examples button{display:flex;gap:8px;width:100%;text-align:left;padding:9px 0;background:transparent;border:0;border-top:1px solid #eeeeea;font-size:11px;color:#535960}
-#pensionAgentDemo .pad-branch-examples button>span:first-child{color:#a0a48d;font-size:10px;flex-shrink:0;padding-top:2px}
-#pensionAgentDemo .pad-branch-tour{padding:10px 16px;background:#fff9e2;border-bottom:1px solid #f3e9be;font-size:11px;flex-shrink:0}
-#pensionAgentDemo .pad-branch-tour>span{font-size:9px;color:#9b8134;font-weight:700;letter-spacing:.5px}
-#pensionAgentDemo .pad-branch-tour p{margin:4px 0 7px;color:#685b35;line-height:1.65}
-#pensionAgentDemo .pad-branch-tour button{border:1px solid #dacf9b;border-radius:6px;background:#fff;padding:3px 9px;font-size:10px;margin-right:6px;color:#6b5a2c}
-#pensionAgentDemo .pad-branch-mode-gate{padding:28px 22px;font-size:13px}
-#pensionAgentDemo .pad-branch-mode-gate p{color:#777d83;font-size:12px}
-#pensionAgentDemo .pad-branch-primary{border:0;border-radius:9px;background:#ffcc00;padding:9px 14px;font-weight:700;color:#26282c}
+/* Branch AI styles. Every rule is scoped by the .pad-branch- class prefix instead of #pensionAgentDemo:
+ * the floating widget is mounted on document.body because the Starroot shell wraps the business page in a
+ * transformed .pt-page, inside which position:fixed would follow the page scroll. No tag or global selectors. */
+.pad-branch-widget{position:relative;z-index:10000;font-family:inherit;font-size:13px;color:#26282c;line-height:1.6}
+.pad-branch-widget *{box-sizing:border-box}
+.pad-branch-widget [hidden]{display:none!important}
+.pad-branch-widget button,.pad-branch-widget textarea{font:inherit}
+.pad-branch-widget button{cursor:pointer;-webkit-appearance:none}
+.pad-branch-widget button:disabled{cursor:default;opacity:.45}
+.pad-branch-widget button:focus-visible,.pad-branch-widget textarea:focus-visible{outline:3px solid #867120;outline-offset:3px}
+.pad-branch-launcher{position:fixed;right:24px;bottom:24px;display:flex;align-items:center;gap:9px;height:52px;min-width:116px;padding:0 18px;border:1px solid #e6b800;border-radius:28px;background:#ffcc00;color:#26282c;font-size:14px;font-weight:700;box-shadow:0 6px 18px #47390024;transition:transform .16s,box-shadow .16s}
+.pad-branch-launcher:hover{transform:translateY(-2px);box-shadow:0 9px 23px #47390032}
+.pad-branch-launcher.is-open{background:#282a2e;border-color:#282a2e;color:#fff}
+.pad-branch-live-dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.6}
+.pad-branch-window{position:fixed;right:24px;bottom:88px;width:min(380px,calc(100vw - 32px));height:min(540px,calc(100dvh - 118px));height:min(540px,calc(100vh - 118px));display:flex;flex-direction:column;border:1px solid #dedfdc;border-radius:18px;background:#fff;box-shadow:0 18px 60px #20252b26,0 3px 12px #20252b12;overflow:hidden;transform-origin:bottom right;animation:padBranchOpen .18s ease-out}
+.pad-branch-header{height:66px;min-height:66px;display:flex;align-items:center;gap:10px;padding:12px 14px 12px 18px;border-bottom:1px solid #f0f0ed}
+.pad-branch-avatar{width:35px;height:35px;display:grid;place-items:center;border-radius:12px;background:#fff3c2;color:#766117;flex-shrink:0}
+.pad-branch-heading{flex:1;display:flex;flex-direction:column;gap:1px}
+.pad-branch-heading strong{font-size:15px;font-weight:700;letter-spacing:-.3px}
+.pad-branch-heading span{font-size:11px;color:#73776e;display:flex;align-items:center;gap:5px}
+.pad-branch-heading i{width:5px;height:5px;background:#769270;border-radius:50%}
+.pad-branch-icon{border:0;background:transparent;color:#70757d;width:30px;height:32px;display:grid;place-items:center;border-radius:8px;padding:4px}
+.pad-branch-icon:hover{background:#f2f3f4}
+.pad-branch-scope{display:flex;justify-content:space-between;gap:6px;font-size:10px;padding:8px 16px;background:#fafaf8;color:#787b75;border-bottom:1px solid #efefeb;white-space:nowrap}
+.pad-branch-scope span:first-child{color:#8b7130;font-weight:700}
+.pad-branch-context{padding:7px 16px;font-size:10px;color:#6c6f73;background:#fffdf4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-bottom:1px solid #f3edda}
+.pad-branch-body{position:relative;flex:1;min-height:60px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#d4d6d8 transparent;padding:18px 16px 20px}
+.pad-branch-welcome{padding:12px 2px 0}
+.pad-branch-welcome-icon{color:#8a7420;margin:0 0 10px}
+.pad-branch-welcome-icon svg{width:28px;height:28px}
+.pad-branch-welcome .pad-branch-welcome-title{font-size:18px;letter-spacing:-.6px;margin:0 0 7px;line-height:1.5}
+.pad-branch-welcome p{font-size:12px;color:#747980;line-height:1.8;margin:0 0 17px}
+.pad-branch-suggestions{display:flex;flex-direction:column;gap:7px}
+.pad-branch-suggestions button{width:100%;display:flex;align-items:center;justify-content:space-between;min-height:40px;text-align:left;padding:9px 13px;border:1px solid #e9e9e5;background:#fff;border-radius:10px;color:#4e545c;font-size:12px;transition:background .15s}
+.pad-branch-suggestions button:hover{background:#fffbee;border-color:#e7d88e}
+.pad-branch-suggestions span{color:#949996}
+.pad-branch-welcome .pad-branch-mock-note{font-size:10px;margin-top:12px;text-align:center;color:#949893}
+.pad-branch-messages{display:flex;flex-direction:column;gap:18px}
+.pad-branch-message{font-size:12px;line-height:1.8;max-width:100%;word-break:keep-all;overflow-wrap:anywhere;animation:padBranchMessage .16s ease-out}
+.pad-branch-message p{margin:0;white-space:pre-wrap}
+.pad-branch-message.is-user{align-self:flex-end;max-width:90%;background:#fff3bd;border-radius:13px 13px 3px 13px;padding:10px 13px;color:#403a28}
+.pad-branch-message.is-assistant{align-self:flex-start;max-width:100%;padding:0 2px 0}
+.pad-branch-author{font-size:11px;font-weight:700;color:#7a6a38;margin-bottom:7px}
+.pad-branch-message.is-system,.pad-branch-system{font-size:10px;text-align:center;align-self:center;color:#8c9094;padding:4px 6px}
+.pad-branch-answer-meta{font-size:10px;color:#9498a0;margin-top:8px}
+.pad-branch-result-action{border:1px solid #d9dad5;border-radius:8px;background:#fff;padding:7px 10px;color:#555b60;font-size:11px;margin-top:10px;font-weight:700}
+.pad-branch-result-action:hover{background:#f6f7f4}
+.pad-branch-typing{display:flex;gap:4px;margin-top:7px}
+.pad-branch-typing i{width:4px;height:4px;border-radius:100%;background:#9c9680;animation:padBranchDot 1s infinite}
+.pad-branch-typing i:nth-child(2){animation-delay:.13s}
+.pad-branch-typing i:nth-child(3){animation-delay:.26s}
+.pad-branch-footer{padding:8px 13px 10px;border-top:1px solid #f0f0ed;background:#fff;flex-shrink:0}
+.pad-branch-tools{display:flex;align-items:center;gap:10px;padding:0 3px 8px}
+.pad-branch-tools button{padding:0;border:0;background:none;color:#777d83;font-size:10px}
+.pad-branch-tools button:hover{color:#353a40;text-decoration:underline}
+.pad-branch-tools .pad-branch-cancel{margin-left:auto;color:#ad603f}
+.pad-branch-composer{display:flex;align-items:flex-end;gap:7px;padding:9px 8px 9px 12px;border:1px solid #dadcd9;border-radius:12px;background:#fff;margin:0}
+.pad-branch-composer:focus-within{border-color:#b8a252;box-shadow:0 0 0 2px #fff3c270}
+.pad-branch-composer textarea{width:100%;min-height:28px;max-height:92px;resize:none;border:0;background:none;outline:none!important;color:#26282c;font-size:12px;line-height:1.6;padding:4px 0;margin:0;overflow-y:auto}
+.pad-branch-composer textarea::placeholder{font-size:11px!important;font-weight:400!important;color:#9c9fa3!important;-webkit-text-fill-color:#9c9fa3!important;text-align:left!important}
+.pad-branch-send{width:30px;height:30px;flex-shrink:0;display:grid;place-items:center;border:0;border-radius:9px;background:#ffcc00;color:#282a2e;padding:4px}
+.pad-branch-disclaimer{font-size:9px;color:#9b9e9f;text-align:center;padding-top:7px}
+.pad-branch-examples{max-height:230px;overflow:auto;border-top:1px solid #e7e8e2;background:#fafbf8;padding:10px 14px;overscroll-behavior:contain}
+.pad-branch-examples-title{font-size:10px;color:#72776b;padding-bottom:9px}
+.pad-branch-examples button{display:flex;gap:8px;width:100%;text-align:left;padding:9px 0;background:transparent;border:0;border-top:1px solid #eeeeea;font-size:11px;color:#535960}
+.pad-branch-examples button>span:first-child{color:#a0a48d;font-size:10px;flex-shrink:0;padding-top:2px}
+.pad-branch-tour{padding:10px 16px;background:#fff9e2;border-bottom:1px solid #f3e9be;font-size:11px;flex-shrink:0}
+.pad-branch-tour>span{font-size:9px;color:#9b8134;font-weight:700;letter-spacing:.5px}
+.pad-branch-tour p{margin:4px 0 7px;color:#685b35;line-height:1.65}
+.pad-branch-tour button{border:1px solid #dacf9b;border-radius:6px;background:#fff;padding:3px 9px;font-size:10px;margin-right:6px;color:#6b5a2c}
+.pad-branch-mode-gate{padding:28px 22px;font-size:13px}
+.pad-branch-mode-gate p{color:#777d83;font-size:12px}
+.pad-branch-primary{border:0;border-radius:9px;background:#ffcc00;padding:9px 14px;font-weight:700;color:#26282c}
 /* Main-list support, shared by the independent preview and repository adapter. */
-#pensionAgentDemo .pad-branch-empty{padding:48px 20px;text-align:center;background:#fff;border:1px dashed #deded8;border-radius:12px;color:#7d8384;font-size:13px}
-#pensionAgentDemo .pad-branch-empty strong{display:block;font-size:16px;color:#4e5658;margin-bottom:8px}
-#pensionAgentDemo .pad-branch-reveal{animation:padBranchReveal .7s ease-out}
+.pad-branch-empty{padding:48px 20px;text-align:center;background:#fff;border:1px dashed #deded8;border-radius:12px;color:#7d8384;font-size:13px}
+.pad-branch-empty strong{display:block;font-size:16px;color:#4e5658;margin-bottom:8px}
+.pad-branch-reveal{animation:padBranchReveal .7s ease-out}
 @keyframes padBranchOpen{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}
 @keyframes padBranchMessage{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 @keyframes padBranchDot{0%,70%,100%{opacity:.3;transform:translateY(0)}35%{opacity:1;transform:translateY(-3px)}}
 @keyframes padBranchReveal{from{box-shadow:0 0 0 4px #e7c95970}to{box-shadow:0 0 0 0 transparent}}
-@media(prefers-reduced-motion:reduce){#pensionAgentDemo .pad-branch-widget *,#pensionAgentDemo .pad-branch-reveal{animation:none!important;transition:none!important}#pensionAgentDemo .pad-branch-launcher:hover{transform:none}}
+@media(prefers-reduced-motion:reduce){.pad-branch-widget *,.pad-branch-reveal{animation:none!important;transition:none!important}.pad-branch-launcher:hover{transform:none}}
 /* Additive result annotation, using the original page's compact inline visual language. */
-#pensionAgentDemo .pad-branch-resultbar{box-sizing:border-box;margin:0 0 12px;padding:11px 2px 12px;border-bottom:1px solid #E2E4E8;color:#696E76;font:12px/1.6 'KBFG Text','KBText','Pretendard Variable','Malgun Gothic',sans-serif}
-#pensionAgentDemo .pad-branch-resulthead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-#pensionAgentDemo .pad-branch-resulttitle{font-weight:700;color:#7A6108}
-#pensionAgentDemo .pad-branch-resultcount{font-weight:700;color:#26282C}
-#pensionAgentDemo .pad-branch-resultscope{font-size:11px;color:#9298A2}
-#pensionAgentDemo .pad-branch-resultactions{display:flex;gap:12px;margin-left:auto}
-#pensionAgentDemo .pad-branch-resultactions button{padding:0;background:none;border:0;cursor:pointer;font:inherit;color:#696E76}
-#pensionAgentDemo .pad-branch-resultactions button:hover{text-decoration:underline;color:#26282C}
-#pensionAgentDemo .pad-branch-resultchips{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px}
-#pensionAgentDemo .pad-branch-resultchip{padding:3px 10px;border:0;border-radius:999px;background:#FFF3C2;color:#7A6108;font:inherit;font-weight:700;cursor:pointer}
-#pensionAgentDemo .pad-branch-resultsort{font-size:11px;color:#9298A2;margin-left:4px}
-#pensionAgentDemo .pad-branch-resultunknown{margin-top:8px;font-size:11px;color:#94701D}
-#pensionAgentDemo .pad-branch-resultunknown p{margin:4px 0}
-#pensionAgentDemo .pad-branch-list-status{font-size:11px;color:#9298A2}
-#pensionAgentDemo .pad-branch-empty{padding:36px 20px;text-align:center;border:1px solid #ECEDF0;border-radius:16px;background:#fff;color:#9298A2;font-size:13px}
-#pensionAgentDemo .pad-branch-widget{font-family:'KBFG Text','KBText','Pretendard Variable','Malgun Gothic',sans-serif}
-@media(prefers-reduced-motion:reduce){#pensionAgentDemo .pad-branch-widget *,#pensionAgentDemo .pad-branch-resultbar *{animation:none!important;transition:none!important}}
+.pad-branch-resultbar{box-sizing:border-box;margin:0 0 12px;padding:11px 2px 12px;border-bottom:1px solid #E2E4E8;color:#696E76;font:12px/1.6 'KBFG Text','KBText','Pretendard Variable','Malgun Gothic',sans-serif}
+.pad-branch-resulthead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pad-branch-resulttitle{font-weight:700;color:#7A6108}
+.pad-branch-resultcount{font-weight:700;color:#26282C}
+.pad-branch-resultscope{font-size:11px;color:#9298A2}
+.pad-branch-resultactions{display:flex;gap:12px;margin-left:auto}
+.pad-branch-resultactions button{padding:0;background:none;border:0;cursor:pointer;font:inherit;color:#696E76}
+.pad-branch-resultactions button:hover{text-decoration:underline;color:#26282C}
+.pad-branch-resultchips{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px}
+.pad-branch-resultchip{padding:3px 10px;border:0;border-radius:999px;background:#FFF3C2;color:#7A6108;font:inherit;font-weight:700;cursor:pointer}
+.pad-branch-resultsort{font-size:11px;color:#9298A2;margin-left:4px}
+.pad-branch-resultunknown{margin-top:8px;font-size:11px;color:#94701D}
+.pad-branch-resultunknown p{margin:4px 0}
+.pad-branch-list-status{font-size:11px;color:#9298A2}
+.pad-branch-empty{padding:36px 20px;text-align:center;border:1px solid #ECEDF0;border-radius:16px;background:#fff;color:#9298A2;font-size:13px}
+.pad-branch-widget{font-family:'KBFG Text','KBText','Pretendard Variable','Malgun Gothic',sans-serif}
+@media(prefers-reduced-motion:reduce){.pad-branch-widget *,.pad-branch-resultbar *{animation:none!important;transition:none!important}}

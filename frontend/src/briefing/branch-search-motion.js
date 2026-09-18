@@ -12,8 +12,9 @@ function create(win){
    if(id&&rect.width&&rect.height)out.set(id,{rect,clone:el.cloneNode(true)});
   });return out;
  }
+ const fixedWorks=root=>{for(let e=root;e&&e!==win.document.documentElement;e=e.parentElement){const cs=win.getComputedStyle(e);if(cs.transform!=='none'||cs.perspective!=='none'||cs.filter!=='none'||cs.willChange==='transform')return false;}return true;};
  function play(root,before,changed){
-  cancel();if(!changed||reduced()||!root)return;
+  cancel();if(!changed||reduced()||!root)return;const ghostsOk=fixedWorks(root);
   const now=new Map();root.querySelectorAll('[data-branch-customer-id]').forEach(el=>now.set(el.getAttribute('data-branch-customer-id'),el));
   const beforeIds=Array.from(before.keys()),afterIds=Array.from(now.keys());
   if(JSON.stringify(beforeIds)===JSON.stringify(afterIds))return;
@@ -25,7 +26,7 @@ function create(win){
    if(typeof el.animate==='function')running.push(el.animate(frames,{duration:old?280:190,delay:old?0:Math.min(entered++*22,88),easing:'cubic-bezier(.2,.7,.2,1)',fill:'none'}));
   });
   before.forEach((old,id)=>{
-   if(now.has(id)||old.rect.bottom<0||old.rect.top>win.innerHeight)return;
+   if(!ghostsOk||now.has(id)||old.rect.bottom<0||old.rect.top>win.innerHeight)return;
    const ghost=old.clone;ghost.removeAttribute('id');ghost.removeAttribute('data-branch-customer-id');ghost.setAttribute('aria-hidden','true');ghost.inert=true;
    ghost.querySelectorAll('[id]').forEach(n=>n.removeAttribute('id'));
    Object.assign(ghost.style,{position:'fixed',left:old.rect.left+'px',top:old.rect.top+'px',width:old.rect.width+'px',height:old.rect.height+'px',margin:'0',pointerEvents:'none',zIndex:'25',boxSizing:'border-box',animation:'none'});

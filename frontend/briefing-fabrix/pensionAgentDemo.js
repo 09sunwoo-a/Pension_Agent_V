@@ -1950,8 +1950,9 @@ function create(win){
    if(id&&rect.width&&rect.height)out.set(id,{rect,clone:el.cloneNode(true)});
   });return out;
  }
+ const fixedWorks=root=>{for(let e=root;e&&e!==win.document.documentElement;e=e.parentElement){const cs=win.getComputedStyle(e);if(cs.transform!=='none'||cs.perspective!=='none'||cs.filter!=='none'||cs.willChange==='transform')return false;}return true;};
  function play(root,before,changed){
-  cancel();if(!changed||reduced()||!root)return;
+  cancel();if(!changed||reduced()||!root)return;const ghostsOk=fixedWorks(root);
   const now=new Map();root.querySelectorAll('[data-branch-customer-id]').forEach(el=>now.set(el.getAttribute('data-branch-customer-id'),el));
   const beforeIds=Array.from(before.keys()),afterIds=Array.from(now.keys());
   if(JSON.stringify(beforeIds)===JSON.stringify(afterIds))return;
@@ -1963,7 +1964,7 @@ function create(win){
    if(typeof el.animate==='function')running.push(el.animate(frames,{duration:old?280:190,delay:old?0:Math.min(entered++*22,88),easing:'cubic-bezier(.2,.7,.2,1)',fill:'none'}));
   });
   before.forEach((old,id)=>{
-   if(now.has(id)||old.rect.bottom<0||old.rect.top>win.innerHeight)return;
+   if(!ghostsOk||now.has(id)||old.rect.bottom<0||old.rect.top>win.innerHeight)return;
    const ghost=old.clone;ghost.removeAttribute('id');ghost.removeAttribute('data-branch-customer-id');ghost.setAttribute('aria-hidden','true');ghost.inert=true;
    ghost.querySelectorAll('[id]').forEach(n=>n.removeAttribute('id'));
    Object.assign(ghost.style,{position:'fixed',left:old.rect.left+'px',top:old.rect.top+'px',width:old.rect.width+'px',height:old.rect.height+'px',margin:'0',pointerEvents:'none',zIndex:'25',boxSizing:'border-box',animation:'none'});
@@ -1980,7 +1981,8 @@ return {create};
 ;
 
 /* branch-search-widget.js */
-/* Non-modal floating chat widget. Created outside the legacy full-render mount. */
+/* Non-modal floating chat widget. Mounted on document.body (outside the shell's transformed .pt-page and the
+ * legacy full-render mount) so position:fixed is viewport-relative; removed again on destroy. */
 (function(root){'use strict';
 const C=root.PensionBranchSearchCore;
 const svg=(path)=>'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+path+'</svg>';
@@ -1988,14 +1990,14 @@ const icons={chat:svg('<path d="M20 11.5a8 8 0 0 1-8 8H5l-3 2V11.5a9 9 0 0 1 18 
 function mount(container,session,options){
  options=options||{};const meta=session.metadata();const scopeText=(meta.scopeLabel||'조회 대상')+' '+meta.recordCount+'명';const dateText=meta.asOfDate?meta.asOfDate.replace(/-/g,'.'):'기준일 미확인';let open=false,visible=true,disposed=false,composing=false,examplesOpen=false,tour=-1,enabled=options.enabled!==false;
  const rootEl=document.createElement('div');rootEl.className='pad-branch-widget';rootEl.setAttribute('data-branch-widget','');
- rootEl.innerHTML='<section class="pad-branch-window" id="pad-branch-window" role="dialog" aria-modal="false" aria-label="부점 AI 고객 검색" hidden>'+
- '<header class="pad-branch-header"><div class="pad-branch-avatar">'+icons.spark+'</div><div class="pad-branch-heading"><strong>부점 AI</strong><span><i></i>고객 조회·집계·추출</span></div><button type="button" class="pad-branch-icon" data-action="new" title="새 대화 · 목록 유지" aria-label="새 대화">'+icons.reset+'</button><button type="button" class="pad-branch-icon" data-action="close" aria-label="대화창 최소화">'+icons.minus+'</button></header>'+
+ rootEl.innerHTML='<div class="pad-branch-window" id="pad-branch-window" role="dialog" aria-modal="false" aria-label="부점 AI 고객 검색" hidden>'+
+ '<div class="pad-branch-header"><div class="pad-branch-avatar">'+icons.spark+'</div><div class="pad-branch-heading"><strong>부점 AI</strong><span><i></i>고객 조회·집계·추출</span></div><button type="button" class="pad-branch-icon" data-action="new" title="새 대화 · 목록 유지" aria-label="새 대화">'+icons.reset+'</button><button type="button" class="pad-branch-icon" data-action="close" aria-label="대화창 최소화">'+icons.minus+'</button></div>'+
  '<div class="pad-branch-scope"><span>현재 화면 기준</span><span>'+scopeText+' · '+dateText+'</span></div>'+
  '<div class="pad-branch-mode-gate" hidden><strong>현재 고객 목록을 확인해 주세요.</strong><p>검색 원본 연결을 확인할 수 없습니다. 다른 고객 데이터로 대체하지 않습니다.</p><button class="pad-branch-primary" type="button" data-action="enable">현재 데이터 다시 확인</button></div>'+
  '<div class="pad-branch-context" hidden></div><div class="pad-branch-tour" hidden></div>'+
- '<div class="pad-branch-body" data-branch-scroll><div class="pad-branch-welcome"><div class="pad-branch-welcome-icon">'+icons.chat+'</div><h3>어떤 고객을 찾으시나요?</h3><p>부점 현황을 확인하고, 원하는 조건으로<br>고객 목록을 좁혀 보세요.</p><div class="pad-branch-suggestions"><button type="button" data-question="overview">IRP 고객 현황<span>↗</span></button><button type="button" data-question="cash">납입금 미운용 고객<span>↗</span></button><button type="button" data-question="do">DO 실행 예정 고객<span>↗</span></button></div><p class="pad-branch-mock-note">현재 고객 데이터 조회 · 실제 AI 미연결</p></div><div class="pad-branch-messages" role="log" aria-live="polite" aria-relevant="additions text" aria-label="부점 AI 대화"></div></div>'+
+ '<div class="pad-branch-body" data-branch-scroll><div class="pad-branch-welcome"><div class="pad-branch-welcome-icon">'+icons.chat+'</div><div class="pad-branch-welcome-title">어떤 고객을 찾으시나요?</div><p>부점 현황을 확인하고, 원하는 조건으로<br>고객 목록을 좁혀 보세요.</p><div class="pad-branch-suggestions"><button type="button" data-question="overview">IRP 고객 현황<span>↗</span></button><button type="button" data-question="cash">납입금 미운용 고객<span>↗</span></button><button type="button" data-question="do">DO 실행 예정 고객<span>↗</span></button></div><p class="pad-branch-mock-note">현재 고객 데이터 조회 · 실제 AI 미연결</p></div><div class="pad-branch-messages" role="log" aria-live="polite" aria-relevant="additions text" aria-label="부점 AI 대화"></div></div>'+
  '<div class="pad-branch-examples" hidden></div>'+
- '<footer class="pad-branch-footer"><div class="pad-branch-tools"><button type="button" data-action="examples" aria-expanded="false">예시 질문</button><button type="button" data-action="tour">6턴 시연 가이드</button><button type="button" data-action="restore" title="검색 결과를 해제하고 기존 목록으로">기존 목록</button><button type="button" data-action="cancel" class="pad-branch-cancel" hidden>조회 취소</button></div><form class="pad-branch-composer"><textarea rows="1" maxlength="1200" aria-label="찾고 싶은 고객 조건" placeholder="찾고 싶은 고객 조건을 입력하세요"></textarea><button type="submit" aria-label="질문 전송" class="pad-branch-send" disabled>'+icons.arrow+'</button></form><div class="pad-branch-disclaimer">확인된 데이터만 조회해요. 거래는 실행하지 않아요.</div></footer></section>'+
+ '<div class="pad-branch-footer"><div class="pad-branch-tools"><button type="button" data-action="examples" aria-expanded="false">예시 질문</button><button type="button" data-action="tour">6턴 시연 가이드</button><button type="button" data-action="restore" title="검색 결과를 해제하고 기존 목록으로">기존 목록</button><button type="button" data-action="cancel" class="pad-branch-cancel" hidden>조회 취소</button></div><form class="pad-branch-composer"><textarea rows="1" maxlength="1200" aria-label="찾고 싶은 고객 조건" placeholder="찾고 싶은 고객 조건을 입력하세요"></textarea><button type="submit" aria-label="질문 전송" class="pad-branch-send" disabled>'+icons.arrow+'</button></form><div class="pad-branch-disclaimer">확인된 데이터만 조회해요. 거래는 실행하지 않아요.</div></div></div>'+
  '<button type="button" class="pad-branch-launcher" aria-label="부점 AI 열기" aria-controls="pad-branch-window" aria-expanded="false">'+icons.chat+'<span>부점 AI</span><span class="pad-branch-live-dot"></span></button>';
  container.appendChild(rootEl);
  const scopeNode=rootEl.querySelector('.pad-branch-scope');scopeNode.title=meta.scopeNote||'';
@@ -2078,7 +2080,7 @@ root.PensionBranchSearchWidget={mount};
 (function(root){'use strict';
  const C=root.PensionBranchSearchCore;
  function bar(session,onRestore){
-  const el=document.createElement('section');el.className='pad-branch-resultbar';el.setAttribute('aria-label','AI 검색 결과 조건');
+  const el=document.createElement('div');el.className='pad-branch-resultbar';el.setAttribute('aria-label','AI 검색 결과 조건');
   const state=session.get().state,meta=session.metadata();
   const head=document.createElement('div');head.className='pad-branch-resulthead';
   const title=document.createElement('span');title.className='pad-branch-resulttitle';title.textContent='AI 검색 결과';
@@ -2135,7 +2137,8 @@ function mount(component,params){
  const ctx={component,app,source,session,motion,applied:false,pending:false,before:new Map(),rows:new Map(),oldRender:render,lastSelected:null,legacySnapshot:null};current=ctx;
  function restore(){session.cancel();session.clearReference();ctx.applied=false;ctx.pending=true;component.setState(Object.assign({},ctx.legacySnapshot||{filter:'all',extA:null,extOpen:false},{branchSearchRevision:session.get().revision+1}));}
  function reveal(){const list=app.querySelector('[data-branch-list]');if(list){list.scrollIntoView({behavior:motion.reduced()?'auto':'smooth',block:'start'});list.classList.add('pad-branch-reveal');setTimeout(()=>list.classList.remove('pad-branch-reveal'),800);}}
- ctx.restore=restore;ctx.widget=root.PensionBranchSearchWidget.mount(app,session,{enabled:true,onRestore:restore,onReveal:reveal});
+ // The Starroot shell renders the page inside a transformed .pt-page; position:fixed only works from document.body.
+ ctx.restore=restore;ctx.widget=root.PensionBranchSearchWidget.mount(document.body,session,{enabled:true,onRestore:restore,onReveal:reveal});
  ctx.off=session.subscribe(e=>{
   if(e.type==='apply'){
    if(!ctx.applied)ctx.legacySnapshot=C.copy({filter:component.state.filter,ext:component.state.ext||null,extA:component.state.extA||null,extOpen:!!component.state.extOpen});

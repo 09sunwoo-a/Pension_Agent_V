@@ -336,6 +336,18 @@ height: calc(100vh - 44px - var(--starroot-top-offset, 0px));
 
 ---
 
+## 13-1. 플로팅 요소는 `.pt-page` 밖에 둔다
+
+`.pt-page`에는 `transform`이 걸려 있어 그 안의 `position: fixed`는 뷰포트가 아니라 `.pt-page` 기준으로 잡힌다. 페이지를 스크롤하면 같이 움직이고 창이 화면 밖에 열린다(부점 AI 채팅창에서 실제 발생).
+
+```text
+✅ 플로팅 런처·팝업은 document.body에 append하고 onBeforeUnload에서 제거한다.
+✅ 그 요소의 CSS는 #pensionAgentDemo 대신 고유 클래스 접두사(.pad-branch-*)로만 범위를 잡는다. 태그·전역 선택자는 여전히 금지.
+❌ 뷰포트 좌표(getBoundingClientRect)로 계산한 값을 .pt-page 안의 fixed 요소에 그대로 쓰지 않는다.
+```
+
+---
+
 ## 14. 폰트
 
 Standalone mock의 자체 font asset은 포팅 시 제거했다.

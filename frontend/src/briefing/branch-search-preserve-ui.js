@@ -2,7 +2,7 @@
 (function(root){'use strict';
  const C=root.PensionBranchSearchCore;
  function bar(session,onRestore){
-  const el=document.createElement('section');el.className='pad-branch-resultbar';el.setAttribute('aria-label','AI 검색 결과 조건');
+  const el=document.createElement('div');el.className='pad-branch-resultbar';el.setAttribute('aria-label','AI 검색 결과 조건');
   const state=session.get().state,meta=session.metadata();
   const head=document.createElement('div');head.className='pad-branch-resulthead';
   const title=document.createElement('span');title.className='pad-branch-resulttitle';title.textContent='AI 검색 결과';

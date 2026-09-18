@@ -21,7 +21,8 @@ function mount(component,params){
  const ctx={component,app,source,session,motion,applied:false,pending:false,before:new Map(),rows:new Map(),oldRender:render,lastSelected:null,legacySnapshot:null};current=ctx;
  function restore(){session.cancel();session.clearReference();ctx.applied=false;ctx.pending=true;component.setState(Object.assign({},ctx.legacySnapshot||{filter:'all',extA:null,extOpen:false},{branchSearchRevision:session.get().revision+1}));}
  function reveal(){const list=app.querySelector('[data-branch-list]');if(list){list.scrollIntoView({behavior:motion.reduced()?'auto':'smooth',block:'start'});list.classList.add('pad-branch-reveal');setTimeout(()=>list.classList.remove('pad-branch-reveal'),800);}}
- ctx.restore=restore;ctx.widget=root.PensionBranchSearchWidget.mount(app,session,{enabled:true,onRestore:restore,onReveal:reveal});
+ // The Starroot shell renders the page inside a transformed .pt-page; position:fixed only works from document.body.
+ ctx.restore=restore;ctx.widget=root.PensionBranchSearchWidget.mount(document.body,session,{enabled:true,onRestore:restore,onReveal:reveal});
  ctx.off=session.subscribe(e=>{
   if(e.type==='apply'){
    if(!ctx.applied)ctx.legacySnapshot=C.copy({filter:component.state.filter,ext:component.state.ext||null,extA:component.state.extA||null,extOpen:!!component.state.extOpen});

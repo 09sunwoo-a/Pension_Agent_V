@@ -366,8 +366,10 @@ async function branchSearchCheck() {
   assert.ok(css.startsWith(base), 'Original stylesheet stays an exact prefix');
   let depth = 0, buf = ''; const selectors = [];
   for (const ch of css.slice(base.length)) { if (ch === '{') { if (!depth) selectors.push(buf.replace(/\/\*[\s\S]*?\*\//g, '').trim()); depth++; buf = ''; } else if (ch === '}') { depth--; buf = ''; } else if (!depth) buf += ch; }
-  const stray = selectors.filter(s => !/^#pensionAgentDemo\b/.test(s) && !/^@(keyframes padBranch|media)/.test(s));
-  assert.deepEqual(stray, [], 'Added CSS stays under #pensionAgentDemo');
+  // The widget is mounted on document.body (the shell's .pt-page is transformed, which breaks position:fixed),
+  // so its rules are scoped by the .pad-branch- class prefix; no tag or global selector is allowed.
+  const stray = selectors.filter(s => !/^(#pensionAgentDemo\b|\.pad-branch-)/.test(s) && !/^@(keyframes padBranch|media)/.test(s));
+  assert.deepEqual(stray, [], 'Added CSS stays namespaced (.pad-branch- classes or #pensionAgentDemo)');
   console.log('PASS: 부점 AI golden regression (' + turns + ' turns, 8 review customers, test-only), session ordering/cancel/failure, real main list projected (' + ids.length + ' rows, ' + structured.length + ' structured), renderer hooks, list markup, namespaced CSS.');
 }
 
