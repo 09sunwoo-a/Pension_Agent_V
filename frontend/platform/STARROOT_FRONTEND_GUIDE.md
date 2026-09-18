@@ -93,8 +93,8 @@ pensionAgentDemo.js       ← 한 파일 유지
 HTML head (현재 `frontend/app/mnPensionAgentDemo.html`):
 
 ```html
-<link rel="stylesheet" href="/mnbank/app/css/bfe/pension/pensionAgentDemo.css">
-<script id="PENSION_AGENT_DEMO" src="/mnbank/app/js/bfe/pension/pensionAgentDemo.js"></script>
+<link rel="stylesheet" href="/mnbank/app/html/bfe/asstmgt/asst/pensionAgentDemo.css">
+<script id="PENSION_AGENT_DEMO" src="/mnbank/app/html/bfe/asstmgt/asst/pensionAgentDemo.js"></script>
 ```
 
 > `frontend/app/local_preview.html` 은 **로컬 확인 전용**으로 상대경로를 쓴다.

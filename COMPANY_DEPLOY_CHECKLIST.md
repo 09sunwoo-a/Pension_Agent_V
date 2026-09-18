@@ -33,15 +33,15 @@ Node·개별 고객 JSON·프론트 원본 모듈은 WAS에 올리지 않습니�
 
 - [ ] 기존 사내 화면 파일을 백업하고 원복 위치를 기록합니다.
 - [ ] 반입 JS의 파일코드가 `var STARROOT_FILE_CODE = '1288272';`인지 확인합니다. 빌드 기본값이 1288272이므로 별도 치환은 필요 없고, 다른 코드로 올릴 때만 `node tools/briefing/build.js <숫자파일코드>`로 다시 생성합니다.
-- [ ] HTML을 업무 페이지에 등록하고 JS/CSS를 아래 경로에 배치합니다.
+- [ ] HTML을 업무 페이지에 등록하고 JS/CSS를 HTML과 같은 폴더인 아래 경로에 배치합니다. HTML의 `<link>`·`<script>`도 이 경로를 가리킵니다.
 
 ```text
-/mnbank/app/js/bfe/pension/pensionAgentDemo.js
-/mnbank/app/css/bfe/pension/pensionAgentDemo.css
+/mnbank/app/html/bfe/asstmgt/asst/pensionAgentDemo.js
+/mnbank/app/html/bfe/asstmgt/asst/pensionAgentDemo.css
 ```
 
 - [ ] HTML/CSS/JS가 모두 200으로 로드되는지 확인합니다. Starroot에서 JS가 XHR로 보여도 정상일 수 있습니다.
-- [ ] **실제 로드 경로와 캐시 확인 (2026-09-18 사내 화면에서 확인)**: 브라우저 테스트 환경은 CSS를 `/mnbank/app/html/bfe/asstmgt/asst/pensionAgentDemo.css`에서 읽었습니다(위 경로가 아님). 반입 후 F12 → Network에서 실제 로드된 CSS/JS의 URL과 크기가 이번 반입본과 같은지 보고, 다르면 그 경로의 파일을 교체하고 캐시를 비운 뒤(Ctrl+Shift+R 또는 Disable cache) 다시 확인합니다. 콘솔에서 `getComputedStyle(document.querySelector('.pad-branch-launcher')).position`이 `fixed`면 CSS가 적용된 것입니다. 옛 CSS가 남아 있어도 JS에 실린 사본으로 부점 AI 버튼은 뜨지만 콘솔에 `[Branch AI] … using the bundled copy` 경고가 남습니다.
+- [ ] **실제 로드 경로와 캐시 확인 (2026-09-18 사내 화면에서 확인)**: 브라우저 테스트 환경은 CSS를 `/mnbank/app/html/bfe/asstmgt/asst/pensionAgentDemo.css`에서 읽었고, 이후 HTML·체크리스트의 경로를 여기에 맞췄습니다. 반입 후 F12 → Network에서 실제 로드된 CSS/JS의 URL과 크기가 이번 반입본과 같은지 보고, 다르면 그 경로의 파일을 교체하고 캐시를 비운 뒤(Ctrl+Shift+R 또는 Disable cache) 다시 확인합니다. 콘솔에서 `getComputedStyle(document.querySelector('.pad-branch-launcher')).position`이 `fixed`면 CSS가 적용된 것입니다. 옛 CSS가 남아 있어도 JS에 실린 사본으로 부점 AI 버튼은 뜨지만 콘솔에 `[Branch AI] … using the bundled copy` 경고가 남습니다.
 - [ ] Shell이 `PG_<파일코드>.onParam()`을 호출해 화면을 초기화하는지 확인합니다. `DOMContentLoaded`를 추가하지 않습니다.
 - [ ] 기존 김서연 화면, 구조화 김서연 `DEMO-01`, 30개 사례가 목록에 표시되는지 확인합니다.
 - [ ] 상단 고객정보/IRP/보유상품이 표시되는지 확인합니다. 상담 후 확인 기록은 없습니다.

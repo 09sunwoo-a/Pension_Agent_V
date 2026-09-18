@@ -91,8 +91,8 @@ function preview() {
   // Static preview only. No fake Agent, mock HTTP endpoint or credential capture.
   const assets = new Map([
     ['/', ['mnPensionAgentDemo.html', 'text/html; charset=utf-8']],
-    ['/mnbank/app/js/bfe/pension/pensionAgentDemo.js', ['pensionAgentDemo.js', 'text/javascript; charset=utf-8']],
-    ['/mnbank/app/css/bfe/pension/pensionAgentDemo.css', ['pensionAgentDemo.css', 'text/css; charset=utf-8']]
+    ['/mnbank/app/html/bfe/asstmgt/asst/pensionAgentDemo.js', ['pensionAgentDemo.js', 'text/javascript; charset=utf-8']],
+    ['/mnbank/app/html/bfe/asstmgt/asst/pensionAgentDemo.css', ['pensionAgentDemo.css', 'text/css; charset=utf-8']]
   ]);
   const server = require('http').createServer((req, res) => {
     const asset = assets.get(req.url);
