@@ -299,9 +299,7 @@
     if (kind === 'isa_detail') text += '\n확인된 ISA 평가금액 합계: ' + money(m.knownIsaAmountKrw !== undefined ? m.knownIsaAmountKrw : m.isaKnownAmountSumKrw) + '.' + (m.isaAmountUnknownCount ? ' 금액 미확인 ' + m.isaAmountUnknownCount + '건은 합산하지 않았습니다.' : '');
     if (kind === 'external_detail') text += '\n확인된 외부 IRP ' + m.externalIrpCount + '개 · ' + money(m.knownExternalIrpAmountKrw) + '.\n확인일 ' + m.verificationDate + ' · 원본에 기록된 계좌만 합산했으며 실시간 갱신값으로 간주하지 않습니다.';
     if (kind === 'deposit_detail') text += '\n정기예금 금액을 고객별로 합산한 뒤 IRP 전체 잔액으로 정렬했습니다.';
-    if (result.unknownCount) text += '\n확인 필요 ' + result.unknownCount + '명: ' + result.unknownCaseIds.map(id => records.find(r => idOf(r) === id).customer.name).join('·') + '. 관련 값이 없어 조건 충족 여부를 판단하지 않았습니다.';
-    if (result.uiEffect === 'answer_only_keep_list') text += '\n고객 목록은 그대로 유지했습니다.';
-    else text += '\n검색조건을 고객 목록에 적용했습니다.';
+    if (result.unknownCount) text += '\n확인 필요 ' + result.unknownCount + '명';
     return text;
   }
 

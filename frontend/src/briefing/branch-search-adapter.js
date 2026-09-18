@@ -24,7 +24,7 @@ function mount(component,params){
  // Back to the original list: the 전체 chip, the KPI cards and the chat's 기존 목록 button all end the search mode.
  function restore(){session.cancel();session.clearReference();ctx.applied=false;ctx.pending=true;component.setState({filter:'all',branchSearchRevision:session.get().revision+1});}
  // The Starroot shell renders the page inside a transformed .pt-page; position:fixed only works from document.body.
- ctx.restore=restore;ctx.widget=root.PensionBranchSearchWidget.mount(document.body,session,{enabled:true,onRestore:restore});
+ ctx.restore=restore;ctx.widget=root.PensionBranchSearchWidget.mount(document.body,session,{onRestore:restore});
  ctx.off=session.subscribe(e=>{
   if(e.type!=='apply')return;
   ctx.applied=true;ctx.pending=true;component.setState({branchSearchRevision:e.revision,filter:'all'});
