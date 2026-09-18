@@ -1,5 +1,6 @@
 /* Conversation state is independent of DOM and transport. Latest request wins.
- * options.applyAggregate: the screen applies aggregate answers to the list too (golden tests keep the default). */
+ * options.applyAggregate: the screen applies aggregate answers to the list too (golden tests keep the default).
+ * options.latency: minimum thinking time in ms before a mock answer, so the pending state is visible (0 = none). */
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory(require('./branch-search-core'));else root.PensionBranchSearchSession=factory(root.PensionBranchSearchCore);})(typeof window==='undefined'?globalThis:window,function(C){
 'use strict';
 function create(input,options){
@@ -7,7 +8,8 @@ function create(input,options){
  const data=C.copy(input),records=data.records,asOf=data.metadata.asOfDate;
  let state=C.initialState(records),messages=[],busy=false,ticket=0,revision=0,sequence=0,disposed=false;
  const listeners=new Set();
- const provider=options.provider||((text,s)=>Promise.resolve(C.resolve(text,s,asOf))),applyAggregate=!!options.applyAggregate;
+ const provider=options.provider||((text,s)=>Promise.resolve(C.resolve(text,s,asOf))),applyAggregate=!!options.applyAggregate,latency=Math.max(0,Number(options.latency)||0);
+ const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
  const emit=(type,extra)=>{if(disposed)return;const e=Object.assign({type,revision,busy,state:C.copy(state),messages:C.copy(messages)},extra||{});listeners.forEach(f=>f(e));};
  const add=(role,text,extra)=>{const m=Object.assign({id:++sequence,role,text},extra||{});messages.push(m);return m;};
  function cancel(reason){ticket++;if(busy){busy=false;messages.forEach(m=>{if(m.pending){m.pending=false;m.cancelled=true;m.text=reason||'요청을 취소했습니다. 목록은 유지합니다.';}});emit('cancel');}}
@@ -18,7 +20,7 @@ function create(input,options){
   add('user',text);const reply=add('assistant','검색조건을 확인하고 있어요.',{pending:true});
   const snapshot=C.copy(state);emit('pending');
   try{
-   const request=await provider(text,snapshot);
+   const request=latency?(await Promise.all([provider(text,snapshot),wait(latency)]))[0]:await provider(text,snapshot);
    if(disposed||token!==ticket)return null;
    const out=C.execute(records,snapshot,request,asOf,{applyAggregate});
    state=out.state;busy=false;reply.pending=false;reply.text=out.result.answer;reply.result=out.result;

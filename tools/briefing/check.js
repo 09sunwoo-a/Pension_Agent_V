@@ -332,6 +332,7 @@ async function branchSearchCheck() {
   { const s = S.create(I), original = JSON.stringify(I); s.records()[0].customer.name = 'CHANGED'; assert.notEqual(s.records()[0].customer.name, 'CHANGED'); const x = s.get(); x.state.mainListCaseIds = []; assert.equal(s.get().state.mainListCaseIds.length, 8); await s.send(C.turns[0]); assert.equal(JSON.stringify(I), original, 'Snapshots are copies'); s.destroy(); }
   { const s = S.create(I); await s.send(C.turns[0]); const prev = s.get().state; assert.equal((await s.send('절대로 해석하면 안 되는 임의의 문장')).resultStatus, 'unsupported_mock'); assert.deepEqual(s.get().state, prev); s.destroy(); }
   { const s = S.create(I); let notice = ''; s.subscribe(e => { if (e.notice) notice = e.notice; }); assert.equal(await s.send('가'.repeat(1201)), null); assert.ok(notice && s.get().messages.length === 0, 'Oversized input is not executed'); s.destroy(); }
+  { const s = S.create(I, { latency: 80 }); const types = []; s.subscribe(e => types.push(e.type)); const t0 = Date.now(); const p = s.send(C.turns[0]); assert.deepEqual([s.get().busy, types], [true, ['pending']], 'Latency keeps the reply pending'); const r = await p; assert.ok(r && Date.now() - t0 >= 75 && !s.get().busy && types.at(-1) === 'answer', 'Mock answer arrives after the thinking time'); const p2 = s.send(C.turns[1]); s.cancel(); assert.deepEqual([await p2, s.get().messages.at(-1).cancelled, s.get().busy], [null, true, false], 'Stop during the thinking time cancels the reply'); s.destroy(); }
   // Bundle level: the built page's real main list (legacy demo rows + case customers), projected read-only.
   const w = ctx.window, page = new w.TestComponent({}); page.setState = patch => Object.assign(page.state, typeof patch === 'function' ? patch(page.state) : patch);
   const queue = page.renderVals().queue, rowsBefore = JSON.stringify(queue.map(r => [r.id, r.name, r.bal, r.ret, r.tags.map(t => t.t)]));
@@ -370,6 +371,7 @@ async function branchSearchCheck() {
   assert.ok(!/extToggle|extOpen|extOn\b|조건 추출/.test(html) && !/PensionBranchPreserveUI|resultbar|결과 위치 보기|해당 고객 보기/.test(js), '조건 추출 UI, result bar and reveal/apply buttons removed');
   for (const gone of ['6턴 시연 가이드', '조회 취소', '실제 AI 미연결', '<i></i>고객 조회', 'pad-branch-mode-gate', 'pad-branch-scope', 'pad-branch-live-dot', 'pad-branch-answer-meta', 'pad-branch-author', 'pad-branch-tour']) assert.ok(!js.includes(gone), 'Removed chat element still in the bundle: ' + gone);
   assert.ok(/height:min\(640px,calc\(100vh - 118px\)\)/.test(fs.readFileSync(path.join(OUT, 'pensionAgentDemo.css'), 'utf8')), 'Chat window height 640px');
+  for (const part of ['branchSearchLatency', 'pad-branch-loading__pill', 'pad-spinner', 'pad-branch-updated-tag', 'pad-branch-followups', 'pad-branch-caret', 'has-unread', 'is-stop']) assert.ok(js.includes(part), 'Waiting/completion UI piece in the bundle: ' + part);
   const css = fs.readFileSync(path.join(OUT, 'pensionAgentDemo.css'), 'utf8'), base = fs.readFileSync(path.join(ROOT, 'frontend/src/briefing/pensionAgentDemo.css'), 'utf8');
   assert.ok(css.startsWith(base), 'Original stylesheet stays an exact prefix');
   let depth = 0, buf = ''; const selectors = [];
