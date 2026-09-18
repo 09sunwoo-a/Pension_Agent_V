@@ -54,7 +54,6 @@ function mount(container,session,options){
    if(m.pending){const dot=document.createElement('span');dot.className='pad-branch-typing';dot.setAttribute('aria-hidden','true');dot.innerHTML='<i></i><i></i><i></i>';n.appendChild(dot);}
    if(m.result&&m.result.resolvedQuery){
     const stamp=document.createElement('div');stamp.className='pad-branch-answer-meta';stamp.textContent=scopeText+' · '+dateText;n.appendChild(stamp);
-    const b=document.createElement('button');b.type='button';b.dataset.message=String(m.id);b.dataset.action=m.result.intent==='aggregate'?'apply-answer':'reveal';b.className='pad-branch-result-action';b.textContent=m.result.intent==='aggregate'?'해당 고객 보기 ↗':'결과 위치 보기 ↗';n.appendChild(b);
    }
    if(m.retryText){const b=document.createElement('button');b.type='button';b.dataset.message=String(m.id);b.dataset.action='retry';b.className='pad-branch-result-action';b.textContent='다시 시도';n.appendChild(b);}
   });
@@ -81,8 +80,6 @@ function mount(container,session,options){
   if(act==='tour'){session.reset();session.newConversation();tour=0;renderTour();}
   if(act==='tour-next'){if(tour<6){input.value=C.turns[tour];refreshDraft();input.focus();}}
   if(act==='tour-close'){tour=-1;renderTour();}
-  if(act==='apply-answer'){const m=current.messages.find(x=>String(x.id)===b.dataset.message);if(m&&m.result)session.applyAnswer(m.result);}
-  if(act==='reveal'&&options.onReveal)options.onReveal();
   if(act==='retry'){const m=current.messages.find(x=>String(x.id)===b.dataset.message);if(m)submit(m.retryText);}
  });
  rootEl.addEventListener('keydown',e=>{if(e.key==='Escape'&&open){e.stopPropagation();setOpen(false);}});

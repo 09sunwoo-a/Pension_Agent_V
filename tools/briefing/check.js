@@ -51,7 +51,7 @@ assert.equal(app.renderVals().pfRet, '+3.1%');
 // Main list: legacy demo rows + the 30 case customers (DEMO-01 stays in the picker only).
 // Each case row's badges are its signals, colored the same way as the briefing header.
 const LEGACY_ROWS = 18, queued = customers.filter(c => c.briefingMeta.caseId !== 'DEMO-01');
-app.state.sel = null; app.state.filter = 'all'; app.state.extA = null;
+app.state.sel = null; app.state.filter = 'all';
 const dash = app.renderVals();
 assert.equal(dash.showDashboard, true);
 assert.equal(dash.queue.length, LEGACY_ROWS + queued.length, 'Main list = legacy rows + case customers');
@@ -327,7 +327,8 @@ async function branchSearchCheck() {
   { const { session: s, queue } = pending(); s.apply({ query: C.segment('납입금 미운용'), limit: null }); const prev = s.get().state; const p = s.send(C.questions[2][1]); queue[0].reject(new Error('unavailable')); await p;
     assert.deepEqual(s.get().state, prev); assert.ok(s.get().messages.at(-1).error, 'Failure keeps query and list'); s.destroy(); }
   { const { session: s, resolve } = pending(); let events = 0; s.subscribe(() => events++); const p = s.send(C.questions[0][1]); s.destroy(); const n = events; resolve(0); await p; assert.equal(events, n, 'Destroy cancels in-flight updates'); }
-  { const s = S.create(I); const a = await s.send(C.turns[0]); await s.send(C.questions[2][1]); s.applyAnswer(a); assert.deepEqual(s.get().state.mainListCaseIds, ['B02-04', 'B02-27'], 'Aggregate answer reapplies its query'); s.destroy(); }
+  { const s = S.create(I); const a = await s.send(C.turns[0]); assert.deepEqual([a.uiEffect, s.get().state.mainListCaseIds.length, /유지했습니다/.test(a.answer)], ['answer_only_keep_list', 8, true], 'Default session keeps the list on an aggregate answer (golden semantics)'); s.destroy(); }
+  { const s = S.create(I, { applyAggregate: true }); const a = await s.send(C.turns[0]); assert.deepEqual([a.uiEffect, s.get().state.mainListCaseIds, /적용했습니다/.test(a.answer)], ['apply_customer_list', ['B02-04', 'B02-27'], true], 'Screen session applies an aggregate answer to the list at once'); await s.send(C.turns[1]); assert.deepEqual(s.get().state.mainListCaseIds, ['B02-04'], 'Follow-up narrows the applied list'); s.destroy(); }
   { const s = S.create(I), original = JSON.stringify(I); s.records()[0].customer.name = 'CHANGED'; assert.notEqual(s.records()[0].customer.name, 'CHANGED'); const x = s.get(); x.state.mainListCaseIds = []; assert.equal(s.get().state.mainListCaseIds.length, 8); await s.send(C.turns[0]); assert.equal(JSON.stringify(I), original, 'Snapshots are copies'); s.destroy(); }
   { const s = S.create(I); await s.send(C.turns[0]); const prev = s.get().state; assert.equal((await s.send('절대로 해석하면 안 되는 임의의 문장')).resultStatus, 'unsupported_mock'); assert.deepEqual(s.get().state, prev); s.destroy(); }
   { const s = S.create(I); let notice = ''; s.subscribe(e => { if (e.notice) notice = e.notice; }); assert.equal(await s.send('가'.repeat(1201)), null); assert.ok(notice && s.get().messages.length === 0, 'Oversized input is not executed'); s.destroy(); }
@@ -352,8 +353,10 @@ async function branchSearchCheck() {
   assert.deepEqual(plain([out.result.matchedCaseIds, out.result.unknownCount, out.state.mainListCaseIds]), [rich.slice().sort(), 0, rich], 'Displayed balances (decimal 억원 included) parse exactly; results keep the original list order');
   out = query('우리 부점 IRP 고객 현황을 요약해줘.', state);
   assert.deepEqual(plain([out.result.intent, out.result.metrics.customerCount, out.result.metrics.assetAllocation[2].unknownCount, out.state.mainListCaseIds]), ['aggregate', ids.length, ids.length - structured.length, rich], 'Overview counts the whole list, marks legacy rows as unknown cash and keeps the applied list');
+  const before1 = state;
   out = query('우리 부점에서 납입금 미운용 고객은 몇 명이고, 현금성자산 합계는 얼마야?', state); state = out.state;
   const idle = withBadge('납입금 미운용');
+  assert.deepEqual(plain(w.PensionBranchSearchCore.execute(source.records, before1, provider('우리 부점에서 납입금 미운용 고객은 몇 명이고, 현금성자산 합계는 얼마야?', before1), source.metadata.asOfDate, { applyAggregate: true }).state.mainListCaseIds), idle, 'With applyAggregate (the screen setting) the aggregate answer narrows the list to those customers');
   assert.deepEqual(plain([out.result.intent, out.result.matchedCaseIds, out.state.mainListCaseIds]), ['aggregate', idle.slice().sort(), rich], 'M01 turn 1 aggregates over the current list without changing it');
   out = query('그중 IRP 잔액 2천만원 이상만 보여줘.', state); state = out.state;
   assert.deepEqual(plain(out.state.mainListCaseIds), idle.filter(id => balance(id) >= 20000000), 'M01 turn 2 narrows the previous condition on the current data');
@@ -364,6 +367,7 @@ async function branchSearchCheck() {
   const html = fs.readFileSync(path.join(OUT, 'mnPensionAgentDemo.html'), 'utf8');
   for (const marker of ['PensionBranchSearchAdapter.mount(instance, params || {})', 'PensionBranchSearchAdapter.beforeRender(instance)', 'PensionBranchSearchAdapter.afterRender(instance)', 'PensionBranchSearchAdapter.destroy()']) assert.equal(js.split(marker).length, 2, 'Renderer hook: ' + marker);
   assert.deepEqual([(html.match(/data-branch-list/g) || []).length, (html.match(/data-branch-customer-id="\{\{ c\.id \}\}"/g) || []).length], [1, 1], 'List identity attributes');
+  assert.ok(!/extToggle|extOpen|extOn\b|조건 추출/.test(html) && !/PensionBranchPreserveUI|resultbar|결과 위치 보기|해당 고객 보기/.test(js), '조건 추출 UI, result bar and reveal/apply buttons removed');
   const css = fs.readFileSync(path.join(OUT, 'pensionAgentDemo.css'), 'utf8'), base = fs.readFileSync(path.join(ROOT, 'frontend/src/briefing/pensionAgentDemo.css'), 'utf8');
   assert.ok(css.startsWith(base), 'Original stylesheet stays an exact prefix');
   let depth = 0, buf = ''; const selectors = [];

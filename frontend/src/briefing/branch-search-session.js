@@ -1,4 +1,5 @@
-/* Conversation state is independent of DOM and transport. Latest request wins. */
+/* Conversation state is independent of DOM and transport. Latest request wins.
+ * options.applyAggregate: the screen applies aggregate answers to the list too (golden tests keep the default). */
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory(require('./branch-search-core'));else root.PensionBranchSearchSession=factory(root.PensionBranchSearchCore);})(typeof window==='undefined'?globalThis:window,function(C){
 'use strict';
 function create(input,options){
@@ -6,7 +7,7 @@ function create(input,options){
  const data=C.copy(input),records=data.records,asOf=data.metadata.asOfDate;
  let state=C.initialState(records),messages=[],busy=false,ticket=0,revision=0,sequence=0,disposed=false;
  const listeners=new Set();
- const provider=options.provider||((text,s)=>Promise.resolve(C.resolve(text,s,asOf)));
+ const provider=options.provider||((text,s)=>Promise.resolve(C.resolve(text,s,asOf))),applyAggregate=!!options.applyAggregate;
  const emit=(type,extra)=>{if(disposed)return;const e=Object.assign({type,revision,busy,state:C.copy(state),messages:C.copy(messages)},extra||{});listeners.forEach(f=>f(e));};
  const add=(role,text,extra)=>{const m=Object.assign({id:++sequence,role,text},extra||{});messages.push(m);return m;};
  function cancel(reason){ticket++;if(busy){busy=false;messages.forEach(m=>{if(m.pending){m.pending=false;m.cancelled=true;m.text=reason||'요청을 취소했습니다. 목록은 유지합니다.';}});emit('cancel');}}
@@ -19,7 +20,7 @@ function create(input,options){
   try{
    const request=await provider(text,snapshot);
    if(disposed||token!==ticket)return null;
-   const out=C.execute(records,snapshot,request,asOf);
+   const out=C.execute(records,snapshot,request,asOf,{applyAggregate});
    state=out.state;busy=false;reply.pending=false;reply.text=out.result.answer;reply.result=out.result;
    if(out.result.uiEffect==='apply_customer_list')revision++;
    emit(out.result.uiEffect==='apply_customer_list'?'apply':'answer',{result:C.copy(out.result)});
@@ -39,11 +40,8 @@ function create(input,options){
  return {
   send,cancel,apply,
   reset:()=>apply({query:C.all(),sort:{field:data.metadata.scopeId==='current-main-list'?'source_order':'caseId',direction:'asc'},limit:null},'전체 검색조건과 표시 제한을 해제했습니다.'),
-  removeChip:key=>apply({query:C.remove(state.main.query,q=>JSON.stringify(q)===key)},'선택한 조건을 해제했습니다.'),
-  applyAnswer:result=>apply({query:result.resolvedQuery,sort:result.sort,limit:result.limit},'이 답변의 조건을 고객 목록에 적용했습니다.'),
   newConversation:()=>{cancel();state.reference=null;state.lastResult=null;messages=[];emit('new_conversation');},
   clearReference:()=>{state.reference=null;emit('reference');},
-  notifyManual:()=>{state.reference=C.copy(state.main);emit('reference');},
   get:()=>({state:C.copy(state),messages:C.copy(messages),busy,revision}),
   subscribe:f=>{listeners.add(f);return()=>listeners.delete(f);},
   records:()=>C.copy(records),metadata:()=>C.copy(data.metadata),

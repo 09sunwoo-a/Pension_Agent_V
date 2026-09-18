@@ -144,50 +144,12 @@
 <button sc-camel-on-click="{{ filterAll }}" class="pad-chip pad-chip--dark">{{ subChipLabel }} ✕</button>
 </sc-if>
 <div class="pad-vsep2"></div>
-<button sc-camel-on-click="{{ extToggle }}" class="pad-chip-ico" style="border:1px solid {{ extBtnBd }};background:{{ extBtnBg }};color:{{ extBtnFg }}">
-<svg height="12" sc-camel-view-box="0 0 16 16" width="12"><path d="M2 3h12L9.5 8.5V13l-3-1.5V8.5L2 3Z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="1.6"></path></svg>
-        조건 추출
-      </button>
 <button sc-camel-on-click="{{ xlsTap }}" title="현재 조건 명단 엑셀 다운로드" class="pad-chip-ico pad-chip-ico--line">
 <svg height="12" sc-camel-view-box="0 0 16 16" width="12"><path d="M8 2v8M4.5 7 8 10.5 11.5 7M3 13h10" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"></path></svg>
         엑셀
       </button>
 </div>
 </div>
-<sc-if value="{{ extOpen }}">
-<div class="pad-ext pad-in">
-<div class="pad-col pad-g9">
-<sc-for as="g" list="{{ extGroups }}">
-<div class="pad-row pad-g12">
-<div class="pad-ext__label">{{ g.label }}</div>
-<div class="pad-flex pad-g6 pad-wrap">
-<sc-for as="o" list="{{ g.opts }}">
-<button sc-camel-on-click="{{ o.onTap }}" class="pad-opt" style="border:1px solid {{ o.bd }};background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button>
-</sc-for>
-</div>
-</div>
-</sc-for>
-</div>
-<div class="pad-ext__foot">
-<div class="pad-t-13-sub">조건 일치 <span class="pad-b pad-c-dark">{{ extPreviewN }}명</span></div>
-<div class="pad-flex pad-g8">
-<button sc-camel-on-click="{{ extReset }}" class="pad-btn pad-btn--line pad-p-6-14">초기화</button>
-<button sc-camel-on-click="{{ extApply }}" class="pad-btn pad-btn--brand pad-p-6-16">이 조건으로 추출</button>
-</div>
-</div>
-</div>
-</sc-if>
-<sc-if value="{{ extOn }}">
-<div class="pad-row pad-g6 pad-wrap pad-mb10 pad-in">
-<span class="pad-t-12b-muted">내 추출 조건</span>
-<sc-for as="ec" list="{{ extChips }}">
-<span class="pad-chip-cond">{{ ec.label }}</span>
-</sc-for>
-<button sc-camel-on-click="{{ extClear }}" class="pad-textbtn pad-p-3-6">모두 해제 ✕</button>
-<span class="pad-flex1"></span>
-<span class="pad-t-12-sub">{{ extResultN }}명 추출됨</span>
-</div>
-</sc-if>
 <div class="pad-col pad-g8" data-branch-list>
 <sc-for as="c" list="{{ queue }}">
 <div data-branch-customer-id="{{ c.id }}" sc-camel-on-click="{{ c.onTap }}" class="pad-queue-item" style="opacity:{{ c.op }};animation:{{ c.anim }}">

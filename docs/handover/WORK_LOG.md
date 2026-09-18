@@ -67,3 +67,11 @@
 - 사내 브라우저 테스트 환경 진단(2026-09-18): 위젯은 body에 정상 생성됐지만 로드된 CSS가 `/mnbank/app/html/bfe/asstmgt/asst/pensionAgentDemo.css`의 부점 AI 이전 원본(337개 규칙)이라 런처가 무스타일로 문서 끝에 놓였습니다. 새 CSS는 434개 규칙. 체크리스트의 `/mnbank/app/css/bfe/pension/` 경로와 다르므로 체크리스트에 실제 경로·캐시 확인 항목을 추가했습니다. 재발 대비로 빌드가 `branch-search.css` 사본을 `window.PensionBranchSearchStyles`로 JS에 싣고, 위젯 마운트 시 런처가 `position: fixed`가 아니면(페이지 CSS에 규칙 없음) 그 사본을 `<style data-branch-style>`로 주입하고 콘솔 경고를 남깁니다(destroy 시 제거). 브라우저 검사에 옛 CSS를 서빙하는 경로를 추가해 주입·팝업·정리를 확인했습니다.
 - 배포 경로 정정: HTML의 `<link>`·`<script>`, 미리보기 서버, 체크리스트, 가이드, 프론트 계약 문서의 CSS·JS 경로를 `/mnbank/app/css|js/bfe/pension/`에서 실제 로드 경로인 `/mnbank/app/html/bfe/asstmgt/asst/`로 바꿨습니다(플랫폼 원본 reference 문서는 그대로).
 - 미검증: 실제 WAS 반입 후 화면(shell 재현은 문서의 DOM 구조와 PageTransitions 기본 CSS 기준). 골든 8명 입력은 커밋 7723f21 시점 display-data 사본이라 이후 고객 JSON이 바뀌면 화면 답과 달라질 수 있으며, 화면 수치는 항상 현재 데이터로 계산합니다.
+
+## 부점 AI 화면 단순화 — 조건 추출 제거, 결과 안내줄 제거, 즉시 반영 (2026-09-18)
+
+- 목록 헤더의 `조건 추출` 버튼과 그 패널·"내 추출 조건" 줄을 HTML에서 제거하고, 화면에서 닿을 수 없게 된 렌더러의 ext 상태·핸들러(extMatch, DEFX, extGroups, extApply 등)도 지웠습니다. `전체` 칩, `엑셀`, KPI 카드 필터는 그대로입니다.
+- 검색 적용 시 목록 위에 그리던 결과 안내줄(조건 칩, 확인 필요, 전체 조건 해제, 기존 목록으로, 상태 문구)과 빈 결과 문구를 없앴습니다. 이제 제목만 `AI 검색 결과 · N명`(표시 행 수)으로 바뀌고 정렬 표시는 질문의 정렬을 따릅니다. 해당 모듈 `branch-search-preserve-ui.js`와 CSS는 삭제했습니다.
+- 채팅의 `결과 위치 보기`·`해당 고객 보기` 버튼을 없애고, 집계 질문("몇 명이야?")도 답변과 함께 목록에 바로 반영합니다. 코어 `execute`에 `applyAggregate` 옵션을 두어 화면 세션만 켜고 골든 회귀(24턴)는 기존 의미를 유지합니다. 답변 끝 문장은 실제 목록 반영 여부를 따릅니다.
+- 원래 목록 복귀는 `전체` 칩(검색 모드 종료, 필터 전체), KPI 카드, 채팅 하단 `기존 목록` 버튼입니다. 세션에서 안내줄 전용이던 removeChip·applyAnswer·notifyManual을 제거했습니다.
+- 검증: `check.js`(기본 세션은 목록 유지, 화면 세션은 즉시 반영, 후속 질문 축소, 조건 추출·안내줄·버튼 제거 확인)와 `--agent` 통과, shell 재현 브라우저 검사 통과(뱃지·집계·금액 질문 즉시 반영, 상세 이동·복귀, 전체 칩·기존 목록 복원, 옛 CSS 대비 주입).

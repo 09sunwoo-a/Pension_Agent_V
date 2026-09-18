@@ -300,7 +300,7 @@
     if (kind === 'external_detail') text += '\n확인된 외부 IRP ' + m.externalIrpCount + '개 · ' + money(m.knownExternalIrpAmountKrw) + '.\n확인일 ' + m.verificationDate + ' · 원본에 기록된 계좌만 합산했으며 실시간 갱신값으로 간주하지 않습니다.';
     if (kind === 'deposit_detail') text += '\n정기예금 금액을 고객별로 합산한 뒤 IRP 전체 잔액으로 정렬했습니다.';
     if (result.unknownCount) text += '\n확인 필요 ' + result.unknownCount + '명: ' + result.unknownCaseIds.map(id => records.find(r => idOf(r) === id).customer.name).join('·') + '. 관련 값이 없어 조건 충족 여부를 판단하지 않았습니다.';
-    if (result.intent === 'aggregate') text += '\n고객 목록은 그대로 유지했습니다.';
+    if (result.uiEffect === 'answer_only_keep_list') text += '\n고객 목록은 그대로 유지했습니다.';
     else text += '\n검색조건을 고객 목록에 적용했습니다.';
     return text;
   }
@@ -403,14 +403,16 @@
     const ids=records.map(idOf).sort();
     return {reference:null,main:{query:all(),sort:defaultSort(),limit:null},mainListCaseIds:ids,mainMatchedCount:ids.length,mainUnknownCaseIds:[],lastResult:null};
   }
-  function execute(records, state, request, asOf) {
+  // options.applyAggregate: also apply an aggregate answer's customer set to the main list (screen behaviour).
+  function execute(records, state, request, asOf, options) {
     const next=copy(state);
     if(request.error) return {state:next,result:{intent:request.error,resultStatus:request.error,matchedCount:null,matchedCaseIds:null,unknownCaseIds:null,resolvedQuery:null,metrics:{},answer:request.answer,uiEffect:'keep_list_and_query',resultPreviewCaseIds:null,resultPreviewCount:null,mainListCaseIds:copy(state.mainListCaseIds),mainListCount:state.mainListCaseIds.length}};
     const res=run(records,request.query,request.sort,request.limit);
     res.intent=request.intent;res.metrics=metrics(records,res,request.metric,asOf);res.recipeId=request.recipeId || null;
     const spec={query:copy(request.query),sort:copy(res.sort),limit:res.limit}; next.reference=spec;
-    res.uiEffect=request.intent==='aggregate'?'answer_only_keep_list':'apply_customer_list';
-    if(request.intent!=='aggregate'){
+    const applyList=request.intent!=='aggregate'||!!(options&&options.applyAggregate);
+    res.uiEffect=applyList?'apply_customer_list':'answer_only_keep_list';
+    if(applyList){
       next.main=copy(spec);next.mainListCaseIds=copy(res.resultPreviewCaseIds);next.mainMatchedCount=res.matchedCount;next.mainUnknownCaseIds=copy(res.unknownCaseIds);
     }
     res.mainListCaseIds=copy(next.mainListCaseIds);res.mainListCount=next.mainListCaseIds.length;
