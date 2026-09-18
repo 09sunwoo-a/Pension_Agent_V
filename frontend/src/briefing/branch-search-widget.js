@@ -17,6 +17,10 @@ function mount(container,session,options){
  '<div class="pad-branch-footer"><div class="pad-branch-tools"><button type="button" data-action="examples" aria-expanded="false">예시 질문</button><button type="button" data-action="tour">6턴 시연 가이드</button><button type="button" data-action="restore" title="검색 결과를 해제하고 기존 목록으로">기존 목록</button><button type="button" data-action="cancel" class="pad-branch-cancel" hidden>조회 취소</button></div><form class="pad-branch-composer"><textarea rows="1" maxlength="1200" aria-label="찾고 싶은 고객 조건" placeholder="찾고 싶은 고객 조건을 입력하세요"></textarea><button type="submit" aria-label="질문 전송" class="pad-branch-send" disabled>'+icons.arrow+'</button></form><div class="pad-branch-disclaimer">확인된 데이터만 조회해요. 거래는 실행하지 않아요.</div></div></div>'+
  '<button type="button" class="pad-branch-launcher" aria-label="부점 AI 열기" aria-controls="pad-branch-window" aria-expanded="false">'+icons.chat+'<span>부점 AI</span><span class="pad-branch-live-dot"></span></button>';
  container.appendChild(rootEl);
+ // Fallback for a stale or partially deployed pensionAgentDemo.css: if the launcher is not positioned by the
+ // page stylesheet, inject the bundled copy of branch-search.css once (removed again on destroy).
+ let styleEl=null;
+ if(root.PensionBranchSearchStyles&&getComputedStyle(rootEl.querySelector('.pad-branch-launcher')).position!=='fixed'){styleEl=document.createElement('style');styleEl.setAttribute('data-branch-style','');styleEl.textContent=root.PensionBranchSearchStyles;(document.head||document.body).appendChild(styleEl);console.warn('[Branch AI] pensionAgentDemo.css has no .pad-branch-* rules (old file or cache); using the bundled copy.');}
  const scopeNode=rootEl.querySelector('.pad-branch-scope');scopeNode.title=meta.scopeNote||'';
  const note=rootEl.querySelector('.pad-branch-disclaimer');if(meta.displayOnlyCount)note.textContent='현재 목록 '+meta.recordCount+'명 · 상세 원본 '+meta.structuredCount+'명 · 나머지 상세값은 미확인';if(meta.mixedDates)note.textContent+=' · 일부 기준일 상이';
  const find=s=>rootEl.querySelector(s),panel=find('.pad-branch-window'),launcher=find('.pad-branch-launcher'),input=find('textarea'),sendBtn=find('.pad-branch-send'),body=find('.pad-branch-body'),log=find('.pad-branch-messages');
@@ -85,7 +89,7 @@ function mount(container,session,options){
  const off=session.subscribe(sync);sync(session.get());setEnabled(enabled);
  return {setOpen,setEnabled,setVisible:v=>{visible=v;rootEl.hidden=!v;if(!v)setOpen(false,false);},
   getState:()=>({open,visible,draft:input.value,enabled}),
-  destroy:()=>{disposed=true;off();rootEl.remove();},element:rootEl};
+  destroy:()=>{disposed=true;off();rootEl.remove();if(styleEl)styleEl.remove();},element:rootEl};
 }
 root.PensionBranchSearchWidget={mount};
 })(window);

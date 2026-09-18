@@ -41,6 +41,7 @@ Node·개별 고객 JSON·프론트 원본 모듈은 WAS에 올리지 않습니�
 ```
 
 - [ ] HTML/CSS/JS가 모두 200으로 로드되는지 확인합니다. Starroot에서 JS가 XHR로 보여도 정상일 수 있습니다.
+- [ ] **실제 로드 경로와 캐시 확인 (2026-09-18 사내 화면에서 확인)**: 브라우저 테스트 환경은 CSS를 `/mnbank/app/html/bfe/asstmgt/asst/pensionAgentDemo.css`에서 읽었습니다(위 경로가 아님). 반입 후 F12 → Network에서 실제 로드된 CSS/JS의 URL과 크기가 이번 반입본과 같은지 보고, 다르면 그 경로의 파일을 교체하고 캐시를 비운 뒤(Ctrl+Shift+R 또는 Disable cache) 다시 확인합니다. 콘솔에서 `getComputedStyle(document.querySelector('.pad-branch-launcher')).position`이 `fixed`면 CSS가 적용된 것입니다. 옛 CSS가 남아 있어도 JS에 실린 사본으로 부점 AI 버튼은 뜨지만 콘솔에 `[Branch AI] … using the bundled copy` 경고가 남습니다.
 - [ ] Shell이 `PG_<파일코드>.onParam()`을 호출해 화면을 초기화하는지 확인합니다. `DOMContentLoaded`를 추가하지 않습니다.
 - [ ] 기존 김서연 화면, 구조화 김서연 `DEMO-01`, 30개 사례가 목록에 표시되는지 확인합니다.
 - [ ] 상단 고객정보/IRP/보유상품이 표시되는지 확인합니다. 상담 후 확인 기록은 없습니다.

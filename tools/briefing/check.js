@@ -358,6 +358,8 @@ async function branchSearchCheck() {
   out = query('그중 IRP 잔액 2천만원 이상만 보여줘.', state); state = out.state;
   assert.deepEqual(plain(out.state.mainListCaseIds), idle.filter(id => balance(id) >= 20000000), 'M01 turn 2 narrows the previous condition on the current data');
   assert.equal(out.result.matchedCount, query('납입금 미운용 고객 중 IRP 잔액 2천만원 이상만 보여줘.', w.PensionBranchSearchCore.initialState(source.records)).result.matchedCount, 'Golden G02 gives the same customers as the follow-up, computed from current data');
+  assert.equal(w.PensionBranchSearchStyles, fs.readFileSync(path.join(ROOT, 'frontend/src/briefing/branch-search.css'), 'utf8'), 'Bundled fallback copy of branch-search.css matches the source');
+  assert.ok(js.includes('data-branch-style'), 'Widget injects the fallback stylesheet when the page CSS lacks its rules');
   // Renderer hooks, list markup and namespaced CSS in the built page.
   const html = fs.readFileSync(path.join(OUT, 'mnPensionAgentDemo.html'), 'utf8');
   for (const marker of ['PensionBranchSearchAdapter.mount(instance, params || {})', 'PensionBranchSearchAdapter.beforeRender(instance)', 'PensionBranchSearchAdapter.afterRender(instance)', 'PensionBranchSearchAdapter.destroy()']) assert.equal(js.split(marker).length, 2, 'Renderer hook: ' + marker);

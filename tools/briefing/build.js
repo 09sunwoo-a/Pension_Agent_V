@@ -54,6 +54,8 @@ function artifacts(fileCode = DEFAULT_FILE_CODE) {
     'if (window.__PensionVanilla) window.__PensionVanilla.destroy();\n' +
     // Only customer snapshots ship to the browser; briefing text comes from the Agent.
     'window.PensionBriefingFixtures = ' + JSON.stringify({ customers: data.customers }).replace(/</g, '\\u003c') + ';\n' +
+    // Fallback copy of the widget rules: injected only when the deployed pensionAgentDemo.css lacks them (stale/partial CSS deploy).
+    'window.PensionBranchSearchStyles = ' + JSON.stringify(read(path.join(SRC, 'branch-search.css'))).replace(/</g, '\\u003c') + ';\n' +
     modules.map(f => '\n/* ' + f + ' */\n' + read(path.join(SRC, f))).join('\n;\n')
       .replace("var STARROOT_FILE_CODE = 'REPLACE_WITH_FILE_CODE';", "var STARROOT_FILE_CODE = '" + fileCode + "';") +
     '\n})(window, document);\n';
