@@ -1,0 +1,81 @@
+{
+  "metadata": {
+    "version": "branch-search-golden.v0.1",
+    "status": "검토용 초안 / 전체 모집단 확정 전",
+    "createdOn": "2026-09-18",
+    "repository": "09sunwoo-a/Pension_Agent_V",
+    "sourceCommit": "7723f21a428e98aef935faae20b3c9a8e032b174",
+    "sourceDirectory": "agent-workbench/case-design/active/display-data",
+    "scopeId": "review-8-v0.1",
+    "scopeLabel": "검토용 시연 고객 8명",
+    "asOfDate": "2026-09-14",
+    "caseIds": [
+      "B01-03",
+      "B01-22",
+      "B02-04",
+      "B02-18",
+      "B02-27",
+      "B03-07",
+      "B03-11",
+      "B04-19"
+    ],
+    "recordCount": 8,
+    "singleTurnCount": 18,
+    "multiTurnSessionCount": 1,
+    "multiTurnCount": 6,
+    "totalTurnCount": 24,
+    "querySpecNote": "resolvedQuery는 골든셋 비교용 의미표현이며 운영 API 스키마/에이전트 구현이 아니다.",
+    "inputSha256": "8c08bb1f20009560093aff5fadab69ba02221658e2959a53fee5072530864116"
+  },
+  "sources": [
+    {
+      "path": "agent-workbench/case-design/active/display-data/B01-03.json",
+      "blobSha": "9f9bd3deb646bc44eb850db0f01be13fb0cf02fa",
+      "commit": "7723f21a428e98aef935faae20b3c9a8e032b174",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/7723f21a428e98aef935faae20b3c9a8e032b174/agent-workbench/case-design/active/display-data/B01-03.json"
+    },
+    {
+      "path": "agent-workbench/case-design/active/display-data/B01-22.json",
+      "blobSha": "70e0fefc01fc94819acac71b19b91e9228ebf0c3",
+      "commit": "7723f21a428e98aef935faae20b3c9a8e032b174",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/7723f21a428e98aef935faae20b3c9a8e032b174/agent-workbench/case-design/active/display-data/B01-22.json"
+    },
+    {
+      "path": "agent-workbench/case-design/active/display-data/B02-04.json",
+      "blobSha": "a1d64b30bd1a4d1ab915c786e08a15f98d4065f2",
+      "commit": "7723f21a428e98aef935faae20b3c9a8e032b174",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/7723f21a428e98aef935faae20b3c9a8e032b174/agent-workbench/case-design/active/display-data/B02-04.json"
+    },
+    {
+      "path": "agent-workbench/case-design/active/display-data/B02-18.json",
+      "blobSha": "ae0bf89b062dad65d981e86bc1942e5691cad74b",
+      "commit": "7723f21a428e98aef935faae20b3c9a8e032b174",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/7723f21a428e98aef935faae20b3c9a8e032b174/agent-workbench/case-design/active/display-data/B02-18.json"
+    },
+    {
+      "path": "agent-workbench/case-design/active/display-data/B02-27.json",
+      "blobSha": "ffa5b6d5e3a25c52424e428127d77fabf8cea91e",
+      "commit": "7723f21a428e98aef935faae20b3c9a8e032b174",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/7723f21a428e98aef935faae20b3c9a8e032b174/agent-workbench/case-design/active/display-data/B02-27.json"
+    },
+    {
+      "path": "agent-workbench/case-design/active/display-data/B03-07.json",
+      "blobSha": "e26cb7d2e5014490c08da79362a8ef488fe2ea56",
+      "commit": "7723f21a428e98aef935faae20b3c9a8e032b174",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/7723f21a428e98aef935faae20b3c9a8e032b174/agent-workbench/case-design/active/display-data/B03-07.json"
+    },
+    {
+      "path": "agent-workbench/case-design/active/display-data/B03-11.json",
+      "blobSha": "c77fc325633fa08bd7f26a1abcc250c480b0c41c",
+      "commit": "7723f21a428e98aef935faae20b3c9a8e032b174",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/7723f21a428e98aef935faae20b3c9a8e032b174/agent-workbench/case-design/active/display-data/B03-11.json"
+    },
+    {
+      "path": "agent-workbench/case-design/active/display-data/B04-19.json",
+      "blobSha": "65f200096955fd23833ac8ccac5c018e2faf1b95",
+      "commit": "7723f21a428e98aef935faae20b3c9a8e032b174",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/7723f21a428e98aef935faae20b3c9a8e032b174/agent-workbench/case-design/active/display-data/B04-19.json"
+    }
+  ],
+  "note": "원본 저장소·원본 JSON·프론트 파일은 변경하지 않음."
+}

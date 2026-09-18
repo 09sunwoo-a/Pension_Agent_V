@@ -188,9 +188,9 @@
 <span class="pad-t-12-sub">{{ extResultN }}명 추출됨</span>
 </div>
 </sc-if>
-<div class="pad-col pad-g8">
+<div class="pad-col pad-g8" data-branch-list>
 <sc-for as="c" list="{{ queue }}">
-<div sc-camel-on-click="{{ c.onTap }}" class="pad-queue-item" style="opacity:{{ c.op }};animation:{{ c.anim }}">
+<div data-branch-customer-id="{{ c.id }}" sc-camel-on-click="{{ c.onTap }}" class="pad-queue-item" style="opacity:{{ c.op }};animation:{{ c.anim }}">
 <div class="pad-queue-item__bar" style="background:{{ c.bar }}"></div>
 <sc-if value="{{ c.done }}">
 <svg height="18" sc-camel-view-box="0 0 18 18" width="18" class="pad-none"><circle cx="9" cy="9" fill="#E6F6EF" r="8"></circle><polyline fill="none" points="5.5,9.2 8,11.7 12.5,6.5" stroke="#059669" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></polyline></svg>

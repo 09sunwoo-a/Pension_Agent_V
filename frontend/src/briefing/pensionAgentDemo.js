@@ -244,6 +244,7 @@
       return;
     }
 
+    if (window.PensionBranchSearchAdapter) window.PensionBranchSearchAdapter.beforeRender(instance);
     var uiSnap = captureRenderUiState(mount);
 
     var holder = document.createElement('template');
@@ -254,6 +255,7 @@
     suppressReplayEntryAnimations(frag);
     mount.replaceChildren(frag);
     restoreRenderUiState(mount, uiSnap);
+    if (window.PensionBranchSearchAdapter) window.PensionBranchSearchAdapter.afterRender(instance);
 
     lastRenderedState = Object.assign({}, instance.state);
     if (prevState && typeof instance.componentDidUpdate === 'function') {
@@ -292,6 +294,8 @@
       starrootParams: params || {}
     });
     installSetState(instance);
+    // 부점 AI: searches the current main list only; skipped when params.branchSearch === false.
+    if (window.PensionBranchSearchAdapter) window.PensionBranchSearchAdapter.mount(instance, params || {});
     renderNow();
 
     if (typeof instance.componentDidMount === 'function') {
@@ -302,6 +306,7 @@
   }
 
   function destroy() {
+    if (window.PensionBranchSearchAdapter) window.PensionBranchSearchAdapter.destroy();
     if (!instance) return;
     if (typeof instance.componentWillUnmount === 'function') {
       try { instance.componentWillUnmount(); } catch (err) { console.error(err); }

@@ -1280,6 +1280,907 @@ window.PensionBriefingFixtures = {"customers":[{"schemaVersion":"customer-briefi
 
 ;
 
+/* branch-search-core.js */
+/* Branch search v0.3: deterministic evaluator and reviewed utterance recipes.
+ * No LLM, network, evaluation-answer imports, or customer-data writes.
+ * Dates are evaluated against the fixture asOfDate, never the system clock.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.PensionBranchSearchCore = factory();
+})(typeof window === 'undefined' ? globalThis : window, function () {
+  'use strict';
+  const copy = x => JSON.parse(JSON.stringify(x));
+  const all = () => ({ op: 'all_records' });
+  const segment = label => ({ op: 'segment_registered', label });
+  const compare = (field, cmp, value) => ({ op: 'compare', field, cmp, value });
+  const defaultSort = () => ({ field: 'caseId', direction: 'asc' });
+  const idOf = r => r.briefingMeta.caseId;
+  const number = v => typeof v === 'number' && Number.isFinite(v);
+  const asset = (r, t) => (r.irpAccount.assetAllocation || []).find(a => a.assetType === t);
+  const argsOf = q => !q || q.op === 'all_records' ? [] : q.op === 'and' ? q.args : [q];
+  function and() {
+    const terms = Array.from(arguments).flatMap(argsOf);
+    const seen = new Set();
+    const list = terms.filter(q => { const k = JSON.stringify(q); if (seen.has(k)) return false; seen.add(k); return true; });
+    return list.length === 0 ? all() : list.length === 1 ? list[0] : { op: 'and', args: list };
+  }
+  function remove(q, predicate) {
+    if (!q || predicate(q)) return all();
+    if (q.op === 'and') return and(...q.args.map(x => remove(x, predicate)));
+    // OR chips are removed as a group; do not silently turn A OR B into A AND B.
+    return copy(q);
+  }
+  function dateAdd(date, days) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('Invalid snapshot date');
+    const d = new Date(date + 'T00:00:00Z');
+    if (!Number.isFinite(d.getTime())) throw new Error('Invalid snapshot date');
+    d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0, 10);
+  }
+  const dayDiff = (a, b) => Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 86400000);
+  function value(r, field) {
+    const a = r.irpAccount, s = r.searchSupplement || {}, c = r.customer;
+    switch (field) {
+      case 'caseId': return idOf(r);
+      case 'source_order': return r.searchSource ? r.searchSource.originalOrder : null;
+      case 'name': return c.name;
+      case 'customerId': return c.customerId;
+      case 'age': return c.age;
+      case 'grade': return c.starClubGrade;
+      case 'profile': return c.investmentProfile;
+      case 'trigger_risk': return (s.triggers || {}).risk;
+      case 'trigger_mat': return (s.triggers || {}).mat;
+      case 'trigger_imp': return (s.triggers || {}).imp;
+      case 'trigger_opp': return (s.triggers || {}).opp;
+      case 'irp_amount': return a.valuationAmountKrw;
+      case 'return_pct': return a.oneYearReturnPct;
+      case 'cash_amount': return (asset(r, '현금성자산') || {}).amountKrw;
+      case 'cash_pct': return (asset(r, '현금성자산') || {}).weightPct;
+      case 'protected_amount': return (asset(r, '원리금보장형') || {}).amountKrw;
+      case 'protected_pct': return (asset(r, '원리금보장형') || {}).weightPct;
+      case 'tax_remaining': return a.taxDeductionRemainingKrw;
+      case 'auto_registered': return (s.autoTransfer || {}).registered;
+      case 'auto_monthly': return (s.autoTransfer || {}).monthlyAmountKrw;
+      case 'deposit_configured': return (s.depositPurchase || {}).configured;
+      default: throw new Error('Unsupported field: ' + field);
+    }
+  }
+  const fields = ['caseId','name','customerId','age','grade','profile','irp_amount','return_pct','cash_amount','cash_pct','protected_amount','protected_pct','tax_remaining','auto_registered','auto_monthly','deposit_configured','trigger_risk','trigger_mat','trigger_imp','trigger_opp','source_order'];
+  function cmp(v, op, target) {
+    if (v == null) return null;
+    if (op === 'eq') return v === target;
+    if (!number(v) || !number(target)) return null;
+    if (op === 'gte') return v >= target;
+    if (op === 'gt') return v > target;
+    if (op === 'lte') return v <= target;
+    if (op === 'lt') return v < target;
+    throw new Error('Unsupported comparator');
+  }
+  const triAnd = list => list.includes(false) ? false : list.includes(null) ? null : true;
+  const triOr = list => list.includes(true) ? true : list.includes(null) ? null : false;
+  function between(v, start, end) {
+    if (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
+    return v >= start && v <= end;
+  }
+  function sumKnown(list) {
+    if (!list.length) return { value: null, known: 0, unknown: 0 };
+    const known = list.filter(number);
+    return { value: known.length ? known.reduce((s, x) => s + x, 0) : null, known: known.length, unknown: list.length - known.length };
+  }
+  const external = (r, type) => ((r.searchSupplement || {}).externalAccounts || []).filter(x => x.type === type);
+  function evaluate(r, q) {
+    if (!q || q.op === 'all_records') return true;
+    const s = r.searchSupplement || {};
+    switch (q.op) {
+      case 'and': return triAnd(q.args.map(x => evaluate(r, x)));
+      case 'or': return triOr(q.args.map(x => evaluate(r, x)));
+      case 'case_ids': return q.ids.includes(idOf(r));
+      case 'segment_registered': return (r.signals || []).some(x => x.label === q.label);
+      case 'segment_family': return (r.signals || []).some(x => x.label === q.label || x.label.startsWith(q.label + ' D-') || (q.label === '추가납입' && /^추가납입 [\d,.]+만원$/.test(x.label)));
+      case 'compare': return cmp(value(r, q.field), q.cmp, q.value);
+      case 'segment_date_between': {
+        const signals = (r.signals || []).filter(x => x.label === q.label);
+        return signals.length ? triOr(signals.map(x => between(x.date, q.start, q.end))) : false;
+      }
+      case 'do_between': return s.defaultOptionExecution ? between(s.defaultOptionExecution.scheduledAt, q.start, q.end) : null;
+      case 'isa_between': {
+        const accts = external(r, 'ISA');
+        return accts.length ? triOr(accts.map(a => triAnd([
+          between(a.maturityDate, q.start, q.end),
+          q.minAmountKrw == null ? true : cmp(a.valuationAmountKrw, 'gte', q.minAmountKrw)
+        ]))) : false; // Searches *recorded* ISA accounts, not negative ownership evidence.
+      }
+      case 'holding_sum_gte': {
+        if (!Array.isArray(r.holdings)) return null;
+        const rows = r.holdings.filter(h => h.productCategory === q.category);
+        if (!rows.length) return cmp(0, 'gte', q.minAmountKrw);
+        const sum = sumKnown(rows.map(h => h.valuationAmountKrw));
+        if (sum.value != null && sum.value >= q.minAmountKrw) return true;
+        return sum.unknown ? null : false;
+      }
+      case 'holding_exists': {
+        if (!Array.isArray(r.holdings)) return null;
+        return triOr(r.holdings.filter(h => h.productId === q.productId).map(h => cmp(h.valuationAmountKrw, 'gte', q.minAmountKrw)));
+      }
+      case 'external_irp_sum_gte': {
+        const rows = external(r, '개인형IRP');
+        if (!rows.length) return null;
+        const sum = sumKnown(rows.map(a => a.valuationAmountKrw));
+        if (sum.value != null && sum.value >= q.minAmountKrw) return true;
+        return sum.unknown ? null : false;
+      }
+      default: throw new Error('Unsupported query: ' + q.op);
+    }
+  }
+  function validateQuery(q, depth) {
+    depth = depth || 0;
+    if (!q || typeof q !== 'object' || depth > 8) throw new Error('Invalid query');
+    switch (q.op) {
+      case 'all_records': return;
+      case 'and': case 'or':
+        if (!Array.isArray(q.args) || !q.args.length || q.args.length > 30) throw new Error('Invalid group');
+        q.args.forEach(x => validateQuery(x, depth + 1)); return;
+      case 'compare':
+        if (!fields.includes(q.field) || !['eq','gte','gt','lte','lt'].includes(q.cmp)) throw new Error('Unsupported field/operator');
+        if (!['string','number','boolean'].includes(typeof q.value)) throw new Error('Invalid condition value'); return;
+      case 'segment_registered': case 'segment_family':
+        if (typeof q.label !== 'string' || q.label.length > 80) throw new Error('Invalid segment'); return;
+      case 'case_ids':
+        if (!Array.isArray(q.ids)) throw new Error('Invalid IDs'); return;
+      case 'do_between': case 'isa_between': case 'segment_date_between':
+        dateAdd(q.start, 0); dateAdd(q.end, 0);
+        if (q.start > q.end) throw new Error('Invalid date range'); return;
+      case 'holding_sum_gte': case 'holding_exists': case 'external_irp_sum_gte':
+        if (!number(q.minAmountKrw) || q.minAmountKrw < 0) throw new Error('Invalid amount'); return;
+      default: throw new Error('Unsupported query');
+    }
+  }
+  function run(records, query, sort, limit) {
+    validateQuery(query); sort = sort || defaultSort();
+    if (!fields.includes(sort.field) || !['asc','desc'].includes(sort.direction)) throw new Error('Invalid sort');
+    if (limit != null && (!Number.isInteger(limit) || limit < 1 || limit > 1000)) throw new Error('Invalid limit');
+    const matched = [], unknown = [], seen = new Set();
+    records.forEach(r => {
+      const identity = r.customer.customerId || ('view:' + idOf(r));
+      if (seen.has(identity)) return;
+      seen.add(identity);
+      const t = evaluate(r, query); if (t === true) matched.push(r); else if (t === null) unknown.push(r);
+    });
+    const ordered = matched.slice().sort((a, b) => {
+      const x = value(a, sort.field), y = value(b, sort.field);
+      if (x == null && y != null) return 1; if (y == null && x != null) return -1;
+      const sign = sort.direction === 'desc' ? -1 : 1;
+      return (x < y ? -sign : x > y ? sign : 0) || idOf(a).localeCompare(idOf(b));
+    });
+    return {
+      matchedCaseIds: matched.map(idOf).sort(), matchedCount: matched.length,
+      orderedCaseIds: ordered.map(idOf), unknownCaseIds: unknown.map(idOf).sort(), unknownCount: unknown.length,
+      resultPreviewCaseIds: (limit == null ? ordered : ordered.slice(0, limit)).map(idOf),
+      resultPreviewCount: limit == null ? ordered.length : Math.min(limit, ordered.length),
+      resultStatus: unknown.length ? 'partial' : matched.length ? 'ok' : 'empty',
+      resolvedQuery: copy(query), sort: copy(sort), limit: limit == null ? null : limit
+    };
+  }
+  function money(v) {
+    if (!number(v)) return '미확인';
+    if (v === 0) return '0원';
+    const abs = Math.abs(v); if (abs < 10000) return v.toLocaleString('ko-KR') + '원';
+    if (v % 10000) return v.toLocaleString('ko-KR') + '원';
+    const eok = Math.floor(abs / 100000000), man = abs % 100000000 / 10000;
+    return (v < 0 ? '-' : '') + (eok ? eok.toLocaleString('ko-KR') + '억' : '') +
+      (eok && man ? ' ' : '') + (man ? man.toLocaleString('ko-KR') + '만' : '') + '원';
+  }
+  function flatten(q) { return q && ['and','or'].includes(q.op) ? q.args.flatMap(flatten) : q ? [q] : []; }
+  function metrics(records, result, kind, asOf) {
+    const seenCustomers = new Set();
+    const matched = records.filter(r => {
+      const identity = r.customer.customerId || ('view:' + idOf(r));
+      if (!result.matchedCaseIds.includes(idOf(r)) || seenCustomers.has(identity)) return false;
+      seenCustomers.add(identity); return true;
+    });
+    if (kind === 'overview') {
+      const totalCoverage = sumKnown(matched.map(r => r.irpAccount.valuationAmountKrw));
+      const total = totalCoverage.value;
+      return { customerCount: matched.length, irpAmountKrw: total,
+        assetAllocation: ['원리금보장형','실적배당형','현금성자산'].map(t => {
+          const sum = sumKnown(matched.map(r => (asset(r, t) || {}).amountKrw));
+          const live = records.some(r => r.searchSource);
+          const m = { assetType: t, amountKrw: sum.value, weightPct: total && sum.value != null && (!live || (!sum.unknown && !totalCoverage.unknown)) ? +(sum.value / total * 100).toFixed(2) : null };
+          if (live) { m.knownCount = sum.known; m.unknownCount = sum.unknown; }
+          return m;
+        }) };
+    }
+    if (kind === 'cash_sum') {
+      const sum = sumKnown(matched.map(r => value(r, 'cash_amount')));
+      const m = { customerCount: matched.length, cashAmountKrw: matched.length ? sum.value : 0 };
+      if (records.some(r => r.searchSource)) { m.cashKnownCount = sum.known; m.cashUnknownCount = sum.unknown; }
+      return m;
+    }
+    if (kind === 'do_detail' && matched.length === 1) {
+      const d = matched[0].searchSupplement.defaultOptionExecution;
+      return { executionDate: d.scheduledAt, daysUntil: dayDiff(asOf, d.scheduledAt), executionAmountKrw: d.amountKrw };
+    }
+    if (kind === 'isa_detail') {
+      const q = flatten(result.resolvedQuery).find(x => x.op === 'isa_between');
+      const entries = matched.flatMap(r => external(r, 'ISA').filter(a => between(a.maturityDate, q.start, q.end) === true).map(a => ({ r, a })));
+      if (q.minAmountKrw != null) return { knownIsaAmountKrw: sumKnown(entries.filter(x => number(x.a.valuationAmountKrw) && x.a.valuationAmountKrw >= q.minAmountKrw).map(x => x.a.valuationAmountKrw)).value };
+      const known = entries.filter(x => number(x.a.valuationAmountKrw)), unknown = entries.filter(x => !number(x.a.valuationAmountKrw));
+      return { isaKnownAmountSumKrw: sumKnown(known.map(x => x.a.valuationAmountKrw)).value,
+        isaAmountKnownCount: known.length, isaAmountUnknownCount: unknown.length,
+        isaAmountUnknownCaseIds: [...new Set(unknown.map(x => idOf(x.r)))].sort() };
+    }
+    if (kind === 'deposit_detail') return { depositAmountsByCaseId: Object.fromEntries(matched.map(r => [idOf(r), r.holdings.filter(h => h.productCategory === '정기예금').reduce((s,h) => s+h.valuationAmountKrw,0)])) };
+    if (kind === 'external_detail') {
+      const rows = matched.flatMap(r => external(r, '개인형IRP'));
+      const dates = [...new Set(rows.map(a => a.verifiedAt).filter(Boolean))];
+      return { externalIrpCount: rows.length, knownExternalIrpAmountKrw: sumKnown(rows.map(x=>x.valuationAmountKrw)).value,
+        verificationDate: dates.length === 1 ? dates[0] : null, includesInternalIrp: false };
+    }
+    return {};
+  }
+  const labels = { age:'연령', irp_amount:'IRP 평가금액', cash_amount:'현금성자산', cash_pct:'현금성 비중',
+    protected_amount:'원리금보장 금액', protected_pct:'원리금보장 비중', return_pct:'계좌 1년 수익률', tax_remaining:'공제 잔여한도',
+    auto_monthly:'월 자동이체', auto_registered:'자동이체 등록', deposit_configured:'입금매수상품 지정', grade:'관리등급', profile:'투자성향', name:'고객명', customerId:'고객번호', caseId:'고객번호 순' };
+  function describe(q) {
+    if (!q || q.op === 'all_records') return '현재 메인 목록 전체';
+    switch (q.op) {
+      case 'and': return q.args.map(describe).join(' · ');
+      case 'or': return '(' + q.args.map(describe).join(' 또는 ') + ')';
+      case 'segment_registered': case 'segment_family': return q.label;
+      case 'case_ids': return '선택한 결과 집합';
+      case 'compare': {
+        const v = q.field === 'age' ? q.value + '세' : q.field.endsWith('_pct') ? q.value + '%' : typeof q.value === 'boolean' ? q.value ? '예' : '아니오' : typeof q.value === 'number' ? money(q.value) : q.value;
+        return (labels[q.field] || q.field) + ' ' + v + ({gte:' 이상',gt:' 초과',lte:' 이하',lt:' 미만',eq:''}[q.cmp]);
+      }
+      case 'do_between': return 'DO 실행 ' + q.start.slice(5).replace('-','.') + '~' + q.end.slice(5).replace('-','.');
+      case 'isa_between': return 'ISA 만기 ' + q.start.slice(5).replace('-','.') + '~' + q.end.slice(5).replace('-','.') + (q.minAmountKrw != null ? ' · ISA ' + money(q.minAmountKrw) + ' 이상' : '');
+      case 'segment_date_between': return q.label + ' ' + q.start.slice(5).replace('-','.') + '~' + q.end.slice(5).replace('-','.');
+      case 'holding_sum_gte': return q.category + ' 합계 ' + money(q.minAmountKrw) + ' 이상';
+      case 'holding_exists': return (q.productId === 'SAV-013' ? 'DB저축은행 예금' : q.productId) + ' 한 상품 ' + money(q.minAmountKrw) + ' 이상';
+      case 'external_irp_sum_gte': return '확인된 타행 IRP 합계 ' + money(q.minAmountKrw) + ' 이상';
+      default: return q.op;
+    }
+  }
+  function chips(query) { return argsOf(query).map(q => ({ label: describe(q), query: copy(q), key: JSON.stringify(q) })); }
+  function sortLabel(sort) {
+    if (!sort || sort.field === 'caseId') return '고객번호 순';
+    if (sort.field === 'source_order') return '기존 목록 순';
+    return (labels[sort.field] || sort.field) + (sort.direction === 'desc' ? ' 높은 순' : ' 낮은 순');
+  }
+  function answer(records, result, kind, asOf) {
+    const m = result.metrics, names = result.resultPreviewCaseIds.map(id => records.find(r => idOf(r) === id).customer.name).join('·');
+    let text;
+    if (kind === 'overview') {
+      const cash = m.assetAllocation.find(a => a.assetType === '현금성자산');
+      text = '조회 대상 고객 ' + m.customerCount + '명 기준입니다.\n확인된 IRP 평가금액 합계는 ' + money(m.irpAmountKrw) + ', 현금성자산 합계는 ' + money(cash.amountKrw) + '입니다.';
+      if (cash.unknownCount) text += '\n현금성 금액 확인 ' + cash.knownCount + '명 · 미확인 ' + cash.unknownCount + '명. 합계는 확인된 금액만 포함합니다.';
+    } else if (kind === 'cash_sum') text = '등록된 조건에 해당하는 고객은 ' + m.customerCount + '명입니다.\n현금성자산 합계는 ' + money(m.cashAmountKrw) + '입니다.';
+    else if (!result.matchedCount) text = '확인된 조건 충족 고객은 0명입니다. 입력한 조건은 그대로 유지했습니다.';
+    else text = (result.unknownCount ? '조건 충족이 확인된 고객은 ' : '조건에 맞는 고객은 ') + result.matchedCount + '명입니다.\n' +
+      (result.resultPreviewCount < result.matchedCount ? '그중 ' + sortLabel(result.sort) + '으로 상위 ' + result.resultPreviewCount + '명(' + names + ')을 표시합니다.' : names + ' 고객을 찾았습니다.');
+    if (result.intent === 'extract' && result.resultPreviewCount > 0 && result.resultPreviewCount <= 3 && !['do_detail','isa_detail','external_detail'].includes(kind)) {
+      const terms = flatten(result.resolvedQuery);
+      let detailFields = [];
+      if (!['caseId', 'source_order'].includes(result.sort.field)) detailFields.push(result.sort.field);
+      terms.filter(q => q.op === 'compare' && ['irp_amount','cash_amount','cash_pct','age','auto_monthly','tax_remaining'].includes(q.field)).forEach(q => detailFields.push(q.field));
+      detailFields = [...new Set(detailFields)].slice(0, 2);
+      const detailLines = result.resultPreviewCaseIds.map(id => {
+        const r = records.find(x => idOf(x) === id), bits = detailFields.map(f => {
+          const v = value(r, f); return labels[f] + ' ' + (f === 'age' ? v + '세' : f.endsWith('_pct') ? v + '%' : money(v));
+        });
+        if (kind === 'deposit_detail') bits.push('정기예금 합계 ' + money(m.depositAmountsByCaseId[id]));
+        const hq = terms.find(q => q.op === 'holding_exists');
+        if (hq) bits.push('해당 상품 ' + money(r.holdings.find(h => h.productId === hq.productId && h.valuationAmountKrw >= hq.minAmountKrw).valuationAmountKrw));
+        const dq = terms.find(q => q.op === 'segment_date_between');
+        if (dq) { const signal = r.signals.find(x => x.label === dq.label && between(x.date, dq.start, dq.end)); if (signal) bits.push('조회일 ' + signal.date); }
+        return bits.length ? r.customer.name + ': ' + bits.join(' · ') : '';
+      }).filter(Boolean);
+      if (detailLines.length) text += '\n' + detailLines.join('\n');
+    }
+    if (kind === 'cash_sum' && m.cashUnknownCount) text += '\n금액 확인 ' + m.cashKnownCount + '명 · 미확인 ' + m.cashUnknownCount + '명. 미확인은 0원으로 합산하지 않았습니다.';
+    if (kind === 'do_detail' && m.executionDate) text += '\n실행예정일 ' + m.executionDate + ' (D-' + m.daysUntil + '), 대상금액 ' + money(m.executionAmountKrw) + '.';
+    if (kind === 'isa_detail') text += '\n확인된 ISA 평가금액 합계: ' + money(m.knownIsaAmountKrw !== undefined ? m.knownIsaAmountKrw : m.isaKnownAmountSumKrw) + '.' + (m.isaAmountUnknownCount ? ' 금액 미확인 ' + m.isaAmountUnknownCount + '건은 합산하지 않았습니다.' : '');
+    if (kind === 'external_detail') text += '\n확인된 외부 IRP ' + m.externalIrpCount + '개 · ' + money(m.knownExternalIrpAmountKrw) + '.\n확인일 ' + m.verificationDate + ' · 원본에 기록된 계좌만 합산했으며 실시간 갱신값으로 간주하지 않습니다.';
+    if (kind === 'deposit_detail') text += '\n정기예금 금액을 고객별로 합산한 뒤 IRP 전체 잔액으로 정렬했습니다.';
+    if (result.unknownCount) text += '\n확인 필요 ' + result.unknownCount + '명: ' + result.unknownCaseIds.map(id => records.find(r => idOf(r) === id).customer.name).join('·') + '. 관련 값이 없어 조건 충족 여부를 판단하지 않았습니다.';
+    if (result.intent === 'aggregate') text += '\n고객 목록은 그대로 유지했습니다.';
+    else text += '\n검색조건을 고객 목록에 적용했습니다.';
+    return text;
+  }
+
+  // Reviewed recipes contain only utterances and semantic queries, never expected IDs or amounts.
+  const questions = [
+    ['G01','우리 부점 IRP 고객 현황을 요약해줘.'],
+    ['G02','납입금 미운용 고객 중 IRP 잔액 2천만원 이상만 보여줘.'],
+    ['G03','현금성자산 500만원 이상이고 비중이 10% 이상인 고객 보여줘.'],
+    ['G04','납입금 미운용이거나 이탈징후가 등록된 고객을 보여줘.'],
+    ['G05','앞으로 7일 안에 DO가 실행되는 고객 중 투자성향-DO불일치 고객을 보여줘.'],
+    ['G06','앞으로 30일 이내 ISA 만기 고객을 보여주고, 확인된 ISA 평가금액도 알려줘.'],
+    ['G07','앞으로 45일 이내 ISA 만기 고객 중 ISA 평가금액 3천만원 이상인 고객을 보여줘.'],
+    ['G08','정기예금을 합계 5천만원 이상 보유한 고객을 IRP 잔액 큰 순으로 보여줘.'],
+    ['G09','DB저축은행 퇴직연금 정기예금을 한 상품에 3천만원 이상 보유한 고객 보여줘.'],
+    ['G10','월 30만원 이상 자동이체 중인데 입금매수상품이 미지정인 고객 보여줘.'],
+    ['G11','타행 IRP 보유가 등록된 고객 중 확인된 외부 IRP 합계가 5천만원 이상인 고객 보여줘.'],
+    ['G12','세액공제 잔여한도가 0원인 고객 보여줘.'],
+    ['G13','펀드 상품조회가 등록된 고객 중 최근 7일 이내 조회일이 있는 고객만 보여줘.'],
+    ['G14','검토 고객 중 IRP 잔액 1억원 이상인 고객 보여줘.'],
+    ['G15','최근 7일 동안 ETF를 한 번도 조회하지 않은 고객만 보여줘.'],
+    ['G16','지난달보다 현금성자산이 늘어난 고객을 찾아줘.'],
+    ['G17','이 고객들에게 ETF를 골라서 자동매수해줘.'],
+    ['G18','현금이 많은 고객 찾아줘.']
+  ];
+  const turns = [
+    '우리 부점에서 납입금 미운용 고객은 몇 명이고, 현금성자산 합계는 얼마야?',
+    '그중 IRP 잔액 2천만원 이상만 보여줘.',
+    '잔액 조건은 빼고, 현금성자산 많은 순으로 1명만 보여줘.',
+    '그중 38세 이상만 남겨줘.',
+    '나이 조건은 빼고, 최근 7일 이내 펀드 상품조회한 고객만.',
+    '조건을 모두 지우고, 전체 검토 고객에서 현금성자산 500만원 이상을 금액 큰 순으로 전부 보여줘.'
+  ];
+  const norm = s => String(s).normalize('NFKC').trim().replace(/[?!？。·,]/g, '').replace(/\.$/, '').replace(/\s/g, '').toLowerCase();
+  const aliases = {
+    G01: ['우리 부점 현황','IRP 고객 현황'],
+    G05: ['7일 안에 DO가 실행되는 고객 중 투자성향-DO불일치 고객을 보여줘.'],
+    G06: ['앞으로 30일 이내 ISA 만기 예정인 고객을 보여줘.'],
+    G14: ['IRP 잔액 1억원 이상인 고객 보여줘.'],
+    M01T1: ['납입금 미운용 고객은 몇 명이고, 현금성자산 합계는 얼마야?']
+  };
+  function error(status, text) { return { error: status, answer: text }; }
+  function resolve(text, state, asOf) {
+    const n = norm(text), matched = questions.find(x => norm(x[1]) === n);
+    let id = matched && matched[0];
+    if (!id) Object.keys(aliases).some(k => { if (aliases[k].some(s=>norm(s)===n)) { id=k; return true; } return false; });
+    const ti = turns.findIndex(s=>norm(s)===n);
+    if (ti >= 0) id = 'M01T' + (ti + 1);
+    const base = () => ({ intent: 'extract', query: all(), sort: defaultSort(), limit: null, metric: null, recipeId: id });
+    let out = base();
+    const fundRecent = () => and(segment('펀드 상품조회'), {op:'segment_date_between',label:'펀드 상품조회',start:dateAdd(asOf,-6),end:asOf});
+    switch (id) {
+      case 'G01': out.intent='aggregate'; out.metric='overview'; break;
+      case 'G02': out.query=and(segment('납입금 미운용'),compare('irp_amount','gte',20000000)); break;
+      case 'G03': out.query=and(compare('cash_amount','gte',5000000),compare('cash_pct','gte',10)); break;
+      case 'G04': out.query={op:'or',args:[segment('납입금 미운용'),segment('이탈징후')]}; break;
+      case 'G05': out.query=and({op:'do_between',start:asOf,end:dateAdd(asOf,7)},segment('투자성향-DO불일치')); out.metric='do_detail'; break;
+      case 'G06': case 'G07': out.query={op:'isa_between',start:asOf,end:dateAdd(asOf,id==='G06'?30:45)};
+        if(id==='G07')out.query.minAmountKrw=30000000; out.metric='isa_detail'; break;
+      case 'G08': out.query={op:'holding_sum_gte',category:'정기예금',minAmountKrw:50000000}; out.sort={field:'irp_amount',direction:'desc'};out.metric='deposit_detail';break;
+      case 'G09': out.query={op:'holding_exists',productId:'SAV-013',minAmountKrw:30000000};break;
+      case 'G10':out.query=and(compare('auto_registered','eq',true),compare('auto_monthly','gte',300000),compare('deposit_configured','eq',false));break;
+      case 'G11':out.query=and(segment('타행 IRP 보유'),{op:'external_irp_sum_gte',minAmountKrw:50000000});out.metric='external_detail';break;
+      case 'G12':out.query=compare('tax_remaining','eq',0);break;
+      case 'G13':out.query=fundRecent();break;
+      case 'G14':out.query=compare('irp_amount','gte',100000000);break;
+      case 'G15':return error('insufficient_data','기간 전체의 ETF 방문·조회 로그가 없어 미조회 고객을 확정할 수 없습니다. 등록 태그가 없다는 것을 실제 미조회로 보지는 않습니다. 기존 목록은 유지합니다.');
+      case 'G16':return error('unsupported_history','동일 정의의 전월말 현금성자산 스냅샷이 없어 전월 대비 증감을 계산할 수 없습니다. 현재 금액 기준으로 조회해 주세요. 기존 목록은 유지합니다.');
+      case 'G17':return error('out_of_scope','이 대화창은 고객 조회·집계·추출 기능입니다. 상품 추천이나 자동매수를 실행하지 않습니다. 기존 목록은 유지합니다.');
+      case 'G18':return error('clarification_required','현금성자산 금액으로 찾을까요, 비중으로 찾을까요? 예를 들어 “현금성자산 500만원 이상”처럼 기준을 알려주세요.');
+      case 'M01T1':out.intent='aggregate';out.query=segment('납입금 미운용');out.metric='cash_sum';break;
+      case 'M01T2': case 'M01T3':case 'M01T4':case 'M01T5': {
+        if(!state.reference) return error('clarification_required','이어갈 검색조건이 없습니다. 먼저 찾고 싶은 고객 조건을 알려주세요.');
+        out = Object.assign(out,copy(state.reference)); out.intent='extract'; out.metric=null; out.recipeId=id;
+        if(id==='M01T2') out.query=and(out.query,compare('irp_amount','gte',20000000));
+        if(id==='M01T3'){out.query=remove(out.query,q=>q.field==='irp_amount');out.sort={field:'cash_amount',direction:'desc'};out.limit=1;}
+        if(id==='M01T4')out.query=and(out.query,compare('age','gte',38));
+        if(id==='M01T5')out.query=and(remove(out.query,q=>q.field==='age'),fundRecent());
+        break;
+      }
+      case 'M01T6':out.query=compare('cash_amount','gte',5000000);out.sort={field:'cash_amount',direction:'desc'};out.limit=null;break;
+      default: {
+        // Deliberately bounded grammar: refuse unrecognised clauses instead of dropping them.
+        if (['조건전부지워줘','조건모두해제','전체조건해제','전체보기'].includes(n)) return out;
+        const m = n.match(/^(그중)?(irp잔액|현금성자산|현금성비중|원리금보장비중|연령)(\d+(?:\.\d+)?)(억원|천만원|만원|원|%|세)(이상|이하|초과|미만)(인)?(고객)?(만)?(보여줘|찾아줘|남겨줘)?$/);
+        if(m){
+          const f={'irp잔액':'irp_amount','현금성자산':'cash_amount','현금성비중':'cash_pct','원리금보장비중':'protected_pct','연령':'age'}[m[2]];
+          if((f==='age' && m[4]!=='세') || (f.endsWith('_pct') && m[4]!=='%') || (f.endsWith('_amount') && !m[4].endsWith('원')))return error('clarification_required','금액·비중·연령에 맞는 단위를 입력해 주세요.');
+          const mult={'억원':1e8,'천만원':1e7,'만원':1e4,'원':1,'%':1,'세':1}[m[4]];
+          const q=compare(f,{'이상':'gte','이하':'lte','초과':'gt','미만':'lt'}[m[5]],Math.round(Number(m[3])*mult));
+          if(m[1]){if(!state.reference)return error('clarification_required','먼저 검색조건을 지정해 주세요.'); out=Object.assign(out,copy(state.reference),{intent:'extract',metric:null});out.query=and(out.query,q);} else out.query=q;
+          return out;
+        }
+        return error('unsupported_mock','현재는 골든셋 기반 목업입니다. 이 문장은 아직 연결하지 않았습니다. “예시 질문”에서 지원하는 질문을 선택하거나, “현금성자산 500만원 이상”처럼 입력해 주세요. 기존 목록은 유지합니다.');
+      }
+    }
+    return out;
+  }
+  function initialState(records) {
+    const ids=records.map(idOf).sort();
+    return {reference:null,main:{query:all(),sort:defaultSort(),limit:null},mainListCaseIds:ids,mainMatchedCount:ids.length,mainUnknownCaseIds:[],lastResult:null};
+  }
+  function execute(records, state, request, asOf) {
+    const next=copy(state);
+    if(request.error) return {state:next,result:{intent:request.error,resultStatus:request.error,matchedCount:null,matchedCaseIds:null,unknownCaseIds:null,resolvedQuery:null,metrics:{},answer:request.answer,uiEffect:'keep_list_and_query',resultPreviewCaseIds:null,resultPreviewCount:null,mainListCaseIds:copy(state.mainListCaseIds),mainListCount:state.mainListCaseIds.length}};
+    const res=run(records,request.query,request.sort,request.limit);
+    res.intent=request.intent;res.metrics=metrics(records,res,request.metric,asOf);res.recipeId=request.recipeId || null;
+    const spec={query:copy(request.query),sort:copy(res.sort),limit:res.limit}; next.reference=spec;
+    res.uiEffect=request.intent==='aggregate'?'answer_only_keep_list':'apply_customer_list';
+    if(request.intent!=='aggregate'){
+      next.main=copy(spec);next.mainListCaseIds=copy(res.resultPreviewCaseIds);next.mainMatchedCount=res.matchedCount;next.mainUnknownCaseIds=copy(res.unknownCaseIds);
+    }
+    res.mainListCaseIds=copy(next.mainListCaseIds);res.mainListCount=next.mainListCaseIds.length;
+    res.answer=answer(records,res,request.metric,asOf);next.lastResult=copy(res);
+    return {state:next,result:res};
+  }
+  function step(records,state,text,asOf){return execute(records,state,resolve(text,state,asOf),asOf);}
+  return {version:'branch-search-current.v0.3',copy,all,segment,compare,and,remove,fields,value,idOf,asset,run,evaluate,dateAdd,dayDiff,money,describe,chips,sortLabel,questions,turns,resolve,initialState,execute,step};
+});
+
+;
+
+/* branch-search-current-data.js */
+/* Read-only projection of the CURRENT main-list rows and CURRENT embedded fixtures.
+ * No review-8 fixture, no extra customers, no changes to customer snapshots.
+ */
+(function(root,factory){
+  if(typeof module==='object'&&module.exports)module.exports=factory();
+  else root.PensionBranchCurrentData=factory();
+})(typeof window==='undefined'?globalThis:window,function(){
+'use strict';
+const copy=x=>JSON.parse(JSON.stringify(x));
+const num=x=>typeof x==='number'&&Number.isFinite(x)?x:null;
+const get=(x,p)=>p.reduce((v,k)=>v==null?undefined:v[k],x);
+const own=(x,k)=>!!x&&Object.prototype.hasOwnProperty.call(x,k);
+function money(text){
+ if(typeof text==='number')return num(text);
+ if(typeof text!=='string'||!text.trim())return null;
+ const s=text.replace(/[\s,원]/g,'').replace(/[−–]/g,'-');
+ if(/^-?\d+(?:\.\d+)?$/.test(s))return Number(s);
+ let total=0,pos=0,matched=false;const re=/(-?\d+(?:\.\d+)?)(억|천만|만)/g;let m;
+ while((m=re.exec(s))){if(m.index!==pos)return null;total+=Math.round(Number(m[1])*({'억':1e8,'천만':1e7,'만':1e4}[m[2]]));pos=re.lastIndex;matched=true;}
+ return matched&&pos===s.length&&Number.isSafeInteger(total)?total:null;
+}
+function percent(x){if(typeof x==='number')return num(x);if(typeof x!=='string')return null;const t=x.replace(/[\s,%]/g,'').replace(/[−–]/g,'-');return /^[-+]?\d+(?:\.\d+)?$/.test(t)?Number(t):null;}
+function date(x){if(typeof x!=='string')return null;const d=x.slice(0,10).replace(/\./g,'-');return /^\d{4}-\d{2}-\d{2}$/.test(d)?d:null;}
+function supplement(raw){
+ const ctx=raw['에이전트맥락데이터']||{},s={},a=get(ctx,['납입및세제','개인부담금자동이체']),p=get(ctx,['계좌운영','입금시매수상품']),d=get(ctx,['계좌운영','디폴트옵션실행예정']);
+ if(a)s.autoTransfer={registered:typeof a['등록여부']==='boolean'?a['등록여부']:null,monthlyAmountKrw:num(a['월이체금액원'])};
+ if(p)s.depositPurchase={configured:typeof p['설정여부']==='boolean'?p['설정여부']:null};
+ if(d)s.defaultOptionExecution={scheduledAt:date(d['예정일']),amountKrw:num(d['대상금액원'])};
+ s.externalAccounts=(ctx['외부계좌']||[]).map((a,i)=>({
+  id:a['외부계좌식별자']||('recorded-external-'+i),
+  type:a['계좌유형']||(a['외부계좌구분']==='ISA'?'ISA':a['외부계좌구분']),
+  institution:a['금융기관']||null,valuationAmountKrw:num(a['평가금액원']),
+  maturityDate:date(a['만기일']),verifiedAt:date(a['정보확인일']),source:a['정보출처']||null,
+  liveIntegrated:a['통합조회가능여부']===true
+ }));
+ if(own(ctx['납입및세제'],'올해개인부담금납입액원'))s.annualContributionKrw=num(ctx['납입및세제']['올해개인부담금납입액원']);
+ return s;
+}
+function fromCurrentRows(mainRows,embeddedFixtures,modelRows,profileGetter){
+ if(!Array.isArray(mainRows))throw new Error('현재 고객 목록을 읽을 수 없습니다.');
+ const raw=(embeddedFixtures&&embeddedFixtures.customers)||[],models=new Map((modelRows||[]).map(r=>[r.id,r]));
+ const byCase=new Map(raw.map(r=>[r.briefingMeta.caseId,r]));
+ const byCustomer=new Map(raw.filter(r=>r.customer.customerId).map(r=>[r.customer.customerId,r]));
+ const records=[],warnings=[],seenRows=new Set();
+ for(const row of mainRows){
+  if(!row.id||seenRows.has(row.id))continue;seenRows.add(row.id);
+  const model=models.get(row.id)||{};
+  let profile={};try{profile=profileGetter?profileGetter(model)||{}:{};}catch(_){}
+  let src=byCase.get(row.id)||byCustomer.get(model.cno||profile.pin);
+  // Repository documents DEMO-01 as the structured twin of the existing ksy row.
+  if(!src&&row.id==='ksy')src=byCase.get('DEMO-01');
+  let r;
+  if(src){
+   r=copy(src);r.searchSupplement=supplement(src);
+   r.searchSource={kind:'structured',sourceCaseId:src.briefingMeta.caseId,asOfDate:src.briefingMeta.asOfDate,displayOverrides:[]};
+   r.briefingMeta.caseId=row.id;
+  }else{
+   r={briefingMeta:{caseId:row.id,asOfDate:null},
+    customer:{customerId:model.cno||profile.pin||null,name:row.name||model.name||'',age:num(profile.age),starClubGrade:row.club||profile.club||null,investmentProfile:model.profile||null,irpOpenedAt:date(profile.acct),defaultOption:{registrationStatus:typeof profile.dopt==='boolean'?(profile.dopt?'등록':'미등록'):null}},
+    irpAccount:{valuationAmountKrw:null,oneYearReturnPct:null,taxDeductionRemainingKrw:null,assetAllocation:[]},holdings:null,signals:[],searchSupplement:{},
+    searchSource:{kind:'display-only',sourceCaseId:null,asOfDate:null,displayOverrides:[]}};
+   // These are current model facts, not invented legacy-to-JSON customer records.
+   // Do not infer cash/holdings/tax amounts from rounded display labels or missing arrays.
+   if(num(model.taxRemainingKrw)!==null)r.irpAccount.taxDeductionRemainingKrw=model.taxRemainingKrw;
+  }
+  r.customer.name=row.name||r.customer.name;
+  if(row.club)r.customer.starClubGrade=row.club;
+  const currentBalance=money(row.bal),currentReturn=percent(row.ret);
+  if(currentBalance!==null&&r.irpAccount.valuationAmountKrw!==currentBalance){
+   if(src)r.searchSource.displayOverrides.push('valuationAmountKrw');
+   r.irpAccount.valuationAmountKrw=currentBalance;
+  }
+  if(currentReturn!==null&&r.irpAccount.oneYearReturnPct!==currentReturn){
+   if(src)r.searchSource.displayOverrides.push('oneYearReturnPct');
+   r.irpAccount.oneYearReturnPct=currentReturn;
+  }
+  // Keep exactly the state labels exposed by the CURRENT row. A missing badge is
+  // not evidence of absent behaviour. Attach a date only when the original agrees.
+  const originalSignals=src&&Array.isArray(src.signals)?src.signals:[];
+  if(Array.isArray(row.tags))r.signals=row.tags.map(t=>{
+   const label=t.t||t.label||'';const old=originalSignals.find(s=>s.label===label);
+   return Object.assign({},old?copy(old):{}, {label,source:old&&old.source||'현재 메인 목록의 표시 뱃지'});
+  }).filter(x=>x.label);
+  const triggers={};for(const k of ['risk','mat','imp','opp'])triggers[k]=own(model,k)?!!model[k]:null;
+  r.searchSupplement.triggers=triggers;
+  if(r.searchSource.displayOverrides.length)warnings.push({caseId:row.id,kind:'display-vs-snapshot',fields:r.searchSource.displayOverrides});
+  r.searchSource.originalOrder=records.length;records.push(r);
+ }
+ const counts={};for(const r of records){const d=r.searchSource.asOfDate;if(d)counts[d]=(counts[d]||0)+1;}
+ const dates=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]||b.localeCompare(a));
+ const asOfDate=dates[0]||null;
+ const knownDates=Object.keys(counts).sort();
+ return {metadata:{scopeId:'current-main-list',scopeLabel:'현재 메인 목록',recordCount:records.length,
+  structuredCount:records.filter(r=>r.searchSource.kind==='structured').length,
+  displayOnlyCount:records.filter(r=>r.searchSource.kind==='display-only').length,
+  asOfDate,knownDates,mixedDates:knownDates.length>1,
+  source:'frontend/briefing-fabrix + PensionBriefingFixtures + original main-list rows',warnings,
+  scopeNote:'현재 메인 목록에 포함된 시연 고객만 조회합니다. 상단 부점 전체 예시 통계와 별도 범위입니다. 상세 원본이 없는 값은 미확인으로 처리합니다.'},records};
+}
+return {fromCurrentRows,supplement,money,percent,date};
+});
+
+;
+
+/* branch-search-current-provider.js */
+/* Bounded mock interpreter. Queries are evaluated against current data, not golden answers. */
+(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory(require('./branch-search-core'));else root.PensionBranchCurrentProvider=factory(root.PensionBranchSearchCore);})(typeof window==='undefined'?globalThis:window,function(C){
+'use strict';
+const norm=t=>String(t).trim().replace(/[?!？。·,]/g,'').replace(/\.$/,'').replace(/\s/g,'').toLowerCase();
+const fields={'irp잔액':'irp_amount','irp평가금액':'irp_amount','잔액':'irp_amount','현금성자산':'cash_amount','현금성잔액':'cash_amount','현금성비중':'cash_pct','원리금보장비중':'protected_pct','연령':'age','나이':'age','계좌수익률':'return_pct','수익률':'return_pct','세액공제잔여한도':'tax_remaining'};
+const err=text=>({error:'clarification_required',answer:text});
+function create(input){
+ const labels=new Map();
+ const approved=['퇴직금 운용 미지시','퇴직금 일부만 운용','현금성 장기대기','현금성 과다','만기자금 미운용','납입금 미운용','입금매수상품 미지정','원리금보장 편중','수익률 부진','환매추천 펀드 보유','판매중단 펀드 보유','저금리 예금 보유','DO 미등록','투자성향-DO불일치','타행 IRP 보유','타사 연금저축 보유','복수 IRP 보유','연금자산 분산보유','이탈징후','계약이전 신청','계약이전 페이지 방문','연금개시 가능','연금개시 예정','연금수령 중','올해 미납입','납입 중단','퇴직연금 관리화면 방문','ETF 상품조회','펀드 상품조회','보유상품 수익률 조회','장기 미운용'];
+ for(const label of approved)labels.set(norm(label),{op:'segment_registered',label});
+ for(const label of ['정기예금 만기','GIC 만기','ISA 만기','ISA 전환기한','DO 실행','퇴직금 재입금기한','연금개시','추가납입'])labels.set(norm(label),{op:'segment_family',label});
+ for(const r of input.records)for(const s of r.signals||[]){
+  labels.set(norm(s.label),{op:'segment_registered',label:s.label});
+  const m=s.label.match(/^(.*) D-\d+$/);if(m)labels.set(norm(m[1]),{op:'segment_family',label:m[1]});
+ }
+ if(labels.has('etf상품조회'))labels.set('etf조회',labels.get('etf상품조회'));
+ if(labels.has('펀드상품조회'))labels.set('펀드조회',labels.get('펀드상품조회'));
+ const simpleClause=raw=>{
+  let n=raw.replace(/(이고|이면서|등록된|이있는|이있음|한|인)?고객(만)?$/,'').replace(/(한|인|등록된)$/,'');
+  if(labels.has(n))return C.copy(labels.get(n));
+  if(['vip','vvip','그랜드','베스트'].includes(n))return C.compare('grade','eq',({vip:'VIP',vvip:'VVIP'}[n]||n));
+  let m=n.match(/^(\d{1,2})대$/);if(m){const age=Number(m[1]);if(age%10)return null;return C.and(C.compare('age','gte',age),C.compare('age','lte',age+9));}
+  m=n.match(/^(?:(irp잔액|irp평가금액|잔액|현금성자산|현금성잔액|현금성비중|원리금보장비중|연령|나이|계좌수익률|수익률|세액공제잔여한도))?([-+]?\d+(?:\.\d+)?)(억원|억|천만원|천만|만원|만|원|%|세)(이상|이하|초과|미만)$/);
+  if(m){const f=m[1]?fields[m[1]]:m[3]==='세'?'age':null;if(!f)return null;
+   const monetary=f.endsWith('_amount')||f==='tax_remaining';
+   if(f==='age'&&m[3]!=='세'||f.endsWith('_pct')&&m[3]!=='%'||monetary&&!['억원','억','천만원','천만','만원','만','원'].includes(m[3]))return null;
+   const v=Math.round(Number(m[2])*({'억원':1e8,'억':1e8,'천만원':1e7,'천만':1e7,'만원':1e4,'만':1e4,'원':1,'%':1,'세':1}[m[3]]));
+   return C.compare(f,{'이상':'gte','이하':'lte','초과':'gt','미만':'lt'}[m[4]],v);
+  }
+  const person=input.records.find(r=>norm(r.customer.name)===n);if(person)return C.compare('name','eq',person.customer.name);
+  return null;
+ };
+ return function(text,state){
+  const asOf=input.metadata.asOfDate;
+  const base=C.resolve(text,state,asOf||'1900-01-01');
+  if(!asOf&&base.query&&/between/.test(JSON.stringify(base.query)))return err('공통 분석 기준일이 확인되지 않아 기간 조건을 계산할 수 없습니다.');
+  if(!base.error||base.error!=='unsupported_mock'){if(base.sort&&base.sort.field==='caseId')base.sort={field:'source_order',direction:'asc'};return base;}
+  let n=norm(text).replace(/^우리부점(에서|의)?/,'').replace(/^현재(메인)?목록(에서|의)?/,'');
+  const follow=/^(그중|이중)/.test(n);n=n.replace(/^(그중|이중)/,'');
+  const prior=state.reference;
+  if(follow&&!prior)return err('이어갈 검색조건이 없습니다. 먼저 찾고 싶은 고객 조건을 알려주세요.');
+  let out={intent:'extract',query:follow?C.copy(prior.query):C.all(),sort:follow?C.copy(prior.sort):{field:'source_order',direction:'asc'},limit:follow?prior.limit:null};
+  let m=n.match(/^(irp잔액|잔액|현금성자산|현금성비중|원리금보장비중|수익률)(큰|많은|높은|작은|적은|낮은)순으로(?:상위)?(\d+)명만(?:보여줘|남겨줘)?$/);
+  if(m){if(!follow&&prior)out=Object.assign(out,C.copy(prior),{intent:'extract',metric:null});out.sort={field:fields[m[1]],direction:['큰','많은','높은'].includes(m[2])?'desc':'asc'};out.limit=Number(m[3]);return out;}
+  m=n.match(/^(.+)조건(?:은|만)?(?:빼줘|빼자|삭제해줘|해제해줘)$/);
+  if(m){if(!prior)return err('삭제할 검색조건이 없습니다.');const key=m[1],f=fields[key],seg=labels.get(key);if(!f&&!seg)return base;
+   out=Object.assign(out,C.copy(prior),{intent:'extract',metric:null});out.query=C.remove(out.query,q=>f?q.field===f:(q.label===seg.label));return out;
+  }
+  if(/(몇명이야|몇명이있어|몇명인지알려줘)$/.test(n)){out.intent='aggregate';n=n.replace(/(몇명이야|몇명이있어|몇명인지알려줘)$/,'').replace(/(은|는|이|가)$/,'');}
+  else n=n.replace(/(보여줘|찾아줘|추려줘|남겨줘)$/,'');
+  n=n.replace(/만$/,'');
+  const hasOr=/(또는|이거나)/.test(n),hasAnd=/(이면서|이고|그리고|고객중|중에서)/.test(n);
+  if(hasOr&&hasAnd)return err('“또는”과 “그리고”가 함께 있어 결합 기준을 확인해야 합니다. 조건을 두 묶음으로 나눠 알려주세요.');
+  const parts=n.split(/(?:이면서|이고|그리고|고객중|중에서|또는|이거나)/).filter(Boolean),terms=parts.map(simpleClause);
+  if(!parts.length||terms.some(x=>!x))return {error:'unsupported_mock',answer:'현재는 정해진 조회 규칙으로 동작하는 목업입니다. 이 문장을 임의의 조건으로 바꾸지 않았습니다. 예시 질문 또는 현재 뱃지명과 금액 조건을 사용해 주세요. 기존 목록은 유지합니다.'};
+  const q=hasOr?{op:'or',args:terms}:C.and(...terms);out.query=follow?C.and(prior.query,q):q;return out;
+ };
+}
+return {create};
+});
+
+;
+
+/* branch-search-session.js */
+/* Conversation state is independent of DOM and transport. Latest request wins. */
+(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory(require('./branch-search-core'));else root.PensionBranchSearchSession=factory(root.PensionBranchSearchCore);})(typeof window==='undefined'?globalThis:window,function(C){
+'use strict';
+function create(input,options){
+ options=options||{};
+ const data=C.copy(input),records=data.records,asOf=data.metadata.asOfDate;
+ let state=C.initialState(records),messages=[],busy=false,ticket=0,revision=0,sequence=0,disposed=false;
+ const listeners=new Set();
+ const provider=options.provider||((text,s)=>Promise.resolve(C.resolve(text,s,asOf)));
+ const emit=(type,extra)=>{if(disposed)return;const e=Object.assign({type,revision,busy,state:C.copy(state),messages:C.copy(messages)},extra||{});listeners.forEach(f=>f(e));};
+ const add=(role,text,extra)=>{const m=Object.assign({id:++sequence,role,text},extra||{});messages.push(m);return m;};
+ function cancel(reason){ticket++;if(busy){busy=false;messages.forEach(m=>{if(m.pending){m.pending=false;m.cancelled=true;m.text=reason||'요청을 취소했습니다. 목록은 유지합니다.';}});emit('cancel');}}
+ async function send(text){
+  text=String(text||'').trim();if(!text||disposed)return null;
+  if(text.length>1200){emit('validation',{notice:'질문은 1,200자 이내로 입력해 주세요.'});return null;}
+  cancel('새 요청으로 이전 조회를 취소했습니다.');const token=++ticket;busy=true;
+  add('user',text);const reply=add('assistant','검색조건을 확인하고 있어요.',{pending:true});
+  const snapshot=C.copy(state);emit('pending');
+  try{
+   const request=await provider(text,snapshot);
+   if(disposed||token!==ticket)return null;
+   const out=C.execute(records,snapshot,request,asOf);
+   state=out.state;busy=false;reply.pending=false;reply.text=out.result.answer;reply.result=out.result;
+   if(out.result.uiEffect==='apply_customer_list')revision++;
+   emit(out.result.uiEffect==='apply_customer_list'?'apply':'answer',{result:C.copy(out.result)});
+   return out.result;
+  }catch(err){
+   if(disposed||token!==ticket)return null;
+   busy=false;reply.pending=false;reply.error=true;reply.text='조회 중 오류가 발생했습니다. 기존 목록과 조건은 유지했습니다. 다시 시도해 주세요.';reply.retryText=text;
+   emit('error');return null;
+  }
+ }
+ function apply(spec,source){
+  cancel('조건이 변경되어 이전 조회를 취소했습니다.');
+  const out=C.execute(records,state,{intent:'extract',query:spec.query,sort:spec.sort||C.copy(state.main.sort),limit:spec.limit===undefined?state.main.limit:spec.limit},asOf);
+  state=out.state;revision++;
+  if(source)add('system',source);emit('apply',{result:C.copy(out.result)});return out.result;
+ }
+ return {
+  send,cancel,apply,
+  reset:()=>apply({query:C.all(),sort:{field:data.metadata.scopeId==='current-main-list'?'source_order':'caseId',direction:'asc'},limit:null},'전체 검색조건과 표시 제한을 해제했습니다.'),
+  removeChip:key=>apply({query:C.remove(state.main.query,q=>JSON.stringify(q)===key)},'선택한 조건을 해제했습니다.'),
+  applyAnswer:result=>apply({query:result.resolvedQuery,sort:result.sort,limit:result.limit},'이 답변의 조건을 고객 목록에 적용했습니다.'),
+  newConversation:()=>{cancel();state.reference=null;state.lastResult=null;messages=[];emit('new_conversation');},
+  clearReference:()=>{state.reference=null;emit('reference');},
+  notifyManual:()=>{state.reference=C.copy(state.main);emit('reference');},
+  get:()=>({state:C.copy(state),messages:C.copy(messages),busy,revision}),
+  subscribe:f=>{listeners.add(f);return()=>listeners.delete(f);},
+  records:()=>C.copy(records),metadata:()=>C.copy(data.metadata),
+  destroy:()=>{cancel();disposed=true;listeners.clear();},
+  // Fixture verification only. No evaluation answers are used by the session.
+  mode:input.metadata.scopeId==='current-main-list'?'current-data-mock':'golden-mock'
+ };
+}
+return {create};
+});
+
+;
+
+/* branch-search-motion.js */
+/* FLIP-like position transition; also supports hosts replacing every row DOM node. */
+(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.PensionBranchMotion=factory();})(typeof window==='undefined'?globalThis:window,function(){
+'use strict';
+function create(win){
+ win=win||window;let running=[],ghosts=[],timer=null,generation=0;
+ const reduced=()=>!!(win.matchMedia&&win.matchMedia('(prefers-reduced-motion: reduce)').matches);
+ function cancel(){generation++;running.forEach(a=>{try{a.cancel();}catch(_){}});running=[];ghosts.forEach(n=>n.remove());ghosts=[];clearTimeout(timer);}
+ function capture(root){
+  const out=new Map();if(!root)return out;
+  root.querySelectorAll('[data-branch-customer-id]').forEach(el=>{
+   const id=el.getAttribute('data-branch-customer-id');const rect=el.getBoundingClientRect();
+   if(id&&rect.width&&rect.height)out.set(id,{rect,clone:el.cloneNode(true)});
+  });return out;
+ }
+ function play(root,before,changed){
+  cancel();if(!changed||reduced()||!root)return;
+  const now=new Map();root.querySelectorAll('[data-branch-customer-id]').forEach(el=>now.set(el.getAttribute('data-branch-customer-id'),el));
+  const beforeIds=Array.from(before.keys()),afterIds=Array.from(now.keys());
+  if(JSON.stringify(beforeIds)===JSON.stringify(afterIds))return;
+  let entered=0;
+  now.forEach((el,id)=>{
+   const current=el.getBoundingClientRect(),old=before.get(id);let frames;
+   if(old){const dx=old.rect.left-current.left,dy=old.rect.top-current.top;if(Math.abs(dx)<1&&Math.abs(dy)<1)return;frames=[{transform:'translate('+dx+'px,'+dy+'px)',opacity:1},{transform:'translate(0,0)',opacity:1}];}
+   else frames=[{transform:'translateY(10px)',opacity:0},{transform:'translateY(0)',opacity:1}];
+   if(typeof el.animate==='function')running.push(el.animate(frames,{duration:old?280:190,delay:old?0:Math.min(entered++*22,88),easing:'cubic-bezier(.2,.7,.2,1)',fill:'none'}));
+  });
+  before.forEach((old,id)=>{
+   if(now.has(id)||old.rect.bottom<0||old.rect.top>win.innerHeight)return;
+   const ghost=old.clone;ghost.removeAttribute('id');ghost.removeAttribute('data-branch-customer-id');ghost.setAttribute('aria-hidden','true');ghost.inert=true;
+   ghost.querySelectorAll('[id]').forEach(n=>n.removeAttribute('id'));
+   Object.assign(ghost.style,{position:'fixed',left:old.rect.left+'px',top:old.rect.top+'px',width:old.rect.width+'px',height:old.rect.height+'px',margin:'0',pointerEvents:'none',zIndex:'25',boxSizing:'border-box',animation:'none'});
+   ghost.classList.add('pad-branch-row-ghost');root.appendChild(ghost);ghosts.push(ghost);
+   if(typeof ghost.animate==='function')running.push(ghost.animate([{opacity:.65,transform:'translateY(0)'},{opacity:0,transform:'translateY(-5px)'}],{duration:160,fill:'forwards',easing:'ease-out'}));
+  });
+  timer=setTimeout(()=>{ghosts.forEach(n=>n.remove());ghosts=[];running=[];},480);
+ }
+ return {capture,play,cancel,reduced};
+}
+return {create};
+});
+
+;
+
+/* branch-search-widget.js */
+/* Non-modal floating chat widget. Created outside the legacy full-render mount. */
+(function(root){'use strict';
+const C=root.PensionBranchSearchCore;
+const svg=(path)=>'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+path+'</svg>';
+const icons={chat:svg('<path d="M20 11.5a8 8 0 0 1-8 8H5l-3 2V11.5a9 9 0 0 1 18 0Z"/><path d="M7 10h8M7 14h5"/>'),arrow:svg('<path d="m5 12 7-7 7 7M12 5v15"/>'),minus:svg('<path d="M5 12h14"/>'),reset:svg('<path d="M3 10a9 9 0 1 1 1.5 7M3 4v6h6"/>'),spark:svg('<path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5Z"/>')};
+function mount(container,session,options){
+ options=options||{};const meta=session.metadata();const scopeText=(meta.scopeLabel||'조회 대상')+' '+meta.recordCount+'명';const dateText=meta.asOfDate?meta.asOfDate.replace(/-/g,'.'):'기준일 미확인';let open=false,visible=true,disposed=false,composing=false,examplesOpen=false,tour=-1,enabled=options.enabled!==false;
+ const rootEl=document.createElement('div');rootEl.className='pad-branch-widget';rootEl.setAttribute('data-branch-widget','');
+ rootEl.innerHTML='<section class="pad-branch-window" id="pad-branch-window" role="dialog" aria-modal="false" aria-label="부점 AI 고객 검색" hidden>'+
+ '<header class="pad-branch-header"><div class="pad-branch-avatar">'+icons.spark+'</div><div class="pad-branch-heading"><strong>부점 AI</strong><span><i></i>고객 조회·집계·추출</span></div><button type="button" class="pad-branch-icon" data-action="new" title="새 대화 · 목록 유지" aria-label="새 대화">'+icons.reset+'</button><button type="button" class="pad-branch-icon" data-action="close" aria-label="대화창 최소화">'+icons.minus+'</button></header>'+
+ '<div class="pad-branch-scope"><span>현재 화면 기준</span><span>'+scopeText+' · '+dateText+'</span></div>'+
+ '<div class="pad-branch-mode-gate" hidden><strong>현재 고객 목록을 확인해 주세요.</strong><p>검색 원본 연결을 확인할 수 없습니다. 다른 고객 데이터로 대체하지 않습니다.</p><button class="pad-branch-primary" type="button" data-action="enable">현재 데이터 다시 확인</button></div>'+
+ '<div class="pad-branch-context" hidden></div><div class="pad-branch-tour" hidden></div>'+
+ '<div class="pad-branch-body" data-branch-scroll><div class="pad-branch-welcome"><div class="pad-branch-welcome-icon">'+icons.chat+'</div><h3>어떤 고객을 찾으시나요?</h3><p>부점 현황을 확인하고, 원하는 조건으로<br>고객 목록을 좁혀 보세요.</p><div class="pad-branch-suggestions"><button type="button" data-question="overview">IRP 고객 현황<span>↗</span></button><button type="button" data-question="cash">납입금 미운용 고객<span>↗</span></button><button type="button" data-question="do">DO 실행 예정 고객<span>↗</span></button></div><p class="pad-branch-mock-note">현재 고객 데이터 조회 · 실제 AI 미연결</p></div><div class="pad-branch-messages" role="log" aria-live="polite" aria-relevant="additions text" aria-label="부점 AI 대화"></div></div>'+
+ '<div class="pad-branch-examples" hidden></div>'+
+ '<footer class="pad-branch-footer"><div class="pad-branch-tools"><button type="button" data-action="examples" aria-expanded="false">예시 질문</button><button type="button" data-action="tour">6턴 시연 가이드</button><button type="button" data-action="restore" title="검색 결과를 해제하고 기존 목록으로">기존 목록</button><button type="button" data-action="cancel" class="pad-branch-cancel" hidden>조회 취소</button></div><form class="pad-branch-composer"><textarea rows="1" maxlength="1200" aria-label="찾고 싶은 고객 조건" placeholder="찾고 싶은 고객 조건을 입력하세요"></textarea><button type="submit" aria-label="질문 전송" class="pad-branch-send" disabled>'+icons.arrow+'</button></form><div class="pad-branch-disclaimer">확인된 데이터만 조회해요. 거래는 실행하지 않아요.</div></footer></section>'+
+ '<button type="button" class="pad-branch-launcher" aria-label="부점 AI 열기" aria-controls="pad-branch-window" aria-expanded="false">'+icons.chat+'<span>부점 AI</span><span class="pad-branch-live-dot"></span></button>';
+ container.appendChild(rootEl);
+ const scopeNode=rootEl.querySelector('.pad-branch-scope');scopeNode.title=meta.scopeNote||'';
+ const note=rootEl.querySelector('.pad-branch-disclaimer');if(meta.displayOnlyCount)note.textContent='현재 목록 '+meta.recordCount+'명 · 상세 원본 '+meta.structuredCount+'명 · 나머지 상세값은 미확인';if(meta.mixedDates)note.textContent+=' · 일부 기준일 상이';
+ const find=s=>rootEl.querySelector(s),panel=find('.pad-branch-window'),launcher=find('.pad-branch-launcher'),input=find('textarea'),sendBtn=find('.pad-branch-send'),body=find('.pad-branch-body'),log=find('.pad-branch-messages');
+ const welcome=find('.pad-branch-welcome'),context=find('.pad-branch-context'),tourEl=find('.pad-branch-tour'),examples=find('.pad-branch-examples');
+ const nodes=new Map();let lastMessageIds='',current=session.get();
+ function refreshDraft(){sendBtn.disabled=!input.value.trim()||!enabled;input.style.height='auto';input.style.height=Math.min(input.scrollHeight,92)+'px';}
+ input.addEventListener('input',refreshDraft);
+ input.addEventListener('compositionstart',()=>{composing=true;});input.addEventListener('compositionend',()=>{composing=false;refreshDraft();});
+ input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&!composing&&e.keyCode!==229){e.preventDefault();submit();}});
+ find('form').addEventListener('submit',e=>{e.preventDefault();if(!composing)submit();});
+ function submit(text){const q=text===undefined?input.value:text;if(!q.trim()||!enabled)return;input.value='';refreshDraft();examplesOpen=false;examples.hidden=true;find('[data-action="examples"]').setAttribute('aria-expanded','false');const step=tour;session.send(q).then(result=>{if(step>=0&&step<6&&tour===step&&q===C.turns[step]&&result&&['ok','partial','empty'].includes(result.resultStatus)){tour++;renderTour();}});}
+ function setOpen(value,focus){open=value;panel.hidden=!open;launcher.setAttribute('aria-expanded',String(open));launcher.setAttribute('aria-label',open?'부점 AI 최소화':'부점 AI 열기');launcher.classList.toggle('is-open',open);if(open&&focus!==false)setTimeout(()=>{if(!disposed&&open&&visible)input.focus({preventScroll:true});},80);if(!open&&focus!==false)launcher.focus({preventScroll:true});}
+ launcher.addEventListener('click',()=>setOpen(!open));
+ function setEnabled(value){enabled=value;find('.pad-branch-mode-gate').hidden=enabled;find('.pad-branch-body').hidden=!enabled;find('.pad-branch-footer').hidden=!enabled;refreshDraft();}
+ function buildExamples(){examples.replaceChildren();const title=document.createElement('div');title.className='pad-branch-examples-title';title.textContent='예시 질문 · 정답은 현재 고객 데이터에서 계산해요';examples.appendChild(title);C.questions.forEach(([id,q])=>{const b=document.createElement('button');b.type='button';b.dataset.example=id;const n=document.createElement('span');n.textContent=id;const txt=document.createElement('span');txt.textContent=q;b.append(n,txt);examples.appendChild(b);});}
+ buildExamples();
+ function renderTour(){tourEl.replaceChildren();tourEl.hidden=tour<0;if(tour<0)return;const tag=document.createElement('span');tag.textContent=tour>=6?'6턴 시연 완료':('M01 · '+(tour+1)+'/6');const p=document.createElement('p');p.textContent=tour>=6?'현재 고객 기준 조건 변경을 확인했어요.':C.turns[tour];const b=document.createElement('button');b.type='button';b.dataset.action=tour>=6?'tour':'tour-next';b.textContent=tour>=6?'처음부터':'질문 입력';const close=document.createElement('button');close.type='button';close.dataset.action='tour-close';close.textContent='닫기';tourEl.append(tag,p,b,close);}
+ function systemStatus(text){const n=document.createElement('div');n.className='pad-branch-system';n.textContent=text;log.appendChild(n);}
+ function sync(e){
+  if(disposed)return;current=e;
+  context.hidden=!e.state.reference;context.textContent=e.state.reference?'대화 기준 · '+C.describe(e.state.reference.query):'';
+  context.title=context.textContent;
+  welcome.hidden=e.messages.length>0;
+  const liveIds=new Set(e.messages.map(m=>m.id));nodes.forEach((n,id)=>{if(!liveIds.has(id)){n.remove();nodes.delete(id);}});
+  e.messages.forEach(m=>{
+   let n=nodes.get(m.id);const key=JSON.stringify([m.text,m.pending,m.cancelled,m.error,m.result&&m.result.uiEffect]);
+   if(!n){n=document.createElement('div');nodes.set(m.id,n);log.appendChild(n);}if(n.dataset.renderKey===key)return;n.dataset.renderKey=key;
+   n.className='pad-branch-message '+(m.role==='user'?'is-user':m.role==='system'?'is-system':'is-assistant')+(m.pending?' is-pending':'');n.replaceChildren();
+   if(m.role==='assistant'){const label=document.createElement('div');label.className='pad-branch-author';label.textContent=m.pending?'조건 확인 중':'부점 AI';n.appendChild(label);}
+   const p=document.createElement('p');p.textContent=m.text;n.appendChild(p);
+   if(m.pending){const dot=document.createElement('span');dot.className='pad-branch-typing';dot.setAttribute('aria-hidden','true');dot.innerHTML='<i></i><i></i><i></i>';n.appendChild(dot);}
+   if(m.result&&m.result.resolvedQuery){
+    const stamp=document.createElement('div');stamp.className='pad-branch-answer-meta';stamp.textContent=scopeText+' · '+dateText;n.appendChild(stamp);
+    const b=document.createElement('button');b.type='button';b.dataset.message=String(m.id);b.dataset.action=m.result.intent==='aggregate'?'apply-answer':'reveal';b.className='pad-branch-result-action';b.textContent=m.result.intent==='aggregate'?'해당 고객 보기 ↗':'결과 위치 보기 ↗';n.appendChild(b);
+   }
+   if(m.retryText){const b=document.createElement('button');b.type='button';b.dataset.message=String(m.id);b.dataset.action='retry';b.className='pad-branch-result-action';b.textContent='다시 시도';n.appendChild(b);}
+  });
+  find('[data-action="cancel"]').hidden=!e.busy;
+  if(e.type==='new_conversation'){log.replaceChildren();nodes.clear();input.value='';tour=-1;renderTour();refreshDraft();}
+  if(e.type==='validation')systemStatus(e.notice);
+  const ids=e.messages.map(x=>x.id).join(',');
+  if(ids!==lastMessageIds||['answer','apply','error'].includes(e.type)){
+   requestAnimationFrame(()=>{if(disposed)return;const last=e.messages.at(-1),node=last&&nodes.get(last.id);if(node){const top=node.offsetTop-log.offsetTop+log.offsetTop;body.scrollTop=Math.max(0,top-14);}else body.scrollTop=0;});
+  }
+  lastMessageIds=ids;
+ }
+ rootEl.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  const q=b.dataset.question;if(q){submit(q==='overview'?C.questions[0][1]:q==='cash'?C.turns[0]:C.questions[4][1]);return;}
+  if(b.dataset.example){const row=C.questions.find(x=>x[0]===b.dataset.example);input.value=row[1];refreshDraft();examplesOpen=false;examples.hidden=true;input.focus();return;}
+  const act=b.dataset.action;
+  if(act==='close')setOpen(false);
+  if(act==='new'){session.newConversation();input.value='';refreshDraft();input.focus();}
+  if(act==='cancel')session.cancel();
+  if(act==='restore'&&options.onRestore)options.onRestore();
+  if(act==='enable'){if(options.onEnable&&options.onEnable()===false)return;setEnabled(true);}
+  if(act==='examples'){examplesOpen=!examplesOpen;examples.hidden=!examplesOpen;b.setAttribute('aria-expanded',String(examplesOpen));}
+  if(act==='tour'){session.reset();session.newConversation();tour=0;renderTour();}
+  if(act==='tour-next'){if(tour<6){input.value=C.turns[tour];refreshDraft();input.focus();}}
+  if(act==='tour-close'){tour=-1;renderTour();}
+  if(act==='apply-answer'){const m=current.messages.find(x=>String(x.id)===b.dataset.message);if(m&&m.result)session.applyAnswer(m.result);}
+  if(act==='reveal'&&options.onReveal)options.onReveal();
+  if(act==='retry'){const m=current.messages.find(x=>String(x.id)===b.dataset.message);if(m)submit(m.retryText);}
+ });
+ rootEl.addEventListener('keydown',e=>{if(e.key==='Escape'&&open){e.stopPropagation();setOpen(false);}});
+ const off=session.subscribe(sync);sync(session.get());setEnabled(enabled);
+ return {setOpen,setEnabled,setVisible:v=>{visible=v;rootEl.hidden=!v;if(!v)setOpen(false,false);},
+  getState:()=>({open,visible,draft:input.value,enabled}),
+  destroy:()=>{disposed=true;off();rootEl.remove();},element:rootEl};
+}
+root.PensionBranchSearchWidget={mount};
+})(window);
+
+;
+
+/* branch-search-preserve-ui.js */
+/* Shared additive search-result row. Existing dashboard/rows/filter CSS is never changed. */
+(function(root){'use strict';
+ const C=root.PensionBranchSearchCore;
+ function bar(session,onRestore){
+  const el=document.createElement('section');el.className='pad-branch-resultbar';el.setAttribute('aria-label','AI 검색 결과 조건');
+  const state=session.get().state,meta=session.metadata();
+  const head=document.createElement('div');head.className='pad-branch-resulthead';
+  const title=document.createElement('span');title.className='pad-branch-resulttitle';title.textContent='AI 검색 결과';
+  const count=document.createElement('span');count.className='pad-branch-resultcount';count.textContent='조건 일치 '+state.mainMatchedCount+'명 · '+state.mainListCaseIds.length+'명 표시';
+  const scope=document.createElement('span');scope.className='pad-branch-resultscope';scope.textContent=(meta.scopeLabel||'조회 대상')+' '+meta.recordCount+'명 · '+(meta.asOfDate?meta.asOfDate.replace(/-/g,'.')+' 기준':'기준일 미확인');
+  const actions=document.createElement('div');actions.className='pad-branch-resultactions';
+  [['전체 조건 해제',()=>session.reset()],['기존 목록으로',onRestore]].forEach(([label,fn])=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',fn);actions.appendChild(b);});
+  head.append(title,count,scope,actions);el.appendChild(head);
+  const chips=document.createElement('div');chips.className='pad-branch-resultchips';
+  C.chips(state.main.query).forEach(ch=>{const b=document.createElement('button');b.type='button';b.className='pad-branch-resultchip';b.setAttribute('aria-label',ch.label+' 조건 삭제');b.textContent=ch.label+' ×';b.addEventListener('click',()=>session.removeChip(ch.key));chips.appendChild(b);});
+  const sort=document.createElement('span');sort.className='pad-branch-resultsort';sort.textContent=C.sortLabel(state.main.sort)+(state.main.limit?' · 상위 '+state.main.limit+'명':'');chips.appendChild(sort);el.appendChild(chips);
+  if(state.mainUnknownCaseIds.length){const d=document.createElement('details');d.className='pad-branch-resultunknown';const s=document.createElement('summary');s.textContent='확인 필요 '+state.mainUnknownCaseIds.length+'명';const p=document.createElement('p');p.textContent=state.mainUnknownCaseIds.map(id=>session.records().find(r=>C.idOf(r)===id).customer.name).join(' · ')+' — 관련 값이 미확인이어서 조건 충족 여부를 판단하지 않았습니다.';d.append(s,p);el.appendChild(d);}
+  const status=document.createElement('div');status.className='pad-branch-list-status';status.setAttribute('role','status');status.textContent=session.get().busy?'고객 조회 중… 기존 목록을 유지합니다.':'';el.appendChild(status);return el;
+ }
+ function manual(session,e){
+  e=e||{};let q=session.get().state.main.query;
+  q=C.remove(q,x=>x.source==='legacy-filter');
+  const add=(x)=>{x.source='legacy-filter';q=C.and(q,x);};
+  if(e.dep==='lt1')add(C.compare('irp_amount','lt',100000000));
+  if(e.dep==='1to2'){add(C.compare('irp_amount','gte',100000000));add(C.compare('irp_amount','lt',200000000));};
+  if(e.dep==='gt2')add(C.compare('irp_amount','gte',200000000));
+  const profiles={st:['안정형','안정추구형'],nu:['위험중립형'],ag:['적극투자형','공격투자형']};
+  if(profiles[e.inv])add({op:'or',args:profiles[e.inv].map(x=>C.compare('profile','eq',x))});
+  if(e.taxOnly)add(C.compare('tax_remaining','gt',0));
+  if(['risk','mat','imp','opp'].includes(e.trig)) add(C.compare('trigger_'+e.trig,'eq',true));
+  return {query:q,sort:session.get().state.main.sort,limit:e.topN||null};
+ }
+ root.PensionBranchPreserveUI={bar,manual};
+})(window);
+
+;
+
+/* branch-search-adapter.js */
+/* v0.3: additive integration with frontend/briefing-fabrix's CURRENT main list.
+ * No fixed cohort; no legacy standalone HTML; no replacement customer renderer.
+ */
+(function(root){'use strict';
+const C=root.PensionBranchSearchCore;let current=null;
+function fullView(component,render){
+ const saved=component.state;
+ // renderVals is evaluated synchronously. Do not emit a state update or modify
+ // existing filters merely to read the unfiltered source population.
+ component.state=Object.assign({},saved,{sel:null,filter:'all',extA:null});
+ try{return render.call(component);}finally{component.state=saved;}
+}
+function mount(component,params){
+ destroy();params=params||{};if(params.branchSearch===false)return;
+ const app=document.getElementById('pensionAgentDemo');if(!app)return;
+ const render=component.renderVals,initial=fullView(component,render);
+ const source=root.PensionBranchCurrentData.fromCurrentRows(initial.queue,root.PensionBriefingFixtures,component.DATA,c=>component.profileOf(c));
+ if(!source.records.length){console.error('[Branch AI] Current main list empty. No fallback cohort used.');return;}
+ const session=root.PensionBranchSearchSession.create(source,{provider:root.PensionBranchCurrentProvider.create(source)});
+ const motion=root.PensionBranchMotion.create();
+ const ctx={component,app,source,session,motion,applied:false,pending:false,before:new Map(),rows:new Map(),oldRender:render,lastSelected:null,legacySnapshot:null};current=ctx;
+ function restore(){session.cancel();session.clearReference();ctx.applied=false;ctx.pending=true;component.setState(Object.assign({},ctx.legacySnapshot||{filter:'all',extA:null,extOpen:false},{branchSearchRevision:session.get().revision+1}));}
+ function reveal(){const list=app.querySelector('[data-branch-list]');if(list){list.scrollIntoView({behavior:motion.reduced()?'auto':'smooth',block:'start'});list.classList.add('pad-branch-reveal');setTimeout(()=>list.classList.remove('pad-branch-reveal'),800);}}
+ ctx.restore=restore;ctx.widget=root.PensionBranchSearchWidget.mount(app,session,{enabled:true,onRestore:restore,onReveal:reveal});
+ ctx.off=session.subscribe(e=>{
+  if(e.type==='apply'){
+   if(!ctx.applied)ctx.legacySnapshot=C.copy({filter:component.state.filter,ext:component.state.ext||null,extA:component.state.extA||null,extOpen:!!component.state.extOpen});
+   ctx.applied=true;ctx.pending=true;component.setState({branchSearchRevision:e.revision,filter:'all',extA:null,extOpen:false});
+  }else{const status=app.querySelector('.pad-branch-list-status');if(status)status.textContent=e.busy?'고객 조회 중… 기존 목록을 유지합니다.':'';}
+ });
+ component.renderVals=function(){
+  const base=ctx.oldRender.apply(this,arguments);
+  if(!ctx.applied||this.state.sel)return base;
+  // Always reuse original row objects/handlers, including badges and tax rings.
+  // The query chooses IDs and their order; it never builds an alternative row.
+  const all=fullView(this,ctx.oldRender),rows=new Map((all.queue||[]).filter(r=>r.id).map(r=>[r.id,r]));
+  const s=session.get().state;
+  base.queue=s.mainListCaseIds.map(id=>{if(!rows.has(id))throw new Error('Current original row disappeared: '+id);return Object.assign({},rows.get(id),{anim:'none'});});
+  base.queueTotal=s.mainMatchedCount;base.extOn=false;
+  base.filterAll=()=>session.reset();base.extClear=()=>session.reset();
+  base.extApply=()=>{session.apply(root.PensionBranchPreserveUI.manual(session,component.state.ext),'기존 조건 추출의 조건을 현재 검색에 반영했습니다.');component.setState({extOpen:false,extA:null,filter:'all'});};
+  if(component.state.ext){const p=root.PensionBranchPreserveUI.manual(session,component.state.ext);base.extPreviewN=C.run(session.records(),p.query,p.sort,p.limit).resultPreviewCount;}
+  for(const k of ['kNewTap','kOnTap','kResTap','filterNew','filterIsa']){const fn=base[k];if(typeof fn==='function')base[k]=()=>{restore();fn();};}
+  return base;
+ };
+}
+function beforeRender(component){const c=current;if(c&&c.component===component&&c.pending)c.before=c.motion.capture(c.app);}
+function afterRender(component){
+ const c=current;if(!c||c.component!==component)return;
+ const selected=component.state.sel;
+ if(selected&&c.lastSelected!==selected)c.session.cancel('상세화면 이동으로 진행 중인 조회를 취소했습니다.');
+ c.lastSelected=selected;c.widget.setVisible(!selected);
+ if(selected){c.pending=false;return;}
+ c.app.querySelectorAll('.pad-branch-resultbar,.pad-branch-empty').forEach(n=>n.remove());
+ const list=c.app.querySelector('[data-branch-list]');
+ if(c.applied&&list){
+  list.parentNode.insertBefore(root.PensionBranchPreserveUI.bar(c.session,c.restore),list);
+  const title=c.app.querySelector('.pad-section-head .pad-h2');if(title)title.textContent='AI 검색 결과 · '+c.session.get().state.mainMatchedCount+'명';
+  const order=c.app.querySelector('.pad-section-head > .pad-rowb > .pad-t-12-muted');if(order)order.textContent=C.sortLabel(c.session.get().state.main.sort);
+  if(!c.session.get().state.mainListCaseIds.length){const n=document.createElement('div');n.className='pad-branch-empty';n.textContent='조건에 맞는 고객이 없습니다. 입력한 조건은 유지했습니다.';list.appendChild(n);}
+ }
+ if(c.pending&&list)c.motion.play(c.app,c.before,true);c.pending=false;
+}
+function destroy(){const c=current;if(!c)return;current=null;c.off();c.widget.destroy();c.session.destroy();c.motion.cancel();c.component.renderVals=c.oldRender;}
+root.PensionBranchSearchAdapter={mount,beforeRender,afterRender,destroy,get:()=>current,disable:()=>current&&current.restore(),fullView};
+})(window);
+
+;
+
 /* pensionAgentDemo.js */
 (function (window, document) {
   'use strict';
@@ -1527,6 +2428,7 @@ window.PensionBriefingFixtures = {"customers":[{"schemaVersion":"customer-briefi
       return;
     }
 
+    if (window.PensionBranchSearchAdapter) window.PensionBranchSearchAdapter.beforeRender(instance);
     var uiSnap = captureRenderUiState(mount);
 
     var holder = document.createElement('template');
@@ -1537,6 +2439,7 @@ window.PensionBriefingFixtures = {"customers":[{"schemaVersion":"customer-briefi
     suppressReplayEntryAnimations(frag);
     mount.replaceChildren(frag);
     restoreRenderUiState(mount, uiSnap);
+    if (window.PensionBranchSearchAdapter) window.PensionBranchSearchAdapter.afterRender(instance);
 
     lastRenderedState = Object.assign({}, instance.state);
     if (prevState && typeof instance.componentDidUpdate === 'function') {
@@ -1575,6 +2478,8 @@ window.PensionBriefingFixtures = {"customers":[{"schemaVersion":"customer-briefi
       starrootParams: params || {}
     });
     installSetState(instance);
+    // 부점 AI: searches the current main list only; skipped when params.branchSearch === false.
+    if (window.PensionBranchSearchAdapter) window.PensionBranchSearchAdapter.mount(instance, params || {});
     renderNow();
 
     if (typeof instance.componentDidMount === 'function') {
@@ -1585,6 +2490,7 @@ window.PensionBriefingFixtures = {"customers":[{"schemaVersion":"customer-briefi
   }
 
   function destroy() {
+    if (window.PensionBranchSearchAdapter) window.PensionBranchSearchAdapter.destroy();
     if (!instance) return;
     if (typeof instance.componentWillUnmount === 'function') {
       try { instance.componentWillUnmount(); } catch (err) { console.error(err); }

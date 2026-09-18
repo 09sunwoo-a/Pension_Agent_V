@@ -16,6 +16,7 @@
 | API 호출·설정 | `frontend/src/briefing/fabrix-transport.js`, `pensionFabrix.js` |
 | 실시간 상담(대화 Agent) 호출·패널 | `frontend/src/briefing/fabrix-chat-transport.js`, `pensionChat.js`, [규격](integration/contracts/CHAT_AGENT_CONTRACT.md) |
 | 기존 Vanilla 화면 동작 | `frontend/src/briefing/pensionAgentDemo.js` |
+| 부점 AI 고객 검색(플로팅 채팅·목록 전환) | `frontend/src/briefing/branch-search-core.js`(해석·집계), `branch-search-current-data.js`(현재 목록 투영), `branch-search-widget.js`·`branch-search.css`(채팅창), `branch-search-adapter.js`(기존 렌더러 연결) |
 | 내일 사내 반입·Agent 배포·연동 확인 | [COMPANY_DEPLOY_CHECKLIST.md](COMPANY_DEPLOY_CHECKLIST.md), 필요한 [플랫폼 문서](docs/platform/README.md) |
 | 지식 검색 | [색인](knowledge/source_registry.md)으로 관련 자료만 선택 |
 | 변경·미완료 기록 | [WORK_LOG.md](docs/handover/WORK_LOG.md) |
@@ -54,4 +55,5 @@ node tools/briefing/build.js --preview
 - **LLM 없는 고정 Agent 구현 완료**: 선택한 사례의 저장된 S1–S5를 반환하며 요청 식별값/고객 스냅샷이 다르면 오류. Python 응답은 프론트 계약으로 검증했습니다.
 - **로컬 FastAPI/Pydantic 미설치로 앱 기동은 미검증. 실제 사내 E2E, LLM 기반 생성, 운영 인증 방식은 미완료.**
 - 우측 실시간 상담은 31명 구조화 고객에서 대화 Agent(별도 Connector·토큰, 설정 블록의 `chat`)를 호출합니다. 실제 3턴 응답 샘플로 파싱·화면을 검증했고, `customer_id`는 상담 시작 시 직원이 채팅으로 입력합니다(대화 Agent 시연 고객 `198734-1205842`). 기존 데모 3명은 mock 상담을 유지합니다.
+- **부점 AI 고객 검색(플로팅 채팅)**: 메인 목록 우하단 런처. 현재 메인 목록(레거시 18행 + 케이스 30행)만 조회합니다. 케이스 행과 김서연(ksy→DEMO-01)은 구조화 스냅샷을, 레거시 17행은 표시된 잔액·수익률·뱃지만 쓰며 나머지 값은 미확인입니다. 실제 LLM 미연결 목업입니다. `onParam({ branchSearch: false })`로 끕니다. 골든 회귀는 `check.js`에 포함, 입력은 `tests/branch-search/golden/`.
 - Secret과 실제 고객 데이터를 올리지 마세요.
