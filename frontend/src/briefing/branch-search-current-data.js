@@ -26,12 +26,20 @@ function supplement(raw){
  if(a)s.autoTransfer={registered:typeof a['등록여부']==='boolean'?a['등록여부']:null,monthlyAmountKrw:num(a['월이체금액원'])};
  if(p)s.depositPurchase={configured:typeof p['설정여부']==='boolean'?p['설정여부']:null};
  if(d)s.defaultOptionExecution={scheduledAt:date(d['예정일']),amountKrw:num(d['대상금액원'])};
+ const transfer=get(ctx,['계좌운영','계약이전현황']),instruction=get(ctx,['계좌운영','상품운용지시']);
+ s.management={
+  transfer:transfer?{applied:transfer['신청여부']===true,status:transfer['진행상태'],reason:transfer['주된이전사유']}:null,
+  instruction:instruction&&typeof instruction['지시여부']==='boolean'?instruction['지시여부']:null,
+  retirementAmount:num(get(ctx,['납입및세제','퇴직급여재원금액원'])),
+  retirementDeposits:(ctx['최근사건']||[]).filter(e=>e['이벤트유형']==='퇴직급여입금'&&e['처리상태']==='완료'&&e['계좌구분']==='IRP').map(e=>({date:date(e['발생일시']),amount:num(e['금액원'])}))
+ };
  s.externalAccounts=(ctx['외부계좌']||[]).map((a,i)=>({
   id:a['외부계좌식별자']||('recorded-external-'+i),
   type:a['계좌유형']||(a['외부계좌구분']==='ISA'?'ISA':a['외부계좌구분']),
   institution:a['금융기관']||null,valuationAmountKrw:num(a['평가금액원']),
   maturityDate:date(a['만기일']),verifiedAt:date(a['정보확인일']),source:a['정보출처']||null,
-  liveIntegrated:a['통합조회가능여부']===true
+  liveIntegrated:a['통합조회가능여부']===true,
+  usePlan:a['자금사용계획']||null,conversionIntent:a['개인형퇴직연금전환의향']==null?null:a['개인형퇴직연금전환의향']
  }));
  if(own(ctx['납입및세제'],'올해개인부담금납입액원'))s.annualContributionKrw=num(ctx['납입및세제']['올해개인부담금납입액원']);
  return s;

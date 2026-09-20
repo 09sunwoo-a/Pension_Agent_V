@@ -265,7 +265,7 @@
     return (labels[sort.field] || sort.field) + (sort.direction === 'desc' ? ' 높은 순' : ' 낮은 순');
   }
   function answer(records, result, kind, asOf) {
-    const m = result.metrics, names = result.resultPreviewCaseIds.map(id => records.find(r => idOf(r) === id).customer.name).join('·');
+    const m = result.metrics;
     let text;
     if (kind === 'overview') {
       const cash = m.assetAllocation.find(a => a.assetType === '현금성자산');
@@ -273,26 +273,9 @@
       if (cash.unknownCount) text += '\n현금성 금액 확인 ' + cash.knownCount + '명 · 미확인 ' + cash.unknownCount + '명. 합계는 확인된 금액만 포함합니다.';
     } else if (kind === 'cash_sum') text = '등록된 조건에 해당하는 고객은 ' + m.customerCount + '명입니다.\n현금성자산 합계는 ' + money(m.cashAmountKrw) + '입니다.';
     else if (!result.matchedCount) text = '확인된 조건 충족 고객은 0명입니다. 입력한 조건은 그대로 유지했습니다.';
-    else text = (result.unknownCount ? '조건 충족이 확인된 고객은 ' : '조건에 맞는 고객은 ') + result.matchedCount + '명입니다.\n' +
-      (result.resultPreviewCount < result.matchedCount ? '그중 ' + sortLabel(result.sort) + '으로 상위 ' + result.resultPreviewCount + '명(' + names + ')을 표시합니다.' : names + ' 고객을 찾았습니다.');
-    if (result.intent === 'extract' && result.resultPreviewCount > 0 && result.resultPreviewCount <= 3 && !['do_detail','isa_detail','external_detail'].includes(kind)) {
-      const terms = flatten(result.resolvedQuery);
-      let detailFields = [];
-      if (!['caseId', 'source_order'].includes(result.sort.field)) detailFields.push(result.sort.field);
-      terms.filter(q => q.op === 'compare' && ['irp_amount','cash_amount','cash_pct','age','auto_monthly','tax_remaining'].includes(q.field)).forEach(q => detailFields.push(q.field));
-      detailFields = [...new Set(detailFields)].slice(0, 2);
-      const detailLines = result.resultPreviewCaseIds.map(id => {
-        const r = records.find(x => idOf(x) === id), bits = detailFields.map(f => {
-          const v = value(r, f); return labels[f] + ' ' + (f === 'age' ? v + '세' : f.endsWith('_pct') ? v + '%' : money(v));
-        });
-        if (kind === 'deposit_detail') bits.push('정기예금 합계 ' + money(m.depositAmountsByCaseId[id]));
-        const hq = terms.find(q => q.op === 'holding_exists');
-        if (hq) bits.push('해당 상품 ' + money(r.holdings.find(h => h.productId === hq.productId && h.valuationAmountKrw >= hq.minAmountKrw).valuationAmountKrw));
-        const dq = terms.find(q => q.op === 'segment_date_between');
-        if (dq) { const signal = r.signals.find(x => x.label === dq.label && between(x.date, dq.start, dq.end)); if (signal) bits.push('조회일 ' + signal.date); }
-        return bits.length ? r.customer.name + ': ' + bits.join(' · ') : '';
-      }).filter(Boolean);
-      if (detailLines.length) text += '\n' + detailLines.join('\n');
+    else {
+      text = (result.unknownCount ? '조건 충족이 확인된 고객은 ' : '조건에 맞는 고객은 ') + result.matchedCount + '명입니다.';
+      if (result.resultPreviewCount < result.matchedCount) text += '\n그중 ' + sortLabel(result.sort) + '으로 상위 ' + result.resultPreviewCount + '명을 표시합니다.';
     }
     if (kind === 'cash_sum' && m.cashUnknownCount) text += '\n금액 확인 ' + m.cashKnownCount + '명 · 미확인 ' + m.cashUnknownCount + '명. 미확인은 0원으로 합산하지 않았습니다.';
     if (kind === 'do_detail' && m.executionDate) text += '\n실행예정일 ' + m.executionDate + ' (D-' + m.daysUntil + '), 대상금액 ' + money(m.executionAmountKrw) + '.';
@@ -388,7 +371,7 @@
           const f={'irp잔액':'irp_amount','현금성자산':'cash_amount','현금성비중':'cash_pct','원리금보장비중':'protected_pct','연령':'age'}[m[2]];
           if((f==='age' && m[4]!=='세') || (f.endsWith('_pct') && m[4]!=='%') || (f.endsWith('_amount') && !m[4].endsWith('원')))return error('clarification_required','금액·비중·연령에 맞는 단위를 입력해 주세요.');
           const mult={'억원':1e8,'천만원':1e7,'만원':1e4,'원':1,'%':1,'세':1}[m[4]];
-          const q=compare(f,{'이상':'gte','이하':'lte','초과':'gt','미만':'lt'}[m[5]],Math.round(Number(m[3])*mult));
+          const q=compare(f,{'이상':'gte','이하':'lte','초과':'gt','미만':'lt'}[m[5]],(f.endsWith('_pct') ? Number(m[3])*mult : Math.round(Number(m[3])*mult)));
           if(m[1]){if(!state.reference)return error('clarification_required','먼저 검색조건을 지정해 주세요.'); out=Object.assign(out,copy(state.reference),{intent:'extract',metric:null});out.query=and(out.query,q);} else out.query=q;
           return out;
         }

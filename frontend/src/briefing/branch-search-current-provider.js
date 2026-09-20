@@ -4,15 +4,21 @@
 const norm=t=>String(t).trim().replace(/[?!？。·,]/g,'').replace(/\.$/,'').replace(/\s/g,'').toLowerCase();
 const fields={'irp잔액':'irp_amount','irp평가금액':'irp_amount','잔액':'irp_amount','현금성자산':'cash_amount','현금성잔액':'cash_amount','현금성비중':'cash_pct','원리금보장비중':'protected_pct','연령':'age','나이':'age','계좌수익률':'return_pct','수익률':'return_pct','세액공제잔여한도':'tax_remaining'};
 const err=text=>({error:'clarification_required',answer:text});
-function create(input){
+function segmentRegistry(records){
  const labels=new Map();
  const approved=['퇴직금 운용 미지시','퇴직금 일부만 운용','현금성 장기대기','현금성 과다','만기자금 미운용','납입금 미운용','입금매수상품 미지정','원리금보장 편중','수익률 부진','환매추천 펀드 보유','판매중단 펀드 보유','저금리 예금 보유','DO 미등록','투자성향-DO불일치','타행 IRP 보유','타사 연금저축 보유','복수 IRP 보유','연금자산 분산보유','이탈징후','계약이전 신청','계약이전 페이지 방문','연금개시 가능','연금개시 예정','연금수령 중','올해 미납입','납입 중단','퇴직연금 관리화면 방문','ETF 상품조회','펀드 상품조회','보유상품 수익률 조회','장기 미운용'];
  for(const label of approved)labels.set(norm(label),{op:'segment_registered',label});
  for(const label of ['정기예금 만기','GIC 만기','ISA 만기','ISA 전환기한','DO 실행','퇴직금 재입금기한','연금개시','추가납입'])labels.set(norm(label),{op:'segment_family',label});
- for(const r of input.records)for(const s of r.signals||[]){
+ for(const r of records)for(const s of r.signals||[]){
   labels.set(norm(s.label),{op:'segment_registered',label:s.label});
   const m=s.label.match(/^(.*) D-\d+$/);if(m)labels.set(norm(m[1]),{op:'segment_family',label:m[1]});
  }
+ return labels;
+}
+// Shared by the provider and data build; includes registered badges and families.
+function segmentLabels(records){return [...new Set([...segmentRegistry(records).values()].map(x=>x.label))].sort();}
+function create(input){
+ const labels=segmentRegistry(input.records);
  if(labels.has('etf상품조회'))labels.set('etf조회',labels.get('etf상품조회'));
  if(labels.has('펀드상품조회'))labels.set('펀드조회',labels.get('펀드상품조회'));
  const simpleClause=raw=>{
@@ -24,7 +30,7 @@ function create(input){
   if(m){const f=m[1]?fields[m[1]]:m[3]==='세'?'age':null;if(!f)return null;
    const monetary=f.endsWith('_amount')||f==='tax_remaining';
    if(f==='age'&&m[3]!=='세'||f.endsWith('_pct')&&m[3]!=='%'||monetary&&!['억원','억','천만원','천만','만원','만','원'].includes(m[3]))return null;
-   const v=Math.round(Number(m[2])*({'억원':1e8,'억':1e8,'천만원':1e7,'천만':1e7,'만원':1e4,'만':1e4,'원':1,'%':1,'세':1}[m[3]]));
+   const v=(f.endsWith('_pct')?x=>x:Math.round)(Number(m[2])*({'억원':1e8,'억':1e8,'천만원':1e7,'천만':1e7,'만원':1e4,'만':1e4,'원':1,'%':1,'세':1}[m[3]]));
    return C.compare(f,{'이상':'gte','이하':'lte','초과':'gt','미만':'lt'}[m[4]],v);
   }
   const person=input.records.find(r=>norm(r.customer.name)===n);if(person)return C.compare('name','eq',person.customer.name);
@@ -56,5 +62,5 @@ function create(input){
   const q=hasOr?{op:'or',args:terms}:C.and(...terms);out.query=follow?C.and(prior.query,q):q;return out;
  };
 }
-return {create};
+return {create,segmentLabels};
 });

@@ -1,35 +1,40 @@
-/* Conversation state is independent of DOM and transport. Latest request wins.
- * options.applyAggregate: the screen applies aggregate answers to the list too (golden tests keep the default).
- * options.latency: minimum thinking time in ms before a mock answer, so the pending state is visible (0 = none). */
-(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory(require('./branch-search-core'));else root.PensionBranchSearchSession=factory(root.PensionBranchSearchCore);})(typeof window==='undefined'?globalThis:window,function(C){
+/* Remote turns commit only after clean EOF; the latest ticket wins.
+ * options.mode='local' retains the isolated demo/golden engine. Only that mode
+ * uses applyAggregate and simulated latency. No remote failure falls back to it. */
+(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory(require('./branch-search-core'),require('./branch-agent-contract'),require('./branch-agent-transport'),globalThis);else root.PensionBranchSearchSession=factory(root.PensionBranchSearchCore,root.PensionBranchAgentContract,root.PensionBranchAgentTransport,root);})(typeof window==='undefined'?globalThis:window,function(C,W,T,root){
 'use strict';
-function create(input,options){
+function createLocal(input,options){
  options=options||{};
  const data=C.copy(input),records=data.records,asOf=data.metadata.asOfDate;
- let state=C.initialState(records),messages=[],busy=false,ticket=0,revision=0,sequence=0,disposed=false;
+ const engine=options.engine;
+ let state=engine?engine.initialState():C.initialState(records),messages=[],busy=false,ticket=0,revision=0,sequence=0,disposed=false;
  const listeners=new Set();
  const provider=options.provider||((text,s)=>Promise.resolve(C.resolve(text,s,asOf))),applyAggregate=!!options.applyAggregate,latency=Math.max(0,Number(options.latency)||0);
  const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
  const emit=(type,extra)=>{if(disposed)return;const e=Object.assign({type,revision,busy,state:C.copy(state),messages:C.copy(messages)},extra||{});listeners.forEach(f=>f(e));};
  const add=(role,text,extra)=>{const m=Object.assign({id:++sequence,role,text},extra||{});messages.push(m);return m;};
  function cancel(reason){ticket++;if(busy){busy=false;messages.forEach(m=>{if(m.pending){m.pending=false;m.cancelled=true;m.text=reason||'요청을 취소했습니다. 목록은 유지합니다.';}});emit('cancel');}}
- async function send(text){
+ async function send(text,action){
   text=String(text||'').trim();if(!text||disposed)return null;
   if(text.length>1200){emit('validation',{notice:'질문은 1,200자 이내로 입력해 주세요.'});return null;}
   cancel('새 요청으로 이전 조회를 취소했습니다.');const token=++ticket;busy=true;
   add('user',text);const reply=add('assistant','검색조건을 확인하고 있어요.',{pending:true});
   const snapshot=C.copy(state);emit('pending');
   try{
-   const request=latency?(await Promise.all([provider(text,snapshot),wait(latency)]))[0]:await provider(text,snapshot);
+   const delay=latency?wait(latency):Promise.resolve();
+   const request=engine?await engine.resolve(text,snapshot,action):await provider(text,snapshot);
    if(disposed||token!==ticket)return null;
-   const out=C.execute(records,snapshot,request,asOf,{applyAggregate});
+   emit('resolved',{listChange:engine?!!request.listChange:true});
+   await delay;
+   if(disposed||token!==ticket)return null;
+   const out=engine?engine.execute(snapshot,request):C.execute(records,snapshot,request,asOf,{applyAggregate});
    state=out.state;busy=false;reply.pending=false;reply.text=out.result.answer;reply.result=out.result;
    if(out.result.uiEffect==='apply_customer_list')revision++;
    emit(out.result.uiEffect==='apply_customer_list'?'apply':'answer',{result:C.copy(out.result)});
    return out.result;
   }catch(err){
    if(disposed||token!==ticket)return null;
-   busy=false;reply.pending=false;reply.error=true;reply.text='조회 중 오류가 발생했습니다. 기존 목록과 조건은 유지했습니다. 다시 시도해 주세요.';reply.retryText=text;
+   busy=false;reply.pending=false;reply.error=true;reply.text='조회 중 오류가 발생했습니다. 기존 목록과 조건은 유지했습니다. 다시 시도해 주세요.';reply.retryText=text;reply.retryAction=action;
    emit('error');return null;
   }
  }
@@ -40,9 +45,9 @@ function create(input,options){
   if(source)add('system',source);emit('apply',{result:C.copy(out.result)});return out.result;
  }
  return {
-  send,cancel,apply,
-  reset:()=>apply({query:C.all(),sort:{field:data.metadata.scopeId==='current-main-list'?'source_order':'caseId',direction:'asc'},limit:null},'전체 검색조건과 표시 제한을 해제했습니다.'),
-  newConversation:()=>{cancel();state.reference=null;state.lastResult=null;messages=[];emit('new_conversation');},
+  send,cancel,apply,perform:(action,label)=>send(label||'선택한 요청',action),
+  reset:()=>{if(!engine)return apply({query:C.all(),sort:{field:data.metadata.scopeId==='current-main-list'?'source_order':'caseId',direction:'asc'},limit:null},'전체 검색조건과 표시 제한을 해제했습니다.');cancel();state=engine.initialState();revision++;add('system','기존 고객 목록으로 돌아왔습니다.');emit('apply');},
+  newConversation:()=>{cancel();if(!engine)state.reference=null;else {state.clarification=null;state.aggregate=null;state.selectedCustomerId=null;}state.lastResult=null;messages=[];emit('new_conversation');},
   clearReference:()=>{state.reference=null;emit('reference');},
   get:()=>({state:C.copy(state),messages:C.copy(messages),busy,revision}),
   subscribe:f=>{listeners.add(f);return()=>listeners.delete(f);},
@@ -52,5 +57,80 @@ function create(input,options){
   mode:input.metadata.scopeId==='current-main-list'?'current-data-mock':'golden-mock'
  };
 }
+function createRemote(input,options){
+ options=Object.assign({},options);let cfg=options.config;delete options.config;
+ let manifest=options.manifest?C.copy(options.manifest):null;delete options.manifest;
+ const metadata=C.copy(input.metadata),listeners=new Set();
+ let state=null,revision=0,conversationId=uuid(),messages=[],sequence=0,ticket=0,busy=false,disposed=false,controller=null;
+ let view={active:false,rowIds:[],sort:null,contextLabel:''};
+ function uuid(){
+  if(root.crypto.randomUUID)return root.crypto.randomUUID();
+  const b=root.crypto.getRandomValues(new Uint8Array(16));b[6]=(b[6]&15)|64;b[8]=(b[8]&63)|128;
+  const h=Array.from(b,x=>x.toString(16).padStart(2,'0')).join('');return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20);
+ }
+ let connectionNotice='';try{ready();}catch(e){connectionNotice=notice(e.code);}
+ function snapshot(){return {state:C.copy(state),view:C.copy(view),messages:C.copy(messages),busy,revision,conversationId,mode:'remote',connectionNotice};}
+ function emit(type,extra){if(!disposed){const event=Object.assign(snapshot(),{type},extra);listeners.forEach(f=>f(event));}}
+ function add(role,text,extra){const m=Object.assign({id:++sequence,role,text},extra);messages.push(m);return m;}
+ function cancel(reason){
+  ticket++;if(controller){controller.abort();controller=null;}
+  if(busy){busy=false;messages.forEach(m=>{if(m.pending){m.pending=false;m.cancelled=true;m.text=reason||'요청을 취소했습니다. 기존 목록과 조건은 유지했습니다.';}});emit('cancel');}
+ }
+ function fault(code){const e=new Error(code);e.code=code;return e;}
+ function ready(){
+  const valid=T.config(cfg);if(!manifest)throw fault('MANIFEST');
+  if(options.checkManifest)options.checkManifest(manifest);
+  return valid;
+ }
+ function notice(code){
+  if(code==='NOCONFIG'||code==='CONFIG')return '부점 AI 연결 설정이 필요합니다. 담당자에게 연결 설정을 확인해 주세요.';
+  if(code==='MANIFEST'||code==='DATA_VERSION')return '부점 AI 데이터 버전을 확인할 수 없습니다. 같은 빌드의 데이터와 화면으로 다시 진입해 주세요.';
+  if(code==='AUTH')return '부점 AI 인증 설정을 확인해 주세요. 기존 목록과 조건은 유지했습니다.';
+  if(code==='TIMEOUT')return '응답 시간이 초과되었습니다. 기존 목록과 조건은 유지했습니다. 다시 시도해 주세요.';
+  return '응답을 확인하지 못했습니다. 기존 목록과 조건은 유지했습니다. 다시 시도해 주세요.';
+ }
+ async function send(text,action){
+  text=String(text||'').trim();if(!text||disposed)return null;
+  if(Array.from(text).length>1200){emit('validation',{notice:'질문은 1,200자 이내로 입력해 주세요.'});return null;}
+  cancel('새 요청으로 이전 조회를 취소했습니다.');const token=++ticket;
+  busy=true;add('user',text);const reply=add('assistant','조건을 해석하고 있어요.',{pending:true,retryText:text,retryAction:action||null});
+  emit('pending');controller=new AbortController();const activeController=controller;
+  try{
+   const valid=ready();
+   const request=W.request({request_id:uuid(),conversation_id:conversationId,base_revision:revision,
+    x_client_user:valid.xClientUser,message:text,action:action||null,state:C.copy(state)},manifest);
+   const final=await T.call(valid,request,manifest,{signal:activeController.signal,fetch:options.fetch,timeoutMs:options.timeoutMs,
+    onProgress:progress=>{
+     if(disposed||token!==ticket)return;
+     reply.text={interpreting:'조건을 해석하고 있어요.',executing:'고객 데이터를 확인하고 있어요.',composing:'답변을 정리하고 있어요.'}[progress.phase];
+     emit('progress',{progress,listChange:progress.phase==='executing'&&progress.list_pending});
+    }});
+   if(disposed||token!==ticket)return null;
+   if(options.isCurrent&&!options.isCurrent()){cancel();return null;}
+   if(final.event==='error')throw fault(final.data.code);
+   const answer=final.data;
+   // Check every ID against the actual original rows before committing any part of the turn.
+   if(options.prepareAnswer)options.prepareAnswer(answer,manifest);
+   state=C.copy(answer.next_state);revision=answer.revision;
+   if(answer.ui.list_action==='replace')view={active:true,rowIds:answer.ui.row_ids.slice(),sort:C.copy(answer.ui.sort),contextLabel:answer.context_label};
+   else if(answer.ui.list_action==='reset')view={active:false,rowIds:[],sort:null,contextLabel:answer.context_label};
+   else view.contextLabel=answer.context_label;
+   busy=false;controller=null;reply.pending=false;reply.text=answer.text;delete reply.retryText;delete reply.retryAction;
+   reply.result={answer:answer.text,scopeNote:answer.scope_note,contextLabel:answer.context_label,actions:C.copy(answer.actions),ui:answer.ui};
+   emit(answer.ui.list_action==='keep'?'answer':'apply',{result:C.copy(reply.result)});return C.copy(answer);
+  }catch(e){
+   if(disposed||token!==ticket)return null;
+   busy=false;controller=null;reply.pending=false;reply.error=true;reply.code=e.code||'NETWORK';reply.text=notice(reply.code);
+   emit('error');return null;
+  }
+ }
+ return {send,cancel,perform:(action,label)=>send(label||'선택한 요청',action),
+  reset:()=>{if(disposed)return;cancel();state=null;revision++;view={active:false,rowIds:[],sort:null,contextLabel:''};add('system','기존 고객 목록으로 돌아왔습니다.');emit('apply');},
+  newConversation:()=>{if(disposed)return;cancel();conversationId=uuid();revision=0;if(state){state.last_aggregate=null;state.clarification=null;}messages=[];emit('new_conversation');},
+  get:snapshot,metadata:()=>C.copy(metadata),subscribe:f=>{listeners.add(f);return()=>listeners.delete(f);},mode:'remote',
+  destroy:()=>{cancel();disposed=true;listeners.clear();state=null;messages=[];cfg=null;manifest=null;view={active:false,rowIds:[],sort:null,contextLabel:''};options={};conversationId=null;}
+ };
+}
+function create(input,options){return options&&options.mode==='local'?createLocal(input,options):createRemote(input,options);}
 return {create};
 });

@@ -1652,6 +1652,20 @@ class Component {
   if (window.PensionFabrix) window.PensionFabrix.install(Component);
   if (window.PensionChat) window.PensionChat.install(Component);
 
+  // Explicit, opt-in build hook. No DOM/lifecycle/network work or source rewriting.
+  // The build reads the same default queue and profiles used by the main screen.
+  if (typeof window.__PensionBuildExtract === 'function') {
+    window.__PensionBuildExtract(function extractCurrentRows() {
+      const page = new Component({});
+      const modelRows = page.DATA;
+      return {
+        mainRows: page.renderVals().queue,
+        modelRows,
+        profiles: Object.fromEntries(modelRows.map(row => [row.id, page.profileOf(row)]))
+      };
+    });
+  }
+
   // Starroot adapter
   // 빌드(tools/briefing/build.js)가 아래 자리표시를 실제 파일코드(기본 1288272)로 치환합니다.
   // 다른 코드로 빌드하려면 node tools/briefing/build.js <파일코드>.

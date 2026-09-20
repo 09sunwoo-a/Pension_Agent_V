@@ -1,0 +1,1384 @@
+{
+  "$defs": {
+    "Aggregate": {
+      "additionalProperties": false,
+      "properties": {
+        "metric_keys": {
+          "items": {
+            "enum": [
+              "customer_count",
+              "irp_sum",
+              "cash_sum"
+            ],
+            "type": "string"
+          },
+          "maxItems": 3,
+          "minItems": 1,
+          "title": "Metric Keys",
+          "type": "array"
+        },
+        "selection": {
+          "$ref": "#/$defs/Selection"
+        }
+      },
+      "required": [
+        "selection",
+        "metric_keys"
+      ],
+      "title": "Aggregate",
+      "type": "object"
+    },
+    "Answer": {
+      "additionalProperties": false,
+      "properties": {
+        "actions": {
+          "items": {
+            "$ref": "#/$defs/Button"
+          },
+          "maxItems": 8,
+          "title": "Actions",
+          "type": "array"
+        },
+        "base_revision": {
+          "exclusiveMaximum": 9007199254740991,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Base Revision",
+          "type": "integer"
+        },
+        "context_label": {
+          "maxLength": 2000,
+          "title": "Context Label",
+          "type": "string"
+        },
+        "conversation_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "title": "Conversation Id",
+          "type": "string"
+        },
+        "data_version": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Data Version",
+          "type": "string"
+        },
+        "dataset_id": {
+          "const": "branch-demo.v1",
+          "title": "Dataset Id",
+          "type": "string"
+        },
+        "intent": {
+          "enum": [
+            "search",
+            "overview",
+            "aggregate",
+            "recommend",
+            "brief",
+            "clarify",
+            "restore",
+            "unsupported"
+          ],
+          "title": "Intent",
+          "type": "string"
+        },
+        "next_state": {
+          "$ref": "#/$defs/State"
+        },
+        "request_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "title": "Request Id",
+          "type": "string"
+        },
+        "result": {
+          "$ref": "#/$defs/Result"
+        },
+        "revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "rule_version": {
+          "const": "branch-rules.v1",
+          "title": "Rule Version",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "branch-agent-api.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "scope_note": {
+          "maxLength": 2000,
+          "title": "Scope Note",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "ok",
+            "empty",
+            "clarification_required",
+            "unsupported"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Text",
+          "type": "string"
+        },
+        "ui": {
+          "$ref": "#/$defs/UI"
+        }
+      },
+      "required": [
+        "schema_version",
+        "request_id",
+        "conversation_id",
+        "base_revision",
+        "dataset_id",
+        "data_version",
+        "rule_version",
+        "revision",
+        "intent",
+        "status",
+        "text",
+        "result",
+        "ui",
+        "context_label",
+        "scope_note",
+        "actions",
+        "next_state"
+      ],
+      "title": "Answer",
+      "type": "object"
+    },
+    "AnswerEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "data": {
+          "$ref": "#/$defs/Answer"
+        },
+        "event": {
+          "const": "answer",
+          "title": "Event",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event",
+        "data"
+      ],
+      "title": "AnswerEvent",
+      "type": "object"
+    },
+    "BooleanPredicate": {
+      "additionalProperties": false,
+      "properties": {
+        "args": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Compare"
+              },
+              {
+                "$ref": "#/$defs/Segment"
+              },
+              {
+                "$ref": "#/$defs/IsaBetween"
+              },
+              {
+                "$ref": "#/$defs/BooleanPredicate"
+              },
+              {
+                "$ref": "#/$defs/NotPredicate"
+              }
+            ]
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "title": "Args",
+          "type": "array"
+        },
+        "op": {
+          "enum": [
+            "and",
+            "or"
+          ],
+          "title": "Op",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "args"
+      ],
+      "title": "BooleanPredicate",
+      "type": "object"
+    },
+    "BranchRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SimpleAction"
+            },
+            {
+              "$ref": "#/$defs/RemoveAction"
+            },
+            {
+              "$ref": "#/$defs/BriefAction"
+            },
+            {
+              "$ref": "#/$defs/ClarifyAction"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Action"
+        },
+        "base_revision": {
+          "exclusiveMaximum": 9007199254740991,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Base Revision",
+          "type": "integer"
+        },
+        "conversation_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "title": "Conversation Id",
+          "type": "string"
+        },
+        "data_version": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Data Version",
+          "type": "string"
+        },
+        "dataset_id": {
+          "const": "branch-demo.v1",
+          "title": "Dataset Id",
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 1200,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Message",
+          "type": "string"
+        },
+        "request_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "title": "Request Id",
+          "type": "string"
+        },
+        "rule_version": {
+          "const": "branch-rules.v1",
+          "title": "Rule Version",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "branch-agent-api.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "state": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/State"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "task": {
+          "const": "branch_assistant",
+          "title": "Task",
+          "type": "string"
+        },
+        "x_client_user": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "X Client User",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "request_id",
+        "conversation_id",
+        "base_revision",
+        "dataset_id",
+        "data_version",
+        "rule_version",
+        "task",
+        "x_client_user",
+        "message",
+        "action",
+        "state"
+      ],
+      "title": "BranchRequest",
+      "type": "object"
+    },
+    "BriefAction": {
+      "additionalProperties": false,
+      "properties": {
+        "row_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "title": "Row Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "brief",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "row_id"
+      ],
+      "title": "BriefAction",
+      "type": "object"
+    },
+    "Button": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SimpleAction"
+            },
+            {
+              "$ref": "#/$defs/RemoveAction"
+            },
+            {
+              "$ref": "#/$defs/BriefAction"
+            },
+            {
+              "$ref": "#/$defs/ClarifyAction"
+            }
+          ],
+          "title": "Action"
+        },
+        "label": {
+          "maxLength": 80,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "action"
+      ],
+      "title": "Button",
+      "type": "object"
+    },
+    "Choice": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "maxLength": 80,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Label",
+          "type": "string"
+        },
+        "value": {
+          "maxLength": 80,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "value",
+        "label"
+      ],
+      "title": "Choice",
+      "type": "object"
+    },
+    "Clarification": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_row_ids": {
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+            "type": "string"
+          },
+          "maxItems": 48,
+          "title": "Candidate Row Ids",
+          "type": "array"
+        },
+        "field": {
+          "anyOf": [
+            {
+              "enum": [
+                "cash_amount",
+                "cash_pct",
+                "irp_amount"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Field"
+        },
+        "kind": {
+          "enum": [
+            "cash_field",
+            "cash_value",
+            "amount_basis",
+            "scope",
+            "customer",
+            "date_basis",
+            "condition"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "options": {
+          "items": {
+            "$ref": "#/$defs/Choice"
+          },
+          "maxItems": 48,
+          "title": "Options",
+          "type": "array"
+        },
+        "pending_message": {
+          "maxLength": 1200,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Pending Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "field",
+        "pending_message",
+        "candidate_row_ids",
+        "options"
+      ],
+      "title": "Clarification",
+      "type": "object"
+    },
+    "ClarifyAction": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "clarify",
+          "title": "Type",
+          "type": "string"
+        },
+        "value": {
+          "maxLength": 80,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "value"
+      ],
+      "title": "ClarifyAction",
+      "type": "object"
+    },
+    "Compare": {
+      "additionalProperties": false,
+      "properties": {
+        "cmp": {
+          "enum": [
+            "eq",
+            "gte",
+            "gt",
+            "lte",
+            "lt"
+          ],
+          "title": "Cmp",
+          "type": "string"
+        },
+        "field": {
+          "anyOf": [
+            {
+              "enum": [
+                "age",
+                "irp_amount",
+                "cash_amount",
+                "cash_pct",
+                "return_pct"
+              ],
+              "type": "string"
+            },
+            {
+              "enum": [
+                "name",
+                "grade"
+              ],
+              "type": "string"
+            }
+          ],
+          "title": "Field"
+        },
+        "op": {
+          "const": "compare",
+          "title": "Op",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "number"
+            },
+            {
+              "maxLength": 80,
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "op",
+        "field",
+        "cmp",
+        "value"
+      ],
+      "title": "Compare",
+      "type": "object"
+    },
+    "ErrorData": {
+      "additionalProperties": false,
+      "properties": {
+        "base_revision": {
+          "anyOf": [
+            {
+              "exclusiveMaximum": 9007199254740991,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Base Revision"
+        },
+        "code": {
+          "enum": [
+            "INVALID_REQUEST",
+            "VERSION",
+            "DATA_VERSION",
+            "STATE",
+            "ACTION",
+            "LLM_TIMEOUT",
+            "LLM_OUTPUT",
+            "INTERNAL"
+          ],
+          "title": "Code",
+          "type": "string"
+        },
+        "conversation_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Conversation Id"
+        },
+        "message": {
+          "maxLength": 300,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Message",
+          "type": "string"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "type": "string"
+            },
+            {
+              "const": "invalid-request",
+              "type": "string"
+            }
+          ],
+          "title": "Request Id"
+        },
+        "retryable": {
+          "title": "Retryable",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "branch-agent-api.v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "request_id",
+        "conversation_id",
+        "base_revision",
+        "code",
+        "retryable",
+        "message"
+      ],
+      "title": "ErrorData",
+      "type": "object"
+    },
+    "ErrorEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "data": {
+          "$ref": "#/$defs/ErrorData"
+        },
+        "event": {
+          "const": "error",
+          "title": "Event",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event",
+        "data"
+      ],
+      "title": "ErrorEvent",
+      "type": "object"
+    },
+    "Filter": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "predicate": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Compare"
+            },
+            {
+              "$ref": "#/$defs/Segment"
+            },
+            {
+              "$ref": "#/$defs/IsaBetween"
+            },
+            {
+              "$ref": "#/$defs/BooleanPredicate"
+            },
+            {
+              "$ref": "#/$defs/NotPredicate"
+            }
+          ],
+          "title": "Predicate"
+        },
+        "type": {
+          "const": "filter",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "predicate"
+      ],
+      "title": "Filter",
+      "type": "object"
+    },
+    "IsaBetween": {
+      "additionalProperties": false,
+      "properties": {
+        "end": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "title": "End",
+          "type": "string"
+        },
+        "op": {
+          "const": "isa_between",
+          "title": "Op",
+          "type": "string"
+        },
+        "start": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "title": "Start",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "start",
+        "end"
+      ],
+      "title": "IsaBetween",
+      "type": "object"
+    },
+    "Metric": {
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "enum": [
+            "customer_count",
+            "irp_sum",
+            "cash_sum"
+          ],
+          "title": "Key",
+          "type": "string"
+        },
+        "known_count": {
+          "maximum": 48,
+          "minimum": 0,
+          "title": "Known Count",
+          "type": "integer"
+        },
+        "unit": {
+          "enum": [
+            "count",
+            "KRW",
+            "pct"
+          ],
+          "title": "Unit",
+          "type": "string"
+        },
+        "unknown_count": {
+          "maximum": 48,
+          "minimum": 0,
+          "title": "Unknown Count",
+          "type": "integer"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "key",
+        "value",
+        "unit",
+        "known_count",
+        "unknown_count"
+      ],
+      "title": "Metric",
+      "type": "object"
+    },
+    "NotPredicate": {
+      "additionalProperties": false,
+      "properties": {
+        "arg": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Compare"
+            },
+            {
+              "$ref": "#/$defs/Segment"
+            },
+            {
+              "$ref": "#/$defs/IsaBetween"
+            },
+            {
+              "$ref": "#/$defs/BooleanPredicate"
+            },
+            {
+              "$ref": "#/$defs/NotPredicate"
+            }
+          ],
+          "title": "Arg"
+        },
+        "op": {
+          "const": "not",
+          "title": "Op",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "arg"
+      ],
+      "title": "NotPredicate",
+      "type": "object"
+    },
+    "Progress": {
+      "additionalProperties": false,
+      "properties": {
+        "base_revision": {
+          "exclusiveMaximum": 9007199254740991,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Base Revision",
+          "type": "integer"
+        },
+        "conversation_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "title": "Conversation Id",
+          "type": "string"
+        },
+        "list_pending": {
+          "title": "List Pending",
+          "type": "boolean"
+        },
+        "phase": {
+          "enum": [
+            "interpreting",
+            "executing",
+            "composing"
+          ],
+          "title": "Phase",
+          "type": "string"
+        },
+        "request_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "title": "Request Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "request_id",
+        "conversation_id",
+        "base_revision",
+        "phase",
+        "list_pending"
+      ],
+      "title": "Progress",
+      "type": "object"
+    },
+    "ProgressEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "data": {
+          "$ref": "#/$defs/Progress"
+        },
+        "event": {
+          "const": "progress",
+          "title": "Event",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event",
+        "data"
+      ],
+      "title": "ProgressEvent",
+      "type": "object"
+    },
+    "Reason": {
+      "additionalProperties": false,
+      "properties": {
+        "as_of_date": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "title": "As Of Date",
+          "type": "string"
+        },
+        "code": {
+          "enum": [
+            "UR01",
+            "UR02",
+            "UR03"
+          ],
+          "title": "Code",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "pattern": "^/",
+            "type": "string"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "row_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "title": "Row Id",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "row_id",
+        "code",
+        "text",
+        "as_of_date",
+        "evidence_refs"
+      ],
+      "title": "Reason",
+      "type": "object"
+    },
+    "Recommendation": {
+      "additionalProperties": false,
+      "properties": {
+        "as_of_date": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "title": "As Of Date",
+          "type": "string"
+        },
+        "rule_version": {
+          "const": "branch-rules.v1",
+          "title": "Rule Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rule_version",
+        "as_of_date"
+      ],
+      "title": "Recommendation",
+      "type": "object"
+    },
+    "RemoveAction": {
+      "additionalProperties": false,
+      "properties": {
+        "operation_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "remove_condition",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "operation_id"
+      ],
+      "title": "RemoveAction",
+      "type": "object"
+    },
+    "Result": {
+      "additionalProperties": false,
+      "properties": {
+        "count": {
+          "maximum": 48,
+          "minimum": 0,
+          "title": "Count",
+          "type": "integer"
+        },
+        "metrics": {
+          "items": {
+            "$ref": "#/$defs/Metric"
+          },
+          "maxItems": 3,
+          "title": "Metrics",
+          "type": "array"
+        },
+        "reasons": {
+          "items": {
+            "$ref": "#/$defs/Reason"
+          },
+          "maxItems": 48,
+          "title": "Reasons",
+          "type": "array"
+        },
+        "row_ids": {
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+            "type": "string"
+          },
+          "maxItems": 48,
+          "title": "Row Ids",
+          "type": "array"
+        },
+        "unknown_row_ids": {
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+            "type": "string"
+          },
+          "maxItems": 48,
+          "title": "Unknown Row Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "row_ids",
+        "count",
+        "unknown_row_ids",
+        "metrics",
+        "reasons"
+      ],
+      "title": "Result",
+      "type": "object"
+    },
+    "Segment": {
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "segment",
+          "title": "Op",
+          "type": "string"
+        },
+        "value": {
+          "maxLength": 80,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "value"
+      ],
+      "title": "Segment",
+      "type": "object"
+    },
+    "Selection": {
+      "additionalProperties": false,
+      "properties": {
+        "base": {
+          "enum": [
+            "all",
+            "recommendation"
+          ],
+          "title": "Base",
+          "type": "string"
+        },
+        "operations": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Filter"
+              },
+              {
+                "$ref": "#/$defs/SortOperation"
+              },
+              {
+                "$ref": "#/$defs/Take"
+              }
+            ]
+          },
+          "maxItems": 100,
+          "title": "Operations",
+          "type": "array"
+        }
+      },
+      "required": [
+        "base",
+        "operations"
+      ],
+      "title": "Selection",
+      "type": "object"
+    },
+    "SimpleAction": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": [
+            "recommend",
+            "restore_recommendation",
+            "show_aggregate",
+            "reset"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "SimpleAction",
+      "type": "object"
+    },
+    "Sort": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "field": {
+          "anyOf": [
+            {
+              "enum": [
+                "age",
+                "irp_amount",
+                "cash_amount",
+                "cash_pct",
+                "return_pct"
+              ],
+              "type": "string"
+            },
+            {
+              "const": "source_order",
+              "type": "string"
+            },
+            {
+              "const": "recommendation_order",
+              "type": "string"
+            }
+          ],
+          "title": "Field"
+        }
+      },
+      "required": [
+        "field",
+        "direction"
+      ],
+      "title": "Sort",
+      "type": "object"
+    },
+    "SortOperation": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "field": {
+          "anyOf": [
+            {
+              "enum": [
+                "age",
+                "irp_amount",
+                "cash_amount",
+                "cash_pct",
+                "return_pct"
+              ],
+              "type": "string"
+            },
+            {
+              "const": "source_order",
+              "type": "string"
+            }
+          ],
+          "title": "Field"
+        },
+        "id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "sort",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "field",
+        "direction"
+      ],
+      "title": "SortOperation",
+      "type": "object"
+    },
+    "State": {
+      "additionalProperties": false,
+      "properties": {
+        "active": {
+          "title": "Active",
+          "type": "boolean"
+        },
+        "clarification": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Clarification"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "last_aggregate": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Aggregate"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "recommendation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Recommendation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "selected_row_id": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Selected Row Id"
+        },
+        "selection": {
+          "$ref": "#/$defs/Selection"
+        }
+      },
+      "required": [
+        "active",
+        "selection",
+        "recommendation",
+        "last_aggregate",
+        "clarification",
+        "selected_row_id"
+      ],
+      "title": "State",
+      "type": "object"
+    },
+    "Take": {
+      "additionalProperties": false,
+      "properties": {
+        "count": {
+          "maximum": 48,
+          "minimum": 1,
+          "title": "Count",
+          "type": "integer"
+        },
+        "id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "take",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "count"
+      ],
+      "title": "Take",
+      "type": "object"
+    },
+    "UI": {
+      "additionalProperties": false,
+      "properties": {
+        "list_action": {
+          "enum": [
+            "keep",
+            "replace",
+            "reset"
+          ],
+          "title": "List Action",
+          "type": "string"
+        },
+        "row_ids": {
+          "anyOf": [
+            {
+              "items": {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+                "type": "string"
+              },
+              "maxItems": 48,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Row Ids"
+        },
+        "sort": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sort"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "list_action",
+        "row_ids",
+        "sort"
+      ],
+      "title": "UI",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Schema entry points, not an object sent across the wire.",
+  "properties": {
+    "answer": {
+      "$ref": "#/$defs/AnswerEvent"
+    },
+    "error": {
+      "$ref": "#/$defs/ErrorEvent"
+    },
+    "progress": {
+      "$ref": "#/$defs/ProgressEvent"
+    },
+    "request": {
+      "$ref": "#/$defs/BranchRequest"
+    },
+    "state": {
+      "$ref": "#/$defs/State"
+    }
+  },
+  "required": [
+    "request",
+    "answer",
+    "progress",
+    "error",
+    "state"
+  ],
+  "title": "ContractSchemas",
+  "type": "object"
+}

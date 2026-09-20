@@ -2,8 +2,10 @@
 (function(window, document) {
 var module, exports, require;
 if (window.__PensionVanilla) window.__PensionVanilla.destroy();
+window.PensionBranchAgentSchema = {"$defs":{"Aggregate":{"additionalProperties":false,"properties":{"metric_keys":{"items":{"enum":["customer_count","irp_sum","cash_sum"],"type":"string"},"maxItems":3,"minItems":1,"title":"Metric Keys","type":"array"},"selection":{"$ref":"#/$defs/Selection"}},"required":["selection","metric_keys"],"title":"Aggregate","type":"object"},"Answer":{"additionalProperties":false,"properties":{"actions":{"items":{"$ref":"#/$defs/Button"},"maxItems":8,"title":"Actions","type":"array"},"base_revision":{"exclusiveMaximum":9007199254740991,"maximum":9007199254740991,"minimum":0,"title":"Base Revision","type":"integer"},"context_label":{"maxLength":2000,"title":"Context Label","type":"string"},"conversation_id":{"pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$","title":"Conversation Id","type":"string"},"data_version":{"pattern":"^[0-9a-f]{64}$","title":"Data Version","type":"string"},"dataset_id":{"const":"branch-demo.v1","title":"Dataset Id","type":"string"},"intent":{"enum":["search","overview","aggregate","recommend","brief","clarify","restore","unsupported"],"title":"Intent","type":"string"},"next_state":{"$ref":"#/$defs/State"},"request_id":{"pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$","title":"Request Id","type":"string"},"result":{"$ref":"#/$defs/Result"},"revision":{"maximum":9007199254740991,"minimum":0,"title":"Revision","type":"integer"},"rule_version":{"const":"branch-rules.v1","title":"Rule Version","type":"string"},"schema_version":{"const":"branch-agent-api.v1","title":"Schema Version","type":"string"},"scope_note":{"maxLength":2000,"title":"Scope Note","type":"string"},"status":{"enum":["ok","empty","clarification_required","unsupported"],"title":"Status","type":"string"},"text":{"maxLength":2000,"minLength":1,"pattern":"\\S","title":"Text","type":"string"},"ui":{"$ref":"#/$defs/UI"}},"required":["schema_version","request_id","conversation_id","base_revision","dataset_id","data_version","rule_version","revision","intent","status","text","result","ui","context_label","scope_note","actions","next_state"],"title":"Answer","type":"object"},"AnswerEvent":{"additionalProperties":false,"properties":{"data":{"$ref":"#/$defs/Answer"},"event":{"const":"answer","title":"Event","type":"string"}},"required":["event","data"],"title":"AnswerEvent","type":"object"},"BooleanPredicate":{"additionalProperties":false,"properties":{"args":{"items":{"anyOf":[{"$ref":"#/$defs/Compare"},{"$ref":"#/$defs/Segment"},{"$ref":"#/$defs/IsaBetween"},{"$ref":"#/$defs/BooleanPredicate"},{"$ref":"#/$defs/NotPredicate"}]},"maxItems":32,"minItems":1,"title":"Args","type":"array"},"op":{"enum":["and","or"],"title":"Op","type":"string"}},"required":["op","args"],"title":"BooleanPredicate","type":"object"},"BranchRequest":{"additionalProperties":false,"properties":{"action":{"anyOf":[{"$ref":"#/$defs/SimpleAction"},{"$ref":"#/$defs/RemoveAction"},{"$ref":"#/$defs/BriefAction"},{"$ref":"#/$defs/ClarifyAction"},{"type":"null"}],"title":"Action"},"base_revision":{"exclusiveMaximum":9007199254740991,"maximum":9007199254740991,"minimum":0,"title":"Base Revision","type":"integer"},"conversation_id":{"pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$","title":"Conversation Id","type":"string"},"data_version":{"pattern":"^[0-9a-f]{64}$","title":"Data Version","type":"string"},"dataset_id":{"const":"branch-demo.v1","title":"Dataset Id","type":"string"},"message":{"maxLength":1200,"minLength":1,"pattern":"\\S","title":"Message","type":"string"},"request_id":{"pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$","title":"Request Id","type":"string"},"rule_version":{"const":"branch-rules.v1","title":"Rule Version","type":"string"},"schema_version":{"const":"branch-agent-api.v1","title":"Schema Version","type":"string"},"state":{"anyOf":[{"$ref":"#/$defs/State"},{"type":"null"}]},"task":{"const":"branch_assistant","title":"Task","type":"string"},"x_client_user":{"maxLength":128,"minLength":1,"pattern":"\\S","title":"X Client User","type":"string"}},"required":["schema_version","request_id","conversation_id","base_revision","dataset_id","data_version","rule_version","task","x_client_user","message","action","state"],"title":"BranchRequest","type":"object"},"BriefAction":{"additionalProperties":false,"properties":{"row_id":{"pattern":"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$","title":"Row Id","type":"string"},"type":{"const":"brief","title":"Type","type":"string"}},"required":["type","row_id"],"title":"BriefAction","type":"object"},"Button":{"additionalProperties":false,"properties":{"action":{"anyOf":[{"$ref":"#/$defs/SimpleAction"},{"$ref":"#/$defs/RemoveAction"},{"$ref":"#/$defs/BriefAction"},{"$ref":"#/$defs/ClarifyAction"}],"title":"Action"},"label":{"maxLength":80,"minLength":1,"pattern":"\\S","title":"Label","type":"string"}},"required":["label","action"],"title":"Button","type":"object"},"Choice":{"additionalProperties":false,"properties":{"label":{"maxLength":80,"minLength":1,"pattern":"\\S","title":"Label","type":"string"},"value":{"maxLength":80,"minLength":1,"pattern":"\\S","title":"Value","type":"string"}},"required":["value","label"],"title":"Choice","type":"object"},"Clarification":{"additionalProperties":false,"properties":{"candidate_row_ids":{"items":{"pattern":"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$","type":"string"},"maxItems":48,"title":"Candidate Row Ids","type":"array"},"field":{"anyOf":[{"enum":["cash_amount","cash_pct","irp_amount"],"type":"string"},{"type":"null"}],"title":"Field"},"kind":{"enum":["cash_field","cash_value","amount_basis","scope","customer","date_basis","condition"],"title":"Kind","type":"string"},"options":{"items":{"$ref":"#/$defs/Choice"},"maxItems":48,"title":"Options","type":"array"},"pending_message":{"maxLength":1200,"minLength":1,"pattern":"\\S","title":"Pending Message","type":"string"}},"required":["kind","field","pending_message","candidate_row_ids","options"],"title":"Clarification","type":"object"},"ClarifyAction":{"additionalProperties":false,"properties":{"type":{"const":"clarify","title":"Type","type":"string"},"value":{"maxLength":80,"minLength":1,"pattern":"\\S","title":"Value","type":"string"}},"required":["type","value"],"title":"ClarifyAction","type":"object"},"Compare":{"additionalProperties":false,"properties":{"cmp":{"enum":["eq","gte","gt","lte","lt"],"title":"Cmp","type":"string"},"field":{"anyOf":[{"enum":["age","irp_amount","cash_amount","cash_pct","return_pct"],"type":"string"},{"enum":["name","grade"],"type":"string"}],"title":"Field"},"op":{"const":"compare","title":"Op","type":"string"},"value":{"anyOf":[{"maximum":9007199254740991,"minimum":-9007199254740991,"type":"number"},{"maxLength":80,"minLength":1,"pattern":"\\S","type":"string"}],"title":"Value"}},"required":["op","field","cmp","value"],"title":"Compare","type":"object"},"ErrorData":{"additionalProperties":false,"properties":{"base_revision":{"anyOf":[{"exclusiveMaximum":9007199254740991,"maximum":9007199254740991,"minimum":0,"type":"integer"},{"type":"null"}],"title":"Base Revision"},"code":{"enum":["INVALID_REQUEST","VERSION","DATA_VERSION","STATE","ACTION","LLM_TIMEOUT","LLM_OUTPUT","INTERNAL"],"title":"Code","type":"string"},"conversation_id":{"anyOf":[{"pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$","type":"string"},{"type":"null"}],"title":"Conversation Id"},"message":{"maxLength":300,"minLength":1,"pattern":"\\S","title":"Message","type":"string"},"request_id":{"anyOf":[{"pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$","type":"string"},{"const":"invalid-request","type":"string"}],"title":"Request Id"},"retryable":{"title":"Retryable","type":"boolean"},"schema_version":{"const":"branch-agent-api.v1","title":"Schema Version","type":"string"}},"required":["schema_version","request_id","conversation_id","base_revision","code","retryable","message"],"title":"ErrorData","type":"object"},"ErrorEvent":{"additionalProperties":false,"properties":{"data":{"$ref":"#/$defs/ErrorData"},"event":{"const":"error","title":"Event","type":"string"}},"required":["event","data"],"title":"ErrorEvent","type":"object"},"Filter":{"additionalProperties":false,"properties":{"id":{"pattern":"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$","title":"Id","type":"string"},"predicate":{"anyOf":[{"$ref":"#/$defs/Compare"},{"$ref":"#/$defs/Segment"},{"$ref":"#/$defs/IsaBetween"},{"$ref":"#/$defs/BooleanPredicate"},{"$ref":"#/$defs/NotPredicate"}],"title":"Predicate"},"type":{"const":"filter","title":"Type","type":"string"}},"required":["id","type","predicate"],"title":"Filter","type":"object"},"IsaBetween":{"additionalProperties":false,"properties":{"end":{"pattern":"^\\d{4}-\\d{2}-\\d{2}$","title":"End","type":"string"},"op":{"const":"isa_between","title":"Op","type":"string"},"start":{"pattern":"^\\d{4}-\\d{2}-\\d{2}$","title":"Start","type":"string"}},"required":["op","start","end"],"title":"IsaBetween","type":"object"},"Metric":{"additionalProperties":false,"properties":{"key":{"enum":["customer_count","irp_sum","cash_sum"],"title":"Key","type":"string"},"known_count":{"maximum":48,"minimum":0,"title":"Known Count","type":"integer"},"unit":{"enum":["count","KRW","pct"],"title":"Unit","type":"string"},"unknown_count":{"maximum":48,"minimum":0,"title":"Unknown Count","type":"integer"},"value":{"anyOf":[{"maximum":9007199254740991,"minimum":-9007199254740991,"type":"number"},{"type":"null"}],"title":"Value"}},"required":["key","value","unit","known_count","unknown_count"],"title":"Metric","type":"object"},"NotPredicate":{"additionalProperties":false,"properties":{"arg":{"anyOf":[{"$ref":"#/$defs/Compare"},{"$ref":"#/$defs/Segment"},{"$ref":"#/$defs/IsaBetween"},{"$ref":"#/$defs/BooleanPredicate"},{"$ref":"#/$defs/NotPredicate"}],"title":"Arg"},"op":{"const":"not","title":"Op","type":"string"}},"required":["op","arg"],"title":"NotPredicate","type":"object"},"Progress":{"additionalProperties":false,"properties":{"base_revision":{"exclusiveMaximum":9007199254740991,"maximum":9007199254740991,"minimum":0,"title":"Base Revision","type":"integer"},"conversation_id":{"pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$","title":"Conversation Id","type":"string"},"list_pending":{"title":"List Pending","type":"boolean"},"phase":{"enum":["interpreting","executing","composing"],"title":"Phase","type":"string"},"request_id":{"pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$","title":"Request Id","type":"string"}},"required":["request_id","conversation_id","base_revision","phase","list_pending"],"title":"Progress","type":"object"},"ProgressEvent":{"additionalProperties":false,"properties":{"data":{"$ref":"#/$defs/Progress"},"event":{"const":"progress","title":"Event","type":"string"}},"required":["event","data"],"title":"ProgressEvent","type":"object"},"Reason":{"additionalProperties":false,"properties":{"as_of_date":{"pattern":"^\\d{4}-\\d{2}-\\d{2}$","title":"As Of Date","type":"string"},"code":{"enum":["UR01","UR02","UR03"],"title":"Code","type":"string"},"evidence_refs":{"items":{"maxLength":256,"minLength":1,"pattern":"^/","type":"string"},"maxItems":8,"minItems":1,"title":"Evidence Refs","type":"array"},"row_id":{"pattern":"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$","title":"Row Id","type":"string"},"text":{"maxLength":2000,"minLength":1,"pattern":"\\S","title":"Text","type":"string"}},"required":["row_id","code","text","as_of_date","evidence_refs"],"title":"Reason","type":"object"},"Recommendation":{"additionalProperties":false,"properties":{"as_of_date":{"pattern":"^\\d{4}-\\d{2}-\\d{2}$","title":"As Of Date","type":"string"},"rule_version":{"const":"branch-rules.v1","title":"Rule Version","type":"string"}},"required":["rule_version","as_of_date"],"title":"Recommendation","type":"object"},"RemoveAction":{"additionalProperties":false,"properties":{"operation_id":{"pattern":"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$","title":"Operation Id","type":"string"},"type":{"const":"remove_condition","title":"Type","type":"string"}},"required":["type","operation_id"],"title":"RemoveAction","type":"object"},"Result":{"additionalProperties":false,"properties":{"count":{"maximum":48,"minimum":0,"title":"Count","type":"integer"},"metrics":{"items":{"$ref":"#/$defs/Metric"},"maxItems":3,"title":"Metrics","type":"array"},"reasons":{"items":{"$ref":"#/$defs/Reason"},"maxItems":48,"title":"Reasons","type":"array"},"row_ids":{"items":{"pattern":"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$","type":"string"},"maxItems":48,"title":"Row Ids","type":"array"},"unknown_row_ids":{"items":{"pattern":"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$","type":"string"},"maxItems":48,"title":"Unknown Row Ids","type":"array"}},"required":["row_ids","count","unknown_row_ids","metrics","reasons"],"title":"Result","type":"object"},"Segment":{"additionalProperties":false,"properties":{"op":{"const":"segment","title":"Op","type":"string"},"value":{"maxLength":80,"minLength":1,"pattern":"\\S","title":"Value","type":"string"}},"required":["op","value"],"title":"Segment","type":"object"},"Selection":{"additionalProperties":false,"properties":{"base":{"enum":["all","recommendation"],"title":"Base","type":"string"},"operations":{"items":{"anyOf":[{"$ref":"#/$defs/Filter"},{"$ref":"#/$defs/SortOperation"},{"$ref":"#/$defs/Take"}]},"maxItems":100,"title":"Operations","type":"array"}},"required":["base","operations"],"title":"Selection","type":"object"},"SimpleAction":{"additionalProperties":false,"properties":{"type":{"enum":["recommend","restore_recommendation","show_aggregate","reset"],"title":"Type","type":"string"}},"required":["type"],"title":"SimpleAction","type":"object"},"Sort":{"additionalProperties":false,"properties":{"direction":{"enum":["asc","desc"],"title":"Direction","type":"string"},"field":{"anyOf":[{"enum":["age","irp_amount","cash_amount","cash_pct","return_pct"],"type":"string"},{"const":"source_order","type":"string"},{"const":"recommendation_order","type":"string"}],"title":"Field"}},"required":["field","direction"],"title":"Sort","type":"object"},"SortOperation":{"additionalProperties":false,"properties":{"direction":{"enum":["asc","desc"],"title":"Direction","type":"string"},"field":{"anyOf":[{"enum":["age","irp_amount","cash_amount","cash_pct","return_pct"],"type":"string"},{"const":"source_order","type":"string"}],"title":"Field"},"id":{"pattern":"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$","title":"Id","type":"string"},"type":{"const":"sort","title":"Type","type":"string"}},"required":["id","type","field","direction"],"title":"SortOperation","type":"object"},"State":{"additionalProperties":false,"properties":{"active":{"title":"Active","type":"boolean"},"clarification":{"anyOf":[{"$ref":"#/$defs/Clarification"},{"type":"null"}]},"last_aggregate":{"anyOf":[{"$ref":"#/$defs/Aggregate"},{"type":"null"}]},"recommendation":{"anyOf":[{"$ref":"#/$defs/Recommendation"},{"type":"null"}]},"selected_row_id":{"anyOf":[{"pattern":"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$","type":"string"},{"type":"null"}],"title":"Selected Row Id"},"selection":{"$ref":"#/$defs/Selection"}},"required":["active","selection","recommendation","last_aggregate","clarification","selected_row_id"],"title":"State","type":"object"},"Take":{"additionalProperties":false,"properties":{"count":{"maximum":48,"minimum":1,"title":"Count","type":"integer"},"id":{"pattern":"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$","title":"Id","type":"string"},"type":{"const":"take","title":"Type","type":"string"}},"required":["id","type","count"],"title":"Take","type":"object"},"UI":{"additionalProperties":false,"properties":{"list_action":{"enum":["keep","replace","reset"],"title":"List Action","type":"string"},"row_ids":{"anyOf":[{"items":{"pattern":"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$","type":"string"},"maxItems":48,"type":"array"},{"type":"null"}],"title":"Row Ids"},"sort":{"anyOf":[{"$ref":"#/$defs/Sort"},{"type":"null"}]}},"required":["list_action","row_ids","sort"],"title":"UI","type":"object"}},"$schema":"https://json-schema.org/draft/2020-12/schema","additionalProperties":false,"description":"Schema entry points, not an object sent across the wire.","properties":{"answer":{"$ref":"#/$defs/AnswerEvent"},"error":{"$ref":"#/$defs/ErrorEvent"},"progress":{"$ref":"#/$defs/ProgressEvent"},"request":{"$ref":"#/$defs/BranchRequest"},"state":{"$ref":"#/$defs/State"}},"required":["request","answer","progress","error","state"],"title":"ContractSchemas","type":"object"};
+window.PensionBranchDataManifest = {"dataset_id":"branch-demo.v1","data_version":"2faa49449acd295992aba6ca7d57aebc1ba0cb7bef3a6a363a281fc52fc9afc4","rule_version":"branch-rules.v1","projection_version":"current-data.v1","as_of_date":"2026-09-14","known_dates":["2026-09-04","2026-09-14"],"mixed_dates":true,"record_count":48,"structured_count":31,"display_only_count":17,"row_ids":["ksy","B02-18","khj","cjh","B03-07","B03-11","lsm","B01-03","oks","B07-29","B01-22","B05-28","pjh","pey","lsc","kdy","msy","B04-23","B10-16","B10-25","jmr","jmj","B01-14","B02-04","B02-27","B04-15","B05-26","B06-10","B06-13","B08-01","ysr","bjh","B03-20","B04-19","B05-09","B06-21","B07-30","B07-32","B08-05","B08-12","B09-02","B09-17","B09-24","B10-08","hsw","lth","hkg","sjh"],"segment_labels":["DO 미등록","DO 실행","DO 실행 D-4","ETF 상품조회","GIC 만기","ISA 만기","ISA 만기 D-23","ISA 만기 D-3","ISA 만기 D-32","ISA 전환기한","계약이전 신청","계약이전 페이지 방문","납입 중단","납입금 미운용","만기자금 미운용","보유상품 수익률 조회","복수 IRP 보유","수익률 부진","연금개시","연금개시 D-30","연금개시 D-31","연금개시 가능","연금개시 예정","연금수령 중","연금자산 분산보유","연금저축 보유","올해 미납입","원리금보장 편중","이탈징후","입금매수상품 미지정","장기 미운용","저금리 예금 보유","정기예금 만기","정기예금 만기 D-14","정기예금 만기 D-16","정기예금 만기 D-18","정기예금 만기 D-22","정기예금 만기 D-7","추가납입","추가납입 200만원","추가납입 900만원","타사 연금저축 보유","타행 IRP 보유","타행 연금저축 보유","퇴직금 운용 미지시","퇴직금 일부만 운용","퇴직금 재입금기한","퇴직금 재입금기한 D-36","퇴직금 재입금기한 D-39","퇴직연금 관리화면 방문","투자성향-DO불일치","판매중단 펀드 보유","펀드 상품조회","현금성 과다","현금성 장기대기","환매추천 펀드 보유"]};
 window.PensionBriefingFixtures = {"customers":[{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"DEMO-01","dataType":"시연용가상고객","asOfDate":"2026-09-04","generatedAt":"2026-09-04T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"10274-38562","name":"김서연","age":44,"gender":"여","starClubGrade":"VIP","investmentProfile":"위험중립형","irpOpenedAt":"2019-03-15","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-006","productName":"뿔려드림II","riskLevel":"중위험"},"applicationStatus":"미적용"}},"signals":[{"label":"ISA 만기 D-3","date":"2026-09-07","source":"마이데이터 가상정보"},{"label":"ETF 상품조회","date":"2026-09-03","source":"가상 행동로그"}],"irpAccount":{"valuationAmountKrw":45000000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":28000000,"weightPct":62.2},{"assetType":"실적배당형","amountKrw":15000000,"weightPct":33.3},{"assetType":"현금성자산","amountKrw":2000000,"weightPct":4.5}],"oneYearReturnPct":3,"taxDeductionRemainingKrw":5000000,"latestProductOpening":{"holdingId":"H002","productId":"FND-001","productName":"키움더드림단기채증권투자신탁(채권)C-P2E(퇴직연금)","openedAt":"2026-06-12","amountKrw":15000000}},"holdings":[{"holdingId":"H001","productId":"SAV-001","productName":"KB저축은행 퇴직연금 정기예금","assetType":"원리금보장형","productCategory":"정기예금","contractTerm":"1년","valuationAmountKrw":28000000,"weightPct":62.2,"oneYearReturnPct":3.5,"openedAt":"2026-02-16","allocationBreakdown":null,"flags":[]},{"holdingId":"H002","productId":"FND-001","productName":"키움더드림단기채증권투자신탁(채권)C-P2E(퇴직연금)","assetType":"실적배당형","productCategory":"채권형펀드","contractTerm":null,"valuationAmountKrw":15000000,"weightPct":33.3,"oneYearReturnPct":2.52,"openedAt":"2026-06-12","allocationBreakdown":null,"flags":[]},{"holdingId":"H003","productId":null,"productName":"현금성자산","assetType":"현금성자산","productCategory":"현금성자산","contractTerm":null,"valuationAmountKrw":2000000,"weightPct":4.5,"oneYearReturnPct":null,"openedAt":null,"allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{"재직상태":"재직"},"외부계좌":[{"외부계좌구분":"ISA","금융기관":"신한은행","평가금액원":80000000,"만기일":"2026-09-07","정보확인일":"2026-09-03","정보출처":"마이데이터 연계 동의가 있는 시연용 가상정보","자금사용계획":null,"개인형퇴직연금전환의향":null}],"디지털행동":[{"채널":"KB스타뱅킹","행동유형":"IRP ETF 상품목록 조회","첫조회일":"2026-08-28","최근조회일":"2026-09-03","조회횟수":3,"조회상품명":null,"정보출처":"시연용 가상 행동로그; 조회는 매수 의사가 아님"}],"가상설정메모":["기존 참고본의 ISA 8,000만원·9/7 만기·ETF 조회 사실을 입력에 복원. 조회일·횟수·정보출처는 2026-09-16 추가한 가상 설정."]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B01-03","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"47306-92158","name":"오민서","age":46,"gender":"여","starClubGrade":"그랜드","investmentProfile":"위험중립형","irpOpenedAt":"2020-11-06","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-006","productName":"뿔려드림II","riskLevel":"중위험"},"applicationStatus":"운용중"}},"signals":[{"label":"ISA 만기 D-23","date":"2026-10-07","source":"시연용 고객 원본 거래·이벤트"},{"label":"추가납입 900만원","date":"2026-03-14","source":"시연용 고객 원본 거래·이벤트"},{"label":"보유상품 수익률 조회","date":"2026-09-11","source":"가상 행동로그"}],"irpAccount":{"valuationAmountKrw":63500000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":24130000,"weightPct":38},{"assetType":"실적배당형","amountKrw":35000000,"weightPct":55.1},{"assetType":"현금성자산","amountKrw":4370000,"weightPct":6.9}],"oneYearReturnPct":10.1,"taxDeductionRemainingKrw":0,"latestProductOpening":{"holdingId":"H001","productId":"SAV-001","productName":"KB저축은행 퇴직연금 정기예금","openedAt":"2025-12-09","amountKrw":24130000}},"holdings":[{"holdingId":"H001","productId":"SAV-001","productName":"KB저축은행 퇴직연금 정기예금","assetType":"원리금보장형","productCategory":"정기예금","contractTerm":"1년","valuationAmountKrw":24130000,"weightPct":38,"oneYearReturnPct":3.5,"openedAt":"2025-12-09","allocationBreakdown":null,"flags":[]},{"holdingId":"H002","productId":"DO-006","productName":"뿔려드림II","assetType":"실적배당형","productCategory":"디폴트옵션","contractTerm":null,"valuationAmountKrw":35000000,"weightPct":55.1,"oneYearReturnPct":15.9,"openedAt":"2024-07-22","allocationBreakdown":[{"assetType":"실적배당형","weightPct":100}],"flags":[]},{"holdingId":"H003","productId":null,"productName":"현금성자산","assetType":"현금성자산","productCategory":"현금성자산","contractTerm":null,"valuationAmountKrw":4370000,"weightPct":6.9,"oneYearReturnPct":null,"openedAt":null,"allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{},"납입및세제":{"올해개인부담금납입액원":9000000},"계좌운영":{},"퇴직및인출":{},"최근사건":[{"이벤트식별자":"T001","발생일시":"2026-03-14T00:00:00+09:00","이벤트유형":"개인부담금 입금","계좌구분":"IRP","관련보유상품식별자":null,"금액원":9000000,"처리상태":"입금완료","채널":null}],"금융거래":[],"상담이력":[{"상담식별자":"CRM001","상담일시":"2026-07-24T00:00:00+09:00","상담채널":null,"상담유형":"직원상담메모","상담메모":"고객은 올해 연금계좌 세액공제 한도를 이미 채운 상태에서 '올해는 더 넣을 필요가 없겠네요'라고 말함."}],"외부계좌":[{"외부계좌구분":"ISA","외부계좌식별자":"EXT001","금융기관":"타행","평가금액원":null,"만기일":"2026-10-07","정보확인일":"2026-09-14","자금사용계획":null,"개인형퇴직연금전환의향":null,"개인형퇴직연금전환예정금액원":null}],"투자성향이력":[],"운용정책":{},"상품진단":[],"계산지표":[{"지표식별자":"M001","지표유형":"파생값","지표명":"연금계좌세액공제잔여한도","대상참조":null,"값":0,"단위":"원","산출기준일":"2026-09-14"},{"지표식별자":"M002","지표유형":"파생값","지표명":"ISA만기까지남은일수","대상참조":null,"값":23,"단위":"일","산출기준일":"2026-09-14"}],"확인된특이사항":[],"디지털행동":[{"채널":"KB스타뱅킹","행동유형":"보유상품 수익률 조회","최근조회일":"2026-09-11","조회횟수":2,"정보출처":"시연용 가상 행동로그"}],"가상설정메모":["2026-09-17 시연 설계: 보유상품 수익률 조회 2회 가상 행동로그 추가. 조회는 조회일 뿐 매수·전환·개시 의향은 미확인 상태 유지."]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B01-14","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"43195-68420","name":"정유진","age":43,"gender":"여","starClubGrade":"그랜드","investmentProfile":"위험중립형","irpOpenedAt":"2022-04-15","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-005","productName":"뿔려드림","riskLevel":"중위험"},"applicationStatus":"미적용"}},"signals":[{"label":"납입 중단","date":"2025-07-10","source":"시연용 고객 원본 거래·이벤트"},{"label":"연금저축 보유","source":"시연용 고객 원본 거래·이벤트"},{"label":"저금리 예금 보유","source":"시연용 고객 원본 거래·이벤트"}],"irpAccount":{"valuationAmountKrw":31600000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":14000000,"weightPct":44.3},{"assetType":"실적배당형","amountKrw":15000000,"weightPct":47.5},{"assetType":"현금성자산","amountKrw":2600000,"weightPct":8.2}],"oneYearReturnPct":2.2,"taxDeductionRemainingKrw":3800000,"latestProductOpening":{"holdingId":"H002","productId":"FND-005","productName":"KB글로벌단기채증권자투자신탁(채권-재간접형)(H)C-퇴직E","openedAt":"2026-01-16","amountKrw":15000000}},"holdings":[{"holdingId":"H001","productId":"DEP-005","productName":"신한은행 TOPS퇴직플랜 정기예금","assetType":"원리금보장형","productCategory":"정기예금","contractTerm":"1년","valuationAmountKrw":14000000,"weightPct":44.3,"oneYearReturnPct":3.25,"openedAt":"2025-10-21","allocationBreakdown":null,"flags":[]},{"holdingId":"H002","productId":"FND-005","productName":"KB글로벌단기채증권자투자신탁(채권-재간접형)(H)C-퇴직E","assetType":"실적배당형","productCategory":"채권형펀드","contractTerm":null,"valuationAmountKrw":15000000,"weightPct":47.5,"oneYearReturnPct":1.58,"openedAt":"2026-01-16","allocationBreakdown":null,"flags":[]},{"holdingId":"H003","productId":null,"productName":"현금성자산","assetType":"현금성자산","productCategory":"현금성자산","contractTerm":null,"valuationAmountKrw":2600000,"weightPct":8.2,"oneYearReturnPct":null,"openedAt":null,"allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{"재직상태":"재직"},"납입및세제":{"올해개인부담금납입액원":0,"개인부담금납입이력":[{"연도":2023,"납입금액원":3600000},{"연도":2024,"납입금액원":3600000},{"연도":2025,"납입금액원":1800000},{"연도":2026,"납입금액원":0}],"개인부담금자동이체":{"등록여부":false,"해지일":"2025-07-10","해지전월이체금액원":300000}},"계좌운영":{},"퇴직및인출":{},"최근사건":[{"이벤트식별자":"T001","발생일시":"2025-07-10T09:00:00+09:00","이벤트유형":"개인부담금자동이체해지","계좌구분":"IRP","관련보유상품식별자":null,"금액원":300000,"처리상태":"완료","채널":null}],"금융거래":[],"상담이력":[],"외부계좌":[{"외부계좌구분":"연금저축","외부계좌식별자":"EXTPS001","금융기관":"KB국민은행","정보확인일":"2026-09-14","연도별납입액원":[{"연도":2024,"개인부담금납입액원":6000000},{"연도":2025,"개인부담금납입액원":6000000},{"연도":2026,"개인부담금납입액원":5200000}]}],"투자성향이력":[],"운용정책":{},"상품진단":[{"진단구분":"금리비교","관련보유상품식별자":"H001","보유상품금리":3.25,"비교기준":"현재 제공 중인 동일만기(1년) 정기예금 최고금리","비교상품식별자":"SAV-013","비교상품금리":3.75,"금리차이퍼센트포인트":-0.5,"비교기준일":"2026-09-11"}],"계산지표":[{"지표식별자":"M001","지표유형":"파생값","지표명":"2026년연금계좌세액공제대상납입액","대상참조":null,"값":5200000,"단위":"원","산출기준일":"2026-09-14"},{"지표식별자":"M002","지표유형":"파생값","지표명":"연금계좌세액공제잔여한도","대상참조":null,"값":3800000,"단위":"원","산출기준일":"2026-09-14"},{"지표식별자":"M003","지표유형":"기간","지표명":"개인부담금 납입중단 후 경과개월수","대상참조":"T001","값":14,"단위":"개월","산출기준일":"2026-09-14"},{"지표식별자":"M004","지표유형":"파생값","지표명":"보유정기예금 현재제공최고금리 대비 차이","대상참조":"H001","값":-0.5,"단위":"%p","산출기준일":"2026-09-14"}],"확인된특이사항":[],"가상설정메모":["2026-09-17 시연 설계: 당행 IRP 개인부담금 납입이력(2023~2025)과 2025-07 자동이체 해지, 보유 정기예금 금리비교 진단을 추가. 납입 중단·저금리 예금 뱃지 근거.","2026-09-17 시연 설계: 연금저축 보유기관을 당행(KB국민은행)으로 명시. 뱃지는 연금저축 보유."]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B01-22","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"54182-30764","name":"한지훈","age":54,"gender":"남","starClubGrade":"VIP","investmentProfile":"안정추구형","irpOpenedAt":"2021-06-18","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-003","productName":"알파드림II","riskLevel":"저위험"},"applicationStatus":"미적용"}},"signals":[{"label":"ISA 만기 D-32","date":"2026-10-16","source":"가상 마이데이터"},{"label":"퇴직연금 관리화면 방문","date":"2026-09-11","source":"가상 행동로그"}],"irpAccount":{"valuationAmountKrw":82300000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":48000000,"weightPct":58.3},{"assetType":"실적배당형","amountKrw":29000000,"weightPct":35.2},{"assetType":"현금성자산","amountKrw":5300000,"weightPct":6.5}],"oneYearReturnPct":2.5,"taxDeductionRemainingKrw":2600000,"latestProductOpening":{"holdingId":"H002","productId":"FND-003","productName":"한국투자크레딧포커스ESG증권자투자신탁1호(채권)C-RE","openedAt":"2026-02-04","amountKrw":29000000}},"holdings":[{"holdingId":"H001","productId":"SAV-003","productName":"NH저축은행 퇴직연금 정기예금","assetType":"원리금보장형","productCategory":"정기예금","contractTerm":"1년","valuationAmountKrw":48000000,"weightPct":58.3,"oneYearReturnPct":3.6,"openedAt":"2025-11-15","allocationBreakdown":null,"flags":[]},{"holdingId":"H002","productId":"FND-003","productName":"한국투자크레딧포커스ESG증권자투자신탁1호(채권)C-RE","assetType":"실적배당형","productCategory":"채권형펀드","contractTerm":null,"valuationAmountKrw":29000000,"weightPct":35.2,"oneYearReturnPct":1.26,"openedAt":"2026-02-04","allocationBreakdown":null,"flags":[]},{"holdingId":"H003","productId":null,"productName":"현금성자산","assetType":"현금성자산","productCategory":"현금성자산","contractTerm":null,"valuationAmountKrw":5300000,"weightPct":6.5,"oneYearReturnPct":null,"openedAt":null,"allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{"재직상태":"재직"},"납입및세제":{},"계좌운영":{},"퇴직및인출":{},"최근사건":[],"금융거래":[],"상담이력":[],"외부계좌":[{"외부계좌구분":"ISA","외부계좌식별자":"EXT001","금융기관":"타행","평가금액원":49680000,"만기일":"2026-10-16","정보확인일":"2026-09-14","자금사용계획":null,"개인형퇴직연금전환의향":null,"개인형퇴직연금전환예정금액원":null,"정보출처":"마이데이터 연계 동의가 있는 시연용 가상정보"}],"투자성향이력":[],"운용정책":{},"상품진단":[],"계산지표":[{"지표식별자":"M001","지표유형":"파생값","지표명":"ISA만기까지남은일수","대상참조":null,"값":32,"단위":"일","산출기준일":"2026-09-14"}],"확인된특이사항":[],"디지털행동":[{"채널":"KB스타뱅킹","행동유형":"IRP 원리금보장상품 금리 비교 조회","최근조회일":"2026-09-11","조회횟수":2,"정보출처":"시연용 가상 행동로그"}],"가상설정메모":["2026-09-16 개선: 원리금보장상품 금리 비교 조회 2회를 추가. 조회는 안정 운용 관심 단서이며 전환 의향은 미확인 상태 유지."]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B02-04","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"58304-91726","name":"한지우","age":37,"gender":"여","starClubGrade":"그랜드","investmentProfile":"위험중립형","irpOpenedAt":"2020-09-11","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-006","productName":"뿔려드림II","riskLevel":"중위험"},"applicationStatus":"미적용"}},"signals":[{"label":"입금매수상품 미지정","source":"시연용 고객 원본 거래·이벤트"},{"label":"납입금 미운용","source":"시연용 고객 원본 거래·이벤트"},{"label":"펀드 상품조회","date":"2026-09-09","source":"가상 행동로그"}],"irpAccount":{"valuationAmountKrw":22740000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":0,"weightPct":0},{"assetType":"실적배당형","amountKrw":21390000,"weightPct":94.1},{"assetType":"현금성자산","amountKrw":1350000,"weightPct":5.9}],"oneYearReturnPct":15.6,"taxDeductionRemainingKrw":null,"latestProductOpening":{"holdingId":"H001","productId":"FND-007","productName":"신한누버거버먼미국가치주증권투자신탁(H)(주식-재간접형)C-RE","openedAt":"2026-06-18","amountKrw":12000000}},"holdings":[{"holdingId":"H001","productId":"FND-007","productName":"신한누버거버먼미국가치주증권투자신탁(H)(주식-재간접형)C-RE","assetType":"실적배당형","productCategory":"주식형펀드","contractTerm":null,"valuationAmountKrw":12000000,"weightPct":52.8,"oneYearReturnPct":28.51,"openedAt":"2026-06-18","allocationBreakdown":null,"flags":[]},{"holdingId":"H002","productId":"FND-003","productName":"한국투자크레딧포커스ESG증권자투자신탁1호(채권)C-RE","assetType":"실적배당형","productCategory":"채권형펀드","contractTerm":null,"valuationAmountKrw":9390000,"weightPct":41.3,"oneYearReturnPct":1.26,"openedAt":"2026-03-17","allocationBreakdown":null,"flags":[]},{"holdingId":"H003","productId":null,"productName":"현금성자산","assetType":"현금성자산","productCategory":"현금성자산","contractTerm":null,"valuationAmountKrw":1350000,"weightPct":5.9,"oneYearReturnPct":null,"openedAt":null,"allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{"개인형퇴직연금자동이체증액의향":true,"희망증액금액원":null,"월부담가능증액금액원":null,"대기발생사유":null,"대기자금사용계획":null,"향후자동매수희망여부":null,"원금보장선호여부":null,"손실감내범위":null},"납입및세제":{"개인부담금자동이체":{"등록여부":true,"월이체금액원":450000,"이체일":10,"최근이체일":"2026-09-10","다음이체예정일":"2026-10-12"},"타연금계좌올해납입액원":null},"계좌운영":{"입금시매수상품":{"설정여부":false,"지정상품":[]}},"퇴직및인출":{},"최근사건":[{"이벤트식별자":"T001","발생일시":"2026-02-10T08:30:00+09:00","이벤트유형":"개인부담금자동이체입금","계좌구분":"IRP","관련보유상품식별자":null,"금액원":450000,"처리상태":"완료","채널":null},{"이벤트식별자":"T002","발생일시":"2026-03-10T08:30:00+09:00","이벤트유형":"개인부담금자동이체입금","계좌구분":"IRP","관련보유상품식별자":null,"금액원":450000,"처리상태":"완료","채널":null},{"이벤트식별자":"T003","발생일시":"2026-03-17T13:41:00+09:00","이벤트유형":"매수","계좌구분":"IRP","관련보유상품식별자":"H002","금액원":900000,"처리상태":"완료","채널":null},{"이벤트식별자":"T004","발생일시":"2026-04-10T08:30:00+09:00","이벤트유형":"개인부담금자동이체입금","계좌구분":"IRP","관련보유상품식별자":null,"금액원":450000,"처리상태":"완료","채널":null},{"이벤트식별자":"T005","발생일시":"2026-05-11T08:30:00+09:00","이벤트유형":"개인부담금자동이체입금","계좌구분":"IRP","관련보유상품식별자":null,"금액원":450000,"처리상태":"완료","채널":null},{"이벤트식별자":"T006","발생일시":"2026-06-10T08:30:00+09:00","이벤트유형":"개인부담금자동이체입금","계좌구분":"IRP","관련보유상품식별자":null,"금액원":450000,"처리상태":"완료","채널":null},{"이벤트식별자":"T007","발생일시":"2026-06-18T14:07:00+09:00","이벤트유형":"매수","계좌구분":"IRP","관련보유상품식별자":"H001","금액원":1350000,"처리상태":"완료","채널":null},{"이벤트식별자":"T008","발생일시":"2026-07-10T08:30:00+09:00","이벤트유형":"개인부담금자동이체입금","계좌구분":"IRP","관련보유상품식별자":null,"금액원":450000,"처리상태":"완료","채널":null},{"이벤트식별자":"T009","발생일시":"2026-08-10T08:30:00+09:00","이벤트유형":"개인부담금자동이체입금","계좌구분":"IRP","관련보유상품식별자":null,"금액원":450000,"처리상태":"완료","채널":null},{"이벤트식별자":"T010","발생일시":"2026-09-10T08:30:00+09:00","이벤트유형":"개인부담금자동이체입금","계좌구분":"IRP","관련보유상품식별자":null,"금액원":450000,"처리상태":"완료","채널":null}],"금융거래":[],"상담이력":[{"상담식별자":"CRM001","상담일시":"2026-09-08T16:10:00+09:00","상담채널":"영업점전화","상담유형":"퇴직연금사후관리","상담메모":"고객은 연말 세액공제를 위해 현재 월 45만원인 IRP 자동이체 금액을 늘리고 싶다고 문의함. 희망 증액 금액은 아직 정하지 않음."}],"외부계좌":[],"투자성향이력":[],"운용정책":{},"상품진단":[],"계산지표":[{"지표식별자":"M001","지표유형":"횟수","지표명":"최근 8개월 개인부담금 입금횟수","대상참조":null,"값":8,"단위":"회","산출기준일":"2026-09-14"},{"지표식별자":"M002","지표유형":"횟수","지표명":"최근 8개월 상품 매수횟수","대상참조":null,"값":2,"단위":"회","산출기준일":"2026-09-14"},{"지표식별자":"M003","지표유형":"기간","지표명":"최근 두 상품 매수 사이 간격","대상참조":["T003","T007"],"값":93,"단위":"일","산출기준일":"2026-09-14"},{"지표식별자":"M004","지표유형":"기간","지표명":"마지막 상품 매수 후 경과일수","대상참조":"T007","값":88,"단위":"일","산출기준일":"2026-09-14"},{"지표식별자":"M005","지표유형":"기간","지표명":"현재 대기자금의 최장 대기일수","대상참조":"T008","값":66,"단위":"일","산출기준일":"2026-09-14"},{"지표식별자":"M006","지표유형":"파생값","지표명":"운용지시 없는 개인부담금 납입금액","대상참조":"T008","값":1350000,"단위":"원","산출기준일":"2026-09-14"}],"확인된특이사항":[{"구분":"납입계획","내용":"연말 세액공제를 위해 IRP 자동이체를 증액하려는 의향은 확인됐으나 희망 증액 금액은 확인되지 않음"}],"디지털행동":[{"채널":"KB스타뱅킹","행동유형":"펀드 상품조회","최근조회일":"2026-09-09","조회횟수":1,"정보출처":"시연용 가상 행동로그"}],"가상설정메모":["2026-09-17 시연 설계: 펀드 상품조회 1회 가상 행동로그 추가. 조회는 조회일 뿐 매수·전환·개시 의향은 미확인 상태 유지.","2026-09-17 시연 설계: 자동이체 입금 후 매수되지 않은 납입금액 지표를 추가. 납입금 미운용 뱃지 근거."]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B02-18","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"92641-58307","name":"오현준","age":34,"gender":"남","starClubGrade":"VIP","investmentProfile":"안정추구형","irpOpenedAt":"2022-01-14","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-009","productName":"모두드림II","riskLevel":"고위험"},"applicationStatus":"실행예정"}},"signals":[{"label":"DO 실행 D-4","date":"2026-09-18","source":"시연용 고객 원본 거래·이벤트"},{"label":"투자성향-DO불일치","source":"시연용 고객 원본 거래·이벤트"}],"irpAccount":{"valuationAmountKrw":55870000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":47630000,"weightPct":85.3},{"assetType":"실적배당형","amountKrw":0,"weightPct":0},{"assetType":"현금성자산","amountKrw":8240000,"weightPct":14.7}],"oneYearReturnPct":3,"taxDeductionRemainingKrw":1800000,"latestProductOpening":{"holdingId":"H001","productId":"SAV-001","productName":"KB저축은행 퇴직연금 정기예금","openedAt":"2026-01-20","amountKrw":47630000}},"holdings":[{"holdingId":"H001","productId":"SAV-001","productName":"KB저축은행 퇴직연금 정기예금","assetType":"원리금보장형","productCategory":"정기예금","contractTerm":"1년","valuationAmountKrw":47630000,"weightPct":85.3,"oneYearReturnPct":3.5,"openedAt":"2026-01-20","allocationBreakdown":null,"flags":[]},{"holdingId":"H002","productId":null,"productName":"현금성자산","assetType":"현금성자산","productCategory":"현금성자산","contractTerm":null,"valuationAmountKrw":8240000,"weightPct":14.7,"oneYearReturnPct":null,"openedAt":null,"allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{"이번자금원금보장우선여부":null,"감수가능변동성":null,"디폴트옵션변경의향":null,"실행예정자금직접운용의향":null,"실행예정자금사용시점":null,"실행예정자금유지가능기간":null},"납입및세제":{},"계좌운영":{"디폴트옵션실행예정":{"실행예정식별자":"DOEXEC001","예정일":"2026-09-18","대상금액원":8240000,"상태":"실행예정","적용예정상품식별자":"DO-009","적용예정상품명":"모두드림II","적용예정위험등급":"고위험","근거지정일":"2024-11-18"}},"퇴직및인출":{},"최근사건":[{"이벤트식별자":"T001","발생일시":"2024-11-18T10:05:00+09:00","이벤트유형":"디폴트옵션등록","계좌구분":"IRP","관련보유상품식별자":null,"금액원":null,"처리상태":"완료","채널":null},{"이벤트식별자":"T002","발생일시":"2026-09-04T14:20:00+09:00","이벤트유형":"투자성향변경","계좌구분":"IRP","관련보유상품식별자":null,"금액원":null,"처리상태":"완료","채널":null},{"이벤트식별자":"T003","발생일시":"2026-09-08T09:00:00+09:00","이벤트유형":"디폴트옵션실행예정안내","계좌구분":"IRP","관련보유상품식별자":"H002","금액원":8240000,"처리상태":"실행전","채널":"시스템"}],"금융거래":[],"상담이력":[],"외부계좌":[],"투자성향이력":[{"이력식별자":"R001","분석일":"2024-11-15","투자성향":"적극투자형","현재여부":false},{"이력식별자":"R002","분석일":"2026-09-04","투자성향":"안정추구형","현재여부":true}],"운용정책":{},"상품진단":[],"계산지표":[{"지표식별자":"M001","지표유형":"기간","지표명":"투자성향 변경 후 경과일수","대상참조":"R002","값":10,"단위":"일","산출기준일":"2026-09-14"},{"지표식별자":"M002","지표유형":"기간","지표명":"디폴트옵션 실행까지 남은 일수","대상참조":"DOEXEC001","값":4,"단위":"일","산출기준일":"2026-09-14"},{"지표식별자":"M003","지표유형":"상태비교","지표명":"현재 투자성향과 지정 디폴트옵션 위험등급 일치 여부","대상참조":["R002","DO-009"],"값":false,"단위":null,"산출기준일":"2026-09-14"}],"확인된특이사항":[{"구분":"설정불일치","내용":"현재 투자성향은 안정추구형이지만 2024년에 지정한 고위험 디폴트옵션이 실행예정 상태임"}]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B02-27","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"74182-30695","name":"김도윤","age":38,"gender":"남","starClubGrade":"베스트","investmentProfile":"위험중립형","irpOpenedAt":"2021-02-19","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-006","productName":"뿔려드림II","riskLevel":"중위험"},"applicationStatus":"미적용"}},"signals":[{"label":"입금매수상품 미지정","source":"시연용 고객 원본 거래·이벤트"},{"label":"납입금 미운용","source":"시연용 고객 원본 거래·이벤트"},{"label":"펀드 상품조회","date":"2026-09-07","source":"가상 행동로그"}],"irpAccount":{"valuationAmountKrw":14680000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":0,"weightPct":0},{"assetType":"실적배당형","amountKrw":13480000,"weightPct":91.8},{"assetType":"현금성자산","amountKrw":1200000,"weightPct":8.2}],"oneYearReturnPct":5.6,"taxDeductionRemainingKrw":4800000,"latestProductOpening":{"holdingId":"H001","productId":"FND-010","productName":"KB온국민평생소득TIF40증권자투자신탁(채권혼합-재간접)C-퇴직E","openedAt":"2026-03-27","amountKrw":13480000}},"holdings":[{"holdingId":"H001","productId":"FND-010","productName":"KB온국민평생소득TIF40증권자투자신탁(채권혼합-재간접)C-퇴직E","assetType":"실적배당형","productCategory":"TIF","contractTerm":null,"valuationAmountKrw":13480000,"weightPct":91.8,"oneYearReturnPct":6.1,"openedAt":"2026-03-27","allocationBreakdown":null,"flags":[]},{"holdingId":"H002","productId":null,"productName":"현금성자산","assetType":"현금성자산","productCategory":"현금성자산","contractTerm":null,"valuationAmountKrw":1200000,"weightPct":8.2,"oneYearReturnPct":null,"openedAt":null,"allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{"대기발생사유":null,"대기자금사용계획":null,"향후자동매수희망여부":null,"원금보장선호여부":null,"손실감내범위":null},"납입및세제":{"개인부담금자동이체":{"등록여부":true,"월이체금액원":600000,"이체일":20,"최근이체일":"2026-08-20","다음이체예정일":"2026-09-21"}},"계좌운영":{"입금시매수상품":{"설정여부":false,"지정상품":[]}},"퇴직및인출":{},"최근사건":[{"이벤트식별자":"T001","발생일시":"2026-02-20T08:30:00+09:00","이벤트유형":"개인부담금자동이체입금","계좌구분":"IRP","관련보유상품식별자":null,"금액원":600000,"처리상태":"완료","채널":null},{"이벤트식별자":"T002","발생일시":"2026-03-20T08:30:00+09:00","이벤트유형":"개인부담금자동이체입금","계좌구분":"IRP","관련보유상품식별자":null,"금액원":600000,"처리상태":"완료","채널":null},{"이벤트식별자":"T003","발생일시":"2026-03-27T14:18:00+09:00","이벤트유형":"매수","계좌구분":"IRP","관련보유상품식별자":"H001","금액원":1200000,"처리상태":"완료","채널":null},{"이벤트식별자":"T004","발생일시":"2026-04-20T08:30:00+09:00","이벤트유형":"개인부담금자동이체입금","계좌구분":"IRP","관련보유상품식별자":null,"금액원":600000,"처리상태":"완료","채널":null},{"이벤트식별자":"T005","발생일시":"2026-05-20T08:30:00+09:00","이벤트유형":"개인부담금자동이체입금","계좌구분":"IRP","관련보유상품식별자":null,"금액원":600000,"처리상태":"완료","채널":null},{"이벤트식별자":"T006","발생일시":"2026-06-22T08:30:00+09:00","이벤트유형":"개인부담금자동이체입금","계좌구분":"IRP","관련보유상품식별자":null,"금액원":600000,"처리상태":"완료","채널":null},{"이벤트식별자":"T007","발생일시":"2026-06-26T15:02:00+09:00","이벤트유형":"매수","계좌구분":"IRP","관련보유상품식별자":"H001","금액원":1800000,"처리상태":"완료","채널":null},{"이벤트식별자":"T008","발생일시":"2026-07-20T08:30:00+09:00","이벤트유형":"개인부담금자동이체입금","계좌구분":"IRP","관련보유상품식별자":null,"금액원":600000,"처리상태":"완료","채널":null},{"이벤트식별자":"T009","발생일시":"2026-08-20T08:30:00+09:00","이벤트유형":"개인부담금자동이체입금","계좌구분":"IRP","관련보유상품식별자":null,"금액원":600000,"처리상태":"완료","채널":null}],"금융거래":[],"상담이력":[],"외부계좌":[],"투자성향이력":[],"운용정책":{},"상품진단":[],"계산지표":[{"지표식별자":"M001","지표유형":"횟수","지표명":"최근 7개월 개인부담금 입금횟수","대상참조":null,"값":7,"단위":"회","산출기준일":"2026-09-14"},{"지표식별자":"M002","지표유형":"횟수","지표명":"최근 7개월 상품 매수횟수","대상참조":null,"값":2,"단위":"회","산출기준일":"2026-09-14"},{"지표식별자":"M003","지표유형":"기간","지표명":"최근 두 상품 매수 사이 간격","대상참조":["T003","T007"],"값":91,"단위":"일","산출기준일":"2026-09-14"},{"지표식별자":"M004","지표유형":"기간","지표명":"마지막 상품 매수 후 경과일수","대상참조":"T007","값":80,"단위":"일","산출기준일":"2026-09-14"},{"지표식별자":"M005","지표유형":"기간","지표명":"현재 대기자금의 최장 대기일수","대상참조":"T008","값":56,"단위":"일","산출기준일":"2026-09-14"},{"지표식별자":"M006","지표유형":"파생값","지표명":"운용지시 없는 개인부담금 납입금액","대상참조":"T008","값":1200000,"단위":"원","산출기준일":"2026-09-14"}],"확인된특이사항":[],"디지털행동":[{"채널":"KB스타뱅킹","행동유형":"펀드 상품조회","최근조회일":"2026-09-07","조회횟수":2,"정보출처":"시연용 가상 행동로그"}],"가상설정메모":["2026-09-17 시연 설계: 펀드 상품조회 2회 가상 행동로그 추가. 조회는 조회일 뿐 매수·전환·개시 의향은 미확인 상태 유지.","2026-09-17 시연 설계: 자동이체 입금 후 매수되지 않은 납입금액 지표를 추가. 납입금 미운용 뱃지 근거."]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B03-07","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"38716-52049","name":"박서진","age":35,"gender":"여","starClubGrade":"그랜드","investmentProfile":"안정추구형","irpOpenedAt":"2018-09-21","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-003","productName":"알파드림II","riskLevel":"저위험"},"applicationStatus":"미적용"}},"signals":[{"label":"정기예금 만기 D-16","date":"2026-09-30","source":"시연용 고객 원본 이벤트·상담"},{"label":"계약이전 페이지 방문","date":"2026-09-10","source":"가상 행동로그"},{"label":"이탈징후","source":"시연용 고객 원본 이벤트·상담"}],"irpAccount":{"valuationAmountKrw":75500000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":72400000,"weightPct":95.9},{"assetType":"실적배당형","amountKrw":0,"weightPct":0},{"assetType":"현금성자산","amountKrw":3100000,"weightPct":4.1}],"oneYearReturnPct":3.2,"taxDeductionRemainingKrw":2200000,"latestProductOpening":{"holdingId":"H001","productId":"DEP-003","productName":"우리은행 퇴직연금 정기예금","openedAt":"2025-09-30","amountKrw":72400000}},"holdings":[{"holdingId":"H001","productId":"DEP-003","productName":"우리은행 퇴직연금 정기예금","assetType":"원리금보장형","productCategory":"정기예금","contractTerm":"1년","valuationAmountKrw":72400000,"weightPct":95.9,"oneYearReturnPct":3.3,"openedAt":"2025-09-30","allocationBreakdown":null,"flags":[]},{"holdingId":"H002","productId":null,"productName":"현금성자산","assetType":"현금성자산","productCategory":"현금성자산","contractTerm":null,"valuationAmountKrw":3100000,"weightPct":4.1,"oneYearReturnPct":null,"openedAt":null,"allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{"즉시이전예상금액원":null,"만기유지예상금액원":null},"납입및세제":{},"계좌운영":{},"퇴직및인출":{},"최근사건":[{"이벤트식별자":"T001","발생일시":"2026-09-30T00:00:00+09:00","이벤트유형":"상품만기예정","계좌구분":"IRP","관련보유상품식별자":"H001","금액원":72400000,"처리상태":"예정","채널":null}],"금융거래":[],"상담이력":[{"상담식별자":"CRM001","상담일시":"2026-09-09T11:25:00+09:00","상담채널":"영업점전화","상담유형":"퇴직연금계약이전문의","상담메모":"고객은 타사에서 더 높은 금리를 제시받았다며 IRP 이전을 문의함. 타사 금융기관·상품기간·적용금리·적용기한 자료는 아직 확인되지 않음."}],"외부계좌":[],"투자성향이력":[],"운용정책":{},"상품진단":[],"계산지표":[{"지표식별자":"M001","지표유형":"파생값","지표명":"정기예금만기까지남은일수","대상참조":null,"값":16,"단위":"일","산출기준일":"2026-09-14"},{"지표식별자":"M002","지표유형":"파생값","지표명":"현금화필요금액","대상참조":null,"값":72400000,"단위":"원","산출기준일":"2026-09-14"},{"지표식별자":"M003","지표유형":"파생값","지표명":"현금화필요금액비중","대상참조":null,"값":95.9,"단위":"%","산출기준일":"2026-09-14"},{"지표식별자":"M004","지표유형":"상태비교","지표명":"이탈징후 판정","대상참조":["CRM001","T001"],"값":true,"단위":null,"산출기준일":"2026-09-14"}],"확인된특이사항":[{"구분":"이탈징후","내용":"타사 고금리 사유 계약이전 문의(9/9), 계약이전 화면 방문 3회(9/10), 정기예금 만기 임박(9/30)이 겹쳐 이탈징후로 판정"}],"디지털행동":[{"채널":"KB스타뱅킹","행동유형":"계약이전 페이지 방문","최근조회일":"2026-09-10","조회횟수":3,"정보출처":"시연용 가상 행동로그"}],"가상설정메모":["2026-09-17 시연 설계: 가상 행동로그를 계약이전 페이지 방문 3회로 설정하고 이탈징후 복합판정(상담·방문·만기임박)을 특이사항·계산지표에 추가."]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B03-11","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"61538-90427","name":"이정훈","age":56,"gender":"남","starClubGrade":"VIP","investmentProfile":"안정형","irpOpenedAt":"2017-03-10","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-001","productName":"지켜드림","riskLevel":"초저위험"},"applicationStatus":"미적용"}},"signals":[{"label":"정기예금 만기 D-18","date":"2026-10-02","source":"시연용 고객 원본 이벤트·상담"},{"label":"원리금보장 편중","source":"시연용 고객 원본 이벤트·상담"}],"irpAccount":{"valuationAmountKrw":74800000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":74800000,"weightPct":100},{"assetType":"실적배당형","amountKrw":0,"weightPct":0},{"assetType":"현금성자산","amountKrw":0,"weightPct":0}],"oneYearReturnPct":3.5,"taxDeductionRemainingKrw":4000000,"latestProductOpening":{"holdingId":"H002","productId":"SAV-013","productName":"DB저축은행 퇴직연금 정기예금","openedAt":"2026-01-25","amountKrw":26180000}},"holdings":[{"holdingId":"H001","productId":"DEP-002","productName":"농협은행 퇴직연금 정기예금","assetType":"원리금보장형","productCategory":"정기예금","contractTerm":"1년","valuationAmountKrw":48620000,"weightPct":65,"oneYearReturnPct":3.37,"openedAt":"2025-10-02","allocationBreakdown":null,"flags":[]},{"holdingId":"H002","productId":"SAV-013","productName":"DB저축은행 퇴직연금 정기예금","assetType":"원리금보장형","productCategory":"정기예금","contractTerm":"1년","valuationAmountKrw":26180000,"weightPct":35,"oneYearReturnPct":3.75,"openedAt":"2026-01-25","allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{},"납입및세제":{},"계좌운영":{"만기후운용설정":{"설정여부":false,"지정상품":[]}},"퇴직및인출":{},"최근사건":[{"이벤트식별자":"T001","발생일시":"2026-10-02T00:00:00+09:00","이벤트유형":"상품만기예정","계좌구분":"IRP","관련보유상품식별자":"H001","금액원":48620000,"처리상태":"예정","채널":null}],"금융거래":[],"상담이력":[],"외부계좌":[],"투자성향이력":[],"운용정책":{},"상품진단":[],"계산지표":[{"지표식별자":"M001","지표유형":"파생값","지표명":"정기예금만기까지남은일수","대상참조":null,"값":18,"단위":"일","산출기준일":"2026-09-14"},{"지표식별자":"M002","지표유형":"파생값","지표명":"만기예정금액","대상참조":null,"값":48620000,"단위":"원","산출기준일":"2026-09-14"},{"지표식별자":"M003","지표유형":"파생값","지표명":"만기예정금액비중","대상참조":null,"값":65,"단위":"%","산출기준일":"2026-09-14"}],"확인된특이사항":[]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B03-20","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"80429-36175","name":"최영호","age":63,"gender":"남","starClubGrade":"VVIP","investmentProfile":"안정형","irpOpenedAt":"2015-08-28","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-001","productName":"지켜드림","riskLevel":"초저위험"},"applicationStatus":"미적용"}},"signals":[{"label":"연금개시 예정","source":"시연용 고객 원본 이벤트·상담"},{"label":"퇴직연금 관리화면 방문","date":"2026-09-08","source":"가상 행동로그"}],"irpAccount":{"valuationAmountKrw":178350000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":171150000,"weightPct":96},{"assetType":"실적배당형","amountKrw":0,"weightPct":0},{"assetType":"현금성자산","amountKrw":7200000,"weightPct":4}],"oneYearReturnPct":3.7,"taxDeductionRemainingKrw":0,"latestProductOpening":{"holdingId":"H002","productId":"GIC-001","productName":"KB손해보험 GIC (2026년 9월 특별제공안)","openedAt":"2026-09-10","amountKrw":74750000}},"holdings":[{"holdingId":"H001","productId":"DEP-008","productName":"한국증권금융 퇴직연금 정기예금","assetType":"원리금보장형","productCategory":"정기예금","contractTerm":"3년","valuationAmountKrw":96400000,"weightPct":54.1,"oneYearReturnPct":3.35,"openedAt":"2026-03-15","allocationBreakdown":null,"flags":[]},{"holdingId":"H002","productId":"GIC-001","productName":"KB손해보험 GIC (2026년 9월 특별제공안)","assetType":"원리금보장형","productCategory":"GIC","contractTerm":"3년","valuationAmountKrw":74750000,"weightPct":41.9,"oneYearReturnPct":4.62,"openedAt":"2026-09-10","allocationBreakdown":null,"flags":[]},{"holdingId":"H003","productId":null,"productName":"현금성자산","assetType":"현금성자산","productCategory":"현금성자산","contractTerm":null,"valuationAmountKrw":7200000,"weightPct":4,"oneYearReturnPct":null,"openedAt":null,"allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{},"납입및세제":{},"계좌운영":{},"퇴직및인출":{"연금수령계획":{"등록여부":true,"개시연도":2027,"첫수령일":null,"수령주기":"매월","월수령희망액":null,"용도":"생활비","별도목돈필요액원":null},"월생활비필요액원":null,"초기수령재원부족액":null},"최근사건":[{"이벤트식별자":"T001","발생일시":"2026-08-28T15:35:00+09:00","이벤트유형":"연금수령계획등록","계좌구분":"IRP","관련보유상품식별자":null,"금액원":null,"처리상태":"완료","채널":null}],"금융거래":[],"상담이력":[],"외부계좌":[],"투자성향이력":[],"운용정책":{},"상품진단":[],"계산지표":[{"지표식별자":"M001","지표유형":"파생값","지표명":"연금수령개시연도까지남은연수","대상참조":null,"값":1,"단위":"년","산출기준일":"2026-09-14"},{"지표식별자":"M002","지표유형":"파생값","지표명":"첫보유상품만기까지남은일수","대상참조":null,"값":913,"단위":"일","산출기준일":"2026-09-14"},{"지표식별자":"M003","지표유형":"파생값","지표명":"2029년만기집중금액","대상참조":null,"값":171150000,"단위":"원","산출기준일":"2026-09-14"},{"지표식별자":"M004","지표유형":"파생값","지표명":"2029년만기집중비중","대상참조":null,"값":96,"단위":"%","산출기준일":"2026-09-14"}],"확인된특이사항":[],"디지털행동":[{"채널":"KB스타뱅킹","행동유형":"퇴직연금 관리화면 방문","최근조회일":"2026-09-08","조회횟수":1,"정보출처":"시연용 가상 행동로그"}],"가상설정메모":["2026-09-17 시연 설계: 퇴직연금 관리화면 방문 1회 가상 행동로그 추가. 조회는 조회일 뿐 매수·전환·개시 의향은 미확인 상태 유지."]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B04-15","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"46281-73509","name":"문지환","age":36,"gender":"남","starClubGrade":"VIP","investmentProfile":"위험중립형","irpOpenedAt":"2016-05-23","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-006","productName":"뿔려드림II","riskLevel":"중위험"},"applicationStatus":"미적용"}},"signals":[{"label":"장기 미운용","source":"시연용 고객 원본 이벤트·상담"},{"label":"퇴직연금 관리화면 방문","date":"2026-09-12","source":"가상 행동로그"}],"irpAccount":{"valuationAmountKrw":68400000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":41600000,"weightPct":60.8},{"assetType":"실적배당형","amountKrw":26800000,"weightPct":39.2},{"assetType":"현금성자산","amountKrw":0,"weightPct":0}],"oneYearReturnPct":2.6,"taxDeductionRemainingKrw":3000000,"latestProductOpening":{"holdingId":"H001","productId":"SAV-001","productName":"KB저축은행 퇴직연금 정기예금","openedAt":"2025-11-08","amountKrw":41600000}},"holdings":[{"holdingId":"H001","productId":"SAV-001","productName":"KB저축은행 퇴직연금 정기예금","assetType":"원리금보장형","productCategory":"정기예금","contractTerm":"1년","valuationAmountKrw":41600000,"weightPct":60.8,"oneYearReturnPct":3.5,"openedAt":"2025-11-08","allocationBreakdown":null,"flags":[]},{"holdingId":"H002","productId":"FND-003","productName":"한국투자크레딧포커스ESG증권자투자신탁1호(채권)C-RE","assetType":"실적배당형","productCategory":"채권형펀드","contractTerm":null,"valuationAmountKrw":26800000,"weightPct":39.2,"oneYearReturnPct":1.26,"openedAt":"2024-06-18","allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{},"납입및세제":{},"계좌운영":{"계좌유형":"대면형","개설채널":"영업점","수수료현황":{"부과여부":true,"운용관리수수료부과여부":true,"자산관리수수료부과여부":true,"현재부담액원":null,"비대면전환후예상부담액원":null,"예상절감액":null},"현재수수료부담액원":null,"비대면전환후예상부담액원":null,"예상절감액":null},"퇴직및인출":{},"최근사건":[],"금융거래":[],"상담이력":[],"외부계좌":[],"투자성향이력":[],"운용정책":{"장기미운용판정기준":{"기준개월수":24,"정기예금자동재예치포함여부":false}},"상품진단":[{"진단구분":"상품운용이력요약","조회시작일":"2016-05-23","조회종료일":"2026-09-11","최근운용변경일":"2024-06-18","최근운용변경내용":"채권형펀드 매수","정기예금자동재예치제외여부":true,"운용변경없는개월수":27,"장기미운용판정":true}],"계산지표":[{"지표식별자":"M001","지표유형":"파생값","지표명":"IRP계좌유지기간년수","대상참조":null,"값":10,"단위":"년","산출기준일":"2026-09-14"},{"지표식별자":"M002","지표유형":"파생값","지표명":"향후90일예정이벤트수","대상참조":null,"값":0,"단위":"건","산출기준일":"2026-09-14"},{"지표식별자":"M003","지표유형":"기간","지표명":"최근 운용변경 후 경과개월수(예금 자동재예치 제외)","대상참조":"H002","값":27,"단위":"개월","산출기준일":"2026-09-14"}],"확인된특이사항":[],"디지털행동":[{"채널":"KB스타뱅킹","행동유형":"퇴직연금 관리화면 방문","최근조회일":"2026-09-12","조회횟수":1,"정보출처":"시연용 가상 행동로그"}],"가상설정메모":["2026-09-17 시연 설계: 퇴직연금 관리화면 방문 1회 가상 행동로그 추가. 조회는 조회일 뿐 매수·전환·개시 의향은 미확인 상태 유지.","2026-09-17 시연 설계: 장기미운용 판정기준(24개월, 예금 자동재예치 제외)과 운용이력요약을 추가. 장기 미운용 뱃지 근거."]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B04-19","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"20857-64913","name":"서민재","age":55,"gender":"남","starClubGrade":"VIP","investmentProfile":"위험중립형","irpOpenedAt":"2016-06-10","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-006","productName":"뿔려드림II","riskLevel":"중위험"},"applicationStatus":"미적용"}},"signals":[{"label":"복수 IRP 보유","source":"시연용 고객 원본 이벤트·상담"},{"label":"타행 IRP 보유","source":"시연용 고객 원본 이벤트·상담"}],"irpAccount":{"valuationAmountKrw":52600000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":31900000,"weightPct":60.6},{"assetType":"실적배당형","amountKrw":20700000,"weightPct":39.4},{"assetType":"현금성자산","amountKrw":0,"weightPct":0}],"oneYearReturnPct":2.9,"taxDeductionRemainingKrw":1600000,"latestProductOpening":{"holdingId":"H001","productId":"SAV-013","productName":"DB저축은행 퇴직연금 정기예금","openedAt":"2025-12-12","amountKrw":31900000}},"holdings":[{"holdingId":"H001","productId":"SAV-013","productName":"DB저축은행 퇴직연금 정기예금","assetType":"원리금보장형","productCategory":"정기예금","contractTerm":"1년","valuationAmountKrw":31900000,"weightPct":60.6,"oneYearReturnPct":3.75,"openedAt":"2025-12-12","allocationBreakdown":null,"flags":[]},{"holdingId":"H002","productId":"FND-005","productName":"KB글로벌단기채증권자투자신탁(채권-재간접형)(H)C-퇴직E","assetType":"실적배당형","productCategory":"채권형펀드","contractTerm":null,"valuationAmountKrw":20700000,"weightPct":39.4,"oneYearReturnPct":1.58,"openedAt":"2024-10-21","allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{},"납입및세제":{},"계좌운영":{"실물이전가능금액원":null,"현금화필요금액원":null},"퇴직및인출":{},"최근사건":[],"금융거래":[],"상담이력":[],"외부계좌":[{"외부계좌구분":"타기관퇴직연금","외부계좌식별자":"EXT-IRP-001","금융기관":"타기관A","계좌유형":"개인형IRP","평가금액원":38400000,"계좌수익률":null,"통합조회가능여부":false,"보유상품":[{"외부보유상품식별자":"EH001","상품명":null,"상품유형":"원리금보장","상품분류":"정기예금","평가금액원":24800000,"비중":64.6,"실물이전가능여부":null,"현금화필요여부":null},{"외부보유상품식별자":"EH002","상품명":null,"상품유형":"실적배당","상품분류":"펀드","평가금액원":13600000,"비중":35.4,"실물이전가능여부":null,"현금화필요여부":null}],"정보확인일":"2026-09-10","정보출처":"고객이 타기관 앱 내역을 제시한 시연용 가상정보; 자동 통합조회 아님"},{"외부계좌구분":"타기관퇴직연금","외부계좌식별자":"EXT-IRP-002","금융기관":"타기관B","계좌유형":"개인형IRP","평가금액원":29700000,"계좌수익률":null,"통합조회가능여부":false,"보유상품":[{"외부보유상품식별자":"EH003","상품명":null,"상품유형":"원리금보장","상품분류":"정기예금","평가금액원":17200000,"비중":57.9,"실물이전가능여부":null,"현금화필요여부":null},{"외부보유상품식별자":"EH004","상품명":null,"상품유형":"실적배당","상품분류":"펀드","평가금액원":12500000,"비중":42.1,"실물이전가능여부":null,"현금화필요여부":null}],"정보확인일":"2026-09-10","정보출처":"고객이 타기관 앱 내역을 제시한 시연용 가상정보; 자동 통합조회 아님"}],"투자성향이력":[],"운용정책":{},"상품진단":[],"계산지표":[{"지표식별자":"M001","지표유형":"파생값","지표명":"IRP보유기관수","대상참조":null,"값":3,"단위":"개","산출기준일":"2026-09-14"},{"지표식별자":"M002","지표유형":"파생값","지표명":"외부IRP계좌수","대상참조":null,"값":2,"단위":"개","산출기준일":"2026-09-14"},{"지표식별자":"M003","지표유형":"파생값","지표명":"전체IRP평가금액","대상참조":null,"값":120700000,"단위":"원","산출기준일":"2026-09-14"},{"지표식별자":"M004","지표유형":"파생값","지표명":"전체연금자산통합조회가능여부","대상참조":null,"값":false,"단위":null,"산출기준일":"2026-09-14"}],"확인된특이사항":[]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B04-23","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"73915-28460","name":"정미경","age":39,"gender":"여","starClubGrade":"그랜드","investmentProfile":"안정형","irpOpenedAt":"2019-02-14","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-001","productName":"지켜드림","riskLevel":"초저위험"},"applicationStatus":"미적용"}},"signals":[{"label":"계약이전 신청","date":"2026-09-08","source":"시연용 고객 원본 이벤트·상담"},{"label":"계약이전 페이지 방문","date":"2026-09-07","source":"가상 행동로그"},{"label":"원리금보장 편중","source":"시연용 고객 원본 이벤트·상담"}],"irpAccount":{"valuationAmountKrw":68700000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":68700000,"weightPct":100},{"assetType":"실적배당형","amountKrw":0,"weightPct":0},{"assetType":"현금성자산","amountKrw":0,"weightPct":0}],"oneYearReturnPct":3.4,"taxDeductionRemainingKrw":0,"latestProductOpening":{"holdingId":"H001","productId":"DEP-002","productName":"농협은행 퇴직연금 정기예금","openedAt":"2026-02-05","amountKrw":68700000}},"holdings":[{"holdingId":"H001","productId":"DEP-002","productName":"농협은행 퇴직연금 정기예금","assetType":"원리금보장형","productCategory":"정기예금","contractTerm":"1년","valuationAmountKrw":68700000,"weightPct":100,"oneYearReturnPct":3.37,"openedAt":"2026-02-05","allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{},"납입및세제":{"퇴직급여재원금액원":68700000,"개인부담금재원금액원":0},"계좌운영":{"계좌유형":"대면형","개설채널":"영업점","수수료현황":{"부과여부":true,"운용관리수수료부과여부":true,"자산관리수수료부과여부":true,"현재부담액원":null,"비대면전환후예상부담액원":null,"타사이전후예상부담액원":null,"예상절감액":null},"계약이전현황":{"신청여부":true,"신청일":"2026-09-08","진행상태":"의사확인대기","이전대상기관":null,"주된이전사유":"계좌수수료부담","신청취소의향":null},"현재수수료부담액원":null,"비대면전환후예상부담액원":null,"타사이전후예상부담액원":null,"예상절감액":null},"퇴직및인출":{},"최근사건":[{"이벤트식별자":"T001","발생일시":"2026-09-08T10:40:00+09:00","이벤트유형":"계약이전신청","계좌구분":"IRP","관련보유상품식별자":null,"금액원":68700000,"처리상태":"의사확인대기","채널":null}],"금융거래":[],"상담이력":[{"상담식별자":"CRM001","상담일시":"2026-09-09T14:05:00+09:00","상담채널":"영업점전화","상담유형":"계약이전사유확인","상담메모":"고객은 타사 계약이전 신청의 주된 이유가 상품이나 서비스가 아니라 현재 대면형 IRP의 계좌 수수료 부담이라고 설명함. 타사 수수료 조건과 당행 비대면 전환 후 부담액은 아직 대조하지 않음."}],"외부계좌":[],"투자성향이력":[],"운용정책":{},"상품진단":[],"계산지표":[{"지표식별자":"M001","지표유형":"파생값","지표명":"퇴직급여재원금액","대상참조":null,"값":68700000,"단위":"원","산출기준일":"2026-09-14"}],"확인된특이사항":[],"디지털행동":[{"채널":"KB스타뱅킹","행동유형":"계약이전 페이지 방문","최근조회일":"2026-09-07","조회횟수":2,"정보출처":"시연용 가상 행동로그"}],"가상설정메모":["2026-09-17 시연 설계: 계약이전 신청 전날 계약이전 화면 방문 2회 가상 행동로그 추가."]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B05-09","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"32064-97815","name":"배정우","age":61,"gender":"남","starClubGrade":"VVIP","investmentProfile":"적극투자형","irpOpenedAt":"2015-04-24","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-008","productName":"모두드림","riskLevel":"고위험"},"applicationStatus":"미적용"}},"signals":[{"label":"연금개시 가능","source":"시연용 고객 사건·상담"},{"label":"보유상품 수익률 조회","date":"2026-09-08","source":"가상 행동로그"}],"irpAccount":{"valuationAmountKrw":198600000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":68800000,"weightPct":34.6},{"assetType":"실적배당형","amountKrw":129800000,"weightPct":65.4},{"assetType":"현금성자산","amountKrw":0,"weightPct":0}],"oneYearReturnPct":19.9,"taxDeductionRemainingKrw":0,"latestProductOpening":{"holdingId":"H002","productId":"SAV-003","productName":"NH저축은행 퇴직연금 정기예금","openedAt":"2026-01-09","amountKrw":68800000}},"holdings":[{"holdingId":"H001","productId":"FND-007","productName":"신한누버거버먼미국가치주증권투자신탁(H)(주식-재간접형)C-RE","assetType":"실적배당형","productCategory":"주식형펀드","contractTerm":null,"valuationAmountKrw":129800000,"weightPct":65.4,"oneYearReturnPct":28.51,"openedAt":"2022-05-16","allocationBreakdown":null,"flags":[]},{"holdingId":"H002","productId":"SAV-003","productName":"NH저축은행 퇴직연금 정기예금","assetType":"원리금보장형","productCategory":"정기예금","contractTerm":"1년","valuationAmountKrw":68800000,"weightPct":34.6,"oneYearReturnPct":3.6,"openedAt":"2026-01-09","allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{"재직상태":null},"납입및세제":{},"계좌운영":{},"퇴직및인출":{"연금수령요건충족여부":true,"연금수령한도":null,"예상세후수령액원":null,"전액해지문의":{"문의여부":true,"문의일":"2026-09-09","처리상태":"상담중"},"확인된자금사용계획":{"사용목적":"주택수리비","필요금액원":null,"지급시기구분":"몇 주 후","최종지급일":null,"분할지급여부":null},"수리비필요금액원":null,"수리비지급까지남은일수":null,"연금수령가능액":null,"필요환매금액원":null,"환매대금입금예정일":null},"최근사건":[{"이벤트식별자":"T001","발생일시":"2026-09-09T13:20:00+09:00","이벤트유형":"IRP전액해지문의","계좌구분":"IRP","관련보유상품식별자":null,"금액원":198600000,"처리상태":"상담중","채널":null}],"금융거래":[],"상담이력":[{"상담식별자":"CRM001","상담일시":"2026-09-09T13:20:00+09:00","상담채널":"영업점전화","상담유형":"IRP해지상담","상담메모":"고객은 몇 주 후 지급할 주택 수리비 때문에 IRP 전액해지 가능 여부를 문의함. 약 2억원 중 필요한 돈은 일부라고 설명했으나 정확한 수리비·최종 지급일·분할 지급 여부는 아직 확인되지 않음."}],"외부계좌":[],"투자성향이력":[],"운용정책":{},"상품진단":[],"계산지표":[{"지표식별자":"M001","지표유형":"파생값","지표명":"해외형펀드비중","대상참조":null,"값":65.4,"단위":"%","산출기준일":"2026-09-14"}],"확인된특이사항":[],"디지털행동":[{"채널":"KB스타뱅킹","행동유형":"보유상품 수익률 조회","최근조회일":"2026-09-08","조회횟수":2,"정보출처":"시연용 가상 행동로그"}],"가상설정메모":["2026-09-17 시연 설계: 보유상품 수익률 조회 2회 가상 행동로그 추가. 조회는 조회일 뿐 매수·전환·개시 의향은 미확인 상태 유지."]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B05-26","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"84620-31579","name":"윤성호","age":62,"gender":"남","starClubGrade":"VIP","investmentProfile":"안정형","irpOpenedAt":"2017-10-20","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-001","productName":"지켜드림","riskLevel":"초저위험"},"applicationStatus":"미적용"}},"signals":[{"label":"연금개시 가능","source":"시연용 고객 사건·상담"},{"label":"퇴직금 일부만 운용","source":"시연용 고객 사건·상담"},{"label":"퇴직연금 관리화면 방문","date":"2026-09-08","source":"가상 행동로그"}],"irpAccount":{"valuationAmountKrw":203400000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":121000000,"weightPct":59.5},{"assetType":"실적배당형","amountKrw":64400000,"weightPct":31.7},{"assetType":"현금성자산","amountKrw":18000000,"weightPct":8.8}],"oneYearReturnPct":4.4,"taxDeductionRemainingKrw":0,"latestProductOpening":{"holdingId":"H001","productId":"GIC-003","productName":"한화생명 GIC (2026년 9월 특별제공안)","openedAt":"2026-09-10","amountKrw":90000000}},"holdings":[{"holdingId":"H001","productId":"GIC-003","productName":"한화생명 GIC (2026년 9월 특별제공안)","assetType":"원리금보장형","productCategory":"GIC","contractTerm":"3년","valuationAmountKrw":90000000,"weightPct":44.2,"oneYearReturnPct":4.48,"openedAt":"2026-09-10","allocationBreakdown":null,"flags":[]},{"holdingId":"H002","productId":"DEP-003","productName":"우리은행 퇴직연금 정기예금","assetType":"원리금보장형","productCategory":"정기예금","contractTerm":"1년","valuationAmountKrw":31000000,"weightPct":15.2,"oneYearReturnPct":3.3,"openedAt":"2026-01-22","allocationBreakdown":null,"flags":[]},{"holdingId":"H003","productId":"FND-010","productName":"KB온국민평생소득TIF40증권자투자신탁(채권혼합-재간접)C-퇴직E","assetType":"실적배당형","productCategory":"TIF","contractTerm":null,"valuationAmountKrw":64400000,"weightPct":31.7,"oneYearReturnPct":6.1,"openedAt":"2025-07-15","allocationBreakdown":null,"flags":[]},{"holdingId":"H004","productId":null,"productName":"현금성자산","assetType":"현금성자산","productCategory":"현금성자산","contractTerm":null,"valuationAmountKrw":18000000,"weightPct":8.9,"oneYearReturnPct":null,"openedAt":null,"allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{"재직상태":"퇴직"},"납입및세제":{"퇴직급여재원금액원":203400000,"개인부담금재원금액원":null},"계좌운영":{"퇴직급여운용현황":{"입금액원":203400000,"운용지시금액원":185400000,"미운용금액원":18000000,"확인일":"2026-09-14"}},"퇴직및인출":{"연금수령요건충족여부":true,"연금수령한도":null,"예상세후수령액원":null,"전액해지요청":{"요청여부":true,"요청일":"2026-09-09","처리상태":"상담중"},"확인된자금사용계획":{"사용목적":"생활관련목돈","필요금액원":10000000,"필요일":null,"추가근시일지출":null},"잔여자금계속운용의향":null,"필요금액수령시예상세후금액원":null,"전액해지시예상세후금액원":null},"최근사건":[{"이벤트식별자":"T001","발생일시":"2026-09-09T10:35:00+09:00","이벤트유형":"IRP전액해지요청","계좌구분":"IRP","관련보유상품식별자":null,"금액원":203400000,"처리상태":"상담중","채널":null}],"금융거래":[],"상담이력":[{"상담식별자":"CRM001","상담일시":"2026-09-09T10:35:00+09:00","상담채널":"영업점","상담유형":"IRP해지상담","상담메모":"고객은 IRP의 퇴직급여 약 2억원을 전액 해지해 달라고 요청함. 확인된 사용 목적은 약 1,000만원의 생활 관련 목돈이며, 필요일과 추가 지출 여부·잔여자금 유지 의향은 아직 확인되지 않음."}],"외부계좌":[],"투자성향이력":[],"운용정책":{},"상품진단":[],"계산지표":[{"지표식별자":"M001","지표유형":"파생값","지표명":"필요금액","대상참조":null,"값":10000000,"단위":"원","산출기준일":"2026-09-14"},{"지표식별자":"M002","지표유형":"파생값","지표명":"필요금액비중","대상참조":null,"값":4.9,"단위":"%","산출기준일":"2026-09-14"},{"지표식별자":"M003","지표유형":"파생값","지표명":"전액해지요청금액","대상참조":null,"값":203400000,"단위":"원","산출기준일":"2026-09-14"},{"지표식별자":"M004","지표유형":"파생값","지표명":"퇴직급여 미운용금액","대상참조":"H004","값":18000000,"단위":"원","산출기준일":"2026-09-14"},{"지표식별자":"M005","지표유형":"파생값","지표명":"퇴직급여 미운용비중","대상참조":"H004","값":8.8,"단위":"%","산출기준일":"2026-09-14"}],"확인된특이사항":[],"디지털행동":[{"채널":"KB스타뱅킹","행동유형":"퇴직연금 관리화면 방문","최근조회일":"2026-09-08","조회횟수":1,"정보출처":"시연용 가상 행동로그"}],"가상설정메모":["2026-09-17 시연 설계: 퇴직연금 관리화면 방문 1회 가상 행동로그 추가. 조회는 조회일 뿐 매수·전환·개시 의향은 미확인 상태 유지.","2026-09-17 시연 설계: 퇴직급여 중 운용지시 금액과 미운용 현금 1,800만원을 계좌운영·계산지표에 추가. 퇴직금 일부만 운용 뱃지 근거."]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B05-28","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"57136-82049","name":"강수진","age":58,"gender":"여","starClubGrade":"베스트","investmentProfile":"안정형","irpOpenedAt":"2021-07-14","defaultOption":{"registrationStatus":"미등록","designatedProduct":null,"applicationStatus":"미적용"}},"signals":[{"label":"퇴직금 재입금기한 D-36","date":"2026-10-20","source":"시연용 고객 사건·상담"},{"label":"올해 미납입","source":"시연용 고객 사건·상담"},{"label":"DO 미등록","source":"시연용 고객 사건·상담"}],"irpAccount":{"valuationAmountKrw":0,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":0,"weightPct":0},{"assetType":"실적배당형","amountKrw":0,"weightPct":0},{"assetType":"현금성자산","amountKrw":0,"weightPct":0}],"oneYearReturnPct":null,"taxDeductionRemainingKrw":6000000,"latestProductOpening":null},"holdings":[],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{"재직상태":"퇴직"},"납입및세제":{"재입금가능금액원":null,"예상환급세액원":null,"올해개인부담금납입액원":0},"계좌운영":{},"퇴직및인출":{},"최근사건":[{"이벤트식별자":"T001","발생일시":"2026-08-21T10:15:00+09:00","이벤트유형":"퇴직급여일반통장입금","계좌구분":"일반계좌","관련보유상품식별자":null,"금액원":154200000,"처리상태":"완료","채널":null}],"금융거래":[],"상담이력":[{"상담식별자":"CRM001","상담일시":"2026-09-10T15:10:00+09:00","상담채널":"영업점전화","상담유형":"퇴직급여사후관리","상담메모":"고객은 일반통장으로 받은 퇴직급여 중 생활비와 예정 지출에 쓸 돈을 제외한 일부를 노후자금으로 남길 계획이라고 설명함. 노후자금 금액과 IRP 재입금 여부·금액은 아직 정하지 않음."}],"외부계좌":[{"외부계좌구분":"일반계좌퇴직급여","외부계좌식별자":"EXT-PAY-001","금융기관":"KB국민은행","계좌유형":"입출금통장","퇴직급여수령일":"2026-08-21","퇴직급여수령금액원":154200000,"현재잔액원":154200000,"원천징수세액원":null,"노후자금유지계획여부":true,"노후자금예정금액원":null,"개인형퇴직연금재입금의향":null,"개인형퇴직연금재입금예정금액원":null,"정보확인일":"2026-09-10"}],"투자성향이력":[],"운용정책":{},"상품진단":[],"계산지표":[{"지표식별자":"M001","지표유형":"파생값","지표명":"퇴직급여수령후경과일수","대상참조":null,"값":24,"단위":"일","산출기준일":"2026-09-14"},{"지표식별자":"M002","지표유형":"파생값","지표명":"IRP재입금기한","대상참조":null,"값":"2026-10-20","단위":null,"산출기준일":"2026-09-14"},{"지표식별자":"M003","지표유형":"파생값","지표명":"IRP재입금기한까지남은일수","대상참조":null,"값":36,"단위":"일","산출기준일":"2026-09-14"}],"확인된특이사항":[],"가상설정메모":["2026-09-17 시연 설계: 당행 IRP 올해 개인부담금 납입액 0원을 명시(퇴직 후 개인부담금 납입 없음). 올해 미납입 뱃지 근거."]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B06-10","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"90742-51638","name":"김은주","age":57,"gender":"여","starClubGrade":"VIP","investmentProfile":"적극투자형","irpOpenedAt":"2018-07-06","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-008","productName":"모두드림","riskLevel":"고위험"},"applicationStatus":"미적용"}},"signals":[{"label":"연금개시 예정","source":"시연용 고객 사건·상담"},{"label":"현금성 과다","source":"시연용 고객 사건·상담"},{"label":"ETF 상품조회","date":"2026-09-10","source":"가상 행동로그"}],"irpAccount":{"valuationAmountKrw":86900000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":0,"weightPct":0},{"assetType":"실적배당형","amountKrw":60830000,"weightPct":70},{"assetType":"현금성자산","amountKrw":26070000,"weightPct":30}],"oneYearReturnPct":26.9,"taxDeductionRemainingKrw":0,"latestProductOpening":{"holdingId":"H001","productId":"ETF-010","productName":"SOL 미국배당다우존스","openedAt":"2024-12-02","amountKrw":60830000}},"holdings":[{"holdingId":"H001","productId":"ETF-010","productName":"SOL 미국배당다우존스","assetType":"실적배당형","productCategory":"ETF","contractTerm":null,"valuationAmountKrw":60830000,"weightPct":70,"oneYearReturnPct":26.89,"openedAt":"2024-12-02","allocationBreakdown":null,"flags":[]},{"holdingId":"H002","productId":null,"productName":"현금성자산","assetType":"현금성자산","productCategory":"현금성자산","contractTerm":null,"valuationAmountKrw":26070000,"weightPct":30,"oneYearReturnPct":null,"openedAt":null,"allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{"재직상태":null},"납입및세제":{},"계좌운영":{},"퇴직및인출":{"연금개시준비여부":true,"연금수령희망":{"정기수령희망여부":true,"희망주기":"매월","희망방식":"정액자동수령","희망금액원":null,"희망개시일":null},"수령요구우선순위":null,"월정액희망금액원":null,"월분배금액원":null,"상장지수펀드유지와정액수령우선순위":null},"최근사건":[],"금융거래":[],"상담이력":[{"상담식별자":"CRM001","상담일시":"2026-09-11T14:00:00+09:00","상담채널":"영업점전화","상담메모":"배당 ETF는 계속 보유하면서 매월 같은 금액의 생활비를 받고 싶다고 문의. 금액·개시일·우선순위는 미정.","정보출처":"2026-09-16 추가한 시연용 가상 상담"}],"외부계좌":[],"투자성향이력":[],"운용정책":{"현금성자산관리기준":{"과다판정비중":20,"단위":"%"}},"상품진단":[],"계산지표":[{"지표식별자":"M001","지표유형":"파생값","지표명":"월분배형ETF비중","대상참조":null,"값":70,"단위":"%","산출기준일":"2026-09-14"},{"지표식별자":"M002","지표유형":"파생값","지표명":"현금성자산비중","대상참조":"H002","값":30,"단위":"%","산출기준일":"2026-09-14"},{"지표식별자":"M003","지표유형":"상태비교","지표명":"현금성자산 과다 여부(관리기준 20% 초과)","대상참조":["H002","운용정책.현금성자산관리기준"],"값":true,"단위":null,"산출기준일":"2026-09-14"}],"확인된특이사항":[],"디지털행동":[{"채널":"KB스타뱅킹","행동유형":"ETF 상품조회","최근조회일":"2026-09-10","조회횟수":2,"정보출처":"시연용 가상 행동로그"}],"가상설정메모":["원본의 주식형 ETF 100% 보유를 기본 위험자산 한도에 맞는 시연 구성인 ETF 70%·현금성 30%로 수정. 총 잔액 유지.","ETF 유지 의향은 원문 브리핑에만 있어 9/11 가상 상담으로 입력에 명시.","2026-09-17 시연 설계: ETF 상품조회 2회 가상 행동로그 추가. 조회는 조회일 뿐 매수·전환·개시 의향은 미확인 상태 유지.","2026-09-17 시연 설계: 현금성자산 관리기준(20%)과 과다 판정 지표를 추가. 현금성 과다 뱃지 근거."]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B06-13","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"13570-84296","name":"신경호","age":60,"gender":"남","starClubGrade":"VIP","investmentProfile":null,"irpOpenedAt":"2026-08-29","defaultOption":{"registrationStatus":"미확인","designatedProduct":null,"applicationStatus":null}},"signals":[{"label":"퇴직금 운용 미지시","source":"가상 계좌거래"},{"label":"퇴직연금 관리화면 방문","date":"2026-09-10","source":"가상 행동로그"}],"irpAccount":{"valuationAmountKrw":164700000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":0,"weightPct":0},{"assetType":"실적배당형","amountKrw":0,"weightPct":0},{"assetType":"현금성자산","amountKrw":164700000,"weightPct":100}],"oneYearReturnPct":0,"taxDeductionRemainingKrw":7000000,"latestProductOpening":null},"holdings":[{"holdingId":"H001","productId":null,"productName":"현금성자산","assetType":"현금성자산","productCategory":"현금성자산","contractTerm":null,"valuationAmountKrw":164700000,"weightPct":100,"oneYearReturnPct":null,"openedAt":null,"allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{"재직상태":"퇴직"},"납입및세제":{"퇴직급여재원금액원":164700000,"개인부담금재원금액원":0},"계좌운영":{"상품운용지시":{"지시여부":false,"지정상품":[]}},"퇴직및인출":{"연금수령계획":{"설정여부":false,"수령방식":null,"개시일":null,"수령금액원":null},"첫1~2년필요자금":null,"장기잔여자금":null},"최근사건":[{"이벤트식별자":"T001","발생일시":"2026-09-04T10:20:00+09:00","이벤트유형":"퇴직급여입금","계좌구분":"IRP","관련보유상품식별자":"H001","금액원":164700000,"처리상태":"완료","채널":null},{"이벤트식별자":"T002","발생일시":"2026-09-04T10:20:01+09:00","이벤트유형":"현금성자산발생","계좌구분":"IRP","관련보유상품식별자":"H001","금액원":164700000,"처리상태":"완료","채널":null}],"금융거래":[],"상담이력":[],"외부계좌":[],"투자성향이력":[],"운용정책":{},"상품진단":[],"계산지표":[{"지표식별자":"M001","지표유형":"파생값","지표명":"퇴직급여입금후경과일수","대상참조":null,"값":10,"단위":"일","산출기준일":"2026-09-14"},{"지표식별자":"M002","지표유형":"파생값","지표명":"현금성대기일수","대상참조":null,"값":10,"단위":"일","산출기준일":"2026-09-14"},{"지표식별자":"M003","지표유형":"파생값","지표명":"현금성자산비중","대상참조":null,"값":100,"단위":"%","산출기준일":"2026-09-14"}],"확인된특이사항":[],"디지털행동":[{"채널":"KB스타뱅킹","행동유형":"IRP 연금수령 방법 안내 조회","최근조회일":"2026-09-10","조회횟수":2,"정보출처":"시연용 가상 행동로그"}],"가상설정메모":["연금수령 안내 조회 2회를 추가. 실제 연금개시 의향·수령계획·투자성향·디폴트옵션 상태는 미확인으로 유지."]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B06-21","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"69418-20357","name":"조영민","age":60,"gender":"남","starClubGrade":"VVIP","investmentProfile":"안정추구형","irpOpenedAt":"2016-09-02","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-003","productName":"알파드림II","riskLevel":"저위험"},"applicationStatus":"미적용"}},"signals":[{"label":"연금개시 가능","source":"시연용 고객 사건·상담"},{"label":"퇴직연금 관리화면 방문","date":"2026-09-09","source":"가상 행동로그"}],"irpAccount":{"valuationAmountKrw":237800000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":150000000,"weightPct":63.1},{"assetType":"실적배당형","amountKrw":77800000,"weightPct":32.7},{"assetType":"현금성자산","amountKrw":10000000,"weightPct":4.2}],"oneYearReturnPct":4.7,"taxDeductionRemainingKrw":0,"latestProductOpening":{"holdingId":"H001","productId":"GIC-001","productName":"KB손해보험 GIC (2026년 9월 특별제공안)","openedAt":"2026-09-03","amountKrw":90000000}},"holdings":[{"holdingId":"H001","productId":"GIC-001","productName":"KB손해보험 GIC (2026년 9월 특별제공안)","assetType":"원리금보장형","productCategory":"GIC","contractTerm":"3년","valuationAmountKrw":90000000,"weightPct":37.9,"oneYearReturnPct":4.62,"openedAt":"2026-09-03","allocationBreakdown":null,"flags":[]},{"holdingId":"H002","productId":"DEP-008","productName":"한국증권금융 퇴직연금 정기예금","assetType":"원리금보장형","productCategory":"정기예금","contractTerm":"1년","valuationAmountKrw":60000000,"weightPct":25.2,"oneYearReturnPct":3.8,"openedAt":"2026-02-10","allocationBreakdown":null,"flags":[]},{"holdingId":"H003","productId":"FND-010","productName":"KB온국민평생소득TIF40증권자투자신탁(채권혼합-재간접)C-퇴직E","assetType":"실적배당형","productCategory":"TIF","contractTerm":null,"valuationAmountKrw":77800000,"weightPct":32.7,"oneYearReturnPct":6.1,"openedAt":"2024-08-19","allocationBreakdown":null,"flags":[]},{"holdingId":"H004","productId":null,"productName":"현금성자산","assetType":"현금성자산","productCategory":"현금성자산","contractTerm":null,"valuationAmountKrw":10000000,"weightPct":4.2,"oneYearReturnPct":null,"openedAt":null,"allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{"재직상태":"퇴직"},"납입및세제":{"퇴직급여재원금액원":237800000,"개인부담금재원금액원":null},"계좌운영":{},"퇴직및인출":{"연금수령요건충족여부":true,"연금수령한도":null,"예상세후수령액원":null,"연금수령필요상황":{"다른소득만으로생활비충당가능여부":false,"개인형퇴직연금정기수령필요여부":true,"개인형퇴직연금계좌전액사용계획여부":false,"월세후생활비필요액원":null,"희망수령주기":null,"장기잔여자금예정금액원":null},"월세후생활비필요액원":null,"필요세전연금수령액원":null,"장기잔여자금":null},"최근사건":[],"금융거래":[],"상담이력":[],"외부계좌":[],"투자성향이력":[],"운용정책":{},"상품진단":[],"계산지표":[],"확인된특이사항":[],"디지털행동":[{"채널":"KB스타뱅킹","행동유형":"퇴직연금 관리화면 방문","최근조회일":"2026-09-09","조회횟수":1,"정보출처":"시연용 가상 행동로그"}],"가상설정메모":["2026-09-17 시연 설계: 퇴직연금 관리화면 방문 1회 가상 행동로그 추가. 조회는 조회일 뿐 매수·전환·개시 의향은 미확인 상태 유지."]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B07-29","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"66317-49028","name":"김태성","age":61,"gender":"남","starClubGrade":"VIP","investmentProfile":"안정추구형","irpOpenedAt":"2014-08-22","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-003","productName":"알파드림II","riskLevel":"저위험"},"applicationStatus":"미적용"}},"signals":[{"label":"연금개시 D-31","date":"2026-10-15"},{"label":"퇴직연금 관리화면 방문","date":"2026-09-11","source":"가상 행동로그"}],"irpAccount":{"valuationAmountKrw":152400000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":82000000,"weightPct":53.8},{"assetType":"실적배당형","amountKrw":58400000,"weightPct":38.3},{"assetType":"현금성자산","amountKrw":12000000,"weightPct":7.9}],"oneYearReturnPct":4.2,"taxDeductionRemainingKrw":0,"latestProductOpening":{"holdingId":"H002","productId":"FND-010","productName":"KB온국민평생소득TIF40증권자투자신탁(채권혼합-재간접)C-퇴직E","openedAt":"2025-11-20","amountKrw":58400000}},"holdings":[{"holdingId":"H001","productId":"SAV-001","productName":"KB저축은행 퇴직연금 정기예금","assetType":"원리금보장형","productCategory":"정기예금","contractTerm":"1년","valuationAmountKrw":82000000,"weightPct":53.8,"oneYearReturnPct":3.5,"openedAt":"2025-09-25","allocationBreakdown":null,"flags":[]},{"holdingId":"H002","productId":"FND-010","productName":"KB온국민평생소득TIF40증권자투자신탁(채권혼합-재간접)C-퇴직E","assetType":"실적배당형","productCategory":"TIF","contractTerm":null,"valuationAmountKrw":58400000,"weightPct":38.3,"oneYearReturnPct":6.1,"openedAt":"2025-11-20","allocationBreakdown":null,"flags":[]},{"holdingId":"H003","productId":null,"productName":"현금성자산","assetType":"현금성자산","productCategory":"현금성자산","contractTerm":null,"valuationAmountKrw":12000000,"weightPct":7.9,"oneYearReturnPct":null,"openedAt":null,"allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{},"납입및세제":{"개인부담금납입이력":[{"연도":2022,"납입금액원":12000000,"세액공제확인금액원":9000000},{"연도":2023,"납입금액원":9000000,"세액공제확인금액원":9000000},{"연도":2024,"납입금액원":12000000,"세액공제확인금액원":null}],"미공제원금확인":{"공식확인서대조상태":"미확인","등록금액원":null}},"계좌운영":{},"퇴직및인출":{"연금수령계획":{"연금개시예정일":"2026-10-15","등록상태":"등록"}},"최근사건":[],"금융거래":[],"상담이력":[],"외부계좌":[],"투자성향이력":[],"운용정책":{},"상품진단":[],"계산지표":[{"지표식별자":"M001","지표유형":"파생값","지표명":"연금개시까지남은일수","대상참조":null,"값":31,"단위":"일","산출기준일":"2026-09-14"},{"지표식별자":"M002","지표유형":"파생값","지표명":"미공제원금확인필요","대상참조":null,"값":null,"단위":"원","산출기준일":"2026-09-14"}],"확인된특이사항":["시연 데이터 정합성 수정: 2024년 공제 내역이 미확인인 상태에서 600만원을 미공제 최대금액으로 산출할 수 없어 제거. 2022년 공제액도 해당 연도 적용요건과 공식 확인서 대조 전 확정하지 않음."],"디지털행동":[{"채널":"KB스타뱅킹","행동유형":"퇴직연금 관리화면 방문","최근조회일":"2026-09-11","조회횟수":2,"정보출처":"시연용 가상 행동로그"}],"가상설정메모":["2026-09-17 시연 설계: 퇴직연금 관리화면 방문 2회 가상 행동로그 추가. 조회는 조회일 뿐 매수·전환·개시 의향은 미확인 상태 유지."]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B07-30","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"21784-65093","name":"이소연","age":48,"gender":"여","starClubGrade":"VVIP","investmentProfile":"위험중립형","irpOpenedAt":"2017-05-19","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-006","productName":"뿔려드림II","riskLevel":"중위험"},"applicationStatus":"미적용"}},"signals":[{"label":"퇴직연금 관리화면 방문","date":"2026-09-08","source":"가상 행동로그"},{"label":"펀드 상품조회","date":"2026-09-10","source":"가상 행동로그"}],"irpAccount":{"valuationAmountKrw":112700000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":42000000,"weightPct":37.3},{"assetType":"실적배당형","amountKrw":56000000,"weightPct":49.7},{"assetType":"현금성자산","amountKrw":14700000,"weightPct":13}],"oneYearReturnPct":11.5,"taxDeductionRemainingKrw":0,"latestProductOpening":{"holdingId":"H002","productId":"FND-008","productName":"삼성글로벌배당성장주증권자투자신탁H[주식] CPE(퇴직연금)","openedAt":"2026-03-18","amountKrw":56000000}},"holdings":[{"holdingId":"H001","productId":"SAV-013","productName":"DB저축은행 퇴직연금 정기예금","assetType":"원리금보장형","productCategory":"정기예금","contractTerm":"1년","valuationAmountKrw":42000000,"weightPct":37.3,"oneYearReturnPct":3.75,"openedAt":"2025-10-02","allocationBreakdown":null,"flags":[]},{"holdingId":"H002","productId":"FND-008","productName":"삼성글로벌배당성장주증권자투자신탁H[주식] CPE(퇴직연금)","assetType":"실적배당형","productCategory":"주식형펀드","contractTerm":null,"valuationAmountKrw":56000000,"weightPct":49.7,"oneYearReturnPct":20.36,"openedAt":"2026-03-18","allocationBreakdown":null,"flags":[]},{"holdingId":"H003","productId":null,"productName":"현금성자산","assetType":"현금성자산","productCategory":"현금성자산","contractTerm":null,"valuationAmountKrw":14700000,"weightPct":13,"oneYearReturnPct":null,"openedAt":null,"allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{"재직상태":"재직"},"납입및세제":{"올해개인부담금납입액원":9000000,"올해연금계좌납입현황":{"세액공제대상납입액원":9000000,"기본세액공제잔여한도":0,"전체연금계좌납입한도잔여액":9000000,"타계좌개인부담금납입액원":0},"여유자금":{"발생일":"2026-09-08","금액원":12000000,"장기노후자금추가적립의향":true,"최종추가납입금액원":null}},"계좌운영":{},"퇴직및인출":{},"최근사건":[],"금융거래":[],"상담이력":[],"외부계좌":[],"투자성향이력":[],"운용정책":{},"상품진단":[],"계산지표":[{"지표식별자":"M001","지표유형":"파생값","지표명":"기본세액공제잔여한도","대상참조":null,"값":0,"단위":"원","산출기준일":"2026-09-14"}],"확인된특이사항":["시연용 가정 수정: 올해 개인부담금 총납입 900만원, 타 연금계좌 개인부담금 0원, 별도 납입한도 예외 없음으로 설정. 일반 연간 합산 1800만원에서 잔여 900만원. 실제 거래 전 전 금융기관 합산 재조회."],"디지털행동":[{"채널":"KB스타뱅킹","행동유형":"펀드 상품조회","최근조회일":"2026-09-10","조회횟수":2,"정보출처":"시연용 가상 행동로그"},{"채널":"KB스타뱅킹","행동유형":"퇴직연금 관리화면 방문","최근조회일":"2026-09-08","조회횟수":1,"정보출처":"시연용 가상 행동로그"}],"가상설정메모":["2026-09-17 시연 설계: 펀드 상품조회 2회 가상 행동로그 추가. 조회는 조회일 뿐 매수·전환·개시 의향은 미확인 상태 유지.","2026-09-17 시연 설계: 여유자금 발생일 퇴직연금 관리화면 방문 1회 가상 행동로그 추가."]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B07-32","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"95831-27406","name":"고정민","age":66,"gender":"남","starClubGrade":"VIP","investmentProfile":"안정형","irpOpenedAt":"2012-03-09","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-001","productName":"지켜드림","riskLevel":"초저위험"},"applicationStatus":"미적용"}},"signals":[{"label":"연금수령 중"},{"label":"타행 연금저축 보유"}],"irpAccount":{"valuationAmountKrw":183600000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":118000000,"weightPct":64.3},{"assetType":"실적배당형","amountKrw":55600000,"weightPct":30.3},{"assetType":"현금성자산","amountKrw":10000000,"weightPct":5.4}],"oneYearReturnPct":4.6,"taxDeductionRemainingKrw":0,"latestProductOpening":{"holdingId":"H001","productId":"GIC-001","productName":"KB손해보험 GIC (2026년 9월 특별제공안)","openedAt":"2026-09-09","amountKrw":90000000}},"holdings":[{"holdingId":"H001","productId":"GIC-001","productName":"KB손해보험 GIC (2026년 9월 특별제공안)","assetType":"원리금보장형","productCategory":"GIC","contractTerm":"3년","valuationAmountKrw":90000000,"weightPct":49,"oneYearReturnPct":4.62,"openedAt":"2026-09-09","allocationBreakdown":null,"flags":[]},{"holdingId":"H002","productId":"DEP-002","productName":"농협은행 퇴직연금 정기예금","assetType":"원리금보장형","productCategory":"정기예금","contractTerm":"1년","valuationAmountKrw":28000000,"weightPct":15.3,"oneYearReturnPct":3.37,"openedAt":"2025-12-03","allocationBreakdown":null,"flags":[]},{"holdingId":"H003","productId":"FND-010","productName":"KB온국민평생소득TIF40증권자투자신탁(채권혼합-재간접)C-퇴직E","assetType":"실적배당형","productCategory":"TIF","contractTerm":null,"valuationAmountKrw":55600000,"weightPct":30.3,"oneYearReturnPct":6.1,"openedAt":"2026-03-11","allocationBreakdown":null,"flags":[]},{"holdingId":"H004","productId":null,"productName":"현금성자산","assetType":"현금성자산","productCategory":"현금성자산","contractTerm":null,"valuationAmountKrw":10000000,"weightPct":5.4,"oneYearReturnPct":null,"openedAt":null,"allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{},"납입및세제":{},"계좌운영":{},"퇴직및인출":{"당행개인형퇴직연금연금수령":{"2026년과세대상예정수령액원":7000000,"재원구분":"세액공제받은개인부담금및운용수익"},"생활비필수수령액원":null,"조정가능수령액원":null},"최근사건":[],"금융거래":[],"상담이력":[],"외부계좌":[{"외부계좌구분":"연금저축","외부계좌식별자":"EXTPS001","금융기관":"타행","2026년과세대상예정수령액원":10000000,"재원구분":"세액공제받은개인부담금및운용수익"}],"투자성향이력":[],"운용정책":{},"상품진단":[],"계산지표":[{"지표식별자":"M001","지표유형":"파생값","지표명":"2026년사적연금과세대상합산예정액","대상참조":null,"값":17000000,"단위":"원","산출기준일":"2026-09-14"}],"확인된특이사항":[]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B08-01","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"75203-41968","name":"임재현","age":45,"gender":"남","starClubGrade":"VIP","investmentProfile":"적극투자형","irpOpenedAt":"2019-05-10","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-008","productName":"모두드림","riskLevel":"고위험"},"applicationStatus":"미적용"}},"signals":[{"label":"만기자금 미운용","source":"가상 계좌거래"},{"label":"현금성 장기대기","source":"가상 계좌거래"}],"irpAccount":{"valuationAmountKrw":89200000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":37400000,"weightPct":41.9},{"assetType":"실적배당형","amountKrw":0,"weightPct":0},{"assetType":"현금성자산","amountKrw":51800000,"weightPct":58.1}],"oneYearReturnPct":1.5,"taxDeductionRemainingKrw":4500000,"latestProductOpening":{"holdingId":"H001","productId":"SAV-001","productName":"KB저축은행 퇴직연금 정기예금","openedAt":"2025-11-04","amountKrw":37400000}},"holdings":[{"holdingId":"H001","productId":"SAV-001","productName":"KB저축은행 퇴직연금 정기예금","assetType":"원리금보장형","productCategory":"정기예금","contractTerm":"1년","valuationAmountKrw":37400000,"weightPct":41.9,"oneYearReturnPct":3.5,"openedAt":"2025-11-04","allocationBreakdown":null,"flags":[]},{"holdingId":"H002","productId":null,"productName":"현금성자산","assetType":"현금성자산","productCategory":"현금성자산","contractTerm":null,"valuationAmountKrw":51800000,"weightPct":58.1,"oneYearReturnPct":null,"openedAt":null,"allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{"재직상태":"재직","은퇴계획":{"등록여부":true,"예상은퇴일":"2042-12-31"}},"납입및세제":{},"계좌운영":{},"퇴직및인출":{},"최근사건":[{"이벤트식별자":"T001","발생일시":"2026-05-15T00:00:00+09:00","이벤트유형":"상품만기","계좌구분":"IRP","관련보유상품식별자":null,"금액원":51800000,"처리상태":"완료","채널":null,"관련과거상품식별자":"HIST001"},{"이벤트식별자":"T002","발생일시":"2026-05-15T00:00:01+09:00","이벤트유형":"현금성자산발생","계좌구분":"IRP","관련보유상품식별자":"H002","금액원":51800000,"처리상태":"완료","채널":null}],"금융거래":[{"거래식별자":"SIG001","거래일시":"2026-08-18T14:32:00+09:00","계좌구분":"일반펀드계좌","상품마스터식별자":null,"상품명":null,"상품유형":"펀드","상품분류":"글로벌주식형","거래유형":"신규매수","거래금액원":4700000,"채널":"KB스타뱅킹"},{"거래식별자":"SIG002","거래일시":"2026-09-03T11:18:00+09:00","계좌구분":"일반펀드계좌","상품마스터식별자":null,"상품명":null,"상품유형":"펀드","상품분류":"글로벌주식형","거래유형":"추가매수","거래금액원":2100000,"채널":"KB스타뱅킹"}],"상담이력":[],"외부계좌":[],"투자성향이력":[],"운용정책":{},"상품진단":[],"계산지표":[{"지표식별자":"M001","지표유형":"파생값","지표명":"현금성대기일수","대상참조":null,"값":122,"단위":"일","산출기준일":"2026-09-14"},{"지표식별자":"M002","지표유형":"파생값","지표명":"현금성자산비중","대상참조":null,"값":58.1,"단위":"%","산출기준일":"2026-09-14"},{"지표식별자":"M003","지표유형":"파생값","지표명":"최근일반펀드신규추가매수횟수","대상참조":null,"값":2,"단위":"회","산출기준일":"2026-09-14"},{"지표식별자":"M004","지표유형":"파생값","지표명":"최근일반펀드신규추가매수금액","대상참조":null,"값":6800000,"단위":"원","산출기준일":"2026-09-14"},{"지표식별자":"M005","지표유형":"파생값","지표명":"예상은퇴일까지남은일수","대상참조":null,"값":5952,"단위":"일","산출기준일":"2026-09-14"},{"지표식별자":"M006","지표유형":"파생값","지표명":"예상은퇴일까지남은연수","대상참조":null,"값":16.3,"단위":"년","산출기준일":"2026-09-14"}],"확인된특이사항":[]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B08-05","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"26975-83104","name":"송혜진","age":58,"gender":"여","starClubGrade":"VIP","investmentProfile":"안정추구형","irpOpenedAt":"2022-06-17","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-003","productName":"알파드림II","riskLevel":"저위험"},"applicationStatus":"미적용"}},"signals":[{"label":"연금저축 보유"},{"label":"펀드 상품조회","date":"2026-09-09","source":"가상 행동로그"}],"irpAccount":{"valuationAmountKrw":64800000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":38000000,"weightPct":58.6},{"assetType":"실적배당형","amountKrw":22800000,"weightPct":35.2},{"assetType":"현금성자산","amountKrw":4000000,"weightPct":6.2}],"oneYearReturnPct":4.5,"taxDeductionRemainingKrw":2500000,"latestProductOpening":{"holdingId":"H001","productId":"GIC-003","productName":"한화생명 GIC (2026년 9월 특별제공안)","openedAt":"2026-09-05","amountKrw":38000000}},"holdings":[{"holdingId":"H001","productId":"GIC-003","productName":"한화생명 GIC (2026년 9월 특별제공안)","assetType":"원리금보장형","productCategory":"GIC","contractTerm":"1년","valuationAmountKrw":38000000,"weightPct":58.6,"oneYearReturnPct":4,"openedAt":"2026-09-05","allocationBreakdown":null,"flags":[]},{"holdingId":"H002","productId":"FND-010","productName":"KB온국민평생소득TIF40증권자투자신탁(채권혼합-재간접)C-퇴직E","assetType":"실적배당형","productCategory":"TIF","contractTerm":null,"valuationAmountKrw":22800000,"weightPct":35.2,"oneYearReturnPct":6.1,"openedAt":"2024-03-15","allocationBreakdown":null,"flags":[]},{"holdingId":"H003","productId":null,"productName":"현금성자산","assetType":"현금성자산","productCategory":"현금성자산","contractTerm":null,"valuationAmountKrw":4000000,"weightPct":6.2,"oneYearReturnPct":null,"openedAt":null,"allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{"재직상태":null,"운용선택지확대희망여부":true,"직접펀드관리부담여부":true},"납입및세제":{},"계좌운영":{},"퇴직및인출":{},"최근사건":[{"이벤트식별자":"T001","발생일시":"2026-08-31T00:00:00+09:00","이벤트유형":"연금저축보험납입완료","계좌구분":"연금저축보험","관련보유상품식별자":null,"금액원":null,"처리상태":"완료","채널":null}],"금융거래":[],"상담이력":[{"상담식별자":"CRM001","상담일시":"2026-06-24T16:05:00+09:00","상담채널":"영업점전화","상담유형":"연금자산운용상담","상담메모":"고객은 연금자산의 운용 선택지는 넓히고 싶지만 펀드를 계속 직접 고르고 바꾸는 일은 부담스럽다고 말함. 연금저축보험의 IRP 이전 의향이나 TDF 선택 의향은 확정하지 않음."}],"외부계좌":[{"외부계좌구분":"연금저축","외부계좌식별자":"EXT-PEN-001","금융기관":"KB국민은행","상품유형":"연금저축보험","가입일":"2013-04-16","납입완료여부":true,"납입완료일":"2026-08-31","연금개시여부":false,"연금개시일":null,"평가금액원":null,"현재적용이율":null,"개인형퇴직연금이전시환급금원":null,"개인형퇴직연금이전의향":null,"연금사용예정시점":null,"정보확인일":"2026-09-10"}],"투자성향이력":[],"운용정책":{},"상품진단":[{"진단구분":"미산출지표","지표명":"현재보험유지예상금액","값":null},{"진단구분":"미산출지표","지표명":"IRP이전예상금액","값":null}],"계산지표":[{"지표식별자":"M001","지표유형":"파생값","지표명":"연금저축보험유지기간년수","대상참조":null,"값":13.4,"단위":"년","산출기준일":"2026-09-14"},{"지표식별자":"M002","지표유형":"파생값","지표명":"연금저축보험납입완료후경과일수","대상참조":null,"값":14,"단위":"일","산출기준일":"2026-09-14"}],"확인된특이사항":[],"디지털행동":[{"채널":"KB스타뱅킹","행동유형":"펀드 상품조회","최근조회일":"2026-09-09","조회횟수":1,"정보출처":"시연용 가상 행동로그"}],"가상설정메모":["2026-09-17 시연 설계: 펀드 상품조회 1회 가상 행동로그 추가. 조회는 조회일 뿐 매수·전환·개시 의향은 미확인 상태 유지.","2026-09-17 시연 설계: 연금저축 보유기관을 당행(KB국민은행)으로 명시. 뱃지는 연금저축 보유."]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B08-12","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"41829-76035","name":"백승우","age":42,"gender":"남","starClubGrade":"그랜드","investmentProfile":"위험중립형","irpOpenedAt":"2018-03-12","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-006","productName":"뿔려드림II","riskLevel":"중위험"},"applicationStatus":"미적용"}},"signals":[{"label":"원리금보장 편중"},{"label":"저금리 예금 보유"},{"label":"펀드 상품조회","date":"2026-09-10","source":"시연용 가상 행동 로그"}],"irpAccount":{"valuationAmountKrw":74600000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":74600000,"weightPct":100},{"assetType":"실적배당형","amountKrw":0,"weightPct":0},{"assetType":"현금성자산","amountKrw":0,"weightPct":0}],"oneYearReturnPct":3.4,"taxDeductionRemainingKrw":3400000,"latestProductOpening":{"holdingId":"H001","productId":"SAV-001","productName":"KB저축은행 퇴직연금 정기예금","openedAt":"2026-01-30","amountKrw":46200000}},"holdings":[{"holdingId":"H001","productId":"SAV-001","productName":"KB저축은행 퇴직연금 정기예금","assetType":"원리금보장형","productCategory":"정기예금","contractTerm":"1년","valuationAmountKrw":46200000,"weightPct":61.9,"oneYearReturnPct":3.5,"openedAt":"2026-01-30","allocationBreakdown":null,"flags":[]},{"holdingId":"H002","productId":"DEP-003","productName":"우리은행 퇴직연금 정기예금","assetType":"원리금보장형","productCategory":"정기예금","contractTerm":"1년","valuationAmountKrw":28400000,"weightPct":38.1,"oneYearReturnPct":3.3,"openedAt":"2025-10-18","allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{"재직상태":"재직","은퇴계획":{"등록여부":true,"예상은퇴일":"2043-03-31"},"장기운용가능금액원":null,"가격변동감수가능금액원":null},"납입및세제":{},"계좌운영":{},"퇴직및인출":{},"최근사건":[],"금융거래":[],"상담이력":[],"외부계좌":[],"투자성향이력":[],"운용정책":{},"상품진단":[{"진단구분":"상품운용이력요약","조회시작일":"2018-03-12","조회종료일":"2026-09-11","원리금보장상품만운용여부":true,"실적배당상품운용이력건수":0},{"진단구분":"금리비교","관련보유상품식별자":"H002","보유상품금리":3.3,"비교기준":"현재 제공 중인 동일만기(1년) 정기예금 최고금리","비교상품식별자":"SAV-013","비교상품금리":3.75,"금리차이퍼센트포인트":-0.45,"비교기준일":"2026-09-11"}],"계산지표":[{"지표식별자":"M001","지표유형":"파생값","지표명":"예상은퇴일까지남은일수","대상참조":null,"값":6042,"단위":"일","산출기준일":"2026-09-14"},{"지표식별자":"M002","지표유형":"파생값","지표명":"예상은퇴일까지남은연수","대상참조":null,"값":16.6,"단위":"년","산출기준일":"2026-09-14"},{"지표식별자":"M003","지표유형":"파생값","지표명":"원리금보장형비중","대상참조":null,"값":100,"단위":"%","산출기준일":"2026-09-14"},{"지표식별자":"M004","지표유형":"파생값","지표명":"보유정기예금 현재제공최고금리 대비 차이","대상참조":"H002","값":-0.45,"단위":"%p","산출기준일":"2026-09-14"}],"확인된특이사항":["2026-09-16 시연 설계: TDF 안내 조회 2회 가상 로그 추가. 실제 고객정보 수집이나 확정 투자 의향을 뜻하지 않음.","2026-09-17 시연 설계: 우리은행 정기예금(3.3%)과 현재 제공 1년 정기예금 최고금리(DB저축은행 3.75%) 비교 진단 추가. 저금리 예금 뱃지 근거."],"디지털행동":[{"발생일":"2026-09-10","채널":"스타뱅킹","행동":"TDF 상품 안내 조회","조회횟수":2,"데이터성격":"시연용 가상 행동 로그; 투자 의향·적합성 확정 아님"}]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B09-02","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"59318-24760","name":"오준석","age":53,"gender":"남","starClubGrade":"VVIP","investmentProfile":"적극투자형","irpOpenedAt":"2019-07-22","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-008","productName":"모두드림","riskLevel":"고위험"},"applicationStatus":"미적용"}},"signals":[{"label":"ETF 상품조회","date":"2026-09-07","source":"가상 행동로그"},{"label":"보유상품 수익률 조회","date":"2026-09-06","source":"가상 행동로그"}],"irpAccount":{"valuationAmountKrw":102500000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":25625000,"weightPct":25},{"assetType":"실적배당형","amountKrw":76875000,"weightPct":75},{"assetType":"현금성자산","amountKrw":0,"weightPct":0}],"oneYearReturnPct":12.1,"taxDeductionRemainingKrw":2000000,"latestProductOpening":{"holdingId":"H003","productId":"SAV-013","productName":"DB저축은행 퇴직연금 정기예금","openedAt":"2026-02-06","amountKrw":25625000}},"holdings":[{"holdingId":"H001","productId":"ETF-006","productName":"RISE 미국S&P500","assetType":"실적배당형","productCategory":"ETF","contractTerm":null,"valuationAmountKrw":62525000,"weightPct":61,"oneYearReturnPct":17.97,"openedAt":"2024-06-12","allocationBreakdown":null,"flags":[]},{"holdingId":"H002","productId":"FND-003","productName":"한국투자크레딧포커스ESG증권자투자신탁1호(채권)C-RE","assetType":"실적배당형","productCategory":"채권형펀드","contractTerm":null,"valuationAmountKrw":14350000,"weightPct":14,"oneYearReturnPct":1.26,"openedAt":"2025-09-22","allocationBreakdown":null,"flags":[]},{"holdingId":"H003","productId":"SAV-013","productName":"DB저축은행 퇴직연금 정기예금","assetType":"원리금보장형","productCategory":"정기예금","contractTerm":"1년","valuationAmountKrw":25625000,"weightPct":25,"oneYearReturnPct":3.75,"openedAt":"2026-02-06","allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{"재직상태":"재직","개인형퇴직연금추가입금확정금액원":null,"기존주식형펀드조정의향":null},"납입및세제":{"올해개인부담금납입액원":7000000},"계좌운영":{},"퇴직및인출":{},"최근사건":[{"이벤트식별자":"T001","발생일시":"2026-09-04T09:12:00+09:00","이벤트유형":"상여금입금","계좌구분":"급여계좌","관련보유상품식별자":null,"금액원":16800000,"처리상태":"완료","채널":null}],"금융거래":[],"상담이력":[{"상담식별자":"CRM001","상담일시":"2026-01-21T15:40:00+09:00","상담채널":"영업점대면","상담유형":"퇴직연금사후관리","상담메모":"고객과 IRP 목표 자산배분을 주식형 50%, 비주식형 50%로 정함. 향후 목표 변경 의사나 추가납입 의향은 확인하지 않음."}],"외부계좌":[],"투자성향이력":[],"운용정책":{"목표자산배분이력":[{"설정일":"2026-01-21","주식형목표비중":50,"비주식형목표비중":50,"현재유효여부":true,"근거상담식별자":"CRM001"}]},"상품진단":[],"계산지표":[{"지표식별자":"M001","지표유형":"파생값","지표명":"현재주식형비중","대상참조":null,"값":61,"단위":"%","산출기준일":"2026-09-14"},{"지표식별자":"M002","지표유형":"파생값","지표명":"목표주식형비중","대상참조":null,"값":50,"단위":"%","산출기준일":"2026-09-14"},{"지표식별자":"M003","지표유형":"파생값","지표명":"목표대비주식형초과비중포인트","대상참조":null,"값":11,"단위":"%p","산출기준일":"2026-09-14"},{"지표식별자":"M004","지표유형":"파생값","지표명":"상여금유입액","대상참조":null,"값":16800000,"단위":"원","산출기준일":"2026-09-14"},{"지표식별자":"M005","지표유형":"파생값","지표명":"상여금유입후경과일수","대상참조":null,"값":10,"단위":"일","산출기준일":"2026-09-14"},{"지표식별자":"M006","지표유형":"파생값","지표명":"세액공제기준한도","대상참조":null,"값":9000000,"단위":"원","산출기준일":"2026-09-14"},{"지표식별자":"M007","지표유형":"파생값","지표명":"올해연금계좌납입액","대상참조":null,"값":7000000,"단위":"원","산출기준일":"2026-09-14"},{"지표식별자":"M008","지표유형":"파생값","지표명":"세액공제잔여한도","대상참조":null,"값":2000000,"단위":"원","산출기준일":"2026-09-14"}],"확인된특이사항":[],"디지털행동":[{"채널":"KB스타뱅킹","행동유형":"ETF 상품조회","최근조회일":"2026-09-07","조회횟수":2,"정보출처":"시연용 가상 행동로그"},{"채널":"KB스타뱅킹","행동유형":"보유상품 수익률 조회","최근조회일":"2026-09-06","조회횟수":2,"정보출처":"시연용 가상 행동로그"}],"가상설정메모":["2026-09-17 시연 설계: ETF 상품조회 2회 가상 행동로그 추가. 조회는 조회일 뿐 매수·전환·개시 의향은 미확인 상태 유지.","2026-09-17 시연 설계: 상여금 입금 직후 보유상품 수익률 조회 2회 가상 행동로그 추가."]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B09-17","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"72461-90538","name":"문정희","age":58,"gender":"여","starClubGrade":"VIP","investmentProfile":"적극투자형","irpOpenedAt":"2021-11-05","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-008","productName":"모두드림","riskLevel":"고위험"},"applicationStatus":"미적용"}},"signals":[{"label":"연금개시 예정","date":"2029-09-11"},{"label":"보유상품 수익률 조회","date":"2026-09-11","source":"가상 행동로그"}],"irpAccount":{"valuationAmountKrw":117200000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":25784000,"weightPct":22},{"assetType":"실적배당형","amountKrw":91416000,"weightPct":78},{"assetType":"현금성자산","amountKrw":0,"weightPct":0}],"oneYearReturnPct":12.7,"taxDeductionRemainingKrw":700000,"latestProductOpening":{"holdingId":"H002","productId":"SAV-001","productName":"KB저축은행 퇴직연금 정기예금","openedAt":"2025-12-01","amountKrw":25784000}},"holdings":[{"holdingId":"H001","productId":"MF-001","productName":"KB 온국민 TDF 2055 (시연 보유설정·클래스 미확인)","assetType":"실적배당형","productCategory":"TDF","contractTerm":null,"valuationAmountKrw":91416000,"weightPct":78,"oneYearReturnPct":null,"openedAt":"2024-02-19","allocationBreakdown":null,"flags":[]},{"holdingId":"H002","productId":"SAV-001","productName":"KB저축은행 퇴직연금 정기예금","assetType":"원리금보장형","productCategory":"정기예금","contractTerm":"1년","valuationAmountKrw":25784000,"weightPct":22,"oneYearReturnPct":3.5,"openedAt":"2025-12-01","allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{"재직상태":null,"현재타깃데이트펀드위험유지의향":null},"납입및세제":{},"계좌운영":{},"퇴직및인출":{"연금수령계획":{"등록여부":true,"연금개시예정일":"2029-09-11","초기수령예정금액원":null,"장기잔여예정금액원":null},"연금개시초기수령금액원":null,"연금개시후장기잔여금액원":null},"최근사건":[{"이벤트식별자":"T001","발생일시":"2024-02-19T10:24:00+09:00","이벤트유형":"상품매수","계좌구분":"IRP","관련보유상품식별자":"H001","금액원":null,"처리상태":"완료","채널":null}],"금융거래":[],"상담이력":[],"외부계좌":[],"투자성향이력":[],"운용정책":{},"상품진단":[{"진단구분":"상품운용이력요약","기준보유상품식별자":"H001","기준상품가입일":"2024-02-19","가입후운용방향변경횟수":0,"최종확인일":"2026-09-11"}],"계산지표":[{"지표식별자":"M001","지표유형":"파생값","지표명":"연금개시까지남은일수","대상참조":null,"값":1093,"단위":"일","산출기준일":"2026-09-14"},{"지표식별자":"M002","지표유형":"파생값","지표명":"연금개시까지남은연수","대상참조":null,"값":3,"단위":"년","산출기준일":"2026-09-14"},{"지표식별자":"M003","지표유형":"파생값","지표명":"TDF2055비중","대상참조":null,"값":78,"단위":"%","산출기준일":"2026-09-14"},{"지표식별자":"M004","지표유형":"파생값","지표명":"TDF가입후운용방향변경횟수","대상참조":null,"값":0,"단위":"회","산출기준일":"2026-09-14"}],"확인된특이사항":["시연 보유 설정의 TDF2055를 상품명에 명시. MF-001은 시리즈 참조 ID이며 실거래 코드가 아님. 다른 빈티지 자료에서 유래한 1년 수익률15.27%는 삭제. 계좌 수익률은 시연용 가상값."],"디지털행동":[{"채널":"KB스타뱅킹","행동유형":"보유상품 수익률 조회","최근조회일":"2026-09-11","조회횟수":1,"정보출처":"시연용 가상 행동로그"}],"가상설정메모":["2026-09-17 시연 설계: 보유상품 수익률 조회 1회 가상 행동로그 추가. 조회는 조회일 뿐 매수·전환·개시 의향은 미확인 상태 유지."]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B09-24","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"18642-57309","name":"차유진","age":47,"gender":"여","starClubGrade":"그랜드","investmentProfile":"적극투자형","irpOpenedAt":"2020-10-08","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-001","productName":"지켜드림","riskLevel":"초저위험"},"applicationStatus":"미적용"}},"signals":[{"label":"투자성향-DO불일치"},{"label":"ETF 상품조회","date":"2026-09-05","source":"가상 행동로그"}],"irpAccount":{"valuationAmountKrw":80600000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":52390000,"weightPct":65},{"assetType":"실적배당형","amountKrw":28210000,"weightPct":35},{"assetType":"현금성자산","amountKrw":0,"weightPct":0}],"oneYearReturnPct":2.7,"taxDeductionRemainingKrw":1500000,"latestProductOpening":{"holdingId":"H001","productId":"SAV-001","productName":"KB저축은행 퇴직연금 정기예금","openedAt":"2026-01-15","amountKrw":52390000}},"holdings":[{"holdingId":"H001","productId":"SAV-001","productName":"KB저축은행 퇴직연금 정기예금","assetType":"원리금보장형","productCategory":"정기예금","contractTerm":"1년","valuationAmountKrw":52390000,"weightPct":65,"oneYearReturnPct":3.5,"openedAt":"2026-01-15","allocationBreakdown":null,"flags":[]},{"holdingId":"H002","productId":"FND-003","productName":"한국투자크레딧포커스ESG증권자투자신탁1호(채권)C-RE","assetType":"실적배당형","productCategory":"채권형펀드","contractTerm":null,"valuationAmountKrw":28210000,"weightPct":35,"oneYearReturnPct":1.26,"openedAt":"2025-08-19","allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{"재직상태":"재직","디폴트옵션변경의향":null,"현재보유상품변경의향":null},"납입및세제":{},"계좌운영":{},"퇴직및인출":{},"최근사건":[],"금융거래":[],"상담이력":[],"외부계좌":[],"투자성향이력":[{"이력식별자":"R001","분석일":"2024-01-15","투자성향":"위험중립형","현재여부":false},{"이력식별자":"R002","분석일":"2026-08-29","투자성향":"적극투자형","현재여부":true}],"운용정책":{},"상품진단":[],"계산지표":[{"지표식별자":"M001","지표유형":"파생값","지표명":"최근투자성향변경일","대상참조":null,"값":"2026-08-29","단위":null,"산출기준일":"2026-09-14"},{"지표식별자":"M002","지표유형":"파생값","지표명":"투자성향변경후경과일수","대상참조":null,"값":16,"단위":"일","산출기준일":"2026-09-14"},{"지표식별자":"M003","지표유형":"파생값","지표명":"이전투자성향","대상참조":null,"값":"위험중립형","단위":null,"산출기준일":"2026-09-14"},{"지표식별자":"M004","지표유형":"파생값","지표명":"현재투자성향","대상참조":null,"값":"적극투자형","단위":null,"산출기준일":"2026-09-14"},{"지표식별자":"M005","지표유형":"파생값","지표명":"현재디폴트옵션위험등급","대상참조":null,"값":"초저위험","단위":null,"산출기준일":"2026-09-14"},{"지표식별자":"M006","지표유형":"파생값","지표명":"디폴트옵션지정후투자성향변경여부","대상참조":null,"값":true,"단위":null,"산출기준일":"2026-09-14"},{"지표식별자":"M007","지표유형":"파생값","지표명":"현재보유상품디폴트옵션적용금액","대상참조":null,"값":0,"단위":"원","산출기준일":"2026-09-14"}],"확인된특이사항":[],"디지털행동":[{"채널":"KB스타뱅킹","행동유형":"ETF 상품조회","최근조회일":"2026-09-05","조회횟수":2,"정보출처":"시연용 가상 행동로그"}],"가상설정메모":["2026-09-17 시연 설계: ETF 상품조회 2회 가상 행동로그 추가. 조회는 조회일 뿐 매수·전환·개시 의향은 미확인 상태 유지."]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B10-08","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"40725-68193","name":"장현수","age":59,"gender":"남","starClubGrade":"VVIP","investmentProfile":"적극투자형","irpOpenedAt":"2017-04-11","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-008","productName":"모두드림","riskLevel":"고위험"},"applicationStatus":"미적용"}},"signals":[{"label":"ETF 상품조회","date":"2026-08-25","source":"가상 행동로그"},{"label":"보유상품 수익률 조회","date":"2026-09-09","source":"가상 행동로그"}],"irpAccount":{"valuationAmountKrw":120000000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":18000000,"weightPct":15},{"assetType":"실적배당형","amountKrw":102000000,"weightPct":85},{"assetType":"현금성자산","amountKrw":0,"weightPct":0}],"oneYearReturnPct":16.4,"taxDeductionRemainingKrw":0,"latestProductOpening":{"holdingId":"H002","productId":"ETF-010","productName":"SOL 미국배당다우존스","openedAt":"2026-08-27","amountKrw":30000000}},"holdings":[{"holdingId":"H001","productId":"MF-001","productName":"KB 온국민 TDF 시리즈","assetType":"실적배당형","productCategory":"TDF","contractTerm":null,"valuationAmountKrw":72000000,"weightPct":60,"oneYearReturnPct":15.27,"openedAt":"2023-05-18","allocationBreakdown":null,"flags":[]},{"holdingId":"H002","productId":"ETF-010","productName":"SOL 미국배당다우존스","assetType":"실적배당형","productCategory":"ETF","contractTerm":null,"valuationAmountKrw":30000000,"weightPct":25,"oneYearReturnPct":26.89,"openedAt":"2026-08-27","allocationBreakdown":null,"flags":[]},{"holdingId":"H003","productId":"SAV-001","productName":"KB저축은행 퇴직연금 정기예금","assetType":"원리금보장형","productCategory":"정기예금","contractTerm":"1년","valuationAmountKrw":18000000,"weightPct":15,"oneYearReturnPct":3.5,"openedAt":"2025-11-02","allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{"재직상태":null,"은퇴계획":{"등록여부":true,"예상은퇴일":"2029-06-30"},"현재위험수준유지의향":null,"미국배당주ETF투자목적":null},"납입및세제":{},"계좌운영":{},"퇴직및인출":{"은퇴초기필요금액원":null},"최근사건":[{"이벤트식별자":"T001","발생일시":"2026-08-27T13:46:00+09:00","이벤트유형":"상품매수","계좌구분":"IRP","관련보유상품식별자":"H002","금액원":30000000,"처리상태":"완료","채널":"KB스타뱅킹"}],"금융거래":[],"상담이력":[{"상담식별자":"CRM001","상담일시":"2026-09-02T11:15:00+09:00","상담채널":"영업점전화","상담유형":"퇴직연금사후관리","상담메모":"고객은 TDF를 보유하고 있으므로 별도로 매수한 ETF를 포함한 IRP 전체 위험도 은퇴시점에 맞춰 자동 조정될 것으로 생각한다고 말함. ETF 유지 의향이나 은퇴 초기 사용금액은 확인하지 않음."}],"외부계좌":[],"투자성향이력":[],"운용정책":{},"상품진단":[{"진단구분":"자산노출분석","분석기준일":"2026-09-10","타깃데이트펀드주식노출확인여부":true,"별도상장지수펀드주식노출확인여부":true,"중복주식노출확인여부":null,"합산주식노출금액원":null,"합산주식노출비중":null,"중복주식노출금액원":null,"중복상세투자대상":null},{"진단구분":"미산출지표","지표명":"합산주식노출비중","값":null}],"계산지표":[{"지표식별자":"M001","지표유형":"파생값","지표명":"예상은퇴일까지남은일수","대상참조":null,"값":1020,"단위":"일","산출기준일":"2026-09-14"},{"지표식별자":"M002","지표유형":"파생값","지표명":"예상은퇴일까지남은연수","대상참조":null,"값":2.8,"단위":"년","산출기준일":"2026-09-14"},{"지표식별자":"M003","지표유형":"파생값","지표명":"TDF비중","대상참조":null,"값":60,"단위":"%","산출기준일":"2026-09-14"},{"지표식별자":"M004","지표유형":"파생값","지표명":"미국배당주ETF비중","대상참조":null,"값":25,"단위":"%","산출기준일":"2026-09-14"},{"지표식별자":"M005","지표유형":"파생값","지표명":"ETF추가후경과일수","대상참조":null,"값":18,"단위":"일","산출기준일":"2026-09-14"}],"확인된특이사항":["SOL 미국배당다우존스를 테마형ETF로 단정하던 표현 수정. TDF 실제 편입자산이 없어 중복 규모·대상은 미확인으로 정정. 상품수익률·계좌수익률은 시연값이며 신규 매수 이후 고객수익률과 다름."],"디지털행동":[{"채널":"KB스타뱅킹","행동유형":"보유상품 수익률 조회","최근조회일":"2026-09-09","조회횟수":2,"정보출처":"시연용 가상 행동로그"},{"채널":"KB스타뱅킹","행동유형":"ETF 상품조회","최근조회일":"2026-08-25","조회횟수":3,"정보출처":"시연용 가상 행동로그"}],"가상설정메모":["2026-09-17 시연 설계: 보유상품 수익률 조회 2회 가상 행동로그 추가. 조회는 조회일 뿐 매수·전환·개시 의향은 미확인 상태 유지.","2026-09-17 시연 설계: ETF 매수(8/27) 이틀 전 ETF 상품조회 3회 가상 행동로그 추가."]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B10-16","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"85136-42907","name":"류성민","age":34,"gender":"남","starClubGrade":"VIP","investmentProfile":"안정추구형","irpOpenedAt":"2018-12-03","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-003","productName":"알파드림II","riskLevel":"저위험"},"applicationStatus":"미적용"}},"signals":[{"label":"판매중단 펀드 보유","date":"2026-01-30"},{"label":"환매추천 펀드 보유","date":"2026-08-31"},{"label":"수익률 부진"}],"irpAccount":{"valuationAmountKrw":93800000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":28140000,"weightPct":30},{"assetType":"실적배당형","amountKrw":65660000,"weightPct":70},{"assetType":"현금성자산","amountKrw":0,"weightPct":0}],"oneYearReturnPct":-2.8,"taxDeductionRemainingKrw":1200000,"latestProductOpening":{"holdingId":"H002","productId":"SAV-001","productName":"KB저축은행 퇴직연금 정기예금","openedAt":"2025-10-14","amountKrw":28140000}},"holdings":[{"holdingId":"H001","productId":null,"productName":"장기 국내채권 펀드 A (시연용 가상상품)","assetType":"실적배당형","productCategory":"채권형펀드","contractTerm":null,"valuationAmountKrw":65660000,"weightPct":70,"oneYearReturnPct":-5.51,"openedAt":"2019-05-14","allocationBreakdown":null,"flags":[]},{"holdingId":"H002","productId":"SAV-001","productName":"KB저축은행 퇴직연금 정기예금","assetType":"원리금보장형","productCategory":"정기예금","contractTerm":"1년","valuationAmountKrw":28140000,"weightPct":30,"oneYearReturnPct":3.5,"openedAt":"2025-10-14","allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{"재직상태":null,"보유지속사유":null,"일부교체수용의향":null},"납입및세제":{},"계좌운영":{},"퇴직및인출":{},"최근사건":[{"이벤트식별자":"T001","발생일시":"2026-01-30T00:00:00+09:00","이벤트유형":"신규판매중단","계좌구분":"IRP","관련보유상품식별자":"H001","금액원":null,"처리상태":"완료","채널":null,"사유":"시연 설정상 성과부진","데이터성격":"가상상품의 가상 관리 이벤트. 실제 금융상품 판매상태가 아님"}],"금융거래":[],"상담이력":[],"외부계좌":[],"투자성향이력":[],"운용정책":{},"상품진단":[{"진단구분":"성과비교","비교식별자":"PERF001","관련보유상품식별자":"H001","비교유형":"상품관리자료상동일유형","성과기간":"최근6개월","성과기준일":"2026-08-31","보유펀드수익률":-4.8,"동일유형비교대상수익률":1.3,"성과차이퍼센트포인트":-6.1},{"진단구분":"미산출지표","지표명":"현재평가손익","값":null},{"진단구분":"관리플래그","관련보유상품식별자":"H001","플래그":"환매추천","지정일":"2026-08-31","사유":"동일유형 대비 성과부진 지속","데이터성격":"가상상품의 가상 관리 플래그. 실제 금융상품 관리상태가 아님"}],"계산지표":[{"지표식별자":"M001","지표유형":"파생값","지표명":"주요펀드보유기간일수","대상참조":null,"값":2680,"단위":"일","산출기준일":"2026-09-14"},{"지표식별자":"M002","지표유형":"파생값","지표명":"주요펀드보유기간년수","대상참조":null,"값":7.3,"단위":"년","산출기준일":"2026-09-14"},{"지표식별자":"M003","지표유형":"파생값","지표명":"주요펀드비중","대상참조":null,"값":70,"단위":"%","산출기준일":"2026-09-14"},{"지표식별자":"M004","지표유형":"파생값","지표명":"최근동일유형대비성과차이퍼센트포인트","대상참조":null,"값":-6.1,"단위":"%p","산출기준일":"2026-09-14"}],"확인된특이사항":["실제 상품 MF-017에 판매중단 가상사건이 사실처럼 연결되지 않도록 보유상품을 시연용 가상 국내채권펀드A로 분리. 성과·판매중단일은 교육용 가상값. 실제 대안FND-003의 판매상태·클래스·듀레이션·신용위험은 확인 필요.","2026-09-17 시연 설계: 가상 채권펀드A에 환매추천 관리플래그(8/31) 추가. 환매추천 펀드 보유 뱃지 근거."]}},{"schemaVersion":"customer-briefing-display.v0.1","briefingMeta":{"caseId":"B10-25","dataType":"시연용가상고객","asOfDate":"2026-09-14","generatedAt":"2026-09-14T07:00:00+09:00","currency":"KRW"},"customer":{"customerId":"31579-86420","name":"한미경","age":37,"gender":"여","starClubGrade":"VIP","investmentProfile":"안정추구형","irpOpenedAt":"2018-02-07","defaultOption":{"registrationStatus":"등록","designatedProduct":{"productId":"DO-003","productName":"알파드림II","riskLevel":"저위험"},"applicationStatus":"미적용"}},"signals":[{"label":"판매중단 펀드 보유","date":"2026-01-30"},{"label":"수익률 부진"},{"label":"장기 미운용"}],"irpAccount":{"valuationAmountKrw":82400000,"assetAllocation":[{"assetType":"원리금보장형","amountKrw":24720000,"weightPct":30},{"assetType":"실적배당형","amountKrw":57680000,"weightPct":70},{"assetType":"현금성자산","amountKrw":0,"weightPct":0}],"oneYearReturnPct":-2.8,"taxDeductionRemainingKrw":800000,"latestProductOpening":{"holdingId":"H002","productId":"SAV-003","productName":"NH저축은행 퇴직연금 정기예금","openedAt":"2025-12-16","amountKrw":24720000}},"holdings":[{"holdingId":"H001","productId":null,"productName":"장기 국내채권 펀드 A (시연용 가상상품)","assetType":"실적배당형","productCategory":"채권형펀드","contractTerm":null,"valuationAmountKrw":57680000,"weightPct":70,"oneYearReturnPct":-5.51,"openedAt":"2018-10-26","allocationBreakdown":null,"flags":[]},{"holdingId":"H002","productId":"SAV-003","productName":"NH저축은행 퇴직연금 정기예금","assetType":"원리금보장형","productCategory":"정기예금","contractTerm":"1년","valuationAmountKrw":24720000,"weightPct":30,"oneYearReturnPct":3.6,"openedAt":"2025-12-16","allocationBreakdown":null,"flags":[]}],"에이전트맥락데이터":{"스키마버전":"customer-agent-context.v0.1","고객계획":{"재직상태":null,"손실인지여부":true,"유지교체결정상태":"미결정","남은운용가능기간":null,"기존전략유지의향":null,"일부교체수용의향":null},"납입및세제":{},"계좌운영":{},"퇴직및인출":{},"최근사건":[{"이벤트식별자":"T001","발생일시":"2026-01-30T00:00:00+09:00","이벤트유형":"신규판매중단","계좌구분":"IRP","관련보유상품식별자":"H001","금액원":null,"처리상태":"완료","채널":null,"사유":"시연 설정상 성과부진","데이터성격":"가상상품의 가상 관리 이벤트. 실제 금융상품 판매상태가 아님"}],"금융거래":[],"상담이력":[{"상담식별자":"CRM001","상담일시":"2026-09-05T10:35:00+09:00","상담채널":"영업점전화","상담유형":"퇴직연금사후관리","상담메모":"고객은 해당 펀드의 평가손실과 신규판매 중단 사실을 알고 있으나 계속 보유할지 다른 상품으로 변경할지 아직 결정하지 못했다고 말함. 특정 대체상품이나 부분교체 의향은 확인하지 않음."}],"외부계좌":[],"투자성향이력":[],"운용정책":{"장기미운용판정기준":{"기준개월수":24,"정기예금자동재예치포함여부":false}},"상품진단":[{"진단구분":"상품운용이력요약","조회시작일":"2018-02-07","조회종료일":"2026-09-11","최근운용변경일":"2018-10-26","최근운용변경내용":"채권형펀드 매수","정기예금자동재예치제외여부":true,"운용변경없는개월수":94,"장기미운용판정":true}],"계산지표":[{"지표식별자":"M001","지표유형":"파생값","지표명":"주요펀드보유기간일수","대상참조":null,"값":2880,"단위":"일","산출기준일":"2026-09-14"},{"지표식별자":"M002","지표유형":"파생값","지표명":"주요펀드보유기간년수","대상참조":null,"값":7.9,"단위":"년","산출기준일":"2026-09-14"},{"지표식별자":"M003","지표유형":"파생값","지표명":"주요펀드비중","대상참조":null,"값":70,"단위":"%","산출기준일":"2026-09-14"},{"지표식별자":"M004","지표유형":"파생값","지표명":"주요펀드평가손실금액","대상참조":null,"값":8120000,"단위":"원","산출기준일":"2026-09-14"},{"지표식별자":"M005","지표유형":"파생값","지표명":"주요펀드평가손실률","대상참조":null,"값":12.34,"단위":"%","산출기준일":"2026-09-14"},{"지표식별자":"M006","지표유형":"기간","지표명":"최근 운용변경 후 경과개월수(예금 자동재예치 제외)","대상참조":"H001","값":94,"단위":"개월","산출기준일":"2026-09-14"}],"확인된특이사항":["실제 상품 MF-017에 판매중단 가상사건이 사실처럼 연결되지 않도록 보유상품을 시연용 가상 국내채권펀드A로 분리. 성과·판매중단일은 교육용 가상값. 실제 대안FND-003의 판매상태·클래스·듀레이션·신용위험은 확인 필요.","2026-09-17 시연 설계: 장기미운용 판정기준(24개월, 예금 자동재예치 제외)과 운용이력요약 추가. 장기 미운용 뱃지 근거."]}}]};
-window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by the .pad-branch- class prefix instead of #pensionAgentDemo:\n * the floating widget is mounted on document.body because the Starroot shell wraps the business page in a\n * transformed .pt-page, inside which position:fixed would follow the page scroll. No tag or global selectors. */\n.pad-branch-widget{position:relative;z-index:10000;font-family:inherit;font-size:13px;color:#26282c;line-height:1.6}\n.pad-branch-widget *{box-sizing:border-box}\n.pad-branch-widget [hidden]{display:none!important}\n.pad-branch-widget button,.pad-branch-widget textarea{font:inherit}\n.pad-branch-widget button{cursor:pointer;-webkit-appearance:none}\n.pad-branch-widget button:disabled{cursor:default;opacity:.45}\n.pad-branch-widget button:focus-visible,.pad-branch-widget textarea:focus-visible{outline:3px solid #867120;outline-offset:3px}\n.pad-branch-launcher{position:fixed;right:24px;bottom:24px;display:flex;align-items:center;gap:9px;height:52px;min-width:116px;padding:0 18px;border:1px solid #e6b800;border-radius:28px;background:#ffcc00;color:#26282c;font-size:14px;font-weight:700;box-shadow:0 6px 18px #47390024;transition:transform .16s,box-shadow .16s}\n.pad-branch-launcher:hover{transform:translateY(-2px);box-shadow:0 9px 23px #47390032}\n.pad-branch-launcher.is-open{background:#282a2e;border-color:#282a2e;color:#fff}\n.pad-branch-window{position:fixed;right:24px;bottom:88px;width:min(380px,calc(100vw - 32px));height:min(640px,calc(100dvh - 118px));height:min(640px,calc(100vh - 118px));display:flex;flex-direction:column;border:1px solid #dedfdc;border-radius:18px;background:#fff;box-shadow:0 18px 60px #20252b26,0 3px 12px #20252b12;overflow:hidden;transform-origin:bottom right;animation:padBranchOpen .18s ease-out}\n.pad-branch-header{height:66px;min-height:66px;display:flex;align-items:center;gap:10px;padding:12px 14px 12px 18px;border-bottom:1px solid #f0f0ed}\n.pad-branch-avatar{width:35px;height:35px;display:grid;place-items:center;border-radius:12px;background:#fff3c2;color:#766117;flex-shrink:0}\n.pad-branch-heading{flex:1;display:flex;flex-direction:column;gap:1px}\n.pad-branch-heading strong{font-size:15px;font-weight:700;letter-spacing:-.3px}\n.pad-branch-icon{border:0;background:transparent;color:#70757d;width:30px;height:32px;display:grid;place-items:center;border-radius:8px;padding:4px}\n.pad-branch-icon:hover{background:#f2f3f4}\n.pad-branch-context{padding:7px 16px;font-size:10px;color:#6c6f73;background:#fffdf4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-bottom:1px solid #f3edda}\n.pad-branch-body{position:relative;flex:1;min-height:60px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#d4d6d8 transparent;padding:18px 16px 20px}\n.pad-branch-welcome{padding:12px 2px 0}\n.pad-branch-welcome .pad-branch-welcome-title{font-size:18px;letter-spacing:-.6px;margin:0 0 14px;line-height:1.5}\n.pad-branch-suggestions{display:flex;flex-direction:column;gap:7px}\n.pad-branch-suggestions button{width:100%;display:flex;align-items:center;justify-content:space-between;min-height:40px;text-align:left;padding:9px 13px;border:1px solid #e9e9e5;background:#fff;border-radius:10px;color:#4e545c;font-size:12px;transition:background .15s}\n.pad-branch-suggestions button:hover{background:#fffbee;border-color:#e7d88e}\n.pad-branch-suggestions span{color:#949996}\n.pad-branch-messages{display:flex;flex-direction:column;gap:18px}\n.pad-branch-message{font-size:12px;line-height:1.8;max-width:100%;word-break:keep-all;overflow-wrap:anywhere;animation:padBranchMessage .16s ease-out}\n.pad-branch-message p{margin:0;white-space:pre-wrap}\n.pad-branch-message.is-user{align-self:flex-end;max-width:90%;background:#fff3bd;border-radius:13px 13px 3px 13px;padding:10px 13px;color:#403a28}\n.pad-branch-message.is-assistant{align-self:flex-start;max-width:100%;padding:0 2px 0}\n.pad-branch-message.is-system,.pad-branch-system{font-size:10px;text-align:center;align-self:center;color:#8c9094;padding:4px 6px}\n.pad-branch-result-action{border:1px solid #d9dad5;border-radius:8px;background:#fff;padding:7px 10px;color:#555b60;font-size:11px;margin-top:10px;font-weight:700}\n.pad-branch-result-action:hover{background:#f6f7f4}\n.pad-branch-typing{display:flex;gap:4px;margin-top:7px}\n.pad-branch-typing i{width:4px;height:4px;border-radius:100%;background:#9c9680;animation:padBranchDot 1s infinite}\n.pad-branch-typing i:nth-child(2){animation-delay:.13s}\n.pad-branch-typing i:nth-child(3){animation-delay:.26s}\n.pad-branch-footer{padding:8px 13px 10px;border-top:1px solid #f0f0ed;background:#fff;flex-shrink:0}\n.pad-branch-tools{display:flex;align-items:center;gap:10px;padding:0 3px 8px}\n.pad-branch-tools button{padding:0;border:0;background:none;color:#777d83;font-size:10px}\n.pad-branch-tools button:hover{color:#353a40;text-decoration:underline}\n.pad-branch-composer{display:flex;align-items:flex-end;gap:7px;padding:9px 8px 9px 12px;border:1px solid #dadcd9;border-radius:12px;background:#fff;margin:0}\n.pad-branch-composer:focus-within{border-color:#b8a252;box-shadow:0 0 0 2px #fff3c270}\n.pad-branch-composer textarea{width:100%;min-height:28px;max-height:92px;resize:none;border:0;background:none;outline:none!important;color:#26282c;font-size:12px;line-height:1.6;padding:4px 0;margin:0;overflow-y:auto}\n.pad-branch-composer textarea::placeholder{font-size:11px!important;font-weight:400!important;color:#9c9fa3!important;-webkit-text-fill-color:#9c9fa3!important;text-align:left!important}\n.pad-branch-send{width:30px;height:30px;flex-shrink:0;display:grid;place-items:center;border:0;border-radius:9px;background:#ffcc00;color:#282a2e;padding:4px}\n.pad-branch-disclaimer{font-size:9px;color:#9b9e9f;text-align:center;padding-top:7px}\n.pad-branch-examples{max-height:230px;overflow:auto;border-top:1px solid #e7e8e2;background:#fafbf8;padding:10px 14px;overscroll-behavior:contain}\n.pad-branch-examples button{display:flex;gap:8px;width:100%;text-align:left;padding:9px 0;background:transparent;border:0;border-top:1px solid #eeeeea;font-size:11px;color:#535960}\n@keyframes padBranchOpen{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}\n@keyframes padBranchMessage{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}\n@keyframes padBranchDot{0%,70%,100%{opacity:.3;transform:translateY(0)}35%{opacity:1;transform:translateY(-3px)}}\n@media(prefers-reduced-motion:reduce){.pad-branch-widget *{animation:none!important;transition:none!important}.pad-branch-launcher:hover{transform:none}}\n.pad-branch-widget{font-family:'KBFG Text','KBText','Pretendard Variable','Malgun Gothic',sans-serif}\n@media(prefers-reduced-motion:reduce){.pad-branch-widget *{animation:none!important;transition:none!important}}\n/* Waiting and completion states. The list pill reuses the page's own .pad-spinner. */\n.pad-branch-status{color:#6f7480}\n.pad-branch-caret{display:inline-block;width:2px;height:1em;margin-left:2px;vertical-align:-2px;background:#7a6a38;animation:padBranchCaret .8s steps(1) infinite}\n.pad-branch-send.is-stop{background:#282a2e;color:#fff}\n.pad-branch-followups{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}\n.pad-branch-followups button{padding:5px 11px;border:1px solid #e3d9ae;border-radius:999px;background:#fffbea;color:#6b5a2c;font-size:11px;line-height:1.5;cursor:pointer}\n.pad-branch-followups button:hover{background:#fff3c2;border-color:#d9c77a}\n.pad-branch-launcher.has-unread::after{content:'';position:absolute;top:-3px;right:-3px;width:12px;height:12px;border-radius:50%;background:#dc2626;border:2px solid #fff}\n#pensionAgentDemo .pad-branch-list--busy .pad-queue-item{filter:opacity(.45);pointer-events:none;transition:filter .2s}\n#pensionAgentDemo .pad-branch-loading{position:sticky;top:12px;z-index:5;height:0;margin-bottom:-8px;display:flex;justify-content:center;overflow:visible}\n#pensionAgentDemo .pad-branch-loading__pill{display:flex;align-items:center;gap:10px;padding:8px 16px;background:#fff;border:1px solid #E2E4E8;border-radius:999px;box-shadow:0 6px 18px #20252b1a;animation:padBranchMessage .16s ease-out}\n#pensionAgentDemo .pad-branch-loading__msg{font-size:var(--pad-fs-13,13px);color:var(--pad-c-sub,#696E76)}\n#pensionAgentDemo .pad-h2.pad-branch-updated{animation:padBranchTitleFlash 1.2s ease-out}\n#pensionAgentDemo .pad-branch-updated-tag{display:inline-block;margin-left:8px;padding:2px 9px;border-radius:999px;background:#FFF3C2;color:#7A6108;font-size:11px;font-weight:700;vertical-align:middle;animation:padBranchTagOut 2.6s ease-in forwards}\n@keyframes padBranchCaret{50%{opacity:0}}\n@keyframes padBranchTitleFlash{0%{box-shadow:0 0 0 8px #ffe680;background:#fff3c2}100%{box-shadow:0 0 0 8px transparent;background:transparent}}\n@keyframes padBranchTagOut{0%,70%{opacity:1}100%{opacity:0}}\n";
+window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by the .pad-branch- class prefix instead of #pensionAgentDemo:\n * the floating widget is mounted on document.body because the Starroot shell wraps the business page in a\n * transformed .pt-page, inside which position:fixed would follow the page scroll. No tag or global selectors. */\n.pad-branch-widget{position:relative;z-index:10000;font-family:inherit;font-size:13px;color:#26282c;line-height:1.6}\n.pad-branch-widget *{box-sizing:border-box}\n.pad-branch-widget [hidden]{display:none!important}\n.pad-branch-widget button,.pad-branch-widget textarea{font:inherit}\n.pad-branch-widget button{cursor:pointer;-webkit-appearance:none}\n.pad-branch-widget button:disabled{cursor:default;opacity:.45}\n.pad-branch-widget button:focus-visible,.pad-branch-widget textarea:focus-visible{outline:3px solid #867120;outline-offset:3px}\n.pad-branch-launcher{position:fixed;right:24px;bottom:24px;display:flex;align-items:center;gap:9px;height:52px;min-width:116px;padding:0 18px;border:1px solid #e6b800;border-radius:28px;background:#ffcc00;color:#26282c;font-size:14px;font-weight:700;box-shadow:0 6px 18px #47390024;transition:transform .16s,box-shadow .16s}\n.pad-branch-launcher:hover{transform:translateY(-2px);box-shadow:0 9px 23px #47390032}\n.pad-branch-launcher.is-open{background:#282a2e;border-color:#282a2e;color:#fff}\n.pad-branch-window{position:fixed;right:24px;bottom:88px;width:min(380px,calc(100vw - 32px));height:min(640px,calc(100dvh - 118px));height:min(640px,calc(100vh - 118px));display:flex;flex-direction:column;border:1px solid #dedfdc;border-radius:18px;background:#fff;box-shadow:0 18px 60px #20252b26,0 3px 12px #20252b12;overflow:hidden;transform-origin:bottom right;animation:padBranchOpen .18s ease-out}\n.pad-branch-header{height:66px;min-height:66px;display:flex;align-items:center;gap:10px;padding:12px 14px 12px 18px;border-bottom:1px solid #f0f0ed}\n.pad-branch-logo{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:7px;background:#FFCC00;color:#26282C;font-size:11px;font-weight:700;letter-spacing:-.03em;flex:none}\n.pad-branch-heading{flex:1;display:flex;flex-direction:column;gap:1px}\n.pad-branch-heading strong{font-size:14px;font-weight:700}\n.pad-branch-heading > span{font-size:10px;color:#777D85}\n.pad-branch-icon{border:0;background:transparent;color:#70757d;width:30px;height:32px;display:grid;place-items:center;border-radius:8px;padding:4px}\n.pad-branch-icon:hover{background:#f2f3f4}\n.pad-branch-context{padding:7px 16px;font-size:10px;color:#6c6f73;background:#fffdf4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-bottom:1px solid #f3edda}\n.pad-branch-body{position:relative;flex:1;min-height:60px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#d4d6d8 transparent;padding:18px 16px 20px}\n.pad-branch-welcome{padding:4px 2px 0}\n.pad-branch-welcome .pad-branch-welcome-title{font-size:18px;font-weight:700;letter-spacing:-.7px;margin:0 0 12px;line-height:1.5}\n.pad-branch-welcome-desc{margin:0;color:#696E76;font-size:12px;line-height:1.8;word-break:keep-all}\n.pad-branch-welcome-note{margin:10px 0 18px;padding-left:9px;border-left:2px solid #E6D9A1;color:#7B776B;font-size:11px;line-height:1.6;word-break:keep-all}\n.pad-branch-suggestions{display:flex;flex-direction:column;gap:7px}\n.pad-branch-suggestions button{width:100%;display:flex;align-items:center;justify-content:space-between;min-height:40px;text-align:left;padding:9px 13px;border:1px solid #e9e9e5;background:#fff;border-radius:10px;color:#4e545c;font-size:12px;transition:background .15s}\n.pad-branch-suggestions button:hover{background:#fffbee;border-color:#e7d88e}\n.pad-branch-suggestion-copy{display:flex;flex-direction:column;gap:3px;min-width:0}\n.pad-branch-suggestion-label{font-size:10px;color:#8A8061;font-weight:600}\n.pad-branch-suggestion-question{color:#40474F;font-size:12px;line-height:1.6;word-break:keep-all}\n.pad-branch-suggestion-arrow{flex-shrink:0;margin-left:10px;color:#949996}\n.pad-branch-messages{display:flex;flex-direction:column;gap:18px}\n.pad-branch-message{font-size:12px;line-height:1.8;max-width:100%;word-break:keep-all;overflow-wrap:anywhere;animation:padBranchMessage .16s ease-out}\n.pad-branch-message p{margin:0;white-space:pre-wrap}\n.pad-branch-message.is-user{align-self:flex-end;max-width:90%;background:#fff3bd;border-radius:13px 13px 3px 13px;padding:10px 13px;color:#403a28}\n.pad-branch-message.is-assistant{align-self:flex-start;max-width:100%;padding:0 2px 0}\n.pad-branch-message.is-system,.pad-branch-system{font-size:10px;text-align:center;align-self:center;color:#8c9094;padding:4px 6px}\n.pad-branch-result-action{border:1px solid #d9dad5;border-radius:8px;background:#fff;padding:7px 10px;color:#555b60;font-size:11px;margin-top:10px;font-weight:700}\n.pad-branch-result-action:hover{background:#f6f7f4}\n.pad-branch-typing{display:flex;gap:4px;margin-top:7px}\n.pad-branch-typing i{width:4px;height:4px;border-radius:100%;background:#9c9680;animation:padBranchDot 1s infinite}\n.pad-branch-typing i:nth-child(2){animation-delay:.13s}\n.pad-branch-typing i:nth-child(3){animation-delay:.26s}\n.pad-branch-footer{padding:8px 13px 10px;border-top:1px solid #f0f0ed;background:#fff;flex-shrink:0}\n.pad-branch-tools{display:flex;align-items:center;gap:10px;padding:0 3px 8px}\n.pad-branch-tools button{padding:0;border:0;background:none;color:#777d83;font-size:10px}\n.pad-branch-tools button:hover{color:#353a40;text-decoration:underline}\n.pad-branch-composer{display:flex;align-items:flex-end;gap:7px;padding:9px 8px 9px 12px;border:1px solid #dadcd9;border-radius:12px;background:#fff;margin:0}\n.pad-branch-composer:focus-within{border-color:#b8a252;box-shadow:0 0 0 2px #fff3c270}\n.pad-branch-composer textarea{width:100%;min-height:28px;max-height:92px;resize:none;border:0;background:none;outline:none!important;color:#26282c;font-size:12px;line-height:1.6;padding:4px 0;margin:0;overflow-y:auto}\n.pad-branch-composer textarea::placeholder{font-size:11px!important;font-weight:400!important;color:#9c9fa3!important;-webkit-text-fill-color:#9c9fa3!important;text-align:left!important}\n.pad-branch-send{width:30px;height:30px;flex-shrink:0;display:grid;place-items:center;border:0;border-radius:9px;background:#ffcc00;color:#282a2e;padding:4px}\n.pad-branch-disclaimer{font-size:9px;color:#9b9e9f;text-align:center;padding-top:7px}\n.pad-branch-examples{max-height:230px;overflow:auto;border-top:1px solid #e7e8e2;background:#fafbf8;padding:10px 14px;overscroll-behavior:contain}\n.pad-branch-examples button{display:flex;gap:8px;width:100%;text-align:left;padding:9px 0;background:transparent;border:0;border-top:1px solid #eeeeea;font-size:11px;color:#535960}\n.pad-branch-example-group + .pad-branch-example-group{margin-top:12px}\n.pad-branch-example-label{padding:2px 0 6px;font-size:10px;font-weight:700;color:#82734D}\n@keyframes padBranchOpen{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}\n@keyframes padBranchMessage{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}\n@keyframes padBranchDot{0%,70%,100%{opacity:.3;transform:translateY(0)}35%{opacity:1;transform:translateY(-3px)}}\n@media(prefers-reduced-motion:reduce){.pad-branch-widget *{animation:none!important;transition:none!important}.pad-branch-launcher:hover{transform:none}}\n.pad-branch-widget{font-family:'KBFG Text','KBText','Pretendard Variable','Malgun Gothic',sans-serif}\n@media(prefers-reduced-motion:reduce){.pad-branch-widget *{animation:none!important;transition:none!important}}\n/* Waiting and completion states. Main-list effects stay inside the business-page root. */\n.pad-branch-status{color:#6f7480}\n.pad-branch-caret{display:inline-block;width:2px;height:1em;margin-left:2px;vertical-align:-2px;background:#7a6a38;animation:padBranchCaret .8s steps(1) infinite}\n.pad-branch-send.is-stop{background:#282a2e;color:#fff}\n.pad-branch-followups{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}\n.pad-branch-followups button{padding:5px 11px;border:1px solid #e3d9ae;border-radius:999px;background:#fffbea;color:#6b5a2c;font-size:11px;line-height:1.5;cursor:pointer}\n.pad-branch-followups button:hover{background:#fff3c2;border-color:#d9c77a}\n.pad-branch-launcher.has-unread::after{content:'';position:absolute;top:-3px;right:-3px;width:12px;height:12px;border-radius:50%;background:#dc2626;border:2px solid #fff}\n#pensionAgentDemo .pad-branch-list--busy{cursor:wait}\n#pensionAgentDemo .pad-branch-list--busy .pad-queue-item,#pensionAgentDemo .pad-branch-skeleton-card{position:relative;background:#fff;border-color:#E6EAF0;box-shadow:none;opacity:1!important;animation:none!important;pointer-events:none}\n#pensionAgentDemo .pad-branch-list--busy .pad-queue-item > *{visibility:hidden}\n#pensionAgentDemo .pad-branch-list--busy .pad-queue-item::after,#pensionAgentDemo .pad-branch-skeleton-card::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(#E3E8EE,#E3E8EE) 20px 18px / 88px 12px no-repeat,linear-gradient(#EDF0F4,#EDF0F4) 122px 19px / 62px 10px no-repeat,linear-gradient(#EDF0F4,#EDF0F4) 20px 43px / 34% 10px no-repeat,linear-gradient(#E8EDF2,#E8EDF2) right 52px top 30px / 78px 12px no-repeat}\n#pensionAgentDemo .pad-branch-list--busy .pad-branch-skeleton-active::after{animation:padBranchSkeleton 1.6s ease-in-out infinite}\n#pensionAgentDemo .pad-branch-skeleton-card{height:78px;margin-bottom:8px;border:1px solid #E6EAF0;border-radius:var(--pad-r-lg,12px)}\n#pensionAgentDemo .pad-branch-list-head{position:relative}\n#pensionAgentDemo .pad-branch-query-state{display:inline-flex;margin-left:10px;vertical-align:middle}\n#pensionAgentDemo .pad-branch-query-donut{display:block;width:15px;height:15px;box-sizing:border-box;border:2px solid #ECEFF3;border-top-color:#B49737;border-right-color:#B49737;border-radius:50%;animation:padBranchDonut .8s linear infinite}\n#pensionAgentDemo .pad-branch-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}\n#pensionAgentDemo .pad-branch-progress{position:absolute;left:0;right:0;bottom:-7px;height:2px;overflow:hidden;border-radius:2px;background:#F5EDD3;pointer-events:none}\n#pensionAgentDemo .pad-branch-progress::after{content:'';display:block;width:28%;height:100%;background:linear-gradient(90deg,transparent,#FFCC00 45%,#DDA900 65%,transparent);animation:padBranchProgress 1.5s ease-in-out infinite}\n#pensionAgentDemo .pad-h2.pad-branch-result-pulse{border-radius:4px;animation:padBranchResultPulse .7s ease-out both}\n#pensionAgentDemo .pad-branch-customer-arrival{position:relative}\n#pensionAgentDemo .pad-branch-customer-arrival::after{content:'';position:absolute;inset:-1px;border:1px solid #B6C7D7;border-radius:inherit;pointer-events:none;opacity:0;background:linear-gradient(105deg,transparent 30%,#A2B9CF 48%,#D7E4EF 53%,transparent 70%) 100% top / 240% 1px no-repeat,linear-gradient(105deg,transparent 30%,#A2B9CF 48%,#D7E4EF 53%,transparent 70%) 100% bottom / 240% 1px no-repeat;animation:padBranchBorderLight .9s ease-in-out var(--pad-branch-border-delay,250ms) both}\n@keyframes padBranchCaret{50%{opacity:0}}\n@keyframes padBranchProgress{from{transform:translateX(-110%)}to{transform:translateX(460%)}}\n@keyframes padBranchResultReveal{from{opacity:0}to{opacity:var(--pad-branch-row-opacity,1)}}\n@keyframes padBranchSkeleton{0%,100%{opacity:.55}50%{opacity:1}}\n@keyframes padBranchDonut{to{transform:rotate(360deg)}}\n@keyframes padBranchBorderLight{0%{opacity:0;background-position:100% top,100% bottom}30%{opacity:1}100%{opacity:0;background-position:0% top,0% bottom}}\n@keyframes padBranchResultPulse{0%{opacity:.4}100%{opacity:1}}\n@media(prefers-reduced-motion:reduce){\n #pensionAgentDemo .pad-branch-query-donut,#pensionAgentDemo .pad-branch-list--busy .pad-branch-skeleton-active::after,#pensionAgentDemo .pad-branch-customer-arrival::after{animation:none}\n #pensionAgentDemo .pad-branch-progress::after{animation:none;transform:translateX(128%)}\n #pensionAgentDemo .pad-h2.pad-branch-result-pulse,#pensionAgentDemo [data-branch-customer-id]{animation:none!important}\n}\n\n.pad-branch-data-note{margin-top:9px;color:#8a8e94;font-size:10px;line-height:1.5}\n";
 
 /* briefing-contract.js */
 /* Shared by the vanilla browser adapter and the offline fixture builder. */
@@ -1281,6 +1283,355 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
 
 ;
 
+/* branch-agent-contract.js */
+/* Branch wire boundary. Schema comes from Pydantic, not an independently edited JS schema.
+ * No DOM, network, credentials, customer calculation, or LLM dependencies. */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('../../../integration/contracts/branch-agent.schema.json'));
+  else root.PensionBranchAgentContract = factory(root.PensionBranchAgentSchema);
+})(typeof window === 'undefined' ? globalThis : window, function (schema) {
+  'use strict';
+  const VERSION = 'branch-agent-api.v1', DATASET = 'branch-demo.v1', RULE = 'branch-rules.v1';
+  const own = (x, k) => Object.prototype.hasOwnProperty.call(x, k);
+  const object = x => x !== null && typeof x === 'object' && !Array.isArray(x);
+  const clone = x => JSON.parse(JSON.stringify(x));
+  function fault(code) { const e = new Error(code); e.code = code; return e; }
+  function requireThat(value, code = 'SCHEMA') { if (!value) throw fault(code); }
+  function equal(a, b) {
+    if (a === b) return true;
+    if (Array.isArray(a)) return Array.isArray(b) && a.length === b.length && a.every((v, i) => equal(v, b[i]));
+    return object(a) && object(b) && Object.keys(a).length === Object.keys(b).length && Object.keys(a).every(k => own(b, k) && equal(a[k], b[k]));
+  }
+
+  // Deliberately restricted Draft 2020-12 subset emitted by branch_models.py.
+  // Fail closed if a future model emits a keyword we have not implemented.
+  const keywords = new Set(['$schema', '$defs', '$ref', 'title', 'description', 'type', 'properties', 'required',
+    'additionalProperties', 'anyOf', 'enum', 'const', 'items', 'minItems', 'maxItems', 'minLength', 'maxLength',
+    'pattern', 'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum']);
+  function checkSchema(rule) {
+    requireThat(object(rule), 'SCHEMA_DEFINITION');
+    Object.keys(rule).forEach(k => requireThat(keywords.has(k), 'SCHEMA_DEFINITION'));
+    if (rule.$ref) requireThat(/^#\/\$defs\/[A-Za-z0-9_]+$/.test(rule.$ref) && own(schema.$defs, rule.$ref.slice(8)), 'SCHEMA_DEFINITION');
+    if (rule.properties) Object.values(rule.properties).forEach(checkSchema);
+    if (rule.$defs) Object.values(rule.$defs).forEach(checkSchema);
+    if (rule.anyOf) rule.anyOf.forEach(checkSchema);
+    if (rule.items) checkSchema(rule.items);
+    if (object(rule.additionalProperties)) checkSchema(rule.additionalProperties);
+  }
+  checkSchema(schema);
+  function shapeMatches(value, rule, depth = 0) {
+    if (depth > 80) return false;
+    if (rule.$ref && !shapeMatches(value, schema.$defs[rule.$ref.slice(8)], depth + 1)) return false;
+    if (rule.anyOf && !rule.anyOf.some(r => shapeMatches(value, r, depth + 1))) return false;
+    if (own(rule, 'const') && value !== rule.const) return false;
+    if (rule.enum && !rule.enum.includes(value)) return false;
+    if (rule.type) {
+      const valid = { object: object(value), array: Array.isArray(value), string: typeof value === 'string',
+        integer: Number.isSafeInteger(value), number: typeof value === 'number' && Number.isFinite(value),
+        boolean: typeof value === 'boolean', null: value === null };
+      if (!valid[rule.type]) return false;
+    }
+    if (typeof value === 'string') {
+      const length = Array.from(value).length; // JSON Schema/Python use code points, not UTF-16 units.
+      if (rule.minLength !== undefined && length < rule.minLength || rule.maxLength !== undefined && length > rule.maxLength) return false;
+      if (rule.pattern && !new RegExp(rule.pattern, 'u').test(value)) return false;
+    }
+    if (typeof value === 'number') {
+      if (!Number.isFinite(value)) return false;
+      if (rule.minimum !== undefined && value < rule.minimum || rule.maximum !== undefined && value > rule.maximum) return false;
+      if (rule.exclusiveMinimum !== undefined && value <= rule.exclusiveMinimum || rule.exclusiveMaximum !== undefined && value >= rule.exclusiveMaximum) return false;
+    }
+    if (Array.isArray(value)) {
+      if (rule.minItems !== undefined && value.length < rule.minItems || rule.maxItems !== undefined && value.length > rule.maxItems) return false;
+      if (rule.items && !value.every(v => shapeMatches(v, rule.items, depth + 1))) return false;
+    }
+    if (object(value)) {
+      if (rule.required && !rule.required.every(k => own(value, k))) return false;
+      for (const k of Object.keys(value)) {
+        if (rule.properties && own(rule.properties, k)) { if (!shapeMatches(value[k], rule.properties[k], depth + 1)) return false; }
+        else if (rule.additionalProperties === false) return false;
+        else if (object(rule.additionalProperties) && !shapeMatches(value[k], rule.additionalProperties, depth + 1)) return false;
+      }
+    }
+    return true;
+  }
+  function shape(kind, raw) {
+    jsonValueCheck(raw);
+    requireThat(own(schema.properties, kind) && shapeMatches(raw, schema.properties[kind]));
+    return raw;
+  }
+  function jsonValueCheck(value, depth = 0) {
+    requireThat(depth <= 64);
+    if (typeof value === 'string') requireThat(!Array.from(value).some(ch => ch.codePointAt(0) >= 0xD800 && ch.codePointAt(0) <= 0xDFFF));
+    else if (typeof value === 'number') requireThat(Number.isFinite(value) && Math.abs(value) <= Number.MAX_SAFE_INTEGER);
+    else if (Array.isArray(value)) value.forEach(x => jsonValueCheck(x, depth + 1));
+    else if (object(value)) Object.keys(value).forEach(k => { jsonValueCheck(k, depth + 1); jsonValueCheck(value[k], depth + 1); });
+    else requireThat(value === null || typeof value === 'boolean');
+  }
+  function initialState() {
+    return { active: false, selection: { base: 'all', operations: [] }, recommendation: null,
+      last_aggregate: null, clarification: null, selected_row_id: null };
+  }
+  function validDay(value) {
+    if (typeof value !== 'string' || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(value)) return false;
+    const [year, month, day] = value.split('-').map(Number), leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+    return year >= 1 && month >= 1 && month <= 12 && day >= 1 && day <= [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1];
+  }
+  function unique(values, code = 'SCHEMA') { requireThat(new Set(values).size === values.length, code); }
+  function manifestCheck(manifest) {
+    requireThat(object(manifest) && manifest.dataset_id === DATASET && manifest.rule_version === RULE, 'MANIFEST');
+    requireThat(Array.isArray(manifest.row_ids) && manifest.row_ids.length > 0 && manifest.row_ids.length <= 48 && manifest.row_ids.every(x => typeof x === 'string'), 'MANIFEST');
+    unique(manifest.row_ids, 'MANIFEST');
+    requireThat(Array.isArray(manifest.segment_labels) && manifest.segment_labels.every(x => typeof x === 'string') && validDay(manifest.as_of_date), 'MANIFEST');
+  }
+  function identities(value, manifest) { ['dataset_id', 'data_version', 'rule_version'].forEach(k => requireThat(value[k] === manifest[k], 'DATA_VERSION')); }
+  function checkIds(ids, manifest) { unique(ids, 'IDENTITY'); requireThat(ids.every(x => manifest.row_ids.includes(x)), 'IDENTITY'); }
+  function predicateCheck(p, manifest, depth = 1) {
+    requireThat(depth <= 4, 'STATE'); let nodes = 1;
+    if (p.op === 'compare') {
+      if (['name', 'grade'].includes(p.field)) requireThat(typeof p.value === 'string' && p.cmp === 'eq', 'STATE');
+      else {
+        requireThat(typeof p.value === 'number', 'STATE');
+        if (['irp_amount', 'cash_amount', 'age'].includes(p.field)) requireThat(p.value >= 0 && Number.isSafeInteger(p.value), 'STATE');
+        if (p.field === 'age') requireThat(p.value <= 150, 'STATE');
+        if (p.field === 'cash_pct') requireThat(p.value >= 0 && p.value <= 100, 'STATE');
+      }
+    } else if (p.op === 'segment') requireThat(manifest.segment_labels.includes(p.value) || p.value === 'retirement_uninstructed', 'STATE');
+    else if (p.op === 'isa_between') requireThat(validDay(p.start) && validDay(p.end) && p.start <= p.end, 'STATE');
+    else if (['and', 'or'].includes(p.op)) nodes += p.args.reduce((n, x) => n + predicateCheck(x, manifest, depth + 1), 0);
+    else if (p.op === 'not') nodes += predicateCheck(p.arg, manifest, depth + 1);
+    requireThat(nodes <= 32, 'STATE'); return nodes;
+  }
+  function selectionCheck(selection, state, manifest) {
+    requireThat(selection.base !== 'recommendation' || state.recommendation !== null, 'STATE');
+    unique(selection.operations.map(x => x.id), 'STATE');
+    selection.operations.forEach(x => { if (x.type === 'filter') predicateCheck(x.predicate, manifest); });
+  }
+  function stateCheck(state, manifest) {
+    selectionCheck(state.selection, state, manifest);
+    if (!state.active) requireThat(equal(state.selection, initialState().selection), 'STATE');
+    if (state.recommendation) requireThat(state.recommendation.rule_version === manifest.rule_version && state.recommendation.as_of_date === manifest.as_of_date, 'STATE');
+    if (state.last_aggregate) { selectionCheck(state.last_aggregate.selection, state, manifest); unique(state.last_aggregate.metric_keys, 'STATE'); }
+    if (state.selected_row_id !== null) checkIds([state.selected_row_id], manifest);
+    const clarify = state.clarification;
+    if (clarify) {
+      checkIds(clarify.candidate_row_ids, manifest); unique(clarify.options.map(x => x.value), 'STATE');
+      if (clarify.kind === 'cash_value') requireThat(['cash_amount', 'cash_pct'].includes(clarify.field), 'STATE');
+      if (clarify.kind === 'customer') requireThat(clarify.candidate_row_ids.length > 0, 'STATE');
+    }
+  }
+  function actionCheck(action, state, manifest) {
+    if (action.type === 'restore_recommendation') requireThat(state.recommendation !== null, 'ACTION');
+    else if (action.type === 'show_aggregate') requireThat(state.last_aggregate !== null, 'ACTION');
+    else if (action.type === 'remove_condition') requireThat(state.selection.operations.some(x => x.type === 'filter' && x.id === action.operation_id), 'ACTION');
+    else if (action.type === 'brief') {
+      checkIds([action.row_id], manifest);
+      if (state.clarification && state.clarification.kind === 'customer') requireThat(state.clarification.candidate_row_ids.includes(action.row_id), 'ACTION');
+    } else if (action.type === 'clarify') requireThat(state.clarification !== null && state.clarification.options.some(x => x.value === action.value), 'ACTION');
+  }
+  function validateRequest(raw, manifest) {
+    manifestCheck(manifest); shape('request', raw); identities(raw, manifest);
+    const state = raw.state || initialState(); stateCheck(state, manifest);
+    if (raw.action !== null) actionCheck(raw.action, state, manifest);
+    return clone(raw);
+  }
+  function pointerExists(record, pointer) {
+    let current = record;
+    for (const part of pointer.slice(1).split('/')) {
+      const key = part.replace(/~1/g, '/').replace(/~0/g, '~');
+      if (Array.isArray(current)) { if (!/^(0|[1-9][0-9]*)$/.test(key) || Number(key) >= current.length) return false; current = current[Number(key)]; }
+      else if (object(current) && own(current, key)) current = current[key];
+      else return false;
+    }
+    return true;
+  }
+  function validateEvent(raw, request, manifest, recordsById) {
+    request = validateRequest(request, manifest);
+    requireThat(object(raw) && ['answer', 'progress', 'error'].includes(raw.event)); shape(raw.event, raw);
+    const data = raw.data;
+    ['request_id', 'conversation_id', 'base_revision'].forEach(k => requireThat(data[k] === request[k], 'IDENTITY'));
+    if (raw.event === 'progress') { requireThat(data.phase !== 'interpreting' || !data.list_pending, 'STATE'); return clone(raw); }
+    if (raw.event === 'error') return clone(raw);
+    identities(data, manifest); requireThat(data.revision === request.base_revision + 1, 'REVISION');
+    const state = data.next_state, old = request.state || initialState(), result = data.result, ui = data.ui;
+    stateCheck(state, manifest); checkIds(result.row_ids, manifest); checkIds(result.unknown_row_ids, manifest);
+    requireThat(result.count === result.row_ids.length && !result.row_ids.some(x => result.unknown_row_ids.includes(x)), 'RESULT');
+    unique(result.metrics.map(x => x.key), 'RESULT');
+    result.metrics.forEach(m => {
+      requireThat(m.known_count + m.unknown_count === result.count, 'RESULT');
+      requireThat(m.unit === (m.key === 'customer_count' ? 'count' : 'KRW'), 'RESULT');
+      if (m.value !== null) requireThat(m.value >= 0 && Number.isSafeInteger(m.value), 'RESULT');
+      if (m.key === 'customer_count') requireThat(m.value === result.count && m.unknown_count === 0, 'RESULT');
+      else {
+        requireThat((m.value === null) === (m.known_count === 0 && result.count > 0), 'RESULT');
+        if (result.count === 0) requireThat(m.value === 0, 'RESULT');
+      }
+    });
+    unique(result.reasons.map(x => x.row_id + ':' + x.code), 'RESULT');
+    result.reasons.forEach(r => {
+      requireThat(result.row_ids.includes(r.row_id) && validDay(r.as_of_date) && r.as_of_date === manifest.as_of_date, 'RESULT');
+      unique(r.evidence_refs, 'RESULT');
+      r.evidence_refs.forEach(p => { requireThat(!/~(?![01])/.test(p), 'RESULT'); if (recordsById !== undefined) requireThat(pointerExists(recordsById[r.row_id], p), 'RESULT'); });
+    });
+    data.actions.forEach(b => actionCheck(b.action, state, manifest));
+    const effect = ui.list_action, intent = data.intent, status = data.status;
+    if (effect === 'replace') {
+      requireThat(ui.row_ids !== null && ui.sort !== null, 'UI'); checkIds(ui.row_ids, manifest);
+      requireThat(equal(ui.row_ids, result.row_ids) && state.active && ['search', 'recommend', 'restore'].includes(intent), 'UI');
+      requireThat(status === (ui.row_ids.length ? 'ok' : 'empty'), 'UI');
+      requireThat(state.selected_row_id === null || ui.row_ids.includes(state.selected_row_id), 'STATE');
+    } else {
+      requireThat(ui.row_ids === null && ui.sort === null, 'UI');
+      if (effect === 'keep') {
+        requireThat(['active', 'selection', 'recommendation'].every(k => equal(state[k], old[k])), 'UI');
+        requireThat(['overview', 'aggregate', 'brief', 'clarify', 'unsupported'].includes(intent), 'UI');
+      } else {
+        requireThat(intent === 'restore' && status === 'ok' && equal(state, initialState()), 'UI');
+        requireThat(equal(result.row_ids, manifest.row_ids), 'RESULT');
+      }
+    }
+    requireThat(status !== 'empty' || effect === 'replace', 'UI');
+    if (intent === 'clarify') requireThat(status === 'clarification_required' && state.clarification !== null, 'STATE');
+    else requireThat(status !== 'clarification_required' && state.clarification === null, 'STATE');
+    requireThat((intent === 'unsupported') === (status === 'unsupported'), 'STATE');
+    if (intent === 'recommend') {
+      requireThat(state.recommendation !== null && equal(state.selection, {base: 'recommendation', operations: []}), 'STATE');
+      const ids = Array.from(new Set(result.reasons.map(x => x.row_id))).sort(); requireThat(equal(ids, result.row_ids.slice().sort()), 'RESULT');
+      requireThat(ui.sort.field === 'recommendation_order', 'UI');
+    }
+    if (intent === 'brief') requireThat(result.count === 1 && state.selected_row_id === result.row_ids[0], 'RESULT');
+    if (['overview', 'aggregate'].includes(intent)) requireThat(state.last_aggregate !== null, 'STATE');
+    return clone(raw);
+  }
+  function request(fields, manifest) {
+    return validateRequest(Object.assign({ schema_version: VERSION, task: 'branch_assistant', dataset_id: manifest.dataset_id,
+      data_version: manifest.data_version, rule_version: manifest.rule_version, action: null, state: null }, fields), manifest);
+  }
+
+  // Known gateway wrapping only. Concatenated complete logical objects are supported
+  // because the existing internal chat samples demonstrate that coalescing can occur.
+  // No regex recovery from error text, plain prose, or partial logical JSON.
+  function logicalObjects(text) {
+    requireThat(typeof text === 'string', 'JSON'); const objects = []; let i = 0;
+    while (i < text.length) {
+      while (/\s/.test(text[i] || '') && i < text.length) i++;
+      if (i === text.length) break;
+      requireThat(text[i] === '{', 'JSON');
+      const start = i; let depth = 0, quoted = false, escaped = false, ended = false;
+      for (; i < text.length; i++) {
+        const ch = text[i];
+        if (quoted) { if (escaped) escaped = false; else if (ch === '\\') escaped = true; else if (ch === '"') quoted = false; }
+        else if (ch === '"') quoted = true;
+        else if (ch === '{') depth++;
+        else if (ch === '}' && --depth === 0) { i++; ended = true; break; }
+      }
+      requireThat(ended, 'JSON');
+      let parsed; try { parsed = JSON.parse(text.slice(start, i)); } catch (_) { throw fault('JSON'); }
+      requireThat(object(parsed), 'JSON'); objects.push(parsed);
+      requireThat(objects.length <= 64, 'LIMIT');
+    }
+    return objects;
+  }
+  function unwrap(envelope) {
+    requireThat(object(envelope), 'SSE');
+    requireThat(!envelope.status || envelope.status === 'SUCCESS', 'GATEWAY');
+    requireThat(envelope.truncated !== true && envelope.truncated !== 'true' && envelope.finish_reason !== 'length', 'TRUNCATED');
+    if (['START', 'END', 'DONE'].includes(envelope.event_status) && !envelope.content) return [];
+    requireThat(envelope.event_status === 'CHUNK', 'SSE');
+    if (envelope.content === '' || envelope.content === null || envelope.content === undefined) return [];
+    return logicalObjects(envelope.content).flatMap(x => x.event === 'CHUNK' ? logicalObjects(x.content) : [x]);
+  }
+  function createTurn(req, manifest) {
+    const requestSnapshot = validateRequest(req, manifest), context = clone(manifest);
+    let final = null, closed = false, broken = false, count = 0;
+    return {
+      accept(envelope) {
+        try {
+          requireThat(!closed && !broken, 'STATE');
+          const events = unwrap(envelope);
+          events.forEach(event => {
+            requireThat(final === null, 'MULTIPLE'); requireThat(++count <= 64, 'LIMIT');
+            const valid = validateEvent(event, requestSnapshot, context);
+            if (valid.event !== 'progress') final = valid;
+          });
+          return events.filter(e => e.event === 'progress').map(clone);
+        } catch (e) { broken = true; throw e; }
+      },
+      finish() {
+        requireThat(!closed && !broken, 'STATE'); requireThat(final !== null, 'EMPTY'); closed = true;
+        return clone(final); // Transport calls this only after parser.finish() and clean HTTP EOF.
+      },
+      cancel() { broken = true; final = null; }
+    };
+  }
+  return { version: VERSION, schema, shape, initialState, request, validateRequest, validateEvent, unwrap, createTurn };
+});
+
+;
+
+/* branch-agent-transport.js */
+/* Shared remote path for FabriX and the validation localhost bridge. */
+(function(root,factory){
+ if(typeof module==='object'&&module.exports)module.exports=factory(require('./fabrix-transport'),require('./branch-agent-contract'));
+ else root.PensionBranchAgentTransport=factory(root.PensionFabrixTransport,root.PensionBranchAgentContract);
+})(typeof window==='undefined'?globalThis:window,function(T,C){
+'use strict';
+function fault(code){const e=new Error(code);e.code=code;return e;}
+function config(input){
+ if(!input)throw fault('NOCONFIG');
+ const id=input.agentId;
+ if(!(Number.isSafeInteger(id)&&id>0)&&!(typeof id==='string'&&id.trim()))throw fault('CONFIG');
+ // Reuse URL/header validation without changing the existing numeric-ID API.
+ const cfg=T.config(Object.assign({},input,{agentId:1}));
+ cfg.agentId=typeof id==='string'?id.trim():id;return cfg;
+}
+function settings(params,globalConfig){
+ const p=params&&params.fabrix,g=globalConfig||{};
+ const branch=p&&Object.prototype.hasOwnProperty.call(p,'branch')?p.branch:g.branch;
+ if(!branch)return null;
+ return Object.assign({},branch,{xClientUser:p&&Object.prototype.hasOwnProperty.call(p,'xClientUser')?p.xClientUser:g.xClientUser});
+}
+async function call(input,request,manifest,options){
+ const cfg=config(input),turn=C.createTurn(request,manifest),opts=options||{};
+ const controller=new AbortController();let reader,completed=false,timedOut=false,rejectAbort;
+ const stopped=new Promise((_,reject)=>{rejectAbort=reject;});
+ const stop=()=>{controller.abort();rejectAbort(fault(timedOut?'TIMEOUT':'ABORTED'));};
+ const timer=setTimeout(()=>{timedOut=true;stop();},opts.timeoutMs==null?90000:opts.timeoutMs);
+ if(opts.signal)opts.signal.addEventListener('abort',stop);
+ try{
+  if(opts.signal&&opts.signal.aborted)stop();
+  const response=await Promise.race([stopped,Promise.resolve().then(()=>{
+   if(controller.signal.aborted)throw fault('ABORTED');
+   return (opts.fetch||fetch)(cfg.endpointUrl+'/openapi/agent-chat/v1/agent-messages',{
+    method:'POST',mode:'cors',credentials:'omit',cache:'no-store',redirect:'error',signal:controller.signal,
+    headers:{'Content-Type':'application/json; charset=UTF-8','Accept':'text/event-stream',
+     'x-openapi-token':'Bearer '+cfg.openapiToken,'x-generative-ai-client':cfg.generativeAiClient},
+    body:JSON.stringify({agentId:cfg.agentId,contents:[JSON.stringify(request)],llmConfig:{},isStream:true})
+   });
+  })]);
+  if(!response.ok)throw fault([401,403].includes(response.status)?'AUTH':'HTTP');
+  if(!/^text\/event-stream(?:\s*;|$)/i.test(response.headers.get('content-type')||''))throw fault('CONTENT_TYPE');
+  if(!response.body||!response.body.getReader)throw fault('STREAM');
+  reader=response.body.getReader();
+  const decoder=new TextDecoder('utf-8',{fatal:true});
+  const stream=T.parser(envelope=>turn.accept(envelope).forEach(event=>{if(opts.onProgress)opts.onProgress(event.data);}));
+  function decode(bytes,streaming){try{return decoder.decode(bytes,{stream:streaming});}catch(_){throw fault('SSE');}}
+  while(true){const item=await Promise.race([reader.read(),stopped]);if(item.done)break;stream.push(decode(item.value,true));}
+  stream.push(decode(undefined,false));stream.finish();
+  if(controller.signal.aborted)throw fault(timedOut?'TIMEOUT':'ABORTED');
+  const final=turn.finish();completed=true;return final;
+ }catch(e){turn.cancel();throw controller.signal.aborted?fault(timedOut?'TIMEOUT':'ABORTED'):fault(e.code||'NETWORK');}
+ finally{
+  clearTimeout(timer);if(opts.signal)opts.signal.removeEventListener('abort',stop);
+  if(!completed)controller.abort();
+  if(reader){if(!completed)reader.cancel().catch(()=>{});reader.releaseLock();}
+ }
+}
+return {config,settings,call};
+});
+
+;
+
 /* branch-search-core.js */
 /* Branch search v0.3: deterministic evaluator and reviewed utterance recipes.
  * No LLM, network, evaluation-answer imports, or customer-data writes.
@@ -1549,7 +1900,7 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
     return (labels[sort.field] || sort.field) + (sort.direction === 'desc' ? ' 높은 순' : ' 낮은 순');
   }
   function answer(records, result, kind, asOf) {
-    const m = result.metrics, names = result.resultPreviewCaseIds.map(id => records.find(r => idOf(r) === id).customer.name).join('·');
+    const m = result.metrics;
     let text;
     if (kind === 'overview') {
       const cash = m.assetAllocation.find(a => a.assetType === '현금성자산');
@@ -1557,26 +1908,9 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
       if (cash.unknownCount) text += '\n현금성 금액 확인 ' + cash.knownCount + '명 · 미확인 ' + cash.unknownCount + '명. 합계는 확인된 금액만 포함합니다.';
     } else if (kind === 'cash_sum') text = '등록된 조건에 해당하는 고객은 ' + m.customerCount + '명입니다.\n현금성자산 합계는 ' + money(m.cashAmountKrw) + '입니다.';
     else if (!result.matchedCount) text = '확인된 조건 충족 고객은 0명입니다. 입력한 조건은 그대로 유지했습니다.';
-    else text = (result.unknownCount ? '조건 충족이 확인된 고객은 ' : '조건에 맞는 고객은 ') + result.matchedCount + '명입니다.\n' +
-      (result.resultPreviewCount < result.matchedCount ? '그중 ' + sortLabel(result.sort) + '으로 상위 ' + result.resultPreviewCount + '명(' + names + ')을 표시합니다.' : names + ' 고객을 찾았습니다.');
-    if (result.intent === 'extract' && result.resultPreviewCount > 0 && result.resultPreviewCount <= 3 && !['do_detail','isa_detail','external_detail'].includes(kind)) {
-      const terms = flatten(result.resolvedQuery);
-      let detailFields = [];
-      if (!['caseId', 'source_order'].includes(result.sort.field)) detailFields.push(result.sort.field);
-      terms.filter(q => q.op === 'compare' && ['irp_amount','cash_amount','cash_pct','age','auto_monthly','tax_remaining'].includes(q.field)).forEach(q => detailFields.push(q.field));
-      detailFields = [...new Set(detailFields)].slice(0, 2);
-      const detailLines = result.resultPreviewCaseIds.map(id => {
-        const r = records.find(x => idOf(x) === id), bits = detailFields.map(f => {
-          const v = value(r, f); return labels[f] + ' ' + (f === 'age' ? v + '세' : f.endsWith('_pct') ? v + '%' : money(v));
-        });
-        if (kind === 'deposit_detail') bits.push('정기예금 합계 ' + money(m.depositAmountsByCaseId[id]));
-        const hq = terms.find(q => q.op === 'holding_exists');
-        if (hq) bits.push('해당 상품 ' + money(r.holdings.find(h => h.productId === hq.productId && h.valuationAmountKrw >= hq.minAmountKrw).valuationAmountKrw));
-        const dq = terms.find(q => q.op === 'segment_date_between');
-        if (dq) { const signal = r.signals.find(x => x.label === dq.label && between(x.date, dq.start, dq.end)); if (signal) bits.push('조회일 ' + signal.date); }
-        return bits.length ? r.customer.name + ': ' + bits.join(' · ') : '';
-      }).filter(Boolean);
-      if (detailLines.length) text += '\n' + detailLines.join('\n');
+    else {
+      text = (result.unknownCount ? '조건 충족이 확인된 고객은 ' : '조건에 맞는 고객은 ') + result.matchedCount + '명입니다.';
+      if (result.resultPreviewCount < result.matchedCount) text += '\n그중 ' + sortLabel(result.sort) + '으로 상위 ' + result.resultPreviewCount + '명을 표시합니다.';
     }
     if (kind === 'cash_sum' && m.cashUnknownCount) text += '\n금액 확인 ' + m.cashKnownCount + '명 · 미확인 ' + m.cashUnknownCount + '명. 미확인은 0원으로 합산하지 않았습니다.';
     if (kind === 'do_detail' && m.executionDate) text += '\n실행예정일 ' + m.executionDate + ' (D-' + m.daysUntil + '), 대상금액 ' + money(m.executionAmountKrw) + '.';
@@ -1672,7 +2006,7 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
           const f={'irp잔액':'irp_amount','현금성자산':'cash_amount','현금성비중':'cash_pct','원리금보장비중':'protected_pct','연령':'age'}[m[2]];
           if((f==='age' && m[4]!=='세') || (f.endsWith('_pct') && m[4]!=='%') || (f.endsWith('_amount') && !m[4].endsWith('원')))return error('clarification_required','금액·비중·연령에 맞는 단위를 입력해 주세요.');
           const mult={'억원':1e8,'천만원':1e7,'만원':1e4,'원':1,'%':1,'세':1}[m[4]];
-          const q=compare(f,{'이상':'gte','이하':'lte','초과':'gt','미만':'lt'}[m[5]],Math.round(Number(m[3])*mult));
+          const q=compare(f,{'이상':'gte','이하':'lte','초과':'gt','미만':'lt'}[m[5]],(f.endsWith('_pct') ? Number(m[3])*mult : Math.round(Number(m[3])*mult)));
           if(m[1]){if(!state.reference)return error('clarification_required','먼저 검색조건을 지정해 주세요.'); out=Object.assign(out,copy(state.reference),{intent:'extract',metric:null});out.query=and(out.query,q);} else out.query=q;
           return out;
         }
@@ -1736,12 +2070,20 @@ function supplement(raw){
  if(a)s.autoTransfer={registered:typeof a['등록여부']==='boolean'?a['등록여부']:null,monthlyAmountKrw:num(a['월이체금액원'])};
  if(p)s.depositPurchase={configured:typeof p['설정여부']==='boolean'?p['설정여부']:null};
  if(d)s.defaultOptionExecution={scheduledAt:date(d['예정일']),amountKrw:num(d['대상금액원'])};
+ const transfer=get(ctx,['계좌운영','계약이전현황']),instruction=get(ctx,['계좌운영','상품운용지시']);
+ s.management={
+  transfer:transfer?{applied:transfer['신청여부']===true,status:transfer['진행상태'],reason:transfer['주된이전사유']}:null,
+  instruction:instruction&&typeof instruction['지시여부']==='boolean'?instruction['지시여부']:null,
+  retirementAmount:num(get(ctx,['납입및세제','퇴직급여재원금액원'])),
+  retirementDeposits:(ctx['최근사건']||[]).filter(e=>e['이벤트유형']==='퇴직급여입금'&&e['처리상태']==='완료'&&e['계좌구분']==='IRP').map(e=>({date:date(e['발생일시']),amount:num(e['금액원'])}))
+ };
  s.externalAccounts=(ctx['외부계좌']||[]).map((a,i)=>({
   id:a['외부계좌식별자']||('recorded-external-'+i),
   type:a['계좌유형']||(a['외부계좌구분']==='ISA'?'ISA':a['외부계좌구분']),
   institution:a['금융기관']||null,valuationAmountKrw:num(a['평가금액원']),
   maturityDate:date(a['만기일']),verifiedAt:date(a['정보확인일']),source:a['정보출처']||null,
-  liveIntegrated:a['통합조회가능여부']===true
+  liveIntegrated:a['통합조회가능여부']===true,
+  usePlan:a['자금사용계획']||null,conversionIntent:a['개인형퇴직연금전환의향']==null?null:a['개인형퇴직연금전환의향']
  }));
  if(own(ctx['납입및세제'],'올해개인부담금납입액원'))s.annualContributionKrw=num(ctx['납입및세제']['올해개인부담금납입액원']);
  return s;
@@ -1819,15 +2161,21 @@ return {fromCurrentRows,supplement,money,percent,date};
 const norm=t=>String(t).trim().replace(/[?!？。·,]/g,'').replace(/\.$/,'').replace(/\s/g,'').toLowerCase();
 const fields={'irp잔액':'irp_amount','irp평가금액':'irp_amount','잔액':'irp_amount','현금성자산':'cash_amount','현금성잔액':'cash_amount','현금성비중':'cash_pct','원리금보장비중':'protected_pct','연령':'age','나이':'age','계좌수익률':'return_pct','수익률':'return_pct','세액공제잔여한도':'tax_remaining'};
 const err=text=>({error:'clarification_required',answer:text});
-function create(input){
+function segmentRegistry(records){
  const labels=new Map();
  const approved=['퇴직금 운용 미지시','퇴직금 일부만 운용','현금성 장기대기','현금성 과다','만기자금 미운용','납입금 미운용','입금매수상품 미지정','원리금보장 편중','수익률 부진','환매추천 펀드 보유','판매중단 펀드 보유','저금리 예금 보유','DO 미등록','투자성향-DO불일치','타행 IRP 보유','타사 연금저축 보유','복수 IRP 보유','연금자산 분산보유','이탈징후','계약이전 신청','계약이전 페이지 방문','연금개시 가능','연금개시 예정','연금수령 중','올해 미납입','납입 중단','퇴직연금 관리화면 방문','ETF 상품조회','펀드 상품조회','보유상품 수익률 조회','장기 미운용'];
  for(const label of approved)labels.set(norm(label),{op:'segment_registered',label});
  for(const label of ['정기예금 만기','GIC 만기','ISA 만기','ISA 전환기한','DO 실행','퇴직금 재입금기한','연금개시','추가납입'])labels.set(norm(label),{op:'segment_family',label});
- for(const r of input.records)for(const s of r.signals||[]){
+ for(const r of records)for(const s of r.signals||[]){
   labels.set(norm(s.label),{op:'segment_registered',label:s.label});
   const m=s.label.match(/^(.*) D-\d+$/);if(m)labels.set(norm(m[1]),{op:'segment_family',label:m[1]});
  }
+ return labels;
+}
+// Shared by the provider and data build; includes registered badges and families.
+function segmentLabels(records){return [...new Set([...segmentRegistry(records).values()].map(x=>x.label))].sort();}
+function create(input){
+ const labels=segmentRegistry(input.records);
  if(labels.has('etf상품조회'))labels.set('etf조회',labels.get('etf상품조회'));
  if(labels.has('펀드상품조회'))labels.set('펀드조회',labels.get('펀드상품조회'));
  const simpleClause=raw=>{
@@ -1839,7 +2187,7 @@ function create(input){
   if(m){const f=m[1]?fields[m[1]]:m[3]==='세'?'age':null;if(!f)return null;
    const monetary=f.endsWith('_amount')||f==='tax_remaining';
    if(f==='age'&&m[3]!=='세'||f.endsWith('_pct')&&m[3]!=='%'||monetary&&!['억원','억','천만원','천만','만원','만','원'].includes(m[3]))return null;
-   const v=Math.round(Number(m[2])*({'억원':1e8,'억':1e8,'천만원':1e7,'천만':1e7,'만원':1e4,'만':1e4,'원':1,'%':1,'세':1}[m[3]]));
+   const v=(f.endsWith('_pct')?x=>x:Math.round)(Number(m[2])*({'억원':1e8,'억':1e8,'천만원':1e7,'천만':1e7,'만원':1e4,'만':1e4,'원':1,'%':1,'세':1}[m[3]]));
    return C.compare(f,{'이상':'gte','이하':'lte','초과':'gt','미만':'lt'}[m[4]],v);
   }
   const person=input.records.find(r=>norm(r.customer.name)===n);if(person)return C.compare('name','eq',person.customer.name);
@@ -1871,44 +2219,262 @@ function create(input){
   const q=hasOr?{op:'or',args:terms}:C.and(...terms);out.query=follow?C.and(prior.query,q):q;return out;
  };
 }
+return {create,segmentLabels};
+});
+
+;
+
+/* branch-search-conversation.js */
+/* Local demo conversation: data-derived selection, ordered history, evidence and UI actions.
+ * This is not a remote Agent contract. No fixed customer IDs or golden answers are used. */
+(function(root,factory){
+ if(typeof module==='object'&&module.exports)module.exports=factory(require('./branch-search-core'),require('./branch-search-current-provider'));
+ else root.PensionBranchConversation=factory(root.PensionBranchSearchCore,root.PensionBranchCurrentProvider);
+})(typeof window==='undefined'?globalThis:window,function(C,P){
+'use strict';
+const norm=t=>String(t).normalize('NFKC').replace(/[\s?!？。,·]/g,'').replace(/\.$/,'').toLowerCase();
+const normalSort={field:'source_order',direction:'asc'};
+const act=(label,command)=>({label,command});
+const finite=v=>typeof v==='number'&&Number.isFinite(v);
+const same=(a,b)=>a.length===b.length&&a.every(x=>b.includes(x));
+function create(input){
+ const data=C.copy(input),records=data.records,byId=new Map(records.map(r=>[C.idOf(r),r])),allIds=records.map(C.idOf),asOf=data.metadata.asOfDate;
+ const provider=P.create(data),pick=ids=>ids.map(id=>byId.get(id)).filter(Boolean);
+ const dateText=d=>d?Number(d.slice(5,7))+'월 '+Number(d.slice(8,10))+'일':'기준일 미확인';
+ const accounts=r=>(r.searchSupplement&&r.searchSupplement.externalAccounts||[]).filter(a=>a.type==='ISA');
+ const upcoming=r=>accounts(r).filter(a=>asOf&&a.maturityDate>=asOf&&a.maturityDate<=C.dateAdd(asOf,30));
+ function evidence(r){
+  const s=r.searchSupplement||{},m=s.management||{},date=r.searchSource&&r.searchSource.asOfDate,items=[];
+  if(date!==asOf)return items;
+  if(m.transfer&&m.transfer.applied&&m.transfer.status==='의사확인대기')items.push({type:'transfer',rank:0,label:'계약이전 신청 · 의사확인 대기'});
+  const cash=C.value(r,'cash_amount'),pct=C.value(r,'cash_pct');
+  const deposits=(m.retirementDeposits||[]).filter(e=>e.date&&e.date<=asOf&&e.amount===m.retirementAmount).sort((a,b)=>b.date.localeCompare(a.date));
+  if(m.instruction===false&&m.retirementAmount>0&&cash===m.retirementAmount&&pct===100&&deposits.length)items.push({type:'retirement',rank:1,label:'퇴직금 운용 미지시 · 현금성 '+C.money(cash),date:deposits[0].date,days:C.dayDiff(deposits[0].date,asOf)});
+  const isa=upcoming(r).filter(a=>a.verifiedAt===asOf).sort((a,b)=>a.maturityDate.localeCompare(b.maturityDate));
+  if(isa.length)items.push({type:'isa',rank:2,label:'ISA 만기 D-'+C.dayDiff(asOf,isa[0].maturityDate)+' · '+isa[0].maturityDate.slice(5).replace('-','.'),date:isa[0].maturityDate});
+  return items;
+ }
+ function recommendation(){
+  const seen=new Set(),rows=records.map(r=>({r,reasons:evidence(r)})).filter(x=>x.reasons.length).filter(x=>{const id=x.r.customer.customerId||C.idOf(x.r);if(seen.has(id))return false;seen.add(id);return true;});
+  rows.sort((a,b)=>a.reasons[0].rank-b.reasons[0].rank||C.idOf(a.r).localeCompare(C.idOf(b.r)));
+  return {ids:rows.map(x=>C.idOf(x.r)),reasons:Object.fromEntries(rows.map(x=>[C.idOf(x.r),x.reasons])),asOf};
+ }
+ function initialState(){return Object.assign(C.initialState(records),{mainListCaseIds:allIds.slice(),active:false,selection:null,recommendation:null,aggregate:null,clarification:null,selectedCustomerId:null,operationSequence:0,conditionChips:[],contextLabel:''});}
+ function info(answer,extra){return Object.assign({type:'info',answer,listChange:false},extra||{});}
+ function clarify(answer,clarification,actions){return info(answer,{status:'clarification_required',clarification,actions:actions||[]});}
+ function parseSearch(text){
+  const out=provider(text,{reference:null});
+  if(out.error)return out;
+  return out;
+ }
+ function resolve(text,state,action){
+  if(action){if(action.type==='query')return resolve(action.text,Object.assign({},state,{clarification:null}));return Object.assign({},action,{listChange:['recommend','restore_recommendation','reset','show_ids','remove','select','scope'].includes(action.type)});}
+  const n=norm(text),pending=state.clarification;
+  if(pending&&pending.kind==='cash'){
+   if(n==='금액'||n==='비중')return clarify(n==='금액'?'기준 금액을 알려주세요.':'기준 비중을 알려주세요.',{kind:'cash_value',field:n==='금액'?'현금성자산':'현금성비중'},[]);
+  }
+  if(pending&&pending.kind==='cash_value'&&/^\d/.test(n))return resolve(pending.field+' '+text+' 고객 보여줘',Object.assign({},state,{clarification:null}));
+  if(pending&&pending.kind==='customer'){
+   const ids=pending.ids.filter(id=>norm(byId.get(id).customer.name)===n.replace(/고객$/,''));
+   if(ids.length===1)return {type:'brief',id:ids[0],listChange:false};
+  }
+  if(pending&&pending.kind==='scope'&&/^(현재목록|추천고객|방금집계|집계고객)$/.test(n))return resolve('',state,{type:'scope',target:/현재|추천/.test(n)?'current':'aggregate',text:pending.text});
+  if(/^(기존목록|전체목록)(으로)?(돌아가|보여줘|복원해줘)?$/.test(n))return {type:'reset',listChange:true};
+  if(/^처음추천/.test(n))return state.recommendation?{type:'restore_recommendation',listChange:true}:info('저장된 추천 결과가 없습니다. 오늘 관리할 고객을 추천해드릴까요?',{actions:[act('관리할 고객 추천',{type:'recommend'})]});
+  if(/어제|전일|지난달/.test(n))return info('비교할 과거 자료가 없어 증감은 확인할 수 없습니다. 현재 확인된 관리 상태는 조회할 수 있습니다.');
+  if(/^(오늘|지금).*(중점|우선|먼저|관리할).*(고객).*(누구|추천|보여줘)/.test(n)||n==='관리할고객추천해줘')return {type:'recommend',listChange:true};
+  if(/^(오늘의?|우리)?부점(?:irp고객)?현황(?:을)?(?:말해줘|요약해줘|정리해줘|알려줘|보여줘)?$/.test(n)||n==='irp고객현황')return {type:'aggregate',query:C.all(),metric:'overview',listChange:false};
+  if(/^(현금(이)?많은고객)(찾아줘|보여줘)?$/.test(n))return clarify('현금성자산 금액과 비중 중 어떤 기준으로 찾을까요?',{kind:'cash'},[act('금액',{type:'cash_field',field:'현금성자산'}),act('비중',{type:'cash_field',field:'현금성비중'})]);
+  if(n.includes('운용금액'))return clarify('운용금액을 현금성을 포함한 IRP 평가금액 기준으로 조회할까요?',{kind:'amount'},[act('IRP 평가금액 기준',{type:'query',text:text.replace(/운용금액/g,'IRP 잔액').replace(/이상이다\s*$/,'이상 고객 보여줘')})]);
+  if(/오늘.*isa.*만기/.test(n))return info('시연 기준일은 '+asOf+'입니다. 당일 ISA 만기를 확인할까요, 등록된 ISA 만기 고객을 볼까요?',{actions:[act('기준일 당일 만기',{type:'query',text:'앞으로 0일 이내 ISA 만기 고객 보여줘'}),act('ISA 만기 등록 고객',{type:'query',text:'ISA 만기 고객 보여줘'})]});
+  if(/isa.*누구.*언제|isa.*언제.*만기/.test(n))return {type:'isa_facts',listChange:false};
+  if(/브리핑|왜.*관리|왜.*확인|어떻게관리|얼마가운용되지|isa만기자금/.test(n)){
+   const scope=state.active?pick(state.mainListCaseIds):records;
+   const allNamed=records.filter(r=>n.includes(norm(r.customer.name))),inScope=scope.filter(r=>allNamed.includes(r));
+   const named=inScope.length?inScope:allNamed;
+   const ids=named.length?named.map(C.idOf):state.selectedCustomerId&&state.mainListCaseIds.includes(state.selectedCustomerId)?[state.selectedCustomerId]:state.active?state.mainListCaseIds:[];
+   const mode=n.includes('isa만기자금')?'isa_amount':'brief';
+   if(ids.length===1)return {type:mode,id:ids[0],listChange:false};
+   if(!ids.length)return info('확인할 고객을 이름으로 지정하거나 먼저 고객을 검색해 주세요.');
+   return clarify('어떤 고객을 확인할까요?',{kind:'customer',ids},ids.slice(0,8).map(id=>act(byId.get(id).customer.name,{type:mode,id})));
+  }
+  const remove=n.match(/^(.+?)(조건)(은|도|만)?(빼줘|빼자|삭제해줘|해제해줘)$/);
+  if(remove)return {type:'remove',field:({'나이':'age','연령':'age','50대':'age','잔액':'irp_amount','irp잔액':'irp_amount','irp평가금액':'irp_amount','현금성자산':'cash_amount','현금성비중':'cash_pct'})[remove[1]],label:remove[1],listChange:!!state.active};
+  const follow=/^(그중|이중|현재목록|이\d+명)/.test(n)||/조건(도|을)?추가해줘$/.test(n);
+  if(follow&&!state.active)return info('이어갈 검색 결과가 없습니다. 먼저 고객을 찾거나 추천해 주세요.');
+  const countReference=n.match(/^이(\d+)명/);if(countReference&&Number(countReference[1])!==state.mainListCaseIds.length)return info('현재 목록은 '+state.mainListCaseIds.length+'명입니다. 집계할 고객 범위를 확인해 주세요.');
+  if(follow&&state.aggregate&&!same(state.mainListCaseIds,state.aggregate.ids))return clarify('현재 목록 '+state.mainListCaseIds.length+'명과 방금 집계한 고객 '+state.aggregate.ids.length+'명 중 어느 대상을 확인할까요?',{kind:'scope',text},[act('현재 목록 기준',{type:'scope',target:'current',text}),act('방금 집계한 고객',{type:'scope',target:'aggregate',text})]);
+  if(/(irp|잔액).*합계/.test(n))return {type:'aggregate',query:C.all(),metric:'irp_sum',ids:follow?state.mainListCaseIds:null,listChange:false};
+  if(/^(우리부점)?현금성자산합계/.test(n))return {type:'aggregate',query:C.all(),metric:'cash_sum',listChange:false};
+  if(/납입금미운용.*(현금|현금성자산).*합계/.test(n))return {type:/찾아|보여/.test(n)?'select':'aggregate',query:C.segment('납입금 미운용'),metric:'cash_sum',follow,listChange:/찾아|보여/.test(n)};
+  let queryText=text.replace(/^\s*(그중|이중)\s*/,'').replace(/조건\s*(도|을)?\s*추가해줘\s*$/,'고객 보여줘').replace(/몇\s*명이냐/g,'몇 명이야').replace(/나이/g,'연령');
+  let clean=norm(queryText).replace(/^irp(?=[+-]?\d)/,'irp잔액').replace(/(이상|이하|초과|미만|대)만$/,'$1');queryText=clean;
+  let sort=clean.match(/^(irp잔액|irp평가금액|잔액|현금성자산|현금성비중|수익률)(큰|많은|높은|작은|적은|낮은)순으로(?:상위)?(?:(\d+)명만)?(?:보여줘|남겨줘)?$/);
+  if(sort){if(!state.active)return info('정렬할 고객을 먼저 검색해 주세요.');return {type:'select',follow:true,sort:{field:({'irp잔액':'irp_amount','irp평가금액':'irp_amount','잔액':'irp_amount','현금성자산':'cash_amount','현금성비중':'cash_pct','수익률':'return_pct'})[sort[1]],direction:/큰|많은|높은/.test(sort[2])?'desc':'asc'},limit:sort[3]?Number(sort[3]):null,listChange:true};}
+  const isa=clean.match(/^(?:앞으로)?(\d+)일(?:이내|안에)isa만기고객(?:은)?(몇명이야|보여줘|찾아줘)$/);
+  if(isa){if(!asOf)return info('기준일이 확인되지 않아 만기 기간을 계산할 수 없습니다.');return {type:isa[2]==='몇명이야'?'aggregate':'select',query:{op:'isa_between',start:asOf,end:C.dateAdd(asOf,Number(isa[1]))},follow,listChange:isa[2]!=='몇명이야'};}
+  if(!/(보여줘|찾아줘|몇명이야|남겨줘|알려줘)$/.test(clean)&&/(이상|이하|초과|미만|만)$/.test(clean))queryText+=' 보여줘';
+  const parsed=parseSearch(queryText);
+  if(parsed.error)return info(parsed.error==='unsupported_mock'?'조건을 이해하지 못했습니다. 고객 상태나 금액 기준을 구체적으로 알려주세요.':parsed.answer,{status:parsed.error});
+  return {type:parsed.intent==='aggregate'?'aggregate':'select',query:parsed.query,metric:parsed.metric,sort:parsed.sort&&parsed.sort.field!=='source_order'?parsed.sort:null,limit:parsed.limit,follow,listChange:parsed.intent!=='aggregate'};
+ }
+ function replay(selection){
+  let candidates=selection.baseIds.slice(),ids=candidates.slice(),query=C.all(),unknown=[],sort=normalSort,limit=null;
+  for(const op of selection.operations){
+   if(op.type==='filter'){
+    query=C.and(query,op.query);const r=C.run(pick(candidates),query,sort);
+    ids=sort.field==='source_order'?candidates.filter(id=>r.matchedCaseIds.includes(id)):r.orderedCaseIds;unknown=r.unknownCaseIds;
+   }else if(op.type==='sort'){
+    sort=op.sort;ids=C.run(pick(ids),C.all(),sort).orderedCaseIds;
+   }else if(op.type==='limit'){
+    limit=op.limit;ids=ids.slice(0,limit);candidates=ids.slice();query=C.all();unknown=[];
+   }
+  }
+  // A filter after sorting retains the selected order.
+  const lastSort=selection.operations.map((o,i)=>o.type==='sort'?i:-1).filter(i=>i>=0).pop();
+  if(lastSort!==undefined)ids=C.run(pick(ids),C.all(),sort).orderedCaseIds;
+  return {ids,unknown,sort,limit};
+ }
+ function conditionChips(selection){return selection.operations.map(o=>({key:o.key,label:o.type==='filter'?C.describe(o.query):o.type==='sort'?C.sortLabel(o.sort):'상위 '+o.limit+'명'}));}
+ function brief(r){
+  const reasons=evidence(r),m=r.searchSupplement&&r.searchSupplement.management||{},name=r.customer.name;
+  if(reasons.some(x=>x.type==='transfer'))return name+' 고객은 IRP '+C.money(C.value(r,'irp_amount'))+'을 보유하고 있으며, '+(m.transfer.reason==='계좌수수료부담'?'수수료 부담으로 ':'')+'계약이전을 신청해 의사확인 대기 중입니다. 현재 이전 의사와 불편 사항을 확인하는 상담이 필요합니다.';
+  const deposit=reasons.find(x=>x.type==='retirement');
+  if(deposit)return name+' 고객은 퇴직급여 '+C.money(m.retirementAmount)+'이 운용지시 없이 전액 현금성으로 남아 있으며, '+dateText(asOf)+' 기준 입금 후 '+deposit.days+'일이 지났습니다. 자금 사용계획과 운용 의사를 확인해 첫 운용 상담이 필요합니다.';
+  const isa=reasons.find(x=>x.type==='isa');
+  if(isa){const a=upcoming(r).find(a=>a.maturityDate===isa.date),missing=[];if(!finite(a.valuationAmountKrw))missing.push('ISA 금액');if(!a.usePlan)missing.push('자금 사용계획');if(a.conversionIntent==null)missing.push('IRP 전환 의향');return name+' 고객의 ISA 만기는 '+dateText(isa.date)+'로, '+dateText(asOf)+' 기준 '+C.dayDiff(asOf,isa.date)+'일 남았습니다. '+(missing.length?missing.join('·')+'이 확인되지 않아 만기 전에 이를 확인하는 상담이 필요합니다.':'만기 전에 확인된 자금 사용계획을 다시 점검할 필요가 있습니다.');}
+  const labels=(r.signals||[]).map(s=>s.label),idle=labels.includes('현금성 장기대기'),unregistered=labels.includes('DO 미등록');
+  if(idle||unregistered)return name+' 고객은 '+(finite(r.customer.age)?r.customer.age+'세이며, ':'')+[idle?'현금성 장기대기':null,unregistered?'DO 미등록':null].filter(Boolean).join('와 ')+' 상태가 등록되어 있습니다. '+(idle?'현금성으로 유지하는 이유와 운용 의사를 확인하고, ':'')+(unregistered?'디폴트옵션 등록 여부를 상담할 필요가 있습니다.':'자금 사용계획에 맞는 운용 상담이 필요합니다.');
+  return name+' 고객의 IRP 평가금액은 '+C.money(C.value(r,'irp_amount'))+'입니다. '+(labels.length?'등록된 '+labels.slice(0,2).join('·')+' 상태의 현재 상황과 고객 의사를 확인하는 상담이 필요합니다.':'추가 관리 사유가 확인되지 않아 현재 계획과 상담 필요 여부를 먼저 확인해야 합니다.');
+ }
+ function execute(state,request){
+  let next=C.copy(state),q=C.copy(request),result={intent:q.type,resultStatus:'ok',answer:'',actions:[],metrics:{},uiEffect:'answer_only_keep_list',asOfDate:asOf};
+  next.clarification=null;
+  function finish(){result.mainListCaseIds=next.mainListCaseIds.slice();result.mainListCount=next.mainListCaseIds.length;result.contextLabel=next.contextLabel;next.lastResult=C.copy(result);return {state:next,result};}
+  if(q.type==='query')return execute(state,resolve(q.text,Object.assign({},state,{clarification:null})));
+  if(q.type==='cash_field')return execute(state,clarify(q.field==='현금성자산'?'기준 금액을 알려주세요.':'기준 비중을 알려주세요.',{kind:'cash_value',field:q.field},[]));
+  if(q.type==='scope'){
+   const chosen=state.clarification;if(!chosen||chosen.kind!=='scope')return execute(state,info('다시 확인할 고객 범위를 질문해 주세요.'));
+   next.aggregate=null;
+   if(q.target==='aggregate'){next.selection={baseIds:state.aggregate.ids.slice(),scope:'집계 고객 중',operations:[]};next.mainListCaseIds=state.aggregate.ids.slice();next.active=true;}
+   const resolved=resolve(q.text,next);
+   if(resolved.type==='info')return execute(state,resolved);
+   if(resolved.type==='aggregate')return execute(Object.assign({},state,{aggregate:null}),Object.assign({},resolved,{ids:next.mainListCaseIds}));
+   return execute(next,resolved);
+  }
+  if(q.type==='info'){result.answer=q.answer;result.actions=q.actions||[];result.resultStatus=q.status||'ok';if(q.clarification)next.clarification=q.clarification;return finish();}
+  if(q.type==='reset'){next=initialState();result.answer='기존 고객 목록으로 돌아왔습니다.';result.uiEffect='apply_customer_list';return finish();}
+  if(q.type==='brief'||q.type==='isa_amount'){
+   const r=byId.get(q.id);if(!r)return execute(state,info('해당 고객을 현재 조회 범위에서 확인할 수 없습니다.'));
+   next.selectedCustomerId=q.id;
+   if(q.type==='brief')result.answer=brief(r);
+   else {const rows=accounts(r),known=rows.filter(a=>finite(a.valuationAmountKrw));result.answer=known.length?'확인된 ISA 평가금액 합계는 '+C.money(known.reduce((n,a)=>n+a.valuationAmountKrw,0))+'입니다.'+(known.length<rows.length?' 일부 계좌 금액은 미확인입니다.':''):r.customer.name+' 고객의 ISA 평가금액은 현재 확인되지 않았습니다. IRP 잔액 '+C.money(C.value(r,'irp_amount'))+'은 별도 계좌 금액입니다.';}
+   return finish();
+  }
+  if(q.type==='isa_facts'){
+   const rows=pick(next.active?next.mainListCaseIds:allIds).flatMap(r=>upcoming(r).map(a=>({r,a})));
+   result.answer=rows.length?rows.map(({r,a})=>r.customer.name+' 고객의 ISA 만기는 '+dateText(a.maturityDate)+'로, '+dateText(asOf)+' 기준 '+C.dayDiff(asOf,a.maturityDate)+'일 남았습니다.').join('\n'):'현재 범위에서 30일 이내로 확인된 ISA 만기일이 없습니다.';return finish();
+  }
+  if(q.type==='aggregate'){
+   const subset=pick(q.ids||q.follow&&next.active&&next.mainListCaseIds||allIds),req={intent:'aggregate',query:q.query||C.all(),sort:normalSort,metric:q.metric};
+   const out=C.execute(subset,C.initialState(subset),req,asOf);result=Object.assign(result,out.result,{intent:'aggregate',actions:[],uiEffect:'answer_only_keep_list'});
+   const ids=result.resultPreviewCaseIds;next.aggregate={ids:ids.slice(),query:req.query};
+   if(q.metric==='irp_sum'){const values=pick(ids).map(r=>C.value(r,'irp_amount')),known=values.filter(finite);result.answer='IRP 평가금액 합계는 '+C.money(known.length?known.reduce((a,b)=>a+b,0):ids.length?null:0)+'입니다. '+(known.length===ids.length?ids.length+'명 모두 금액이 확인되었습니다.':known.length+'명 확인 · '+(ids.length-known.length)+'명 미확인입니다.');result.metrics={irpAmountKrw:known.length?known.reduce((a,b)=>a+b,0):null,knownCount:known.length,unknownCount:ids.length-known.length};}
+   if(q.metric==='overview')result.actions=[act('관리할 고객 추천',{type:'recommend'})];
+   else if(ids.length)result.actions=[act('대상 고객 '+ids.length+'명 보기',{type:'show_ids',ids,query:req.query})];
+   result.scopeNote=q.ids||q.follow?'현재 결과 기준':'현재 시연 목록 기준 · 자료 기준일 혼재';return finish();
+  }
+  if(q.type==='recommend'){
+   const rec=recommendation();if(!rec.ids.length)return execute(state,info('확인된 관리정보에서 추천할 고객을 찾지 못했습니다. 기존 목록을 유지합니다.'));
+   next.recommendation=rec;next.selection={baseIds:rec.ids.slice(),scope:'추천 고객 중',operations:[]};
+  }else if(q.type==='restore_recommendation'){
+   if(!next.recommendation)return execute(state,info('저장된 추천 결과가 없습니다.',{actions:[act('관리할 고객 추천',{type:'recommend'})]}));
+   next.selection={baseIds:next.recommendation.ids.slice(),scope:'추천 고객 중',operations:[]};
+  }else if(q.type==='show_ids'){
+   const query=q.query&&same(C.run(records,q.query,normalSort).matchedCaseIds,q.ids)?q.query:{op:'case_ids',ids:q.ids.filter(id=>byId.has(id))};
+   next.selection={baseIds:allIds.slice(),scope:'전체 고객 중',operations:[{type:'filter',query,key:++next.operationSequence}]};
+   if(q.query)next.selection.operations[0].displayLabel=C.describe(q.query);
+  }else if(q.type==='remove'){
+   if(!next.selection)return execute(state,info('해제할 검색 조건이 없습니다.'));
+   const before=JSON.stringify(next.selection.operations);
+   next.selection.operations=next.selection.operations.flatMap(op=>{
+    if(q.key!=null)return String(op.key)===String(q.key)?[]:[op];
+    if(op.type!=='filter')return [op];
+    const query=C.remove(op.query,x=>q.field?x.field===q.field:norm(x.label||'')===q.label);
+    return query.op==='all_records'?[]:[Object.assign({},op,{query})];
+   });
+   if(before===JSON.stringify(next.selection.operations))return execute(state,info('해당 조건을 찾지 못했습니다. 목록 위의 조건을 확인해 주세요.'));
+  }else if(q.type==='select'){
+   if(!q.follow||!next.selection)next.selection={baseIds:allIds.slice(),scope:'전체 고객 중',operations:[]};
+   if(q.query&&q.query.op!=='all_records')next.selection.operations.push({type:'filter',query:q.query,key:++next.operationSequence});
+   if(q.sort)next.selection.operations.push({type:'sort',sort:q.sort,key:++next.operationSequence});
+   if(q.limit!=null)next.selection.operations.push({type:'limit',limit:q.limit,key:++next.operationSequence});
+  }else return execute(state,info('요청을 처리할 수 없습니다. 검색 조건을 다시 알려주세요.'));
+  const selected=replay(next.selection),ids=selected.ids;
+  next.active=true;next.aggregate=null;next.selectedCustomerId=null;next.mainListCaseIds=ids;next.mainUnknownCaseIds=selected.unknown;next.mainMatchedCount=ids.length;
+  next.main={query:C.and(...next.selection.operations.filter(o=>o.type==='filter').map(o=>o.query)),sort:selected.sort,limit:selected.limit};next.reference=C.copy(next.main);
+  next.conditionChips=conditionChips(next.selection).map(chip=>{const o=next.selection.operations.find(o=>o.key===chip.key);return Object.assign(chip,{label:o.displayLabel||chip.label});});
+  next.contextLabel=next.selection.scope+' · '+ids.length+'명'+(next.conditionChips.length?' · '+next.conditionChips.map(c=>c.label).join(' · '):'');
+  const recommended=next.selection.scope==='추천 고객 중'&&!next.selection.operations.length;
+  next.listTitle=(recommended?'오늘 우선 확인할 고객':'AI 검색 결과')+' · '+ids.length+'명';
+  result.uiEffect='apply_customer_list';result.matchedCount=ids.length;result.matchedCaseIds=ids.slice();result.resultPreviewCaseIds=ids.slice();result.resultPreviewCount=ids.length;result.unknownCount=selected.unknown.length;result.resolvedQuery=next.main.query;result.sort=next.main.sort;result.limit=next.main.limit;
+  result.resultStatus=selected.unknown.length?'partial':ids.length?'ok':'empty';
+  result.answer=q.type==='recommend'?'오늘 우선 확인할 고객은 '+ids.length+'명입니다.\n'+[next.recommendation.ids.some(id=>next.recommendation.reasons[id].some(r=>r.type==='transfer'))?'계약이전 의사확인':null,next.recommendation.ids.some(id=>next.recommendation.reasons[id].some(r=>r.type==='retirement'))?'퇴직급여 첫 운용 상담':null,next.recommendation.ids.some(id=>next.recommendation.reasons[id].some(r=>r.type==='isa'))?'ISA 만기자금 사용계획 확인':null].filter(Boolean).join(', ')+'이 필요합니다.':q.type==='restore_recommendation'?'처음 추천한 고객 '+ids.length+'명을 다시 표시했습니다.':(q.type==='remove'?'조건을 해제했습니다. ':'')+'조건에 맞는 고객은 '+ids.length+'명입니다.';
+  if(selected.unknown.length)result.answer+='\n'+selected.unknown.length+'명은 정보가 부족해 조건 충족 여부를 확인할 수 없습니다.';
+  if(q.metric){const out=C.execute(records,C.initialState(records),{intent:'aggregate',query:C.and({op:'case_ids',ids},q.query||C.all()),metric:q.metric,sort:normalSort},asOf);result.metrics=out.result.metrics;result.answer=out.result.answer;}
+  if(!ids.length){const last=next.selection.operations.filter(o=>o.type==='filter').at(-1);if(last){const relaxed=C.copy(next.selection);relaxed.operations=relaxed.operations.filter(o=>o.key!==last.key);const count=replay(relaxed).ids.length;if(count>0){result.answer+='\n마지막 조건을 해제하면 '+count+'명을 다시 확인할 수 있습니다.';result.actions=[act('마지막 조건 해제 · '+count+'명',{type:'remove',key:last.key})];}}}
+  else if(recommended)result.actions=ids.slice(0,3).map(id=>act(byId.get(id).customer.name+' 간단 브리핑',{type:'brief',id}));
+  else if(ids.length===1)result.actions=[act('간단 브리핑',{type:'brief',id:ids[0]})];
+  if(next.recommendation&&!recommended)result.actions.push(act('처음 추천 다시 보기',{type:'restore_recommendation'}));
+  if(!result.actions.length&&ids.length>1){const fifty=C.and(C.compare('age','gte',50),C.compare('age','lte',59)),count=C.run(pick(ids),fifty).matchedCount;if(count>0&&count<ids.length)result.actions.push(act('50대만 · '+count+'명',{type:'select',follow:true,query:fifty}));}
+  result.scopeNote=recommended?'확인된 관리정보 기준 · '+asOf:'현재 시연 목록 기준 · 자료 기준일 혼재';
+  return finish();
+ }
+ return {initialState,resolve,execute,evidence,brief,records:()=>C.copy(records)};
+}
 return {create};
 });
 
 ;
 
 /* branch-search-session.js */
-/* Conversation state is independent of DOM and transport. Latest request wins.
- * options.applyAggregate: the screen applies aggregate answers to the list too (golden tests keep the default).
- * options.latency: minimum thinking time in ms before a mock answer, so the pending state is visible (0 = none). */
-(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory(require('./branch-search-core'));else root.PensionBranchSearchSession=factory(root.PensionBranchSearchCore);})(typeof window==='undefined'?globalThis:window,function(C){
+/* Remote turns commit only after clean EOF; the latest ticket wins.
+ * options.mode='local' retains the isolated demo/golden engine. Only that mode
+ * uses applyAggregate and simulated latency. No remote failure falls back to it. */
+(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory(require('./branch-search-core'),require('./branch-agent-contract'),require('./branch-agent-transport'),globalThis);else root.PensionBranchSearchSession=factory(root.PensionBranchSearchCore,root.PensionBranchAgentContract,root.PensionBranchAgentTransport,root);})(typeof window==='undefined'?globalThis:window,function(C,W,T,root){
 'use strict';
-function create(input,options){
+function createLocal(input,options){
  options=options||{};
  const data=C.copy(input),records=data.records,asOf=data.metadata.asOfDate;
- let state=C.initialState(records),messages=[],busy=false,ticket=0,revision=0,sequence=0,disposed=false;
+ const engine=options.engine;
+ let state=engine?engine.initialState():C.initialState(records),messages=[],busy=false,ticket=0,revision=0,sequence=0,disposed=false;
  const listeners=new Set();
  const provider=options.provider||((text,s)=>Promise.resolve(C.resolve(text,s,asOf))),applyAggregate=!!options.applyAggregate,latency=Math.max(0,Number(options.latency)||0);
  const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
  const emit=(type,extra)=>{if(disposed)return;const e=Object.assign({type,revision,busy,state:C.copy(state),messages:C.copy(messages)},extra||{});listeners.forEach(f=>f(e));};
  const add=(role,text,extra)=>{const m=Object.assign({id:++sequence,role,text},extra||{});messages.push(m);return m;};
  function cancel(reason){ticket++;if(busy){busy=false;messages.forEach(m=>{if(m.pending){m.pending=false;m.cancelled=true;m.text=reason||'요청을 취소했습니다. 목록은 유지합니다.';}});emit('cancel');}}
- async function send(text){
+ async function send(text,action){
   text=String(text||'').trim();if(!text||disposed)return null;
   if(text.length>1200){emit('validation',{notice:'질문은 1,200자 이내로 입력해 주세요.'});return null;}
   cancel('새 요청으로 이전 조회를 취소했습니다.');const token=++ticket;busy=true;
   add('user',text);const reply=add('assistant','검색조건을 확인하고 있어요.',{pending:true});
   const snapshot=C.copy(state);emit('pending');
   try{
-   const request=latency?(await Promise.all([provider(text,snapshot),wait(latency)]))[0]:await provider(text,snapshot);
+   const delay=latency?wait(latency):Promise.resolve();
+   const request=engine?await engine.resolve(text,snapshot,action):await provider(text,snapshot);
    if(disposed||token!==ticket)return null;
-   const out=C.execute(records,snapshot,request,asOf,{applyAggregate});
+   emit('resolved',{listChange:engine?!!request.listChange:true});
+   await delay;
+   if(disposed||token!==ticket)return null;
+   const out=engine?engine.execute(snapshot,request):C.execute(records,snapshot,request,asOf,{applyAggregate});
    state=out.state;busy=false;reply.pending=false;reply.text=out.result.answer;reply.result=out.result;
    if(out.result.uiEffect==='apply_customer_list')revision++;
    emit(out.result.uiEffect==='apply_customer_list'?'apply':'answer',{result:C.copy(out.result)});
    return out.result;
   }catch(err){
    if(disposed||token!==ticket)return null;
-   busy=false;reply.pending=false;reply.error=true;reply.text='조회 중 오류가 발생했습니다. 기존 목록과 조건은 유지했습니다. 다시 시도해 주세요.';reply.retryText=text;
+   busy=false;reply.pending=false;reply.error=true;reply.text='조회 중 오류가 발생했습니다. 기존 목록과 조건은 유지했습니다. 다시 시도해 주세요.';reply.retryText=text;reply.retryAction=action;
    emit('error');return null;
   }
  }
@@ -1919,9 +2485,9 @@ function create(input,options){
   if(source)add('system',source);emit('apply',{result:C.copy(out.result)});return out.result;
  }
  return {
-  send,cancel,apply,
-  reset:()=>apply({query:C.all(),sort:{field:data.metadata.scopeId==='current-main-list'?'source_order':'caseId',direction:'asc'},limit:null},'전체 검색조건과 표시 제한을 해제했습니다.'),
-  newConversation:()=>{cancel();state.reference=null;state.lastResult=null;messages=[];emit('new_conversation');},
+  send,cancel,apply,perform:(action,label)=>send(label||'선택한 요청',action),
+  reset:()=>{if(!engine)return apply({query:C.all(),sort:{field:data.metadata.scopeId==='current-main-list'?'source_order':'caseId',direction:'asc'},limit:null},'전체 검색조건과 표시 제한을 해제했습니다.');cancel();state=engine.initialState();revision++;add('system','기존 고객 목록으로 돌아왔습니다.');emit('apply');},
+  newConversation:()=>{cancel();if(!engine)state.reference=null;else {state.clarification=null;state.aggregate=null;state.selectedCustomerId=null;}state.lastResult=null;messages=[];emit('new_conversation');},
   clearReference:()=>{state.reference=null;emit('reference');},
   get:()=>({state:C.copy(state),messages:C.copy(messages),busy,revision}),
   subscribe:f=>{listeners.add(f);return()=>listeners.delete(f);},
@@ -1931,48 +2497,124 @@ function create(input,options){
   mode:input.metadata.scopeId==='current-main-list'?'current-data-mock':'golden-mock'
  };
 }
+function createRemote(input,options){
+ options=Object.assign({},options);let cfg=options.config;delete options.config;
+ let manifest=options.manifest?C.copy(options.manifest):null;delete options.manifest;
+ const metadata=C.copy(input.metadata),listeners=new Set();
+ let state=null,revision=0,conversationId=uuid(),messages=[],sequence=0,ticket=0,busy=false,disposed=false,controller=null;
+ let view={active:false,rowIds:[],sort:null,contextLabel:''};
+ function uuid(){
+  if(root.crypto.randomUUID)return root.crypto.randomUUID();
+  const b=root.crypto.getRandomValues(new Uint8Array(16));b[6]=(b[6]&15)|64;b[8]=(b[8]&63)|128;
+  const h=Array.from(b,x=>x.toString(16).padStart(2,'0')).join('');return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20);
+ }
+ let connectionNotice='';try{ready();}catch(e){connectionNotice=notice(e.code);}
+ function snapshot(){return {state:C.copy(state),view:C.copy(view),messages:C.copy(messages),busy,revision,conversationId,mode:'remote',connectionNotice};}
+ function emit(type,extra){if(!disposed){const event=Object.assign(snapshot(),{type},extra);listeners.forEach(f=>f(event));}}
+ function add(role,text,extra){const m=Object.assign({id:++sequence,role,text},extra);messages.push(m);return m;}
+ function cancel(reason){
+  ticket++;if(controller){controller.abort();controller=null;}
+  if(busy){busy=false;messages.forEach(m=>{if(m.pending){m.pending=false;m.cancelled=true;m.text=reason||'요청을 취소했습니다. 기존 목록과 조건은 유지했습니다.';}});emit('cancel');}
+ }
+ function fault(code){const e=new Error(code);e.code=code;return e;}
+ function ready(){
+  const valid=T.config(cfg);if(!manifest)throw fault('MANIFEST');
+  if(options.checkManifest)options.checkManifest(manifest);
+  return valid;
+ }
+ function notice(code){
+  if(code==='NOCONFIG'||code==='CONFIG')return '부점 AI 연결 설정이 필요합니다. 담당자에게 연결 설정을 확인해 주세요.';
+  if(code==='MANIFEST'||code==='DATA_VERSION')return '부점 AI 데이터 버전을 확인할 수 없습니다. 같은 빌드의 데이터와 화면으로 다시 진입해 주세요.';
+  if(code==='AUTH')return '부점 AI 인증 설정을 확인해 주세요. 기존 목록과 조건은 유지했습니다.';
+  if(code==='TIMEOUT')return '응답 시간이 초과되었습니다. 기존 목록과 조건은 유지했습니다. 다시 시도해 주세요.';
+  return '응답을 확인하지 못했습니다. 기존 목록과 조건은 유지했습니다. 다시 시도해 주세요.';
+ }
+ async function send(text,action){
+  text=String(text||'').trim();if(!text||disposed)return null;
+  if(Array.from(text).length>1200){emit('validation',{notice:'질문은 1,200자 이내로 입력해 주세요.'});return null;}
+  cancel('새 요청으로 이전 조회를 취소했습니다.');const token=++ticket;
+  busy=true;add('user',text);const reply=add('assistant','조건을 해석하고 있어요.',{pending:true,retryText:text,retryAction:action||null});
+  emit('pending');controller=new AbortController();const activeController=controller;
+  try{
+   const valid=ready();
+   const request=W.request({request_id:uuid(),conversation_id:conversationId,base_revision:revision,
+    x_client_user:valid.xClientUser,message:text,action:action||null,state:C.copy(state)},manifest);
+   const final=await T.call(valid,request,manifest,{signal:activeController.signal,fetch:options.fetch,timeoutMs:options.timeoutMs,
+    onProgress:progress=>{
+     if(disposed||token!==ticket)return;
+     reply.text={interpreting:'조건을 해석하고 있어요.',executing:'고객 데이터를 확인하고 있어요.',composing:'답변을 정리하고 있어요.'}[progress.phase];
+     emit('progress',{progress,listChange:progress.phase==='executing'&&progress.list_pending});
+    }});
+   if(disposed||token!==ticket)return null;
+   if(options.isCurrent&&!options.isCurrent()){cancel();return null;}
+   if(final.event==='error')throw fault(final.data.code);
+   const answer=final.data;
+   // Check every ID against the actual original rows before committing any part of the turn.
+   if(options.prepareAnswer)options.prepareAnswer(answer,manifest);
+   state=C.copy(answer.next_state);revision=answer.revision;
+   if(answer.ui.list_action==='replace')view={active:true,rowIds:answer.ui.row_ids.slice(),sort:C.copy(answer.ui.sort),contextLabel:answer.context_label};
+   else if(answer.ui.list_action==='reset')view={active:false,rowIds:[],sort:null,contextLabel:answer.context_label};
+   else view.contextLabel=answer.context_label;
+   busy=false;controller=null;reply.pending=false;reply.text=answer.text;delete reply.retryText;delete reply.retryAction;
+   reply.result={answer:answer.text,scopeNote:answer.scope_note,contextLabel:answer.context_label,actions:C.copy(answer.actions),ui:answer.ui};
+   emit(answer.ui.list_action==='keep'?'answer':'apply',{result:C.copy(reply.result)});return C.copy(answer);
+  }catch(e){
+   if(disposed||token!==ticket)return null;
+   busy=false;controller=null;reply.pending=false;reply.error=true;reply.code=e.code||'NETWORK';reply.text=notice(reply.code);
+   emit('error');return null;
+  }
+ }
+ return {send,cancel,perform:(action,label)=>send(label||'선택한 요청',action),
+  reset:()=>{if(disposed)return;cancel();state=null;revision++;view={active:false,rowIds:[],sort:null,contextLabel:''};add('system','기존 고객 목록으로 돌아왔습니다.');emit('apply');},
+  newConversation:()=>{if(disposed)return;cancel();conversationId=uuid();revision=0;if(state){state.last_aggregate=null;state.clarification=null;}messages=[];emit('new_conversation');},
+  get:snapshot,metadata:()=>C.copy(metadata),subscribe:f=>{listeners.add(f);return()=>listeners.delete(f);},mode:'remote',
+  destroy:()=>{cancel();disposed=true;listeners.clear();state=null;messages=[];cfg=null;manifest=null;view={active:false,rowIds:[],sort:null,contextLabel:''};options={};conversationId=null;}
+ };
+}
+function create(input,options){return options&&options.mode==='local'?createLocal(input,options):createRemote(input,options);}
 return {create};
 });
 
 ;
 
 /* branch-search-motion.js */
-/* FLIP-like position transition; also supports hosts replacing every row DOM node. */
+/* In-place result reveal. No row translation, cloned ghosts or viewport-positioned layers. */
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.PensionBranchMotion=factory();})(typeof window==='undefined'?globalThis:window,function(){
 'use strict';
 function create(win){
- win=win||window;let running=[],ghosts=[],timer=null,generation=0;
+ win=win||window;let cleanups=[],timer=null;
  const reduced=()=>!!(win.matchMedia&&win.matchMedia('(prefers-reduced-motion: reduce)').matches);
- function cancel(){generation++;running.forEach(a=>{try{a.cancel();}catch(_){}});running=[];ghosts.forEach(n=>n.remove());ghosts=[];clearTimeout(timer);}
+ function cancel(){win.clearTimeout(timer);timer=null;cleanups.forEach(fn=>fn());cleanups=[];}
  function capture(root){
   const out=new Map();if(!root)return out;
   root.querySelectorAll('[data-branch-customer-id]').forEach(el=>{
-   const id=el.getAttribute('data-branch-customer-id');const rect=el.getBoundingClientRect();
-   if(id&&rect.width&&rect.height)out.set(id,{rect,clone:el.cloneNode(true)});
+   const id=el.getAttribute('data-branch-customer-id');if(id)out.set(id,true);
   });return out;
  }
- const fixedWorks=root=>{for(let e=root;e&&e!==win.document.documentElement;e=e.parentElement){const cs=win.getComputedStyle(e);if(cs.transform!=='none'||cs.perspective!=='none'||cs.filter!=='none'||cs.willChange==='transform')return false;}return true;};
  function play(root,before,changed){
-  cancel();if(!changed||reduced()||!root)return;const ghostsOk=fixedWorks(root);
-  const now=new Map();root.querySelectorAll('[data-branch-customer-id]').forEach(el=>now.set(el.getAttribute('data-branch-customer-id'),el));
-  const beforeIds=Array.from(before.keys()),afterIds=Array.from(now.keys());
-  if(JSON.stringify(beforeIds)===JSON.stringify(afterIds))return;
-  let entered=0;
-  now.forEach((el,id)=>{
-   const current=el.getBoundingClientRect(),old=before.get(id);let frames;
-   if(old){const dx=old.rect.left-current.left,dy=old.rect.top-current.top;if(Math.abs(dx)<1&&Math.abs(dy)<1)return;frames=[{transform:'translate('+dx+'px,'+dy+'px)',opacity:1},{transform:'translate(0,0)',opacity:1}];}
-   else frames=[{transform:'translateY(10px)',opacity:0},{transform:'translateY(0)',opacity:1}];
-   if(typeof el.animate==='function')running.push(el.animate(frames,{duration:old?280:190,delay:old?0:Math.min(entered++*22,88),easing:'cubic-bezier(.2,.7,.2,1)',fill:'none'}));
+  cancel();if(!changed||reduced()||!root)return;
+  const title=root.querySelector('.pad-section-head .pad-h2');
+  if(title){title.classList.add('pad-branch-result-pulse');cleanups.push(()=>title.classList.remove('pad-branch-result-pulse'));}
+  const rows=Array.from(root.querySelectorAll('[data-branch-customer-id]'));
+  // A sort-only or identical result receives the title cue, without replaying card entry.
+  const membershipChanged=before.size!==rows.length||rows.some(el=>!before.has(el.getAttribute('data-branch-customer-id')));
+  let visibleIndex=0;
+  if(membershipChanged)rows.forEach(el=>{
+   const rect=el.getBoundingClientRect();
+   if(!rect.width||!rect.height||rect.bottom<=0||rect.top>=win.innerHeight)return;
+   const id=el.getAttribute('data-branch-customer-id'),delay=Math.min(visibleIndex++,3)*50;
+   const previous=el.style.animation;
+   // Preserve the existing dimmed appearance of completed customers.
+   el.style.setProperty('--pad-branch-row-opacity',el.style.opacity||'1');
+   el.style.animation='padBranchResultReveal 900ms cubic-bezier(.4,0,.2,1) '+delay+'ms both';
+   if(!before.has(id)){
+    el.style.setProperty('--pad-branch-border-delay',(delay+250)+'ms');
+    el.classList.add('pad-branch-customer-arrival');
+   }
+   cleanups.push(()=>{el.style.animation=previous;el.style.removeProperty('--pad-branch-row-opacity');el.style.removeProperty('--pad-branch-border-delay');el.classList.remove('pad-branch-customer-arrival');});
   });
-  before.forEach((old,id)=>{
-   if(!ghostsOk||now.has(id)||old.rect.bottom<0||old.rect.top>win.innerHeight)return;
-   const ghost=old.clone;ghost.removeAttribute('id');ghost.removeAttribute('data-branch-customer-id');ghost.setAttribute('aria-hidden','true');ghost.inert=true;
-   ghost.querySelectorAll('[id]').forEach(n=>n.removeAttribute('id'));
-   Object.assign(ghost.style,{position:'fixed',left:old.rect.left+'px',top:old.rect.top+'px',width:old.rect.width+'px',height:old.rect.height+'px',margin:'0',pointerEvents:'none',zIndex:'25',boxSizing:'border-box',animation:'none'});
-   ghost.classList.add('pad-branch-row-ghost');root.appendChild(ghost);ghosts.push(ghost);
-   if(typeof ghost.animate==='function')running.push(ghost.animate([{opacity:.65,transform:'translateY(0)'},{opacity:0,transform:'translateY(-5px)'}],{duration:160,fill:'forwards',easing:'ease-out'}));
-  });
-  timer=setTimeout(()=>{ghosts.forEach(n=>n.remove());ghosts=[];running=[];},480);
+  // Last card: 150ms stagger + 250ms border delay + 900ms glow; clean up after it finishes.
+  timer=win.setTimeout(cancel,1400);
  }
  return {capture,play,cancel,reduced};
 }
@@ -1990,17 +2632,26 @@ return {create};
 const C=root.PensionBranchSearchCore;
 const svg=(path)=>'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+path+'</svg>';
 const icons={chat:svg('<path d="M20 11.5a8 8 0 0 1-8 8H5l-3 2V11.5a9 9 0 0 1 18 0Z"/><path d="M7 10h8M7 14h5"/>'),arrow:svg('<path d="m5 12 7-7 7 7M12 5v15"/>'),stop:svg('<rect x="6.5" y="6.5" width="11" height="11" rx="2" fill="currentColor" stroke="none"/>'),minus:svg('<path d="M5 12h14"/>'),reset:svg('<path d="M3 10a9 9 0 1 1 1.5 7M3 4v6h6"/>'),spark:svg('<path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5Z"/>')};
-const STARTERS=['DO 미등록 고객 보여줘','IRP 잔액 2억원 이상 보여줘','현금성 장기대기 고객 몇 명이야?'];
+const STARTERS=[
+ {label:'관리 대상 추천',question:'오늘 중점적으로 관리할 고객은 누구야?'},
+ {label:'부점 현황',question:'오늘 부점 현황 말해줘'},
+ {label:'고객 검색',question:'현금성 장기대기 고객 보여줘'}
+];
+const EXAMPLES=[
+ {label:'관리 대상 추천',questions:[STARTERS[0].question,'처음 추천한 고객 다시 보여줘']},
+ {label:'부점 현황',questions:[STARTERS[1].question,'ISA 만기 고객은 몇 명이야?','납입금 미운용 고객 몇 명이고 현금 합계 얼마야?']},
+ {label:'고객 검색',questions:[STARTERS[2].question,'IRP 잔액 7천만원 이상 고객 보여줘','DO 미등록 고객 보여줘']}
+];
 function mount(container,session,options){
  options=options||{};let open=false,visible=true,disposed=false,composing=false,examplesOpen=false;
  const phrases=['조건을 해석하고 있어요','현재 고객 '+session.metadata().recordCount+'명을 조회하고 있어요','결과를 정리하고 있어요'];
  const rootEl=document.createElement('div');rootEl.className='pad-branch-widget';rootEl.setAttribute('data-branch-widget','');
- rootEl.innerHTML='<div class="pad-branch-window" id="pad-branch-window" role="dialog" aria-modal="false" aria-label="부점 AI 고객 검색" hidden>'+
- '<div class="pad-branch-header"><div class="pad-branch-avatar">'+icons.spark+'</div><div class="pad-branch-heading"><strong>부점 AI</strong></div><button type="button" class="pad-branch-icon" data-action="new" title="새 대화 · 목록 유지" aria-label="새 대화">'+icons.reset+'</button><button type="button" class="pad-branch-icon" data-action="close" aria-label="대화창 최소화">'+icons.minus+'</button></div>'+
+ rootEl.innerHTML='<div class="pad-branch-window" id="pad-branch-window" role="dialog" aria-modal="false" aria-label="부점 AI 고객 현황·검색" hidden>'+
+ '<div class="pad-branch-header"><span aria-label="KB국민은행" class="pad-branch-logo">KB</span><div class="pad-branch-heading"><strong>퇴직연금 사후관리 에이전트</strong><span>여의도종합금융센터</span></div><button type="button" class="pad-branch-icon" data-action="new" title="새 대화 · 목록 유지" aria-label="새 대화">'+icons.reset+'</button><button type="button" class="pad-branch-icon" data-action="close" aria-label="대화창 최소화">'+icons.minus+'</button></div>'+
  '<div class="pad-branch-context" hidden></div>'+
- '<div class="pad-branch-body" data-branch-scroll><div class="pad-branch-welcome"><div class="pad-branch-welcome-title">어떤 고객을 찾으시나요?</div><div class="pad-branch-suggestions"><button type="button" data-question="overview">IRP 고객 현황<span>↗</span></button><button type="button" data-question="cash">납입금 미운용 고객<span>↗</span></button><button type="button" data-question="do">DO 실행 예정 고객<span>↗</span></button></div></div><div class="pad-branch-messages" role="log" aria-live="polite" aria-relevant="additions text" aria-label="부점 AI 대화"></div></div>'+
+ '<div class="pad-branch-body" data-branch-scroll><div class="pad-branch-welcome"><div class="pad-branch-welcome-title">오늘 우리 부점,<br>어떤 고객을 먼저 살펴볼까요?</div><p class="pad-branch-welcome-desc">우리 부점 고객 현황을 살펴보고, 관리가 필요한 고객을 찾아보세요.</p><p class="pad-branch-welcome-note">찾은 고객은 메인 고객 목록에서 바로 확인할 수 있어요.</p><div class="pad-branch-suggestions"></div></div><div class="pad-branch-messages" role="log" aria-live="polite" aria-relevant="additions text" aria-label="부점 AI 대화"></div></div>'+
  '<div class="pad-branch-examples" hidden></div>'+
- '<div class="pad-branch-footer"><div class="pad-branch-tools"><button type="button" data-action="examples" aria-expanded="false">예시 질문</button><button type="button" data-action="restore" title="검색 결과를 해제하고 기존 목록으로">기존 목록</button></div><form class="pad-branch-composer"><textarea rows="1" maxlength="1200" aria-label="찾고 싶은 고객 조건" placeholder="찾고 싶은 고객 조건을 입력하세요"></textarea><button type="submit" aria-label="질문 전송" class="pad-branch-send" disabled>'+icons.arrow+'</button></form><div class="pad-branch-disclaimer">확인된 데이터만 조회해요.</div></div></div>'+
+ '<div class="pad-branch-footer"><div class="pad-branch-tools"><button type="button" data-action="examples" aria-expanded="false">예시 질문</button><button type="button" data-action="restore" title="검색 결과를 해제하고 기존 목록으로">기존 목록</button></div><form class="pad-branch-composer"><textarea rows="1" maxlength="1200" aria-label="궁금한 부점 현황이나 찾고 싶은 고객 조건" placeholder="궁금한 현황이나 고객 조건을 물어보세요"></textarea><button type="submit" aria-label="질문 전송" class="pad-branch-send" disabled>'+icons.arrow+'</button></form><div class="pad-branch-disclaimer">확인된 데이터만 조회해요.</div></div></div>'+
  '<button type="button" class="pad-branch-launcher" aria-label="부점 AI 열기" aria-controls="pad-branch-window" aria-expanded="false">'+icons.chat+'<span>부점 AI</span></button>';
  container.appendChild(rootEl);
  // Fallback for a stale or partially deployed pensionAgentDemo.css: if the launcher is not positioned by the
@@ -2009,7 +2660,7 @@ function mount(container,session,options){
  if(root.PensionBranchSearchStyles&&getComputedStyle(rootEl.querySelector('.pad-branch-launcher')).position!=='fixed'){styleEl=document.createElement('style');styleEl.setAttribute('data-branch-style','');styleEl.textContent=root.PensionBranchSearchStyles;(document.head||document.body).appendChild(styleEl);console.warn('[Branch AI] pensionAgentDemo.css has no .pad-branch-* rules (old file or cache); using the bundled copy.');}
  const find=s=>rootEl.querySelector(s),panel=find('.pad-branch-window'),launcher=find('.pad-branch-launcher'),input=find('textarea'),sendBtn=find('.pad-branch-send'),body=find('.pad-branch-body'),log=find('.pad-branch-messages');
  const welcome=find('.pad-branch-welcome'),context=find('.pad-branch-context'),examples=find('.pad-branch-examples');
- const nodes=new Map(),streams=new Map();let lastMessageIds='',current=session.get(),statusTimer=null,statusIndex=0,statusEl=null,pendingIds=new Set();
+ const nodes=new Map(),streams=new Map();let lastMessageIds='',current=session.get(),statusTimer=null,statusIndex=0,statusEl=null,pendingIds=new Set(),focusTimer=null,scrollFrame=null;
  // The send button turns into a stop button while the answer is being prepared or typed out.
  function refreshSend(){const stop=current.busy||streams.size>0;sendBtn.classList.toggle('is-stop',stop);sendBtn.innerHTML=stop?icons.stop:icons.arrow;sendBtn.setAttribute('aria-label',stop?'응답 중지':'질문 전송');sendBtn.disabled=stop?false:!input.value.trim();}
  function refreshDraft(){refreshSend();input.style.height='auto';input.style.height=Math.min(input.scrollHeight,92)+'px';}
@@ -2017,23 +2668,34 @@ function mount(container,session,options){
  input.addEventListener('compositionstart',()=>{composing=true;});input.addEventListener('compositionend',()=>{composing=false;refreshDraft();});
  input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&!composing&&e.keyCode!==229){e.preventDefault();submit();}});
  find('form').addEventListener('submit',e=>{e.preventDefault();if(current.busy){session.cancel();return;}if(streams.size){finishStreams();return;}if(!composing)submit();});
- function submit(text){const q=text===undefined?input.value:text;if(!q.trim())return;finishStreams();input.value='';refreshDraft();examplesOpen=false;examples.hidden=true;find('[data-action="examples"]').setAttribute('aria-expanded','false');session.send(q);}
- function setOpen(value,focus){open=value;panel.hidden=!open;launcher.setAttribute('aria-expanded',String(open));launcher.setAttribute('aria-label',open?'부점 AI 최소화':'부점 AI 열기');launcher.classList.toggle('is-open',open);if(open)launcher.classList.remove('has-unread');if(open&&focus!==false)setTimeout(()=>{if(!disposed&&open&&visible)input.focus({preventScroll:true});},80);if(!open&&focus!==false)launcher.focus({preventScroll:true});}
+ function submit(text,action){const q=text===undefined?input.value:text;if(!q.trim())return;finishStreams();input.value='';refreshDraft();examplesOpen=false;examples.hidden=true;find('[data-action="examples"]').setAttribute('aria-expanded','false');session.send(q,action);}
+ function setOpen(value,focus){open=value;panel.hidden=!open;launcher.setAttribute('aria-expanded',String(open));launcher.setAttribute('aria-label',open?'부점 AI 최소화':'부점 AI 열기');launcher.classList.toggle('is-open',open);if(open)launcher.classList.remove('has-unread');if(focusTimer)clearTimeout(focusTimer);if(open&&focus!==false)focusTimer=setTimeout(()=>{if(!disposed&&open&&visible)input.focus({preventScroll:true});},80);if(!open&&focus!==false)launcher.focus({preventScroll:true});}
  launcher.addEventListener('click',()=>setOpen(!open));
- // Example questions: the reviewed utterances only, no recipe ids.
- C.questions.forEach(([id,q])=>{const b=document.createElement('button');b.type='button';b.dataset.example=id;b.textContent=q;examples.appendChild(b);});
+ // Welcome and example questions use the supported current-data grammar.
+ STARTERS.forEach(item=>{
+  const b=document.createElement('button');b.type='button';b.dataset.question=item.question;
+  const copy=document.createElement('span');copy.className='pad-branch-suggestion-copy';
+  const label=document.createElement('span');label.className='pad-branch-suggestion-label';label.textContent=item.label;
+  const question=document.createElement('span');question.className='pad-branch-suggestion-question';question.textContent=item.question.replace(/\.$/,'');
+  copy.appendChild(label);copy.appendChild(question);b.appendChild(copy);
+  const arrow=document.createElement('span');arrow.className='pad-branch-suggestion-arrow';arrow.setAttribute('aria-hidden','true');arrow.textContent='↗';b.appendChild(arrow);find('.pad-branch-suggestions').appendChild(b);
+ });
+ EXAMPLES.forEach(group=>{const section=document.createElement('div');section.className='pad-branch-example-group';const label=document.createElement('div');label.className='pad-branch-example-label';label.textContent=group.label;section.appendChild(label);group.questions.forEach(q=>{const b=document.createElement('button');b.type='button';b.dataset.example=q;b.textContent=q;section.appendChild(b);});examples.appendChild(section);});
  function systemStatus(text){const n=document.createElement('div');n.className='pad-branch-system';n.textContent=text;log.appendChild(n);}
- function setStatusCycle(on){if(on&&!statusTimer)statusTimer=setInterval(()=>{statusIndex=(statusIndex+1)%phrases.length;if(statusEl)statusEl.textContent=phrases[statusIndex];},700);if(!on&&statusTimer){clearInterval(statusTimer);statusTimer=null;statusIndex=0;statusEl=null;}}
+ function setStatusCycle(on){if(on&&session.mode!=='remote'&&!statusTimer)statusTimer=setInterval(()=>{statusIndex=(statusIndex+1)%phrases.length;if(statusEl)statusEl.textContent=phrases[statusIndex];},700);if(!on&&statusTimer){clearInterval(statusTimer);statusTimer=null;statusIndex=0;statusEl=null;}}
  // Follow-up chips: only utterances the bounded grammar accepts, and never a condition the result already carries.
  function followups(m){
-  const r=m.result;if(!r||!r.resolvedQuery||r.matchedCount<2)return STARTERS;
-  const labels=C.chips(r.resolvedQuery).map(c=>c.label).join(' '),out=[];
-  if(!/IRP 평가금액/.test(labels))out.push('그중 IRP 잔액 2천만원 이상만 보여줘.');
-  if(!(r.sort&&r.sort.field==='irp_amount'&&r.limit))out.push('IRP 잔액 큰 순으로 3명만 보여줘');
-  if(!/연령/.test(labels))out.push('그중 50대 고객만 보여줘');
-  return out.length?out.slice(0,3):STARTERS;
+  const r=m.result;
+  if(r&&Array.isArray(r.actions))return r.actions;
+  if(session.mode==='remote')return [];
+  return STARTERS.map(s=>({label:s.label,command:{type:'query',text:s.question}}));
  }
- function renderChips(node,m){node.querySelectorAll('.pad-branch-followups').forEach(x=>x.remove());const wrap=document.createElement('div');wrap.className='pad-branch-followups';followups(m).forEach(t=>{const b=document.createElement('button');b.type='button';b.dataset.followup=t;b.textContent=t.replace(/\.$/,'');wrap.appendChild(b);});node.appendChild(wrap);}
+ function renderChips(node,m){
+  node.querySelectorAll('.pad-branch-followups').forEach(x=>x.remove());
+  const actions=followups(m);if(!actions.length)return;
+  const wrap=document.createElement('div');wrap.className='pad-branch-followups';
+  actions.forEach(a=>{const b=document.createElement('button');b.type='button';b.dataset.command=JSON.stringify(a.action||a.command);b.dataset.message=String(m.id);b.textContent=a.label;wrap.appendChild(b);});node.appendChild(wrap);
+ }
  function afterStreams(){
   const last=current.messages.length?current.messages[current.messages.length-1]:null;
   if(last&&last.role==='assistant'&&!last.pending&&!last.cancelled&&!last.error){const node=nodes.get(last.id);if(node){if(!node.querySelector('.pad-branch-followups'))renderChips(node,last);const bottom=node.offsetTop+node.offsetHeight;if(bottom>body.scrollTop+body.clientHeight)body.scrollTop=bottom-body.clientHeight+8;}}
@@ -2049,7 +2711,9 @@ function mount(container,session,options){
  }
  function sync(e){
   if(disposed)return;current=e;
-  context.hidden=!e.state.reference;context.textContent=e.state.reference?'대화 기준 · '+C.describe(e.state.reference.query):'';
+  const state=e.state||{};
+  context.textContent=e.view?e.view.contextLabel:state.contextLabel||(state.reference?'대화 기준 · '+C.describe(state.reference.query):'');context.hidden=!context.textContent;
+  if(e.connectionNotice)find('.pad-branch-disclaimer').textContent=e.connectionNotice;
   context.title=context.textContent;
   welcome.hidden=e.messages.length>0;
   const liveIds=new Set(e.messages.map(m=>m.id));nodes.forEach((n,id)=>{if(!liveIds.has(id)){n.remove();nodes.delete(id);}});
@@ -2060,41 +2724,42 @@ function mount(container,session,options){
    if(!n){n=document.createElement('div');nodes.set(m.id,n);log.appendChild(n);}if(n.dataset.renderKey===key)return;n.dataset.renderKey=key;
    n.className='pad-branch-message '+(m.role==='user'?'is-user':m.role==='system'?'is-system':'is-assistant')+(m.pending?' is-pending':'');n.replaceChildren();
    const p=document.createElement('p');n.appendChild(p);
-   if(m.pending){p.className='pad-branch-status';p.textContent=phrases[statusIndex];statusEl=p;const dot=document.createElement('span');dot.className='pad-branch-typing';dot.setAttribute('aria-hidden','true');dot.innerHTML='<i></i><i></i><i></i>';n.appendChild(dot);return;}
+   if(m.result&&m.result.scopeNote){const note=document.createElement('div');note.className='pad-branch-data-note';note.textContent=m.result.scopeNote;n.appendChild(note);}
+   if(m.pending){p.className='pad-branch-status';p.textContent=session.mode==='remote'?m.text:phrases[statusIndex];statusEl=p;const dot=document.createElement('span');dot.className='pad-branch-typing';dot.setAttribute('aria-hidden','true');dot.innerHTML='<i></i><i></i><i></i>';n.appendChild(dot);return;}
    // An answer that was pending a moment ago is typed out; cancellations and errors show at once.
    if(m.role==='assistant'&&pendingIds.has(m.id)&&!m.cancelled&&!m.error)startStream(n,p,m);else p.textContent=m.text;
-   if(m.retryText){const b=document.createElement('button');b.type='button';b.dataset.message=String(m.id);b.dataset.action='retry';b.className='pad-branch-result-action';b.textContent='다시 시도';n.appendChild(b);}
+   if(m.retryText&&!m.pending){const b=document.createElement('button');b.type='button';b.dataset.message=String(m.id);b.dataset.action='retry';b.className='pad-branch-result-action';b.textContent='다시 시도';n.appendChild(b);}
   });
   pendingIds=nowPending;setStatusCycle(nowPending.size>0);
-  nodes.forEach((n,id)=>{if(id!==lastId)n.querySelectorAll('.pad-branch-followups').forEach(x=>x.remove());});
-  if(e.type==='reference'&&!e.state.reference)log.querySelectorAll('.pad-branch-followups').forEach(x=>x.remove());
+  nodes.forEach((n,id)=>{if(id!==lastId)n.querySelectorAll('.pad-branch-followups,[data-action="retry"]').forEach(x=>x.remove());});
+  if(e.type==='reference'&&!state.reference)log.querySelectorAll('.pad-branch-followups').forEach(x=>x.remove());
   if(e.type==='new_conversation'){streams.forEach(st=>clearInterval(st.timer));streams.clear();log.replaceChildren();nodes.clear();input.value='';}
   if(e.type==='validation')systemStatus(e.notice);
   if(e.type==='cancel'||e.type==='error')afterStreams();
   refreshSend();
   const ids=e.messages.map(x=>x.id).join(',');
   if(ids!==lastMessageIds||['answer','apply','error'].includes(e.type)){
-   requestAnimationFrame(()=>{if(disposed)return;const last=e.messages.at(-1),node=last&&nodes.get(last.id);if(node){const top=node.offsetTop-log.offsetTop+log.offsetTop;body.scrollTop=Math.max(0,top-14);}else body.scrollTop=0;});
+   if(scrollFrame)cancelAnimationFrame(scrollFrame);scrollFrame=requestAnimationFrame(()=>{if(disposed)return;const last=e.messages.at(-1),node=last&&nodes.get(last.id);if(node){const top=node.offsetTop-log.offsetTop+log.offsetTop;body.scrollTop=Math.max(0,top-14);}else body.scrollTop=0;});
   }
   lastMessageIds=ids;
  }
  rootEl.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
-  const q=b.dataset.question;if(q){submit(q==='overview'?C.questions[0][1]:q==='cash'?C.turns[0]:C.questions[4][1]);return;}
-  if(b.dataset.followup){submit(b.dataset.followup);return;}
-  if(b.dataset.example){const row=C.questions.find(x=>x[0]===b.dataset.example);input.value=row[1];refreshDraft();examplesOpen=false;examples.hidden=true;find('[data-action="examples"]').setAttribute('aria-expanded','false');input.focus();return;}
+  const q=b.dataset.question;if(q){submit(q);return;}
+  if(b.dataset.command){const last=current.messages.at(-1);if(!current.busy&&last&&String(last.id)===b.dataset.message)submit(b.textContent,JSON.parse(b.dataset.command));return;}
+  if(b.dataset.example){input.value=b.dataset.example;refreshDraft();examplesOpen=false;examples.hidden=true;find('[data-action="examples"]').setAttribute('aria-expanded','false');input.focus();return;}
   const act=b.dataset.action;
   if(act==='close')setOpen(false);
   if(act==='new'){session.newConversation();input.value='';refreshDraft();input.focus();}
   if(act==='restore'&&options.onRestore)options.onRestore();
   if(act==='examples'){examplesOpen=!examplesOpen;examples.hidden=!examplesOpen;b.setAttribute('aria-expanded',String(examplesOpen));}
-  if(act==='retry'){const m=current.messages.find(x=>String(x.id)===b.dataset.message);if(m)submit(m.retryText);}
+  if(act==='retry'){const m=current.messages.find(x=>String(x.id)===b.dataset.message);if(m&&m===current.messages.at(-1)&&!current.busy)submit(m.retryText,m.retryAction);}
  });
  rootEl.addEventListener('keydown',e=>{if(e.key==='Escape'&&open){e.stopPropagation();setOpen(false);}});
  const off=session.subscribe(sync);sync(session.get());
- return {setOpen,setVisible:v=>{visible=v;rootEl.hidden=!v;if(!v)setOpen(false,false);},
+ return {setOpen,ask:(text,action)=>{setOpen(true);submit(text,action);},setVisible:v=>{visible=v;rootEl.hidden=!v;if(!v)setOpen(false,false);},
   getState:()=>({open,visible,draft:input.value,busy:current.busy,streaming:streams.size>0}),
-  destroy:()=>{disposed=true;off();setStatusCycle(false);streams.forEach(st=>clearInterval(st.timer));streams.clear();rootEl.remove();if(styleEl)styleEl.remove();},element:rootEl};
+  destroy:()=>{disposed=true;off();clearTimeout(focusTimer);cancelAnimationFrame(scrollFrame);current=null;nodes.clear();setStatusCycle(false);streams.forEach(st=>clearInterval(st.timer));streams.clear();rootEl.remove();if(styleEl)styleEl.remove();},element:rootEl};
 }
 root.PensionBranchSearchWidget={mount};
 })(window);
@@ -2121,58 +2786,101 @@ function mount(component,params){
  const render=component.renderVals,initial=fullView(component,render);
  const source=root.PensionBranchCurrentData.fromCurrentRows(initial.queue,root.PensionBriefingFixtures,component.DATA,c=>component.profileOf(c));
  if(!source.records.length){console.error('[Branch AI] Current main list empty. No fallback cohort used.');return;}
- // Every answer that resolves a customer set (extract or aggregate) is applied to the list at once.
- // The mock answers instantly, so a thinking time (default 2s, onParam({ branchSearchLatency: ms })) keeps the waiting UI visible.
- const latency=params.branchSearchLatency==null?2000:Math.max(0,Number(params.branchSearchLatency)||0);
- const session=root.PensionBranchSearchSession.create(source,{provider:root.PensionBranchCurrentProvider.create(source),applyAggregate:true,latency});
+ // Local calculation is opt-in for regression/demo use; remote failures never fall back to it.
+ const local=params.branchAgentMode==='local';
+ const latency=params.branchSearchLatency==null?6000:Math.max(0,Number(params.branchSearchLatency)||0);
+ const engine=local?root.PensionBranchConversation.create(source):null;
+ function checkManifest(manifest){
+  const ids=fullView(component,render).queue.map(r=>r.id);
+  if(!manifest||JSON.stringify(manifest)!==JSON.stringify(root.PensionBranchDataManifest)||JSON.stringify(ids)!==JSON.stringify(manifest.row_ids)){
+   const error=new Error('MANIFEST');error.code='MANIFEST';throw error;
+  }
+ }
+ const session=root.PensionBranchSearchSession.create(source,local?{mode:'local',engine,latency}:{
+  config:root.PensionBranchAgentTransport.settings(params,root.__PENSION_FABRIX_CONFIG),
+  manifest:root.PensionBranchDataManifest,checkManifest,
+  isCurrent:()=>current&&current.component===component&&!component.state.sel,
+  prepareAnswer:(_answer,manifest)=>checkManifest(manifest)
+ });
+ params=null;
  const motion=root.PensionBranchMotion.create();
- const ctx={component,app,source,session,motion,applied:false,pending:false,busy:false,flash:false,before:new Map(),oldRender:render,lastSelected:null};current=ctx;
+ const ctx={component,app,source,session,engine,motion,applied:false,pending:false,busy:false,before:new Map(),oldRender:render,lastSelected:null};current=ctx;
+ // Capture before the legacy row handlers; CSS also removes hidden controls from keyboard navigation.
+ ctx.blockBusyRow=e=>{if(ctx.busy&&e.target.closest('[data-branch-list]')){e.preventDefault();e.stopImmediatePropagation();}};
+ app.addEventListener('click',ctx.blockBusyRow,true);app.addEventListener('keydown',ctx.blockBusyRow,true);
  // Back to the original list: the 전체 chip, the KPI cards and the chat's 기존 목록 button all end the search mode.
- function restore(){session.cancel();session.clearReference();ctx.applied=false;ctx.pending=true;component.setState({filter:'all',branchSearchRevision:session.get().revision+1});}
+ function restore(keepFilter){ctx.keepFilter=keepFilter===true;try{session.reset();}finally{ctx.keepFilter=false;}}
  // The Starroot shell renders the page inside a transformed .pt-page; position:fixed only works from document.body.
  ctx.restore=restore;ctx.widget=root.PensionBranchSearchWidget.mount(document.body,session,{onRestore:restore});
  ctx.off=session.subscribe(e=>{
-  // pending: dim the list under a loading pill; apply: new rows plus a short 'updated' cue on the title.
-  if(e.type==='pending'){ctx.busy=true;component.setState({branchSearchBusy:true});return;}
-  if(e.type==='apply'){ctx.applied=true;ctx.pending=true;ctx.busy=false;ctx.flash=true;component.setState({branchSearchRevision:e.revision,branchSearchBusy:false,filter:'all'});return;}
-  if(ctx.busy&&(e.type==='answer'||e.type==='error'||e.type==='cancel')){ctx.busy=false;component.setState({branchSearchBusy:false});}
+  // Waiting only patches the header/list styles, preserving the current DOM and focus.
+  if(e.type==='pending'){ctx.busy=false;paintBusy(ctx);return;}
+  if(e.type==='resolved'){ctx.busy=e.listChange;if(ctx.busy)motion.cancel();paintBusy(ctx);return;}
+  if(e.type==='progress'){if(e.listChange){ctx.busy=true;motion.cancel();paintBusy(ctx);}return;}
+  if(e.type==='apply'){ctx.applied=e.view?e.view.active:!!e.state.active;ctx.pending=true;ctx.busy=false;const update={branchSearchRevision:e.revision};if(!ctx.keepFilter)update.filter='all';component.setState(update);return;}
+  if(ctx.busy&&(e.type==='answer'||e.type==='error'||e.type==='cancel')){ctx.busy=false;paintBusy(ctx);}
  });
  component.renderVals=function(){
   const base=ctx.oldRender.apply(this,arguments);
+  // Wrap even before the first AI result so original filters invalidate pending requests.
+  for(const k of ['filterAll','kNewTap','kOnTap','kResTap','filterNew','filterIsa']){const fn=base[k];if(typeof fn==='function')base[k]=()=>{restore(true);fn();};}
   if(!ctx.applied||this.state.sel)return base;
   // Always reuse original row objects/handlers, including badges and tax rings.
   // The query chooses IDs and their order; it never builds an alternative row.
   const all=fullView(this,ctx.oldRender),rows=new Map((all.queue||[]).filter(r=>r.id).map(r=>[r.id,r]));
-  const s=session.get().state;
-  base.queue=s.mainListCaseIds.map(id=>{if(!rows.has(id))throw new Error('Current original row disappeared: '+id);return Object.assign({},rows.get(id),{anim:'none'});});
-  base.queueTotal=s.mainListCaseIds.length;
-  base.filterAll=restore;
-  for(const k of ['kNewTap','kOnTap','kResTap','filterNew','filterIsa']){const fn=base[k];if(typeof fn==='function')base[k]=()=>{restore();fn();};}
+  const snapshot=session.get(),ids=snapshot.view?snapshot.view.rowIds:snapshot.state.mainListCaseIds;
+  base.queue=ids.map(id=>{if(!rows.has(id))throw new Error('Current original row disappeared');return Object.assign({},rows.get(id),{anim:'none'});});
+  base.queueTotal=ids.length;
   return base;
  };
 }
-function beforeRender(component){const c=current;if(c&&c.component===component&&c.pending)c.before=c.motion.capture(c.app);}
+function paintBusy(c){
+ const list=c.app.querySelector('[data-branch-list]'),head=c.app.querySelector('.pad-section-head'),title=head&&head.querySelector('.pad-h2');
+ if(list){
+  list.classList.toggle('pad-branch-list--busy',c.busy);list.setAttribute('aria-busy',String(c.busy));
+  list.setAttribute('aria-hidden',String(c.busy));
+  const rows=list.querySelectorAll('.pad-queue-item');
+  rows.forEach(row=>{const r=row.getBoundingClientRect();row.classList.toggle('pad-branch-skeleton-active',c.busy&&r.bottom>0&&r.top<root.innerHeight);});
+  // An empty result still needs a visible loading state on the next query.
+  if(c.busy&&!rows.length&&!list.querySelector('.pad-branch-skeleton-empty')){
+   const empty=document.createElement('div');empty.className='pad-branch-skeleton-empty';
+   for(let i=0;i<3;i++){const card=document.createElement('div');card.className='pad-branch-skeleton-card pad-branch-skeleton-active';empty.appendChild(card);}list.appendChild(empty);
+  }
+  if(!c.busy)list.querySelectorAll('.pad-branch-skeleton-empty').forEach(n=>n.remove());
+ }
+ if(!head||!title)return;
+ head.classList.add('pad-branch-list-head');
+ if(!c.busy){head.querySelectorAll('.pad-branch-query-state,.pad-branch-progress').forEach(n=>n.remove());return;}
+ if(!title.querySelector('.pad-branch-query-state')){
+  const status=document.createElement('span');status.className='pad-branch-query-state';status.setAttribute('role','status');
+  const label=document.createElement('span');label.className='pad-branch-sr-only';label.textContent='고객 목록 조회 중';status.appendChild(label);
+  const donut=document.createElement('span');donut.className='pad-branch-query-donut';donut.setAttribute('aria-hidden','true');status.appendChild(donut);title.appendChild(status);
+ }
+ if(!head.querySelector('.pad-branch-progress')){const progress=document.createElement('span');progress.className='pad-branch-progress';progress.setAttribute('aria-hidden','true');head.appendChild(progress);}
+}
+function beforeRender(component){const c=current;if(c&&c.component===component){if(c.pending)c.before=c.motion.capture(c.app);c.motion.cancel();}}
 function afterRender(component){
  const c=current;if(!c||c.component!==component)return;
  const selected=component.state.sel;
  if(selected&&c.lastSelected!==selected)c.session.cancel('상세화면 이동으로 진행 중인 조회를 취소했습니다.');
  c.lastSelected=selected;c.widget.setVisible(!selected);
- if(selected){c.pending=false;return;}
+ if(selected){c.pending=false;c.motion.cancel();return;}
  const list=c.app.querySelector('[data-branch-list]');
- if(list){
-  list.classList.toggle('pad-branch-list--busy',!!c.busy);
-  if(c.busy&&!list.querySelector('.pad-branch-loading')){const o=document.createElement('div');o.className='pad-branch-loading';o.setAttribute('role','status');o.innerHTML='<div class="pad-branch-loading__pill"><span class="pad-spinner"></span><span class="pad-branch-loading__msg">부점 AI가 고객을 조회하고 있어요</span></div>';list.prepend(o);}
- }
  if(c.applied){
-  // Search mode changes only the list title and its order label. No extra bar, chips or notes.
-  const s=c.session.get().state;
-  const title=c.app.querySelector('.pad-section-head .pad-h2');if(title)title.textContent='AI 검색 결과 · '+s.mainListCaseIds.length+'명';
-  const order=c.app.querySelector('.pad-section-head > .pad-rowb > .pad-t-12-muted');if(order)order.textContent=C.sortLabel(s.main.sort);
-  if(c.flash&&title){c.flash=false;title.classList.add('pad-branch-updated');const tag=document.createElement('span');tag.className='pad-branch-updated-tag';tag.textContent='방금 갱신';title.appendChild(tag);setTimeout(()=>{tag.remove();title.classList.remove('pad-branch-updated');},2600);}
+  // Preserve the original customer cards; new context and actions belong in chat.
+  const snapshot=c.session.get(),s=snapshot.state,v=snapshot.view;
+  const title=c.app.querySelector('.pad-section-head .pad-h2');if(title)title.textContent='AI 검색 결과 · '+(v?v.rowIds.length:s.mainListCaseIds.length)+'명';
+  const order=c.app.querySelector('.pad-section-head > .pad-rowb > .pad-t-12-muted');
+  if(order)order.textContent=v?remoteSortLabel(v.sort):C.sortLabel(s.main.sort);
  }
+ paintBusy(c);
  if(c.pending&&list)c.motion.play(c.app,c.before,true);c.pending=false;
 }
-function destroy(){const c=current;if(!c)return;current=null;c.off();c.widget.destroy();c.session.destroy();c.motion.cancel();c.component.renderVals=c.oldRender;}
+function remoteSortLabel(sort){
+ const names={recommendation_order:'추천순',source_order:'기존 순서',age:'나이',irp_amount:'IRP 잔액',cash_amount:'현금성자산',cash_pct:'현금 비중',return_pct:'수익률'};
+ return (names[sort.field]||'조회 순서')+(['recommendation_order','source_order'].includes(sort.field)?'':sort.direction==='asc'?' 낮은 순':' 높은 순');
+}
+function destroy(){const c=current;if(!c)return;current=null;c.off();c.widget.destroy();c.session.destroy();c.motion.cancel();c.busy=false;paintBusy(c);c.app.removeEventListener('click',c.blockBusyRow,true);c.app.removeEventListener('keydown',c.blockBusyRow,true);c.component.renderVals=c.oldRender;}
 root.PensionBranchSearchAdapter={mount,beforeRender,afterRender,destroy,get:()=>current,disable:()=>current&&current.restore(),fullView};
 })(window);
 
@@ -3832,6 +4540,20 @@ class Component {
   if (window.PensionBriefingAdapter) window.PensionBriefingAdapter.install(Component);
   if (window.PensionFabrix) window.PensionFabrix.install(Component);
   if (window.PensionChat) window.PensionChat.install(Component);
+
+  // Explicit, opt-in build hook. No DOM/lifecycle/network work or source rewriting.
+  // The build reads the same default queue and profiles used by the main screen.
+  if (typeof window.__PensionBuildExtract === 'function') {
+    window.__PensionBuildExtract(function extractCurrentRows() {
+      const page = new Component({});
+      const modelRows = page.DATA;
+      return {
+        mainRows: page.renderVals().queue,
+        modelRows,
+        profiles: Object.fromEntries(modelRows.map(row => [row.id, page.profileOf(row)]))
+      };
+    });
+  }
 
   // Starroot adapter
   // 빌드(tools/briefing/build.js)가 아래 자리표시를 실제 파일코드(기본 1288272)로 치환합니다.

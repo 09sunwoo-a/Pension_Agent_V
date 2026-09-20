@@ -1,0 +1,6 @@
+pydantic>=2,<3
+fastapi
+uvicorn
+langchain-core
+langchain-openai
+openai
