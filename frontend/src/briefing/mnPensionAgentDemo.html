@@ -25,7 +25,14 @@
         agentId: '',          // 대화 Agent assetId (문자열)
         openapiToken: '',     // Secret. 브리핑 Agent와 다른 토큰
         generativeAiClient: '' // Secret
+      },
+      branch: {               // 부점 AI(퇴직연금 사후관리 에이전트). 비워 두면 대화창에 연결 미설정 안내만 표시
+        endpointUrl: '',      // 사내 FabriX base URL (https). /openapi/agent-chat/… 뒤는 프론트가 붙임. /chat·로컬 주소 금지
+        agentId: 0,           // 부점 전용 Connector의 Agent ID (양의 정수). 기존 S1~S5 ID 재사용 금지
+        openapiToken: '',     // Secret: x-openapi-token. 부점 Agent 전용 토큰
+        generativeAiClient: '' // Secret: x-generative-ai-client
       }
+      // xClientUser(직원 ID)는 위 공통 값을 부점 AI도 함께 사용. onParam(params).fabrix.branch 가 있으면 그쪽이 우선
     };
   </script>
   <div id="pensionAgentDemo">
