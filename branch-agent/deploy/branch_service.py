@@ -63,7 +63,7 @@ def fault_event(outer, code, detail=None):
             "code": code, "retryable": code in ("LLM_TIMEOUT", "LLM_OUTPUT", "INTERNAL"),
             "message": ("응답 시간이 초과되었습니다. 다시 시도해 주세요." if code == "LLM_TIMEOUT" else "요청을 처리하지 못했습니다. 입력과 연결 상태를 확인해 주세요.")
                        # Diagnostic suffix for operators reading the raw FabriX response: class/status/variable names only.
-                       + (" [" + re.sub(r"[^A-Za-z0-9_=|:., -]", "", str(detail))[:120] + "]" if detail else "")}}
+                       + (" [" + re.sub(r"[^A-Za-z0-9_=|:.,/ -]", "", str(detail))[:200] + "]" if detail else "")}}
 
 
 def check_literals(plan, message):

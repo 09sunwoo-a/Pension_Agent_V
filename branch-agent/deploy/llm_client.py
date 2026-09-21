@@ -123,12 +123,29 @@ def call(messages: list[dict[str, str]], *, system: str = "", model: str = "",
     try:
         response = llm.invoke(translated)
     except Exception as error:
+        # Diagnostic trail (no values): SDK class, underlying httpx cause, HTTP status, provider message head.
+        # cause=ReadTimeout means the request reached the endpoint and no reply came in time (the model was hit);
+        # cause=ConnectTimeout/ConnectError means the endpoint host was never reached.
+        chain, cause = [], error
+        while (cause.__cause__ or cause.__context__) is not None and len(chain) < 6:
+            cause = cause.__cause__ or cause.__context__
+            chain.append(cause)
+        # Prefer the httpx layer (ReadTimeout / ConnectTimeout / ConnectError) over the raw socket error beneath it.
+        picked = next((c for c in chain if type(c).__module__.startswith("httpx")), chain[-1] if chain else None)
+        trail = type(error).__name__ + (" cause=" + type(picked).__name__ if picked is not None else "")
+        status = getattr(error, "status_code", None) or getattr(getattr(error, "response", None), "status_code", None)
+        if status:
+            trail += " status=" + str(status)
+        body = getattr(error, "body", None)
+        text = body.get("error", body).get("message") if isinstance(body, dict) and isinstance(body.get("error", body), dict) else None
+        if isinstance(text, str) and text.strip():
+            trail += " msg=" + re.sub(r"[^A-Za-z0-9_ .:/-]", "", text)[:80].strip()
+        elapsed = "elapsed=%.1fs" % (time.monotonic() - started)
         if "timeout" in type(error).__name__.lower():
             timeout = TimeoutError("LLM_TIMEOUT")
-            timeout.detail = "stage=%s timeout=%gs elapsed=%.1fs retries=%d" % (stage, _timeout(), time.monotonic() - started, _retries())
+            timeout.detail = "stage=%s timeout=%gs %s retries=%d %s" % (stage, _timeout(), elapsed, _retries(), trail)
             raise timeout from None
-        status = getattr(error, "status_code", None) or getattr(getattr(error, "response", None), "status_code", None)
-        raise _fail("LLM_PROVIDER", "stage=" + stage + " " + type(error).__name__ + (" status=" + str(status) if status else "")) from None
+        raise _fail("LLM_PROVIDER", "stage=" + stage + " " + elapsed + " " + trail) from None
     if not isinstance(response.content, str):
         raise RuntimeError("LLM_OUTPUT")
     return response.content
