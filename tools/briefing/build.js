@@ -12,29 +12,33 @@ const read = file => fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
 const json = file => JSON.parse(read(file));
 
 function inputs() {
-  const dataDir = path.join(ACTIVE, 'display-data');
-  const customerFiles = fs.readdirSync(dataDir).filter(f => /^B\d{2}-\d{2}\.json$/.test(f)).sort();
-  const kim = json(path.join(ROOT, 'agent-workbench/case-design/materials/reference-cases/DEMO-01_KIM_SEOYEON_표시용데이터_v0.1.json'));
-  const customers = [kim, ...customerFiles.map(f => {
+  const dataDir = path.join(ACTIVE, 'display-data'), briefingDir = path.join(ACTIVE, 'briefing-json');
+  // B = case customers with S1-S5 briefings, C = conversational-agent demo customers (customer data only).
+  const customerFiles = fs.readdirSync(dataDir).filter(f => /^[BC]\d{2}-\d{2}\.json$/.test(f)).sort();
+  const customers = customerFiles.map(f => {
     const customer = json(path.join(dataDir, f));
     if (customer.briefingMeta.caseId + '.json' !== f) throw new Error('Customer filename/caseId mismatch: ' + f);
     return customer;
-  })];
-  if (kim.briefingMeta.caseId !== 'DEMO-01') throw new Error('Kim caseId must be DEMO-01');
+  });
   const ids = customers.map(c => c.briefingMeta.caseId);
   if (new Set(ids).size !== ids.length || new Set(customers.map(c => c.customer.customerId)).size !== ids.length) throw new Error('Duplicate case/customer ID');
-  const actual = fs.readdirSync(path.join(ACTIVE, 'briefing-json')).filter(f => f.endsWith('.json')).sort();
-  if (JSON.stringify(actual) !== JSON.stringify(ids.map(id => id + '.json').sort())) throw new Error('Customer/briefing JSON sets do not match');
+  const actual = fs.readdirSync(briefingDir).filter(f => f.endsWith('.json')).sort();
+  const orphans = actual.filter(f => !ids.includes(f.replace(/\.json$/, '')));
+  if (orphans.length) throw new Error('Briefing JSON without a customer: ' + orphans.join(', '));
   // Metadata is assembled in memory for the existing store, never stored as a
   // second editable briefing. Only briefing-json/*.json is the content source.
+  // A customer without a briefing file (null) ships as a snapshot only; the screen shows the briefing as not ready.
   const briefings = customers.map(c => {
-    const id = c.briefingMeta.caseId, content = json(path.join(ACTIVE, 'briefing-json', id + '.json'));
+    const id = c.briefingMeta.caseId, file = path.join(briefingDir, id + '.json');
+    if (!fs.existsSync(file)) return null;
+    const content = json(file);
     const errors = contract.validateContent(content, c);
     if (errors.length) throw new Error(id + ': ' + errors.join('\n'));
     return { schemaVersion: contract.version, caseId: id, customerId: c.customer.customerId,
       asOfDate: c.briefingMeta.asOfDate, status: 'draft', title: '고객별 브리핑', ...content };
   });
-  return { customers, briefings };
+  if (!briefings.some(Boolean)) throw new Error('No briefing JSON found');
+  return { customers, briefings, noBriefing: customers.filter((c, i) => !briefings[i]).map(c => c.briefingMeta.caseId) };
 }
 
 // Starroot file code of the deployed business page; pass another code as the CLI argument to override.
@@ -50,7 +54,7 @@ function artifacts(fileCode = DEFAULT_FILE_CODE) {
     '(function(window, document) {\nvar module, exports, require;\n' +
     'if (window.__PensionVanilla) window.__PensionVanilla.destroy();\n' +
     // Only customer snapshots ship to the browser; briefing text comes from the Agent.
-    'window.PensionBriefingFixtures = ' + JSON.stringify({ customers: data.customers }).replace(/</g, '\\u003c') + ';\n' +
+    'window.PensionBriefingFixtures = ' + JSON.stringify({ customers: data.customers, noBriefing: data.noBriefing }).replace(/</g, '\\u003c') + ';\n' +
     modules.map(f => '\n/* ' + f + ' */\n' + read(path.join(SRC, f))).join('\n;\n')
       .replace("var STARROOT_FILE_CODE = 'REPLACE_WITH_FILE_CODE';", "var STARROOT_FILE_CODE = '" + fileCode + "';") +
     '\n})(window, document);\n';
@@ -68,16 +72,17 @@ function artifacts(fileCode = DEFAULT_FILE_CODE) {
 function build(fileCode) {
   fs.mkdirSync(OUT, { recursive: true });
   for (const [name, body] of Object.entries(artifacts(fileCode))) fs.writeFileSync(path.join(OUT, name), body);
-  const data = inputs(), req = wire.request(data.customers[0], 'example-request-001', 'TEST_EMPLOYEE');
-  fs.writeFileSync(path.join(ROOT, 'integration/contracts/response.example.json'), JSON.stringify(wire.answer(req, contract.contentOf(data.briefings[0])), null, 2) + '\n');
+  const data = inputs(), first = data.briefings.findIndex(Boolean), req = wire.request(data.customers[first], 'example-request-001', 'TEST_EMPLOYEE');
+  fs.writeFileSync(path.join(ROOT, 'integration/contracts/response.example.json'), JSON.stringify(wire.answer(req, contract.contentOf(data.briefings[first])), null, 2) + '\n');
   fs.writeFileSync(path.join(ROOT, 'agent/briefing_data.json'), JSON.stringify(agentData(data)) + '\n');
-  console.log('Built frontend (1 HTML + 1 JS + 1 CSS) and Agent data from ' + data.customers.length + ' customer/briefing pairs. Source JSON unchanged.');
+  console.log('Built frontend (1 HTML + 1 JS + 1 CSS) from ' + data.customers.length + ' customers and Agent data from ' + data.briefings.filter(Boolean).length + ' customer/briefing pairs. Source JSON unchanged.');
 }
 
 function agentData(data = inputs()) {
   return { schema_version: wire.version, answer_schema: wire.answerSchema,
-    cases: Object.fromEntries(data.customers.map((customer, i) => [customer.briefingMeta.caseId,
-      { customer_data: customer, briefing: contract.contentOf(data.briefings[i]) }])) };
+    // Only customers with a stored briefing are served by the fixed Agent.
+    cases: Object.fromEntries(data.customers.map((customer, i) => [customer.briefingMeta.caseId, data.briefings[i]]).filter(([, b]) => b).map(([id, b], i) => [id,
+      { customer_data: data.customers.find(c => c.briefingMeta.caseId === id), briefing: contract.contentOf(b) }])) };
 }
 
 function preview() {

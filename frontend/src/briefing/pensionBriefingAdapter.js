@@ -15,11 +15,15 @@
     instance.setState(patch);
   });
   var records = store.customers();
-  var sampleLabels = { 'DEMO-01': '대표 · 상품 제안', 'B01-22': '대표 · 업무 제안', 'B06-13': '대표 · 미확인 정보' };
-  // The main list shows the 30 case customers next to the legacy demo rows. DEMO-01 is the
-  // structured twin of the legacy 김서연 (ksy) row, so it stays reachable from the case
-  // picker and search only, not as a second 김서연 row.
-  var QUEUE_EXCLUDED = { 'DEMO-01': true };
+  var sampleLabels = { 'B01-22': '대표 · 업무 제안', 'B06-13': '대표 · 미확인 정보' };
+  var noBriefing = {};
+  (fixtures.noBriefing || []).forEach(function (id) { noBriefing[id] = true; });
+  // The main list shows the case customers next to the legacy demo rows. Cases kept out of the
+  // list (none today) stay reachable from the case picker and search.
+  var QUEUE_EXCLUDED = {};
+  // Legacy demo rows replaced by the conversational-agent versions of the same customers
+  // (C01-10 김서연, C01-12 이수민, C01-11 박정호). Their mock code stays in pensionAgentDemo.js unused.
+  var LEGACY_HIDDEN = { ksy: true, lsm: true, pjh: true };
   var queued = records.filter(function (r) { return !QUEUE_EXCLUDED[r.briefingMeta.caseId]; });
   var asOfDate = (function () {
     var count = {}, best = null;
@@ -30,11 +34,12 @@
     var id = component.state.sel, record = store.customer(id), entry = store.read(id);
     base.briefingLabels = BriefingView.labels;
     base.hasCaseLibrary = true;
+    base.caseLibraryLabel = '고객별 브리핑 · ' + records.length + '명';
     base.openCaseLibrary = function () { component.select('B01-22', true); };
-    base.caseChoices = [{ id: 'ksy', label: '기존 데모 · 김서연', selected: id === 'ksy' }].concat(records.map(function (r) {
+    base.caseChoices = records.map(function (r) {
       return { id: r.briefingMeta.caseId, label: (sampleLabels[r.briefingMeta.caseId] || r.briefingMeta.caseId) + ' · ' + r.customer.name, selected: id === r.briefingMeta.caseId };
-    }));
-    if (!record && id && id !== 'ksy') base.caseChoices.unshift({ id: id, label: '기존 데모 · ' + base.selName, selected: true });
+    });
+    if (!record && id) base.caseChoices.unshift({ id: id, label: '기존 데모 · ' + base.selName, selected: true });
     base.onCaseChange = function (e) { component.select(e.target.value, true); };
     base.structuredBrief = !!record; base.legacyBrief = !record;
     base.briefingTilesClass = record ? 'pad-tiles--structured' : '';
@@ -50,6 +55,7 @@
       };
     }
     base.hasAiBrief = !!entry.content; base.noAiBrief = !entry.content;
+    base.briefingAvailable = !noBriefing[id];
     base.hasBriefingError = false;
     base.hasBriefingState = entry.phase === 'loading' || entry.phase === 'error';
     base.briefingPhase = entry.phase;
@@ -77,12 +83,12 @@
     // Main-list rows: legacy demo rows first in their own order, then the case customers.
     // The queue renderer sorts by 관리 필요도 across both sets.
     Object.defineProperty(Component.prototype, 'DATA', { configurable: true, get: function () {
-      if (!this._queueRows) this._queueRows = originalData.call(this).concat(queued.map(CustomerView.row));
+      if (!this._queueRows) this._queueRows = originalData.call(this).filter(function (c) { return !LEGACY_HIDDEN[c.id]; }).concat(queued.map(CustomerView.row));
       return this._queueRows;
     } });
     // The legacy directory already contains DATA; add only the cases kept out of the list.
     Object.defineProperty(Component.prototype, 'DIR', { configurable: true, get: function () {
-      if (!this._caseDirectory) this._caseDirectory = originalDir.call(this).concat(records.filter(function (r) { return QUEUE_EXCLUDED[r.briefingMeta.caseId]; }).map(CustomerView.stub));
+      if (!this._caseDirectory) this._caseDirectory = originalDir.call(this).filter(function (c) { return !LEGACY_HIDDEN[c.id]; }).concat(records.filter(function (r) { return QUEUE_EXCLUDED[r.briefingMeta.caseId]; }).map(CustomerView.stub));
       return this._caseDirectory;
     } });
     Component.prototype.asOfDate = asOfDate;
@@ -90,6 +96,8 @@
   }
   window.PensionBriefingAdapter = {
     install: install,
+    // Customers shipped as snapshots only: no stored briefing, so no Agent request.
+    hasBriefing: function (id) { return !noBriefing[id]; },
     // Retain the exact local ticket until response arrival. No customer payload.
     begin: store.begin, receive: store.receive, fail: store.fail, cancel: store.cancel,
     clear: store.clear, getContext: store.context, getCustomerForRequest: store.customer

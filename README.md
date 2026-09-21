@@ -1,13 +1,13 @@
 # Pension Agent
 
-고객별 브리핑과 사내 Agent 구현을 이어가기 위한 저장소입니다. **30명 + 김서연(DEMO-01) 고객 데이터/브리핑**을 보존했습니다. 원래 김서연 `ksy` 화면도 최신 프론트 안에 유지됩니다.
+고객별 브리핑과 사내 Agent 구현을 이어가기 위한 저장소입니다. **30명 고객 데이터/브리핑 + 대화 Agent 시연 고객 12명(C01, 고객 데이터만)**을 보존했습니다. 레거시 데모의 김서연·이수민·박정호는 대화 Agent 버전(C01-10·12·11)으로 교체했고, 그 mock 코드는 프론트 안에 남아 있지만 화면에는 뜨지 않습니다.
 
 ## 작업별로 필요한 것만 읽기
 
 | 작업 | 수정 원본 / 참고 |
 |---|---|
 | Agent 내부 구현 | [agent/](agent/), [입출력 명세](integration/contracts/AGENT_FRONTEND_CONTRACT.md) |
-| 고객 데이터·브리핑 개선 | [31건 색인](agent-workbench/case-design/review/CASE_INDEX.md)의 해당 고객 JSON과 S1–S5 JSON |
+| 고객 데이터·브리핑 개선 | [30건 색인](agent-workbench/case-design/review/CASE_INDEX.md)의 해당 고객 JSON과 S1–S5 JSON. C01 고객은 고객 JSON만 |
 | 화면 레이아웃 | `frontend/src/briefing/mnPensionAgentDemo.html`, `pensionAgentDemo.css` |
 | S1–S5·추천상품 렌더링 | `frontend/src/briefing/pensionBriefingView.js` |
 | 상단 고객·계좌 렌더링 | `frontend/src/briefing/pensionCustomerView.js` |
@@ -22,7 +22,7 @@
 
 ## 수정 원칙
 
-- 고객 입력: `agent-workbench/case-design/active/display-data/Bxx-xx.json` 직접 수정. 김서연은 `materials/reference-cases/DEMO-01_KIM_SEOYEON_표시용데이터_v0.1.json` 수정.
+- 고객 입력: `agent-workbench/case-design/active/display-data/Bxx-xx.json`(브리핑 있음)·`Cxx-xx.json`(대화 Agent 시연 고객, 브리핑 없음) 직접 수정. 기준일은 전부 2026-09-29. `materials/reference-cases/DEMO-01_*.json`은 더 이상 빌드에 들어가지 않는 참고본입니다.
 - 브리핑: `active/briefing-json/<caseId>.json` 직접 수정. S1–S5와 출처/검토 메모만 저장합니다.
 - 위 경로의 `active/`, `materials/`는 모두 `agent-workbench/case-design/` 아래입니다.
 - Golden/브리핑 Markdown은 고객 맥락·출처 확인용입니다. JSON을 덮어쓰는 생성기/override는 제거했으므로 MD를 고쳐도 화면 JSON이 자동으로 바뀌지 않습니다.
@@ -48,10 +48,10 @@ node tools/briefing/build.js --preview
 
 ## 현재 단계
 
-- 프론트·브리핑 규격·31건 구조 연결: 로컬 검증.
+- 프론트·브리핑 규격·30건 브리핑 + 12건 고객 스냅샷 구조 연결: 로컬 검증.
 - 브리핑 화면은 고객 선택 시 FabriX를 자동 호출하고 API 응답만 표시합니다. 반입 JS에 더미 브리핑 문장은 없습니다(고객 스냅샷만 포함). 자동 호출 경로는 `check.js`와 로컬 브라우저·가짜 SSE 서버로 확인했고, 사내 WAS의 설정 주입과 실제 Origin 호출은 미검증입니다.
 - 브리핑 내용: 모두 draft, 대표 3건만 1차 개선. 검토 이슈는 각 JSON의 `reviewNotes`와 사례 색인.
 - **LLM 없는 고정 Agent 구현 완료**: 선택한 사례의 저장된 S1–S5를 반환하며 요청 식별값/고객 스냅샷이 다르면 오류. Python 응답은 프론트 계약으로 검증했습니다.
 - **로컬 FastAPI/Pydantic 미설치로 앱 기동은 미검증. 실제 사내 E2E, LLM 기반 생성, 운영 인증 방식은 미완료.**
-- 우측 실시간 상담은 31명 구조화 고객에서 대화 Agent(별도 Connector·토큰, 설정 블록의 `chat`)를 호출합니다. 실제 3턴 응답 샘플로 파싱·화면을 검증했고, `customer_id`는 상담 시작 시 직원이 채팅으로 입력합니다(대화 Agent 시연 고객 `198734-1205842`). 기존 데모 3명은 mock 상담을 유지합니다.
+- 우측 실시간 상담은 42명 구조화 고객에서 대화 Agent(별도 Connector·토큰, 설정 블록의 `chat`)를 호출합니다. 실제 3턴 응답 샘플로 파싱·화면을 검증했고, `customer_id`는 상담 시작 시 직원이 채팅으로 입력합니다(대화 Agent 시연 고객 `198734-1205842`). 기존 데모 3명은 mock 상담을 유지합니다.
 - Secret과 실제 고객 데이터를 올리지 마세요.

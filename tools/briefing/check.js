@@ -11,8 +11,11 @@ const transport = require('../../frontend/src/briefing/fabrix-transport');
 const chatTransport = require('../../frontend/src/briefing/fabrix-chat-transport');
 const { create } = require('../../frontend/src/briefing/pensionBriefingStore');
 const copy = x => JSON.parse(JSON.stringify(x));
-const { customers, briefings } = inputs();
-assert.equal(customers.length, 31, 'Expected 30 customers + Kim. Update intentionally when adding cases.');
+const { customers, briefings, noBriefing } = inputs();
+assert.equal(customers.length, 42, 'Expected 30 case customers + 12 conversational-agent demo customers. Update intentionally when adding cases.');
+assert.equal(briefings.filter(Boolean).length, 30, 'Expected 30 stored briefings');
+assert.deepEqual(noBriefing, customers.filter(c => /^C/.test(c.briefingMeta.caseId)).map(c => c.briefingMeta.caseId), 'C cases ship without a briefing');
+const FIRST = customers[briefings.findIndex(Boolean)].briefingMeta.caseId;
 const js = fs.readFileSync(path.join(OUT, 'pensionAgentDemo.js'), 'utf8');
 const code = js.match(/^\s*var STARROOT_FILE_CODE = '([^']+)'/m)[1];
 const expected = artifacts(code);
@@ -29,12 +32,14 @@ app.setState = patch => Object.assign(app.state, typeof patch === 'function' ? p
 const bridge = ctx.window.PensionBriefingAdapter;
 for (const [i, c] of customers.entries()) {
   const id = c.briefingMeta.caseId, b = briefings[i];
-  assert.deepEqual(contract.validateContent(contract.contentOf(b), c), [], id);
+  if (b) assert.deepEqual(contract.validateContent(contract.contentOf(b), c), [], id);
   assert.equal(c.holdings.reduce((sum, x) => sum + x.valuationAmountKrw, 0), c.irpAccount.valuationAmountKrw, id);
   assert.equal(c.irpAccount.assetAllocation.reduce((sum, x) => sum + x.amountKrw, 0), c.irpAccount.valuationAmountKrw, id);
   if (c.irpAccount.valuationAmountKrw) for (const rows of [c.holdings, c.irpAccount.assetAllocation]) assert.ok(Math.abs(rows.reduce((sum, x) => sum + x.weightPct, 0) - 100) < 0.001, id);
   app.select(id, true);
   assert.equal(app.renderVals().hasAiBrief, false, id + ': no briefing before the Agent answer');
+  assert.equal(app.renderVals().briefingAvailable, !!b, id + ': briefingAvailable follows the stored briefing');
+  if (!b) { assert.equal(app.renderVals().selName, c.customer.name, id); continue; }
   assert.equal(bridge.receive(bridge.begin(id), contract.contentOf(b)).ok, true, id);
   const v = app.renderVals(), normalized = contract.normalizeContent(contract.contentOf(b));
   assert.equal(v.selName, c.customer.name, id);
@@ -45,19 +50,19 @@ for (const [i, c] of customers.entries()) {
   const req = wire.request(c, 'check-' + id, 'TEST_EMPLOYEE');
   assert.equal(wire.validate(wire.answer(req, contract.contentOf(b)), req).ok, true);
 }
-app.select('ksy', true);
-assert.equal(app.renderVals().structuredBrief, false, 'Original Kim remains independent');
-assert.equal(app.renderVals().pfRet, '+3.1%');
-// Main list: legacy demo rows + the 30 case customers (DEMO-01 stays in the picker only).
+// Main list: legacy demo rows (minus the three replaced by C01-10/11/12) + every case customer.
 // Each case row's badges are its signals, colored the same way as the briefing header.
-const LEGACY_ROWS = 18, queued = customers.filter(c => c.briefingMeta.caseId !== 'DEMO-01');
+const LEGACY_ROWS = 15, queued = customers.slice();
 app.state.sel = null; app.state.filter = 'all'; app.state.extA = null;
 const dash = app.renderVals();
 assert.equal(dash.showDashboard, true);
 assert.equal(dash.queue.length, LEGACY_ROWS + queued.length, 'Main list = legacy rows + case customers');
 assert.equal(dash.queueTotal, LEGACY_ROWS + queued.length);
 assert.equal(dash.kNewN + dash.kOnN + dash.doneCount, dash.queueTotal, 'Every row is 신규 선정, 지속 관리 or 처리완료');
-assert.deepEqual([dash.dashDateLabel, dash.dashAsOfLabel], ['9월 14일 월요일', '09.14'], 'Dashboard date follows the case 기준일');
+assert.deepEqual([dash.dashDateLabel, dash.dashAsOfLabel], ['9월 29일 화요일', '09.29'], 'Dashboard date follows the case 기준일');
+assert.ok(customers.every(c => c.briefingMeta.asOfDate === '2026-09-29'), 'Every customer shares the 2026-09-29 기준일');
+for (const hidden of ['ksy', 'lsm', 'pjh']) assert.ok(!Array.from(dash.queue).some(r => r.id === hidden) && !Array.from(dash.caseChoices).some(o => o.id === hidden), hidden + ' legacy row replaced');
+assert.equal(dash.caseLibraryLabel, '고객별 브리핑 · 42명');
 assert.equal(dash.isaCount, dash.queue.filter(r => r.tags.some(t => /^ISA 만기 D-\d+$/.test(t.t))).length);
 const CATALOG = /^(정기예금 만기|GIC 만기|ISA 만기|ISA 전환기한|DO 실행|퇴직금 재입금기한|연금개시) D-\d+$|^추가납입 \d+만원$|^(퇴직금 운용 미지시|퇴직금 일부만 운용|현금성 장기대기|현금성 과다|만기자금 미운용|납입금 미운용|입금매수상품 미지정|원리금보장 편중|수익률 부진|환매추천 펀드 보유|판매중단 펀드 보유|저금리 예금 보유|DO 미등록|투자성향-DO불일치|타행 IRP 보유|타행 연금저축 보유|연금저축 보유|복수 IRP 보유|연금자산 분산보유|이탈징후|계약이전 신청|계약이전 페이지 방문|연금개시 가능|연금개시 예정|연금수령 중|올해 미납입|납입 중단|퇴직연금 관리화면 방문|ETF 상품조회|펀드 상품조회|보유상품 수익률 조회|장기 미운용)$/;
 for (const row of dash.queue) for (const t of row.tags) assert.ok(CATALOG.test(t.t), row.name + ': badge outside the Dynamic Segment catalog: ' + t.t);
@@ -70,7 +75,6 @@ for (const c of customers) {
   // Arrays from the vm realm carry another Array prototype; compare main-realm copies.
   assert.deepEqual(Array.from(header, b => b.t), labels, id + ': briefing header badges = signals');
   const row = dash.queue.find(r => r.id === id);
-  if (id === 'DEMO-01') { assert.equal(row, undefined, 'DEMO-01 is not a second 김서연 row'); continue; }
   assert.deepEqual(Array.from(row.tags, t => [t.t, t.bg, t.fg]), Array.from(header, b => [b.t, b.bg, b.fg]), id + ': main list badges and colors = briefing header');
   assert.equal(row.bal, contract.money(c.irpAccount.valuationAmountKrw), id);
   assert.equal(row.taxOn, c.irpAccount.taxDeductionRemainingKrw != null, id + ': tax ring only with a known 잔여한도');
@@ -83,21 +87,21 @@ const dday = tags => { const m = tags.map(t => t.match(/ D-(\d+)$/)).filter(Bool
 const ddays = order.map(dday).filter(d => d != null);
 assert.deepEqual(ddays, ddays.slice().sort((a, b) => a - b), 'D-day rows come first in ascending order');
 assert.ok(order.findIndex(t => dday(t) == null) > ddays.length - 1, 'No non-D-day row before the D-day rows');
-const kim = customers[0], content = contract.contentOf(briefings[0]), store = create(customers);
-const first = store.begin('DEMO-01'), second = store.begin('DEMO-01');
+const kim = customers[briefings.findIndex(Boolean)], content = contract.contentOf(briefings[briefings.findIndex(Boolean)]), store = create(customers);
+const first = store.begin(FIRST), second = store.begin(FIRST);
 assert.equal(store.receive(first, content).stale, true);
 assert.equal(store.receive(second, content).ok, true);
 assert.equal(store.receive(second, content).stale, true);
-const snapshot = store.customer('DEMO-01');
-assert.equal(store.receive(store.begin('DEMO-01'), { ...content, customer: {} }).ok, false);
-assert.deepEqual(store.customer('DEMO-01'), snapshot);
-const cancelled = store.begin('DEMO-01'); store.cancel('DEMO-01');
+const snapshot = store.customer(FIRST);
+assert.equal(store.receive(store.begin(FIRST), { ...content, customer: {} }).ok, false);
+assert.deepEqual(store.customer(FIRST), snapshot);
+const cancelled = store.begin(FIRST); store.cancel(FIRST);
 assert.equal(store.receive(cancelled, content).stale, true);
 const minimal = { s1: { items: [{ text: '고객 사실', dataRefs: ['/customer/name'] }] }, s2: { lead: '상담 목적' }, s3: { lead: '제안 방향' }, s4: null, s5: null };
 assert.deepEqual(contract.validateContent(minimal, kim), []);
-app.select('DEMO-01', true);
+app.select(FIRST, true);
 const before = app.renderVals().pfAmt;
-assert.equal(bridge.receive(bridge.begin('DEMO-01'), minimal).ok, true);
+assert.equal(bridge.receive(bridge.begin(FIRST), minimal).ok, true);
 assert.equal(app.renderVals().pfAmt, before);
 assert.equal(app.renderVals().hasS4, false); assert.equal(app.renderVals().hasS5, false);
 const req = wire.request(kim, 'check-request', 'TEST_EMPLOYEE'), answer = wire.answer(req, content);
@@ -139,7 +143,7 @@ assert.deepEqual([withAction.blocks[withAction.blocks.length - 1], withAction.gu
   [{ t: 'msg', x: '받는 사람: 3902173\n제목: 안내\n\n본문' }, [{ doc: '상담 원칙', meta: '2026', point: '원금보장 오인 금지' }], 2, 1], 'Action memo, clarify and 주의 sources');
 assert.deepEqual(JSON.parse(fs.readFileSync(path.join(ROOT, 'integration/contracts/response.example.json'), 'utf8')), wire.answer(wire.request(kim, 'example-request-001', 'TEST_EMPLOYEE'), content));
 assert.deepEqual(JSON.parse(fs.readFileSync(path.join(ROOT, 'agent/briefing_data.json'), 'utf8')), agentData({ customers, briefings }), 'Rebuild Agent data together with the frontend');
-console.log('PASS: 31 customer/briefing pairs, totals, render mappings, optional fields, customer isolation, request identity, SSE parser, current three-file build, main list = legacy rows + 30 cases with catalog badges.');
+console.log('PASS: 42 customers (30 with briefings), totals, render mappings, optional fields, customer isolation, request identity, SSE parser, current three-file build, main list = legacy rows + 42 cases with catalog badges.');
 
 // Bundle-level run of the real path: injected config -> auto request on select ->
 // fake fetch answering one SSE frame -> answer rendered. No network, no secrets.
@@ -161,19 +165,22 @@ async function autoRequestCheck() {
     c.componentDidMount(); return c;
   };
   const live = mount({ starrootParams: { fabrix: cfg } });
-  live.select('DEMO-01', true);
+  live.select(FIRST, true);
   assert.equal(live.renderVals().fabrixBusy, true, 'Selecting a case requests it immediately');
   await settle();
   assert.equal(calls.length, 1);
   assert.equal(calls[0].url, cfg.endpointUrl + '/openapi/agent-chat/v1/agent-messages');
   assert.equal(calls[0].init.headers['x-openapi-token'], 'Bearer test-token');
   const sent = JSON.parse(calls[0].init.body), inner = JSON.parse(sent.contents[0]);
-  assert.deepEqual([sent.agentId, sent.isStream, inner.case_id, inner.x_client_user], [7, true, 'DEMO-01', 'TEST_EMPLOYEE']);
+  assert.deepEqual([sent.agentId, sent.isStream, inner.case_id, inner.x_client_user], [7, true, FIRST, 'TEST_EMPLOYEE']);
   assert.deepEqual(inner.customer_data, kim);
   const v = live.renderVals();
   assert.deepEqual([v.fabrixDiagnosticCode, v.hasAiBrief, v.bfS1Lines.length], ['SUCCESS', true, content.s1.items.length]);
-  v.goBack(); live.select('DEMO-01', true);
+  v.goBack(); live.select(FIRST, true);
   assert.equal(calls.length, 1, 'A loaded case is not requested again in the same mount');
+  live.select('C01-01', true);
+  await settle();
+  assert.deepEqual([calls.length, live.renderVals().fabrixEnabled, live.renderVals().briefingAvailable, live.renderVals().noAiBrief], [1, false, false, true], 'A customer without a stored briefing is never requested');
   live.select('B01-22', true);
   assert.equal(calls.length, 2, 'Another case is requested');
   live.componentWillUnmount();
@@ -185,12 +192,12 @@ async function autoRequestCheck() {
   assert.equal(viaGlobal.renderVals().fabrixBusy, true, 'window.__PENSION_FABRIX_CONFIG fallback');
   viaGlobal.componentWillUnmount(); delete ctx.window.__PENSION_FABRIX_CONFIG;
   const invalid = mount({ starrootParams: { fabrix: { ...cfg, endpointUrl: 'http://fabrix.example/prod' } } });
-  invalid.select('DEMO-01', true);
+  invalid.select(FIRST, true);
   assert.deepEqual([invalid.renderVals().fabrixDiagnosticCode, invalid.renderVals().fabrixCanRequest], ['CONFIG', false]);
   invalid.componentWillUnmount();
   ctx.window.__PENSION_FABRIX_CONFIG = { endpointUrl: '', agentId: 0, xClientUser: '', openapiToken: '', generativeAiClient: '' };
   const empty = mount({ starrootParams: {} });
-  empty.select('DEMO-01', true);
+  empty.select(FIRST, true);
   assert.equal(empty.renderVals().fabrixDiagnosticCode, 'NOCONFIG', 'Shipped empty config block counts as not injected');
   empty.componentWillUnmount(); delete ctx.window.__PENSION_FABRIX_CONFIG;
   await settle();
@@ -232,7 +239,7 @@ async function chatPanelCheck() {
   ctx.window.__PENSION_FABRIX_CONFIG = { ...briefingCfg, chat: { endpointUrl: 'https://chat.example/prod/kb0/chat/1', agentId: 'asset-test-01', openapiToken: 'chat-token', generativeAiClient: 'chat-client' } };
   ctx.window.PensionFabrix.destroy(); // keep the briefing controller quiet: no briefing config for this component
   const live = mount({ starrootParams: { fabrix: { ...ctx.window.__PENSION_FABRIX_CONFIG, endpointUrl: '' } } });
-  live.state.sel = 'DEMO-01';
+  live.state.sel = FIRST;
   let v = live.renderVals();
   assert.deepEqual([v.agentOn, v.panelOpen, v.agChipsOn, v.agChips.length, kinds(v.agMsgs), v.agMsgs[0].text, v.agResetOn, v.agName], [true, true, false, 0, ['sys'], '고객 식별자를 입력해 주세요.', false, kim.customer.name], 'Panel opens with only the id prompt, no chips');
   type(live, 'bad id!');
@@ -269,7 +276,7 @@ async function chatPanelCheck() {
   assert.notEqual(calls[3].inner.session_id, calls[0].inner.session_id, 'New customer, new session');
   ans = live.renderVals().agMsgs.pop();
   assert.deepEqual([blockKinds(ans.blocks), ans.blocks[0].copyLabel, ans.srcBadges.length], [['quote', 'quote'], '복사', 1]);
-  live.select('DEMO-01', true);
+  live.select(FIRST, true);
   v = live.renderVals();
   assert.equal(v.agMsgs.length, demoTranscript, 'Transcript kept per customer within the page');
   v.agReset();
@@ -279,7 +286,7 @@ async function chatPanelCheck() {
   assert.notEqual(calls[4].inner.session_id, calls[0].inner.session_id, 'Re-entering an id starts a new session');
   live.componentWillUnmount();
   const bare = mount({ starrootParams: { fabrix: { ...briefingCfg, chat: { endpointUrl: '', agentId: '', openapiToken: '', generativeAiClient: '' } } } });
-  bare.state.sel = 'DEMO-01'; type(bare, demoId); type(bare, '질문');
+  bare.state.sel = FIRST; type(bare, demoId); type(bare, '질문');
   const note = bare.renderVals().agMsgs.pop();
   assert.ok(note.isSys && /주입되지 않아/.test(note.text) && calls.length === 5, 'Empty chat block: question kept, no call, NOCONFIG note');
   bare.componentWillUnmount(); delete ctx.window.__PENSION_FABRIX_CONFIG; delete ctx.fetch;
@@ -291,7 +298,8 @@ autoRequestCheck().then(
   error => { console.error(error); process.exitCode = 1; });
 
 if (process.argv[2] === '--agent') {
-  const requests = customers.map(c => wire.request(c, 'agent-check-' + c.briefingMeta.caseId, 'TEST_EMPLOYEE'));
+  const served = customers.filter((c, i) => briefings[i]), servedBriefings = briefings.filter(Boolean);
+  const requests = served.map(c => wire.request(c, 'agent-check-' + c.briefingMeta.caseId, 'TEST_EMPLOYEE'));
   const script = `
 import ast, asyncio, copy, importlib.util, json, pathlib, sys
 sys.path.insert(0, sys.argv[1])
@@ -366,10 +374,10 @@ print(json.dumps({'events': events, 'http_checked': http_checked}, ensure_ascii=
   const checked = JSON.parse(result.stdout);
   checked.events.forEach((event, i) => {
     assert.equal(wire.validate(event, requests[i]).ok, true, requests[i].case_id);
-    assert.deepEqual(event.data.briefing, contract.contentOf(briefings[i]));
+    assert.deepEqual(event.data.briefing, contract.contentOf(servedBriefings[i]));
   });
-  console.log('PASS: Python fixed lookup + SSE for 31 cases validated by frontend contract; invalid input/snapshot rejection; no LLM import; Python 3.10 syntax.');
-  console.log(checked.http_checked ? 'PASS: FastAPI ASGI /health, 31 /chat responses and error handling.' : 'SKIP: FastAPI/Pydantic not installed in local Python. HTTP application startup must be checked in the internal environment.');
+  console.log('PASS: Python fixed lookup + SSE for 30 cases validated by frontend contract; invalid input/snapshot rejection; no LLM import; Python 3.10 syntax.');
+  console.log(checked.http_checked ? 'PASS: FastAPI ASGI /health, 30 /chat responses and error handling.' : 'SKIP: FastAPI/Pydantic not installed in local Python. HTTP application startup must be checked in the internal environment.');
 }
 
 // Optional real-response check. Inputs must be sanitized logical JSON objects,

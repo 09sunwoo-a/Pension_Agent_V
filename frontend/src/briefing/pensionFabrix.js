@@ -64,7 +64,7 @@
   }
   async function request(caseId) {
     var customer = bridge.getCustomerForRequest(caseId);
-    if (!customer) return { ok: false, code: 'CUSTOMER' };
+    if (!customer || !bridge.hasBriefing(caseId)) return { ok: false, code: 'CUSTOMER' };
     if (!cfg) return { ok: false, code: configCode };
     cancel();
     var requestCfg = cfg, req = wire.request(customer, requestId(), requestCfg.xClientUser);
@@ -90,15 +90,15 @@
     }
   }
   function ensure(caseId) {
-    if (!cfg || loaded.has(caseId) || (active && active.caseId === caseId)) return;
+    if (!cfg || loaded.has(caseId) || (active && active.caseId === caseId) || !bridge.hasBriefing(caseId)) return;
     request(caseId);
   }
   function view(component, base) {
-    var id = component.state.sel, busy = !!active && active.caseId === id;
-    var diagnostic = cfg ? diagnostics.get(id) : { code: configCode };
-    base.fabrixEnabled = !!base.structuredBrief;
+    var id = component.state.sel, busy = !!active && active.caseId === id, available = !!base.structuredBrief && bridge.hasBriefing(id);
+    var diagnostic = !available ? null : cfg ? diagnostics.get(id) : { code: configCode };
+    base.fabrixEnabled = available;
     base.fabrixConfigured = !!cfg;
-    base.fabrixCanRequest = !!base.structuredBrief && !!cfg && !busy;
+    base.fabrixCanRequest = available && !!cfg && !busy;
     base.fabrixBusy = busy;
     base.fabrixRequest = function () { request(component.state.sel); };
     base.fabrixCancel = cancel;
