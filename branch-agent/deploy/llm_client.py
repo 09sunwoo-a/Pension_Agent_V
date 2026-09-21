@@ -1,4 +1,5 @@
 """Internal transport: preserve the established call signature, stage and authentication."""
+import json
 import os
 import random
 import re
@@ -70,6 +71,22 @@ def _retries():
     return _number("LLM_MAX_RETRIES", 0, 0, 2, int)
 
 
+def _extra_body():
+    """Optional JSON object merged into the chat-completions body, e.g. to switch Gemma thinking off on a
+    vLLM-style deployment: LLM_EXTRA_BODY={"chat_template_kwargs":{"enable_thinking":false}}"""
+    raw = os.getenv("LLM_EXTRA_BODY", "").strip()
+    if not raw:
+        return {}
+    try:
+        value = json.loads(raw)
+        return value if isinstance(value, dict) else {}
+    except ValueError:
+        return {}
+
+
+last_usage = None  # Token usage of the most recent call (input/output/reasoning). Diagnostic only.
+
+
 def readiness():
     """Presence-only view of the LLM settings for /health. Never returns values, and never calls the model."""
     stage = _stage()
@@ -84,7 +101,8 @@ def readiness():
             "deployment_default_used": not os.getenv("LLM_DEPLOYMENT_NAME", "").strip(),
             "api_key_set": bool(os.getenv("LLM_API_KEY_" + stage, "").strip() or os.getenv("LLM_API_KEY", "").strip()),
             "base_url_set": bool(os.getenv("LLM_BASE_URL_" + stage, "").strip() or os.getenv("LLM_BASE_URL", "").strip()),
-            "timeout_s": _timeout(), "max_retries": _retries(), "sdk_importable": sdk}
+            "timeout_s": _timeout(), "max_retries": _retries(), "temperature": _number("LLM_TEMPERATURE", 0, 0, 2),
+            "extra_body_set": bool(_extra_body()), "sdk_importable": sdk}
 
 
 def _fail(code, detail):
@@ -111,10 +129,11 @@ def call(messages: list[dict[str, str]], *, system: str = "", model: str = "",
         raise _fail("LLM_CONFIG", "stage=" + stage + " missing: " + ", ".join(missing))
     suffix = "".join(random.choice(string.ascii_letters + string.digits) for _ in range(5))
     headers = {"kb-key": key, "x-client-user": (x_client_user or "system") + "-" + suffix}
+    # temperature 0 matches the validated Google runs; LLM_EXTRA_BODY lets the deployment's thinking mode be turned off.
     llm = AzureChatOpenAI(openai_api_version=os.getenv("LLM_API_VERSION", "").strip() or DEFAULT_API_VERSION,
         deployment_name=deployment, streaming=False, stream_usage=True, default_headers=headers,
-        api_key=key, azure_endpoint=endpoint, model_kwargs={"extra_headers": headers},
-        max_tokens=max_tokens, timeout=_timeout(), max_retries=_retries())
+        api_key=key, azure_endpoint=endpoint, model_kwargs={"extra_headers": headers}, extra_body=_extra_body() or None,
+        temperature=_number("LLM_TEMPERATURE", 0, 0, 2), max_tokens=max_tokens, timeout=_timeout(), max_retries=_retries())
     translated = [SystemMessage(content=system)] if system else []
     types = {"system": SystemMessage, "assistant": AIMessage, "user": HumanMessage}
     translated.extend(types.get(m.get("role"), HumanMessage)(content=m.get("content", "")) for m in messages)
@@ -146,9 +165,19 @@ def call(messages: list[dict[str, str]], *, system: str = "", model: str = "",
             timeout.detail = "stage=%s timeout=%gs %s retries=%d %s" % (stage, _timeout(), elapsed, _retries(), trail)
             raise timeout from None
         raise _fail("LLM_PROVIDER", "stage=" + stage + " " + elapsed + " " + trail) from None
+    global last_usage
+    usage = getattr(response, "usage_metadata", None) or {}
+    details = usage.get("output_token_details") or {}
+    last_usage = {"elapsed_s": round(time.monotonic() - started, 1), "input": usage.get("input_tokens"), "output": usage.get("output_tokens"),
+                  "reasoning": details.get("reasoning")} if usage else {"elapsed_s": round(time.monotonic() - started, 1)}
     if not isinstance(response.content, str):
-        raise RuntimeError("LLM_OUTPUT")
+        raise _fail("LLM_OUTPUT", "non-text content " + usage_text())
     return response.content
+
+
+def usage_text():
+    u = last_usage or {}
+    return "usage=in%s/out%s/reasoning%s elapsed=%ss" % (u.get("input"), u.get("output"), u.get("reasoning"), u.get("elapsed_s"))
 
 
 if __name__ == "__main__":
@@ -163,7 +192,7 @@ if __name__ == "__main__":
     started = time.monotonic()
     try:
         answer = call([{"role": "user", "content": "안녕. 한 문장으로 인사해줘."}], x_client_user="llm-client-test", max_tokens=100)
-        print("[SUCCESS] %.1fs" % (time.monotonic() - started), answer)
+        print("[SUCCESS] %.1fs" % (time.monotonic() - started), usage_text(), "|", answer)
     except Exception as error:
         print("[FAIL] %.1fs" % (time.monotonic() - started), error, "|", getattr(error, "detail", type(error).__name__))
         raise SystemExit(1)

@@ -117,7 +117,7 @@ class Service:
             event = self.execute(req, progress, observe)
             return validate_event(event, req, self.data.manifest, self.data.by_id)
         except (ContractError, LanguageError) as error:
-            return fault_event(outer, error.code)
+            return fault_event(outer, error.code, getattr(error, "detail", None))
         except TimeoutError as error:
             return fault_event(outer, "LLM_TIMEOUT", getattr(error, "detail", None))
         except Exception as error:

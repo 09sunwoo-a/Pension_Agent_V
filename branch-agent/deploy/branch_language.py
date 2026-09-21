@@ -10,9 +10,21 @@ MODEL = "gemma-4-31b-it"
 
 
 class LanguageError(Exception):
-    def __init__(self, code="LLM_OUTPUT"):
+    def __init__(self, code="LLM_OUTPUT", detail=None):
         self.code = code
+        self.detail = detail  # Diagnostic only: output shape and token usage, never the model text.
         super().__init__(code)
+
+
+def _describe(raw):
+    try:
+        import llm_client
+        usage = llm_client.usage_text()
+    except Exception:
+        usage = ""
+    text = raw.strip() if isinstance(raw, str) else ""
+    head = "json" if text.startswith("{") else "fence" if text.startswith("```") else "empty" if not text else "text"
+    return "raw_len=%d starts=%s %s" % (len(text), head, usage)
 
 
 class Plan(Fixed):
@@ -108,7 +120,7 @@ class Language:
                 return decode_plan(raw, manifest)
             except (ValueError, TypeError, RecursionError, ValidationError, ContractError):
                 if attempt:
-                    raise LanguageError() from None
+                    raise LanguageError(detail="interpret attempt=2 " + _describe(raw)) from None
                 # Do not echo arbitrary model output back into the repair prompt.
                 messages.append({"role": "user", "content": "이전 출력은 Plan 검증에 실패했다. 허용 필드와 타입만 사용한 JSON 객체 하나로 다시 해석하라."})
         raise LanguageError()
