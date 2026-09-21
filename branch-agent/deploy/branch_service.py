@@ -41,7 +41,7 @@ def button(text, kind, **kwargs):
     return {"label": text[:80], "action": {"type": kind, **kwargs}}
 
 
-def fault_event(outer, code):
+def fault_event(outer, code, detail=None):
     request = {}
     try:
         request = json.loads(outer.get("input_value", ""))
@@ -61,7 +61,9 @@ def fault_event(outer, code):
             "conversation_id": request["conversation_id"] if identified else None,
             "base_revision": request["base_revision"] if identified else None,
             "code": code, "retryable": code in ("LLM_TIMEOUT", "LLM_OUTPUT", "INTERNAL"),
-            "message": "응답 시간이 초과되었습니다. 다시 시도해 주세요." if code == "LLM_TIMEOUT" else "요청을 처리하지 못했습니다. 입력과 연결 상태를 확인해 주세요."}}
+            "message": ("응답 시간이 초과되었습니다. 다시 시도해 주세요." if code == "LLM_TIMEOUT" else "요청을 처리하지 못했습니다. 입력과 연결 상태를 확인해 주세요.")
+                       # Diagnostic suffix for operators reading the raw FabriX response: class/status/variable names only.
+                       + (" [" + re.sub(r"[^A-Za-z0-9_=|:., -]", "", str(detail))[:120] + "]" if detail else "")}}
 
 
 def check_literals(plan, message):
@@ -118,8 +120,9 @@ class Service:
             return fault_event(outer, error.code)
         except TimeoutError:
             return fault_event(outer, "LLM_TIMEOUT")
-        except Exception:
-            return fault_event(outer, "INTERNAL")
+        except Exception as error:
+            # The exception text itself is never forwarded; only the masked detail set by llm_client.
+            return fault_event(outer, "INTERNAL", getattr(error, "detail", None) or type(error).__name__)
 
     def execute(self, req, progress=lambda *args: None, observe=lambda *args: None):
         d, m = self.data, self.data.manifest
