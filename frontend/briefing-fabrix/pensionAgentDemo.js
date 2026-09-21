@@ -627,23 +627,23 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
   else root.PensionFabrixTransport = factory();
 })(typeof window === 'undefined' ? globalThis : window, function () {
   'use strict';
-  function fault(code) { var error = new Error(code); error.code = code; return error; }
+  function fault(code, field) { var error = new Error(code); error.code = code; if (field) error.field = field; return error; }
   function config(input) {
     if (!input || typeof input !== 'object') throw fault('CONFIG');
     var cfg = {};
     ['endpointUrl', 'openapiToken', 'generativeAiClient', 'xClientUser'].forEach(function (key) {
-      if (typeof input[key] !== 'string' || !input[key].trim()) throw fault('CONFIG');
+      if (typeof input[key] !== 'string' || !input[key].trim()) throw fault('CONFIG', key);
       cfg[key] = input[key].trim();
     });
-    if (!Number.isSafeInteger(input.agentId) || input.agentId <= 0) throw fault('CONFIG');
+    if (!Number.isSafeInteger(input.agentId) || input.agentId <= 0) throw fault('CONFIG', 'agentId');
     cfg.agentId = input.agentId;
     var url;
-    try { url = new URL(cfg.endpointUrl); } catch (_) { throw fault('CONFIG'); }
+    try { url = new URL(cfg.endpointUrl); } catch (_) { throw fault('CONFIG', 'endpointUrl'); }
     var loopback = ['localhost', '127.0.0.1', '[::1]'].indexOf(url.hostname) >= 0;
-    if ((url.protocol !== 'https:' && !(loopback && url.protocol === 'http:')) || url.username || url.password || url.search || url.hash) throw fault('CONFIG');
+    if ((url.protocol !== 'https:' && !(loopback && url.protocol === 'http:')) || url.username || url.password || url.search || url.hash) throw fault('CONFIG', 'endpointUrl');
     cfg.endpointUrl = url.href.replace(/\/+$/, '');
     cfg.openapiToken = cfg.openapiToken.replace(/^Bearer\s+/i, '');
-    if (!cfg.openapiToken || /[\r\n]/.test(cfg.openapiToken + cfg.generativeAiClient)) throw fault('CONFIG');
+    if (!cfg.openapiToken || /[\r\n]/.test(cfg.openapiToken + cfg.generativeAiClient)) throw fault('CONFIG', 'openapiToken');
     return cfg;
   }
   // Buffer by SSE event, not network packet. Handles CRLF split across packets,
@@ -1576,11 +1576,11 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
  else root.PensionBranchAgentTransport=factory(root.PensionFabrixTransport,root.PensionBranchAgentContract);
 })(typeof window==='undefined'?globalThis:window,function(T,C){
 'use strict';
-function fault(code){const e=new Error(code);e.code=code;return e;}
+function fault(code,field){const e=new Error(code);e.code=code;if(field)e.field=field;return e;}
 function config(input){
  if(!input)throw fault('NOCONFIG');
  const id=input.agentId;
- if(!(Number.isSafeInteger(id)&&id>0)&&!(typeof id==='string'&&id.trim()))throw fault('CONFIG');
+ if(!(Number.isSafeInteger(id)&&id>0)&&!(typeof id==='string'&&id.trim()))throw fault('CONFIG','agentId');
  // Reuse URL/header validation without changing the existing numeric-ID API.
  const cfg=T.config(Object.assign({},input,{agentId:1}));
  cfg.agentId=typeof id==='string'?id.trim():id;return cfg;
@@ -1588,7 +1588,10 @@ function config(input){
 function settings(params,globalConfig){
  const p=params&&params.fabrix,g=globalConfig||{};
  const branch=p&&Object.prototype.hasOwnProperty.call(p,'branch')?p.branch:g.branch;
- if(!branch)return null;
+ if(!branch||typeof branch!=='object')return null;
+ // The shipped HTML block is all empty; treat it as "not injected" rather than a malformed config.
+ const blank=v=>v==null||v===0||(typeof v==='string'&&!v.trim());
+ if(['endpointUrl','agentId','openapiToken','generativeAiClient'].every(k=>blank(branch[k])))return null;
  return Object.assign({},branch,{xClientUser:p&&Object.prototype.hasOwnProperty.call(p,'xClientUser')?p.xClientUser:g.xClientUser});
 }
 async function call(input,request,manifest,options){
@@ -2508,7 +2511,7 @@ function createRemote(input,options){
   const b=root.crypto.getRandomValues(new Uint8Array(16));b[6]=(b[6]&15)|64;b[8]=(b[8]&63)|128;
   const h=Array.from(b,x=>x.toString(16).padStart(2,'0')).join('');return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20);
  }
- let connectionNotice='';try{ready();}catch(e){connectionNotice=notice(e.code);}
+ let connectionNotice='';try{ready();}catch(e){connectionNotice=notice(e.code,e.field);if(typeof console!=='undefined'&&(e.code==='NOCONFIG'||e.code==='CONFIG'))console.warn('[Branch AI] connection config '+e.code+(e.field?' ('+e.field+')':'')+': onParam(params).fabrix.branch 또는 window.__PENSION_FABRIX_CONFIG.branch 와 공통 xClientUser 를 확인하세요.');}
  function snapshot(){return {state:C.copy(state),view:C.copy(view),messages:C.copy(messages),busy,revision,conversationId,mode:'remote',connectionNotice};}
  function emit(type,extra){if(!disposed){const event=Object.assign(snapshot(),{type},extra);listeners.forEach(f=>f(event));}}
  function add(role,text,extra){const m=Object.assign({id:++sequence,role,text},extra);messages.push(m);return m;}
@@ -2522,8 +2525,9 @@ function createRemote(input,options){
   if(options.checkManifest)options.checkManifest(manifest);
   return valid;
  }
- function notice(code){
-  if(code==='NOCONFIG'||code==='CONFIG')return '부점 AI 연결 설정이 필요합니다. 담당자에게 연결 설정을 확인해 주세요.';
+ function notice(code,field){
+  if(code==='NOCONFIG')return '부점 AI 연결 설정이 주입되지 않았습니다. 담당자에게 연결 설정(branch)을 확인해 주세요.';
+  if(code==='CONFIG')return '부점 AI 연결 설정 오류'+(field?': '+field+' 값이 비어 있거나 형식이 맞지 않습니다.':'입니다.')+' 담당자에게 연결 설정을 확인해 주세요.';
   if(code==='MANIFEST'||code==='DATA_VERSION')return '부점 AI 데이터 버전을 확인할 수 없습니다. 같은 빌드의 데이터와 화면으로 다시 진입해 주세요.';
   if(code==='AUTH')return '부점 AI 인증 설정을 확인해 주세요. 기존 목록과 조건은 유지했습니다.';
   if(code==='TIMEOUT')return '응답 시간이 초과되었습니다. 기존 목록과 조건은 유지했습니다. 다시 시도해 주세요.';
@@ -2560,7 +2564,7 @@ function createRemote(input,options){
    emit(answer.ui.list_action==='keep'?'answer':'apply',{result:C.copy(reply.result)});return C.copy(answer);
   }catch(e){
    if(disposed||token!==ticket)return null;
-   busy=false;controller=null;reply.pending=false;reply.error=true;reply.code=e.code||'NETWORK';reply.text=notice(reply.code);
+   busy=false;controller=null;reply.pending=false;reply.error=true;reply.code=e.code||'NETWORK';reply.text=notice(reply.code,e.field);
    emit('error');return null;
   }
  }

@@ -4,23 +4,23 @@
   else root.PensionFabrixTransport = factory();
 })(typeof window === 'undefined' ? globalThis : window, function () {
   'use strict';
-  function fault(code) { var error = new Error(code); error.code = code; return error; }
+  function fault(code, field) { var error = new Error(code); error.code = code; if (field) error.field = field; return error; }
   function config(input) {
     if (!input || typeof input !== 'object') throw fault('CONFIG');
     var cfg = {};
     ['endpointUrl', 'openapiToken', 'generativeAiClient', 'xClientUser'].forEach(function (key) {
-      if (typeof input[key] !== 'string' || !input[key].trim()) throw fault('CONFIG');
+      if (typeof input[key] !== 'string' || !input[key].trim()) throw fault('CONFIG', key);
       cfg[key] = input[key].trim();
     });
-    if (!Number.isSafeInteger(input.agentId) || input.agentId <= 0) throw fault('CONFIG');
+    if (!Number.isSafeInteger(input.agentId) || input.agentId <= 0) throw fault('CONFIG', 'agentId');
     cfg.agentId = input.agentId;
     var url;
-    try { url = new URL(cfg.endpointUrl); } catch (_) { throw fault('CONFIG'); }
+    try { url = new URL(cfg.endpointUrl); } catch (_) { throw fault('CONFIG', 'endpointUrl'); }
     var loopback = ['localhost', '127.0.0.1', '[::1]'].indexOf(url.hostname) >= 0;
-    if ((url.protocol !== 'https:' && !(loopback && url.protocol === 'http:')) || url.username || url.password || url.search || url.hash) throw fault('CONFIG');
+    if ((url.protocol !== 'https:' && !(loopback && url.protocol === 'http:')) || url.username || url.password || url.search || url.hash) throw fault('CONFIG', 'endpointUrl');
     cfg.endpointUrl = url.href.replace(/\/+$/, '');
     cfg.openapiToken = cfg.openapiToken.replace(/^Bearer\s+/i, '');
-    if (!cfg.openapiToken || /[\r\n]/.test(cfg.openapiToken + cfg.generativeAiClient)) throw fault('CONFIG');
+    if (!cfg.openapiToken || /[\r\n]/.test(cfg.openapiToken + cfg.generativeAiClient)) throw fault('CONFIG', 'openapiToken');
     return cfg;
   }
   // Buffer by SSE event, not network packet. Handles CRLF split across packets,

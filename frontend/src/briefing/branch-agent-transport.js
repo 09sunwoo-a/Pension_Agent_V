@@ -4,11 +4,11 @@
  else root.PensionBranchAgentTransport=factory(root.PensionFabrixTransport,root.PensionBranchAgentContract);
 })(typeof window==='undefined'?globalThis:window,function(T,C){
 'use strict';
-function fault(code){const e=new Error(code);e.code=code;return e;}
+function fault(code,field){const e=new Error(code);e.code=code;if(field)e.field=field;return e;}
 function config(input){
  if(!input)throw fault('NOCONFIG');
  const id=input.agentId;
- if(!(Number.isSafeInteger(id)&&id>0)&&!(typeof id==='string'&&id.trim()))throw fault('CONFIG');
+ if(!(Number.isSafeInteger(id)&&id>0)&&!(typeof id==='string'&&id.trim()))throw fault('CONFIG','agentId');
  // Reuse URL/header validation without changing the existing numeric-ID API.
  const cfg=T.config(Object.assign({},input,{agentId:1}));
  cfg.agentId=typeof id==='string'?id.trim():id;return cfg;
@@ -16,7 +16,10 @@ function config(input){
 function settings(params,globalConfig){
  const p=params&&params.fabrix,g=globalConfig||{};
  const branch=p&&Object.prototype.hasOwnProperty.call(p,'branch')?p.branch:g.branch;
- if(!branch)return null;
+ if(!branch||typeof branch!=='object')return null;
+ // The shipped HTML block is all empty; treat it as "not injected" rather than a malformed config.
+ const blank=v=>v==null||v===0||(typeof v==='string'&&!v.trim());
+ if(['endpointUrl','agentId','openapiToken','generativeAiClient'].every(k=>blank(branch[k])))return null;
  return Object.assign({},branch,{xClientUser:p&&Object.prototype.hasOwnProperty.call(p,'xClientUser')?p.xClientUser:g.xClientUser});
 }
 async function call(input,request,manifest,options){

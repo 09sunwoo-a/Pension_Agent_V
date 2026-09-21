@@ -68,7 +68,7 @@ function createRemote(input,options){
   const b=root.crypto.getRandomValues(new Uint8Array(16));b[6]=(b[6]&15)|64;b[8]=(b[8]&63)|128;
   const h=Array.from(b,x=>x.toString(16).padStart(2,'0')).join('');return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20);
  }
- let connectionNotice='';try{ready();}catch(e){connectionNotice=notice(e.code);}
+ let connectionNotice='';try{ready();}catch(e){connectionNotice=notice(e.code,e.field);if(typeof console!=='undefined'&&(e.code==='NOCONFIG'||e.code==='CONFIG'))console.warn('[Branch AI] connection config '+e.code+(e.field?' ('+e.field+')':'')+': onParam(params).fabrix.branch 또는 window.__PENSION_FABRIX_CONFIG.branch 와 공통 xClientUser 를 확인하세요.');}
  function snapshot(){return {state:C.copy(state),view:C.copy(view),messages:C.copy(messages),busy,revision,conversationId,mode:'remote',connectionNotice};}
  function emit(type,extra){if(!disposed){const event=Object.assign(snapshot(),{type},extra);listeners.forEach(f=>f(event));}}
  function add(role,text,extra){const m=Object.assign({id:++sequence,role,text},extra);messages.push(m);return m;}
@@ -82,8 +82,9 @@ function createRemote(input,options){
   if(options.checkManifest)options.checkManifest(manifest);
   return valid;
  }
- function notice(code){
-  if(code==='NOCONFIG'||code==='CONFIG')return '부점 AI 연결 설정이 필요합니다. 담당자에게 연결 설정을 확인해 주세요.';
+ function notice(code,field){
+  if(code==='NOCONFIG')return '부점 AI 연결 설정이 주입되지 않았습니다. 담당자에게 연결 설정(branch)을 확인해 주세요.';
+  if(code==='CONFIG')return '부점 AI 연결 설정 오류'+(field?': '+field+' 값이 비어 있거나 형식이 맞지 않습니다.':'입니다.')+' 담당자에게 연결 설정을 확인해 주세요.';
   if(code==='MANIFEST'||code==='DATA_VERSION')return '부점 AI 데이터 버전을 확인할 수 없습니다. 같은 빌드의 데이터와 화면으로 다시 진입해 주세요.';
   if(code==='AUTH')return '부점 AI 인증 설정을 확인해 주세요. 기존 목록과 조건은 유지했습니다.';
   if(code==='TIMEOUT')return '응답 시간이 초과되었습니다. 기존 목록과 조건은 유지했습니다. 다시 시도해 주세요.';
@@ -120,7 +121,7 @@ function createRemote(input,options){
    emit(answer.ui.list_action==='keep'?'answer':'apply',{result:C.copy(reply.result)});return C.copy(answer);
   }catch(e){
    if(disposed||token!==ticket)return null;
-   busy=false;controller=null;reply.pending=false;reply.error=true;reply.code=e.code||'NETWORK';reply.text=notice(reply.code);
+   busy=false;controller=null;reply.pending=false;reply.error=true;reply.code=e.code||'NETWORK';reply.text=notice(reply.code,e.field);
    emit('error');return null;
   }
  }
