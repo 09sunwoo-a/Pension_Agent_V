@@ -2520,6 +2520,13 @@ function createRemote(input,options){
   if(busy){busy=false;messages.forEach(m=>{if(m.pending){m.pending=false;m.cancelled=true;m.text=reason||'요청을 취소했습니다. 기존 목록과 조건은 유지했습니다.';}});emit('cancel');}
  }
  function fault(code){const e=new Error(code);e.code=code;return e;}
+ function guessListChange(text,action){
+  if(action)return ['recommend','restore_recommendation','reset','show_aggregate','remove_condition'].includes(action.type);
+  const n=text.replace(/\s+/g,'');
+  if(/찾아|보여|추천|기존목록|전체목록|처음추천|조건.*(빼|제거|해제|추가)|순으로|명만|만보|만$/.test(n))return true;
+  if(/현황|몇명|합계|얼마|브리핑|왜|어떻게|언제|알려|말해|요약|정리/.test(n))return false;
+  return /고객|누구|중점|우선|관리할/.test(n);
+ }
  function ready(){
   const valid=T.config(cfg);if(!manifest)throw fault('MANIFEST');
   if(options.checkManifest)options.checkManifest(manifest);
@@ -2541,7 +2548,9 @@ function createRemote(input,options){
   if(Array.from(text).length>1200){emit('validation',{notice:'질문은 1,200자 이내로 입력해 주세요.'});return null;}
   cancel('새 요청으로 이전 조회를 취소했습니다.');const token=++ticket;
   busy=true;add('user',text);const reply=add('assistant','조건을 해석하고 있어요.',{pending:true,retryText:text,retryAction:action||null});
-  emit('pending');controller=new AbortController();const activeController=controller;
+  // Optimistic guess (like the local engine's immediate intent): is this request likely to change the main list?
+  // Interpretation is the long phase on a remote Agent, so the list skeleton starts now and the answer decides.
+  emit('pending',{listGuess:guessListChange(text,action)});controller=new AbortController();const activeController=controller;
   try{
    const valid=ready();
    const request=W.request({request_id:uuid(),conversation_id:conversationId,base_revision:revision,
@@ -2833,7 +2842,7 @@ function mount(component,params){
   // Waiting only patches the header/list styles, preserving the current DOM and focus.
   // wait: any request in flight (header donut + progress bar only, rows untouched). busy: the list itself will change (skeleton).
   // Interpretation is the long phase on a remote Agent, so the header shows activity from send until the answer.
-  if(e.type==='pending'){ctx.busy=false;ctx.wait=e.mode==='remote';paintBusy(ctx);return;}
+  if(e.type==='pending'){ctx.wait=e.mode==='remote';ctx.busy=ctx.wait&&!!e.listGuess;if(ctx.busy)motion.cancel();paintBusy(ctx);return;}
   if(e.type==='resolved'){ctx.busy=e.listChange;if(ctx.busy)motion.cancel();paintBusy(ctx);return;}
   if(e.type==='progress'){if(e.listChange){ctx.busy=true;motion.cancel();paintBusy(ctx);}return;}
   if(e.type==='apply'){ctx.applied=e.view?e.view.active:!!e.state.active;ctx.pending=true;ctx.busy=false;ctx.wait=false;const update={branchSearchRevision:e.revision};if(!ctx.keepFilter)update.filter='all';component.setState(update);return;}

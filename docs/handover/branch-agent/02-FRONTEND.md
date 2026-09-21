@@ -20,7 +20,7 @@
 
 1. 부점 설정과 manifest 확인. 연결 모드 기본 `remote`; 설정이 없으면 대화창에 미설정 안내, 네트워크 호출 없음. 테스트는 `branchAgentMode:'local'`을 명시한다. 실패를 로컬 답변으로 몰래 대체하지 않는다.
 2. 질문과 마지막 성공 State를 요청으로 만든다. 명확화·버튼도 같은 API. 사용자 입력을 SQL/DOM 동작으로 직접 해석하지 않는다.
-3. pending은 대화창에만 표시. progress.executing의 list_pending=true일 때 기존 목록 스켈레톤·조회 표시 사용. 6초 모의 지연은 remote 경로에서 제거한다.
+3. pending은 대화창과 목록 헤더(도넛·진행 바)에 표시. remote에서는 전송 시 질문/버튼으로 목록 변경 여부를 추정해(guessListChange) 스켈레톤을 먼저 켜고, progress.executing의 list_pending과 최종 answer의 list_action이 확정한다(keep이면 행 원복). 6초 모의 지연은 remote 경로에서 제거한다.
 4. 최종 응답은 임시 보관하고 정상 EOF까지 기다린다. 스키마·요청ID·대화ID·base_revision·버전·알려진 row ID·중복·count·next_state 불변식을 검사한다.
 5. 최신 ticket과 현재 화면이 유효할 때만 State/revision·답변·목록을 함께 확정한다. 답변의 타이핑 효과는 확정 뒤 표현일 뿐 부분 JSON 반영이 아니다.
 6. 취소·오류·시간초과·불완전 응답이면 이전 State/revision·목록을 보존하고 대화창에서 재시도를 제공한다. 재시도는 새 request_id, 같은 확정 State를 사용한다.
