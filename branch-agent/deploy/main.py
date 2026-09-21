@@ -37,9 +37,14 @@ def create_app(llm_call=None, dataset=None, timeout=85, concurrency=4):
     @app.get("/health")
     async def health():
         m = service.data.manifest if service else {}
+        try:
+            from llm_client import readiness
+            llm = readiness()  # Booleans only: which LLM settings are present. No model call, no values.
+        except Exception:
+            llm = None
         return JSONResponse({"status": "ok" if service else "unavailable", "mode": "branch_assistant",
                              "data_loaded": service is not None, "data_version": m.get("data_version"),
-                             "rule_version": m.get("rule_version"), "model": MODEL}, status_code=200 if service else 503)
+                             "rule_version": m.get("rule_version"), "model": MODEL, "llm": llm}, status_code=200 if service else 503)
 
     async def body(request):
         parts, length = [], 0

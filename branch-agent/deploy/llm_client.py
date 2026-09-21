@@ -8,6 +8,22 @@ def _stage():
     return "SERV" if os.getenv("ENV_PATH", "").strip().lower() in ("serv", "serving") else "TRNN"
 
 
+def readiness():
+    """Presence-only view of the LLM settings for /health. Never returns values, and never calls the model."""
+    stage = _stage()
+    try:
+        import langchain_openai  # noqa: F401
+        sdk = True
+    except Exception:
+        sdk = False
+    return {"stage": stage,
+            "model_ok": os.getenv("LLM_MODEL", "gemma-4-31b-it") == "gemma-4-31b-it",
+            "deployment_name_set": bool(os.getenv("LLM_DEPLOYMENT_NAME", "").strip()),
+            "api_key_set": bool(os.getenv("LLM_API_KEY_" + stage, "").strip() or os.getenv("LLM_API_KEY", "").strip()),
+            "base_url_set": bool(os.getenv("LLM_BASE_URL_" + stage, "").strip() or os.getenv("LLM_BASE_URL", "").strip()),
+            "sdk_importable": sdk}
+
+
 def call(messages: list[dict[str, str]], *, system: str = "", model: str = "",
          max_tokens: int = 1024, x_client_user: str = "") -> str:
     from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
