@@ -2,6 +2,8 @@
  * the floating widget is mounted on document.body because the Starroot shell wraps the business page in a
  * transformed .pt-page, inside which position:fixed would follow the page scroll. No tag or global selectors. */
 .pad-branch-widget{position:relative;z-index:10000;font-family:inherit;font-size:13px;color:#26282c;line-height:1.6}
+/* Build stamps this with the hash of branch-search.css; the widget injects its bundled copy when the page CSS carries another (stale) value. */
+.pad-branch-widget{--pad-branch-css:"PAD_BRANCH_CSS_VERSION"}
 .pad-branch-widget *{box-sizing:border-box}
 .pad-branch-widget [hidden]{display:none!important}
 .pad-branch-widget button,.pad-branch-widget textarea{font:inherit}

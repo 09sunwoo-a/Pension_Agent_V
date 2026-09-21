@@ -29,10 +29,15 @@ function mount(container,session,options){
  // Launcher: the company shell styles .floating_chat as its chatbot button, so the markup carries only that class.
  '<div class="floating_chat" role="button" tabindex="0" aria-label="퇴직연금 사후관리 에이전트 열기" aria-controls="pad-branch-window" aria-expanded="false">퇴직연금 사후관리 에이전트</div>';
  container.appendChild(rootEl);
- // Fallback for a stale or partially deployed pensionAgentDemo.css: if the window is not positioned by the
- // page stylesheet, inject the bundled copy of branch-search.css once (removed again on destroy).
+ // Fallback for a stale or partially deployed pensionAgentDemo.css: the build stamps --pad-branch-css into both the
+ // stylesheet and the bundled copy. A missing or different stamp (old file, cache) means the page CSS predates this JS,
+ // so the bundled copy is injected once (removed again on destroy). Position is kept as a second trigger.
  let styleEl=null;
- if(root.PensionBranchSearchStyles&&getComputedStyle(rootEl.querySelector('.pad-branch-window')).position!=='fixed'){styleEl=document.createElement('style');styleEl.setAttribute('data-branch-style','');styleEl.textContent=root.PensionBranchSearchStyles;(document.head||document.body).appendChild(styleEl);console.warn('[Branch AI] pensionAgentDemo.css has no .pad-branch-* rules (old file or cache); using the bundled copy.');}
+ if(root.PensionBranchSearchStyles){
+  const expected=(String(root.PensionBranchSearchStyles).match(/--pad-branch-css:"([^"]+)"/)||[])[1]||'';
+  const actual=getComputedStyle(rootEl).getPropertyValue('--pad-branch-css').trim().replace(/^"|"$/g,'');
+  if(actual!==expected||getComputedStyle(rootEl.querySelector('.pad-branch-window')).position!=='fixed'){styleEl=document.createElement('style');styleEl.setAttribute('data-branch-style','');styleEl.textContent=root.PensionBranchSearchStyles;(document.head||document.body).appendChild(styleEl);console.warn('[Branch AI] pensionAgentDemo.css is missing or older than this JS (stamp '+(actual||'none')+' vs '+expected+'); using the bundled copy. Deploy the CSS from the same build and clear the cache.');}
+ }
  const find=s=>rootEl.querySelector(s),panel=find('.pad-branch-window'),launcher=find('.floating_chat'),input=find('textarea'),sendBtn=find('.pad-branch-send'),body=find('.pad-branch-body'),log=find('.pad-branch-messages');
  // No stylesheet positions .floating_chat (local preview, shell without the class): use the bundled pill look.
  if(getComputedStyle(launcher).position==='static')launcher.classList.add('pad-branch-launcher-fallback');

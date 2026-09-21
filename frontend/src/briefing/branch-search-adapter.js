@@ -45,11 +45,13 @@ function mount(component,params){
  ctx.restore=restore;ctx.widget=root.PensionBranchSearchWidget.mount(document.body,session,{onRestore:restore});
  ctx.off=session.subscribe(e=>{
   // Waiting only patches the header/list styles, preserving the current DOM and focus.
-  if(e.type==='pending'){ctx.busy=false;paintBusy(ctx);return;}
+  // wait: any request in flight (header donut + progress bar only, rows untouched). busy: the list itself will change (skeleton).
+  // Interpretation is the long phase on a remote Agent, so the header shows activity from send until the answer.
+  if(e.type==='pending'){ctx.busy=false;ctx.wait=e.mode==='remote';paintBusy(ctx);return;}
   if(e.type==='resolved'){ctx.busy=e.listChange;if(ctx.busy)motion.cancel();paintBusy(ctx);return;}
   if(e.type==='progress'){if(e.listChange){ctx.busy=true;motion.cancel();paintBusy(ctx);}return;}
-  if(e.type==='apply'){ctx.applied=e.view?e.view.active:!!e.state.active;ctx.pending=true;ctx.busy=false;const update={branchSearchRevision:e.revision};if(!ctx.keepFilter)update.filter='all';component.setState(update);return;}
-  if(ctx.busy&&(e.type==='answer'||e.type==='error'||e.type==='cancel')){ctx.busy=false;paintBusy(ctx);}
+  if(e.type==='apply'){ctx.applied=e.view?e.view.active:!!e.state.active;ctx.pending=true;ctx.busy=false;ctx.wait=false;const update={branchSearchRevision:e.revision};if(!ctx.keepFilter)update.filter='all';component.setState(update);return;}
+  if((ctx.busy||ctx.wait)&&(e.type==='answer'||e.type==='error'||e.type==='cancel')){ctx.busy=false;ctx.wait=false;paintBusy(ctx);}
  });
  component.renderVals=function(){
   const base=ctx.oldRender.apply(this,arguments);
@@ -81,7 +83,7 @@ function paintBusy(c){
  }
  if(!head||!title)return;
  head.classList.add('pad-branch-list-head');
- if(!c.busy){head.querySelectorAll('.pad-branch-query-state,.pad-branch-progress').forEach(n=>n.remove());return;}
+ if(!c.busy&&!c.wait){head.querySelectorAll('.pad-branch-query-state,.pad-branch-progress').forEach(n=>n.remove());return;}
  if(!title.querySelector('.pad-branch-query-state')){
   const status=document.createElement('span');status.className='pad-branch-query-state';status.setAttribute('role','status');
   const label=document.createElement('span');label.className='pad-branch-sr-only';label.textContent='고객 목록 조회 중';status.appendChild(label);
