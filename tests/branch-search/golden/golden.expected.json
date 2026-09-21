@@ -1,0 +1,1722 @@
+{
+  "metadata": {
+    "version": "branch-search-golden.v0.1",
+    "status": "검토용 초안 / 전체 모집단 확정 전",
+    "createdOn": "2026-09-18",
+    "repository": "09sunwoo-a/Pension_Agent_V",
+    "sourceCommit": "7723f21a428e98aef935faae20b3c9a8e032b174",
+    "sourceDirectory": "agent-workbench/case-design/active/display-data",
+    "scopeId": "review-8-v0.1",
+    "scopeLabel": "검토용 시연 고객 8명",
+    "asOfDate": "2026-09-14",
+    "caseIds": [
+      "B01-03",
+      "B01-22",
+      "B02-04",
+      "B02-18",
+      "B02-27",
+      "B03-07",
+      "B03-11",
+      "B04-19"
+    ],
+    "recordCount": 8,
+    "singleTurnCount": 18,
+    "multiTurnSessionCount": 1,
+    "multiTurnCount": 6,
+    "totalTurnCount": 24,
+    "querySpecNote": "resolvedQuery는 골든셋 비교용 의미표현이며 운영 API 스키마/에이전트 구현이 아니다.",
+    "inputSha256": "8c08bb1f20009560093aff5fadab69ba02221658e2959a53fee5072530864116"
+  },
+  "interpretationPolicies": {
+    "population": "review-8-v0.1에 지정한 8명만. display-data 전체·메인 레거시 포함 목록·실제 부점 전체와 다르다.",
+    "asOfDate": "2026-09-14",
+    "amountUnit": "KRW integer",
+    "defaultBalance": "당행 IRP 평가금액. 외부계좌 잔액 제외.",
+    "segmentMode": "registered_signal_positive_lookup_only",
+    "absentSignalIsNegativeEvidence": false,
+    "past7Days": "[2026-09-08,2026-09-14] inclusive; as-of date counts as 1 day",
+    "nextNDays": "[asOfDate,asOfDate+N] inclusive; endpoints displayed",
+    "nullTreatment": "unknown, not zero or false",
+    "cashPct": "use the source weightPct for filtering; do not recompute or alter it",
+    "portfolioAggregatePct": "sum(asset amount)/sum(IRP amount); not average of customer percentages",
+    "countUnit": "unique customerId",
+    "topN": "apply after filtering and ordering; preserve full matching query for follow-up",
+    "scopeReset": "reset filters and display limit only when the utterance requests it",
+    "listEffect": "aggregate-only questions keep the main list; show/find customer requests apply the result",
+    "referenceCohort": "a successful aggregate query updates the conversational reference cohort even if the main list is unchanged",
+    "sourceText": "no new judgments from counseling text; no silent correction of raw labels",
+    "unknownExternalCoverage": "only recorded/verified external accounts; blank arrays do not prove no real-world external assets",
+    "previewAndMainList": "resultPreviewCaseIds는 답변 대상 미리보기, mainListCaseIds는 실제 메인 목록. 집계 질문은 메인 목록을 유지한다."
+  },
+  "cases": [
+    {
+      "id": "G01",
+      "title": "검토 모집단 현황",
+      "type": "single_turn",
+      "utterance": "우리 부점 IRP 고객 현황을 요약해줘.",
+      "acceptedParaphrases": [],
+      "initialState": {
+        "scopeId": "review-8-v0.1",
+        "query": {
+          "op": "all_records"
+        },
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null
+      },
+      "expected": {
+        "matchedCaseIds": [
+          "B01-03",
+          "B01-22",
+          "B02-04",
+          "B02-18",
+          "B02-27",
+          "B03-07",
+          "B03-11",
+          "B04-19"
+        ],
+        "matchedCount": 8,
+        "orderedCaseIds": [
+          "B01-03",
+          "B01-22",
+          "B02-04",
+          "B02-18",
+          "B02-27",
+          "B03-07",
+          "B03-11",
+          "B04-19"
+        ],
+        "unknownCaseIds": [],
+        "unknownCount": 0,
+        "resultStatus": "ok",
+        "resolvedQuery": {
+          "op": "all_records"
+        },
+        "queryDescription": "고정된 검토용 시연 고객 8명 전체. 실제 부점 전체 아님.",
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null,
+        "metrics": {
+          "customerCount": 8,
+          "irpAmountKrw": 441990000,
+          "assetAllocation": [
+            {
+              "assetType": "원리금보장형",
+              "amountKrw": 298860000,
+              "weightPct": 67.62
+            },
+            {
+              "assetType": "실적배당형",
+              "amountKrw": 119570000,
+              "weightPct": 27.05
+            },
+            {
+              "assetType": "현금성자산",
+              "amountKrw": 23560000,
+              "weightPct": 5.33
+            }
+          ]
+        },
+        "answerExample": "검토용 시연 고객 8명 기준입니다. IRP 평가금액 합계는 4억 4,199만원, 현금성자산 합계는 2,356만원입니다. 기준일은 2026.09.14입니다.",
+        "uiEffect": "answer_only_keep_list",
+        "resultPreviewCaseIds": [
+          "B01-03",
+          "B01-22",
+          "B02-04",
+          "B02-18",
+          "B02-27",
+          "B03-07",
+          "B03-11",
+          "B04-19"
+        ],
+        "resultPreviewCount": 8,
+        "intent": "aggregate",
+        "mainListCaseIds": [
+          "B01-03",
+          "B01-22",
+          "B02-04",
+          "B02-18",
+          "B02-27",
+          "B03-07",
+          "B03-11",
+          "B04-19"
+        ],
+        "mainListCount": 8
+      },
+      "mustNot": [
+        "실제 부점 전체 통계로 표현하지 않는다.",
+        "레거시 고객을 합치거나 부점 인원을 임의 배수로 늘리지 않는다.",
+        "고객별 비중의 단순평균을 전체 자산비중으로 표시하지 않는다."
+      ],
+      "sourceCaseIds": [
+        "B01-03",
+        "B01-22",
+        "B02-04",
+        "B02-18",
+        "B02-27",
+        "B03-07",
+        "B03-11",
+        "B04-19"
+      ]
+    },
+    {
+      "id": "G02",
+      "title": "Segment + 잔액 AND",
+      "type": "single_turn",
+      "utterance": "납입금 미운용 고객 중 IRP 잔액 2천만원 이상만 보여줘.",
+      "acceptedParaphrases": [
+        "납입금 미운용 뱃지가 있고 IRP 평가액이 2000만원 이상인 사람 찾아줘."
+      ],
+      "initialState": {
+        "scopeId": "review-8-v0.1",
+        "query": {
+          "op": "all_records"
+        },
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null
+      },
+      "expected": {
+        "matchedCaseIds": [
+          "B02-04"
+        ],
+        "matchedCount": 1,
+        "orderedCaseIds": [
+          "B02-04"
+        ],
+        "unknownCaseIds": [],
+        "unknownCount": 0,
+        "resultStatus": "ok",
+        "resolvedQuery": {
+          "op": "and",
+          "args": [
+            {
+              "op": "segment_registered",
+              "label": "납입금 미운용"
+            },
+            {
+              "op": "compare",
+              "field": "irp_amount",
+              "cmp": "gte",
+              "value": 20000000
+            }
+          ]
+        },
+        "queryDescription": "등록된 납입금 미운용 AND 당행 IRP 평가금액 ≥ 20,000,000원.",
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null,
+        "metrics": {},
+        "answerExample": "검토 고객 중 한지우 1명이 해당합니다. IRP 평가금액은 2,274만원입니다.",
+        "uiEffect": "apply_customer_list",
+        "resultPreviewCaseIds": [
+          "B02-04"
+        ],
+        "resultPreviewCount": 1,
+        "intent": "extract",
+        "mainListCaseIds": [
+          "B02-04"
+        ],
+        "mainListCount": 1
+      },
+      "mustNot": [],
+      "sourceCaseIds": [
+        "B02-04",
+        "B02-27"
+      ]
+    },
+    {
+      "id": "G03",
+      "title": "금액 + 비중 AND",
+      "type": "single_turn",
+      "utterance": "현금성자산 500만원 이상이고 비중이 10% 이상인 고객 보여줘.",
+      "acceptedParaphrases": [],
+      "initialState": {
+        "scopeId": "review-8-v0.1",
+        "query": {
+          "op": "all_records"
+        },
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null
+      },
+      "expected": {
+        "matchedCaseIds": [
+          "B02-18"
+        ],
+        "matchedCount": 1,
+        "orderedCaseIds": [
+          "B02-18"
+        ],
+        "unknownCaseIds": [],
+        "unknownCount": 0,
+        "resultStatus": "ok",
+        "resolvedQuery": {
+          "op": "and",
+          "args": [
+            {
+              "op": "compare",
+              "field": "cash_amount",
+              "cmp": "gte",
+              "value": 5000000
+            },
+            {
+              "op": "compare",
+              "field": "cash_pct",
+              "cmp": "gte",
+              "value": 10
+            }
+          ]
+        },
+        "queryDescription": "현금성자산 금액 ≥ 5,000,000원 AND 기록된 비중 ≥ 10%.",
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null,
+        "metrics": {},
+        "answerExample": "오현준 1명이 해당합니다. 현금성자산은 824만원, 비중은 14.7%입니다.",
+        "uiEffect": "apply_customer_list",
+        "resultPreviewCaseIds": [
+          "B02-18"
+        ],
+        "resultPreviewCount": 1,
+        "intent": "extract",
+        "mainListCaseIds": [
+          "B02-18"
+        ],
+        "mainListCount": 1
+      },
+      "mustNot": [
+        "원리금보장형이나 전체 IRP 금액을 현금성자산 금액으로 쓰지 않는다.",
+        "현금성 과다 Segment 판정 임계값을 새로 바꾸지 않는다."
+      ],
+      "sourceCaseIds": [
+        "B01-03",
+        "B01-22",
+        "B02-04",
+        "B02-18",
+        "B02-27",
+        "B03-07",
+        "B03-11",
+        "B04-19"
+      ]
+    },
+    {
+      "id": "G04",
+      "title": "Segment OR",
+      "type": "single_turn",
+      "utterance": "납입금 미운용이거나 이탈징후가 등록된 고객을 보여줘.",
+      "acceptedParaphrases": [],
+      "initialState": {
+        "scopeId": "review-8-v0.1",
+        "query": {
+          "op": "all_records"
+        },
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null
+      },
+      "expected": {
+        "matchedCaseIds": [
+          "B02-04",
+          "B02-27",
+          "B03-07"
+        ],
+        "matchedCount": 3,
+        "orderedCaseIds": [
+          "B02-04",
+          "B02-27",
+          "B03-07"
+        ],
+        "unknownCaseIds": [],
+        "unknownCount": 0,
+        "resultStatus": "ok",
+        "resolvedQuery": {
+          "op": "or",
+          "args": [
+            {
+              "op": "segment_registered",
+              "label": "납입금 미운용"
+            },
+            {
+              "op": "segment_registered",
+              "label": "이탈징후"
+            }
+          ]
+        },
+        "queryDescription": "등록된 납입금 미운용 OR 등록된 이탈징후. 고객 중복 제거.",
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null,
+        "metrics": {},
+        "answerExample": "한지우·김도윤·박서진, 총 3명입니다.",
+        "uiEffect": "apply_customer_list",
+        "resultPreviewCaseIds": [
+          "B02-04",
+          "B02-27",
+          "B03-07"
+        ],
+        "resultPreviewCount": 3,
+        "intent": "extract",
+        "mainListCaseIds": [
+          "B02-04",
+          "B02-27",
+          "B03-07"
+        ],
+        "mainListCount": 3
+      },
+      "mustNot": [
+        "OR를 AND로 바꾸지 않는다.",
+        "이탈징후를 새로 예측하거나 계약이전 신청으로 격상하지 않는다."
+      ],
+      "sourceCaseIds": [
+        "B01-03",
+        "B01-22",
+        "B02-04",
+        "B02-18",
+        "B02-27",
+        "B03-07",
+        "B03-11",
+        "B04-19"
+      ]
+    },
+    {
+      "id": "G05",
+      "title": "일정 + Segment",
+      "type": "single_turn",
+      "utterance": "앞으로 7일 안에 DO가 실행되는 고객 중 투자성향-DO불일치 고객을 보여줘.",
+      "acceptedParaphrases": [],
+      "initialState": {
+        "scopeId": "review-8-v0.1",
+        "query": {
+          "op": "all_records"
+        },
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null
+      },
+      "expected": {
+        "matchedCaseIds": [
+          "B02-18"
+        ],
+        "matchedCount": 1,
+        "orderedCaseIds": [
+          "B02-18"
+        ],
+        "unknownCaseIds": [],
+        "unknownCount": 0,
+        "resultStatus": "ok",
+        "resolvedQuery": {
+          "op": "and",
+          "args": [
+            {
+              "op": "do_between",
+              "start": "2026-09-14",
+              "end": "2026-09-21"
+            },
+            {
+              "op": "segment_registered",
+              "label": "투자성향-DO불일치"
+            }
+          ]
+        },
+        "queryDescription": "시연 기준일 2026-09-14부터 7일 후 2026-09-21까지(양끝 포함) 실행예정 AND 등록된 불일치.",
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null,
+        "metrics": {
+          "executionDate": "2026-09-18",
+          "daysUntil": 4,
+          "executionAmountKrw": 8240000
+        },
+        "answerExample": "오현준 1명이 해당합니다. 2026.09.14 기준 DO 실행은 9월 18일(D-4), 대상금액은 824만원입니다.",
+        "uiEffect": "apply_customer_list",
+        "resultPreviewCaseIds": [
+          "B02-18"
+        ],
+        "resultPreviewCount": 1,
+        "intent": "extract",
+        "mainListCaseIds": [
+          "B02-18"
+        ],
+        "mainListCount": 1
+      },
+      "mustNot": [
+        "작성일 2026-09-18을 검색 기준일로 사용하지 않는다.",
+        "실행예정을 실행완료로 바꾸지 않는다."
+      ],
+      "sourceCaseIds": [
+        "B02-18"
+      ]
+    },
+    {
+      "id": "G06",
+      "title": "ISA 기간 검색과 금액 미확인",
+      "type": "single_turn",
+      "utterance": "앞으로 30일 이내 ISA 만기 고객을 보여주고, 확인된 ISA 평가금액도 알려줘.",
+      "acceptedParaphrases": [],
+      "initialState": {
+        "scopeId": "review-8-v0.1",
+        "query": {
+          "op": "all_records"
+        },
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null
+      },
+      "expected": {
+        "matchedCaseIds": [
+          "B01-03"
+        ],
+        "matchedCount": 1,
+        "orderedCaseIds": [
+          "B01-03"
+        ],
+        "unknownCaseIds": [],
+        "unknownCount": 0,
+        "resultStatus": "ok",
+        "resolvedQuery": {
+          "op": "isa_between",
+          "start": "2026-09-14",
+          "end": "2026-10-14"
+        },
+        "queryDescription": "기록된 ISA 만기일이 [2026-09-14,2026-10-14]. 금액은 별도 조회.",
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null,
+        "metrics": {
+          "isaKnownAmountSumKrw": null,
+          "isaAmountKnownCount": 0,
+          "isaAmountUnknownCount": 1,
+          "isaAmountUnknownCaseIds": [
+            "B01-03"
+          ]
+        },
+        "answerExample": "오민서 1명이 해당합니다. ISA 만기일은 10월 7일(D-23)입니다. ISA 평가금액은 미확인이라 합계를 제시할 수 없습니다.",
+        "uiEffect": "apply_customer_list",
+        "resultPreviewCaseIds": [
+          "B01-03"
+        ],
+        "resultPreviewCount": 1,
+        "intent": "extract",
+        "mainListCaseIds": [
+          "B01-03"
+        ],
+        "mainListCount": 1
+      },
+      "mustNot": [
+        "ISA 평가금액 미확인을 0원으로 표시하지 않는다.",
+        "당행 IRP 6,350만원을 ISA 금액으로 대체하지 않는다.",
+        "ISA 금액이 없다고 만기 고객 목록에서 제거하지 않는다."
+      ],
+      "sourceCaseIds": [
+        "B01-03",
+        "B01-22"
+      ]
+    },
+    {
+      "id": "G07",
+      "title": "ISA 날짜와 금액 조건",
+      "type": "single_turn",
+      "utterance": "앞으로 45일 이내 ISA 만기 고객 중 ISA 평가금액 3천만원 이상인 고객을 보여줘.",
+      "acceptedParaphrases": [],
+      "initialState": {
+        "scopeId": "review-8-v0.1",
+        "query": {
+          "op": "all_records"
+        },
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null
+      },
+      "expected": {
+        "matchedCaseIds": [
+          "B01-22"
+        ],
+        "matchedCount": 1,
+        "orderedCaseIds": [
+          "B01-22"
+        ],
+        "unknownCaseIds": [
+          "B01-03"
+        ],
+        "unknownCount": 1,
+        "resultStatus": "partial",
+        "resolvedQuery": {
+          "op": "isa_between",
+          "start": "2026-09-14",
+          "end": "2026-10-29",
+          "minAmountKrw": 30000000
+        },
+        "queryDescription": "같은 ISA 계좌의 만기일 [2026-09-14,2026-10-29] AND 평가금액 ≥ 30,000,000원.",
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null,
+        "metrics": {
+          "knownIsaAmountKrw": 49680000
+        },
+        "answerExample": "조건 충족이 확인된 고객은 한지훈 1명입니다. ISA 평가금액 4,968만원, 만기일 10월 16일입니다. 오민서 1명은 ISA 금액 미확인으로 금액 조건을 판단할 수 없습니다.",
+        "uiEffect": "apply_customer_list",
+        "resultPreviewCaseIds": [
+          "B01-22"
+        ],
+        "resultPreviewCount": 1,
+        "intent": "extract",
+        "mainListCaseIds": [
+          "B01-22"
+        ],
+        "mainListCount": 1
+      },
+      "mustNot": [
+        "미확인 고객을 조건 미충족 고객과 동일하게 집계하지 않는다.",
+        "ISA 평가금액을 확정 만기수령액 또는 IRP 전환예정액으로 부르지 않는다."
+      ],
+      "sourceCaseIds": [
+        "B01-03",
+        "B01-22"
+      ]
+    },
+    {
+      "id": "G08",
+      "title": "상품유형별 합산",
+      "type": "single_turn",
+      "utterance": "정기예금을 합계 5천만원 이상 보유한 고객을 IRP 잔액 큰 순으로 보여줘.",
+      "acceptedParaphrases": [],
+      "initialState": {
+        "scopeId": "review-8-v0.1",
+        "query": {
+          "op": "all_records"
+        },
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null
+      },
+      "expected": {
+        "matchedCaseIds": [
+          "B03-07",
+          "B03-11"
+        ],
+        "matchedCount": 2,
+        "orderedCaseIds": [
+          "B03-07",
+          "B03-11"
+        ],
+        "unknownCaseIds": [],
+        "unknownCount": 0,
+        "resultStatus": "ok",
+        "resolvedQuery": {
+          "op": "holding_sum_gte",
+          "category": "정기예금",
+          "minAmountKrw": 50000000
+        },
+        "queryDescription": "고객별 productCategory=정기예금의 보유 평가금액 합계 ≥ 50,000,000원. 정렬은 당행 IRP 평가금액 내림차순.",
+        "sort": {
+          "field": "irp_amount",
+          "direction": "desc"
+        },
+        "limit": null,
+        "metrics": {
+          "depositAmountsByCaseId": {
+            "B03-07": 72400000,
+            "B03-11": 74800000
+          }
+        },
+        "answerExample": "박서진·이정훈, 2명입니다. 정기예금 합계는 각각 7,240만원·7,480만원이고, 요청한 IRP 총액순으로 박서진 7,550만원 → 이정훈 7,480만원입니다.",
+        "uiEffect": "apply_customer_list",
+        "resultPreviewCaseIds": [
+          "B03-07",
+          "B03-11"
+        ],
+        "resultPreviewCount": 2,
+        "intent": "extract",
+        "mainListCaseIds": [
+          "B03-07",
+          "B03-11"
+        ],
+        "mainListCount": 2
+      },
+      "mustNot": [
+        "이정훈의 예금 두 건을 각각 5천만원 미만이라는 이유로 제외하지 않는다.",
+        "정렬 기준을 상품합계로 조용히 바꾸지 않는다.",
+        "두 상품을 두 고객으로 세지 않는다."
+      ],
+      "sourceCaseIds": [
+        "B01-03",
+        "B01-22",
+        "B02-04",
+        "B02-18",
+        "B02-27",
+        "B03-07",
+        "B03-11",
+        "B04-19"
+      ]
+    },
+    {
+      "id": "G09",
+      "title": "같은 보유상품에 조건 묶기",
+      "type": "single_turn",
+      "utterance": "DB저축은행 퇴직연금 정기예금을 한 상품에 3천만원 이상 보유한 고객 보여줘.",
+      "acceptedParaphrases": [],
+      "initialState": {
+        "scopeId": "review-8-v0.1",
+        "query": {
+          "op": "all_records"
+        },
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null
+      },
+      "expected": {
+        "matchedCaseIds": [
+          "B04-19"
+        ],
+        "matchedCount": 1,
+        "orderedCaseIds": [
+          "B04-19"
+        ],
+        "unknownCaseIds": [],
+        "unknownCount": 0,
+        "resultStatus": "ok",
+        "resolvedQuery": {
+          "op": "holding_exists",
+          "productId": "SAV-013",
+          "minAmountKrw": 30000000
+        },
+        "queryDescription": "동일 holdings 원소에서 productId=SAV-013 AND valuationAmountKrw ≥ 30,000,000원.",
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null,
+        "metrics": {},
+        "answerExample": "서민재 1명입니다. 해당 예금 평가금액은 3,190만원입니다. 이정훈의 같은 상품은 2,618만원으로 조건 미충족입니다.",
+        "uiEffect": "apply_customer_list",
+        "resultPreviewCaseIds": [
+          "B04-19"
+        ],
+        "resultPreviewCount": 1,
+        "intent": "extract",
+        "mainListCaseIds": [
+          "B04-19"
+        ],
+        "mainListCount": 1
+      },
+      "mustNot": [
+        "이정훈의 다른 예금 4,862만원과 DB저축은행 상품명을 서로 결합하지 않는다."
+      ],
+      "sourceCaseIds": [
+        "B03-11",
+        "B04-19"
+      ]
+    },
+    {
+      "id": "G10",
+      "title": "자동이체와 입금매수 설정",
+      "type": "single_turn",
+      "utterance": "월 30만원 이상 자동이체 중인데 입금매수상품이 미지정인 고객 보여줘.",
+      "acceptedParaphrases": [],
+      "initialState": {
+        "scopeId": "review-8-v0.1",
+        "query": {
+          "op": "all_records"
+        },
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null
+      },
+      "expected": {
+        "matchedCaseIds": [
+          "B02-04",
+          "B02-27"
+        ],
+        "matchedCount": 2,
+        "orderedCaseIds": [
+          "B02-04",
+          "B02-27"
+        ],
+        "unknownCaseIds": [
+          "B01-03",
+          "B01-22",
+          "B02-18",
+          "B03-07",
+          "B03-11",
+          "B04-19"
+        ],
+        "unknownCount": 6,
+        "resultStatus": "partial",
+        "resolvedQuery": {
+          "op": "and",
+          "args": [
+            {
+              "op": "compare",
+              "field": "auto_registered",
+              "cmp": "eq",
+              "value": true
+            },
+            {
+              "op": "compare",
+              "field": "auto_monthly",
+              "cmp": "gte",
+              "value": 300000
+            },
+            {
+              "op": "compare",
+              "field": "deposit_configured",
+              "cmp": "eq",
+              "value": false
+            }
+          ]
+        },
+        "queryDescription": "자동이체 등록=true AND 월금액 ≥ 300,000원 AND 입금매수상품 설정=false. 값 부재는 미확인.",
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null,
+        "metrics": {},
+        "answerExample": "조건 충족이 확인된 고객은 한지우(월 45만원)·김도윤(월 60만원) 2명입니다. 나머지 6명은 관련 설정 정보가 없어 이 조건을 판단할 수 없습니다.",
+        "uiEffect": "apply_customer_list",
+        "resultPreviewCaseIds": [
+          "B02-04",
+          "B02-27"
+        ],
+        "resultPreviewCount": 2,
+        "intent": "extract",
+        "mainListCaseIds": [
+          "B02-04",
+          "B02-27"
+        ],
+        "mainListCount": 2
+      },
+      "mustNot": [
+        "매수 설정이 미확인인 고객을 미지정으로 처리하지 않는다.",
+        "가입 후 수동 매수한 이력이 있다는 이유로 입금매수상품 지정=true로 바꾸지 않는다."
+      ],
+      "sourceCaseIds": [
+        "B01-03",
+        "B01-22",
+        "B02-04",
+        "B02-18",
+        "B02-27",
+        "B03-07",
+        "B03-11",
+        "B04-19"
+      ]
+    },
+    {
+      "id": "G11",
+      "title": "외부 IRP 합산과 출처",
+      "type": "single_turn",
+      "utterance": "타행 IRP 보유가 등록된 고객 중 확인된 외부 IRP 합계가 5천만원 이상인 고객 보여줘.",
+      "acceptedParaphrases": [],
+      "initialState": {
+        "scopeId": "review-8-v0.1",
+        "query": {
+          "op": "all_records"
+        },
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null
+      },
+      "expected": {
+        "matchedCaseIds": [
+          "B04-19"
+        ],
+        "matchedCount": 1,
+        "orderedCaseIds": [
+          "B04-19"
+        ],
+        "unknownCaseIds": [],
+        "unknownCount": 0,
+        "resultStatus": "ok",
+        "resolvedQuery": {
+          "op": "and",
+          "args": [
+            {
+              "op": "segment_registered",
+              "label": "타행 IRP 보유"
+            },
+            {
+              "op": "external_irp_sum_gte",
+              "minAmountKrw": 50000000
+            }
+          ]
+        },
+        "queryDescription": "타행 IRP 보유 태그 AND 기록된 외부 개인형IRP 평가금액 합계 ≥ 50,000,000원.",
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null,
+        "metrics": {
+          "externalIrpCount": 2,
+          "knownExternalIrpAmountKrw": 68100000,
+          "verificationDate": "2026-09-10",
+          "includesInternalIrp": false
+        },
+        "answerExample": "서민재 1명입니다. 확인된 외부 IRP는 3,840만원과 2,970만원, 합계 6,810만원입니다. 외부정보 확인일은 2026.09.10이며 고객 제시자료 기반 시연정보입니다.",
+        "uiEffect": "apply_customer_list",
+        "resultPreviewCaseIds": [
+          "B04-19"
+        ],
+        "resultPreviewCount": 1,
+        "intent": "extract",
+        "mainListCaseIds": [
+          "B04-19"
+        ],
+        "mainListCount": 1
+      },
+      "mustNot": [
+        "당행 IRP 5,260만원을 외부 IRP 합계에 더하지 않는다.",
+        "실시간 마이데이터 조회금액이라고 표현하지 않는다."
+      ],
+      "sourceCaseIds": [
+        "B04-19"
+      ]
+    },
+    {
+      "id": "G12",
+      "title": "0원과 미확인 구분",
+      "type": "single_turn",
+      "utterance": "세액공제 잔여한도가 0원인 고객 보여줘.",
+      "acceptedParaphrases": [],
+      "initialState": {
+        "scopeId": "review-8-v0.1",
+        "query": {
+          "op": "all_records"
+        },
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null
+      },
+      "expected": {
+        "matchedCaseIds": [
+          "B01-03"
+        ],
+        "matchedCount": 1,
+        "orderedCaseIds": [
+          "B01-03"
+        ],
+        "unknownCaseIds": [
+          "B02-04"
+        ],
+        "unknownCount": 1,
+        "resultStatus": "partial",
+        "resolvedQuery": {
+          "op": "compare",
+          "field": "tax_remaining",
+          "cmp": "eq",
+          "value": 0
+        },
+        "queryDescription": "taxDeductionRemainingKrw=0. null과 누락은 미확인.",
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null,
+        "metrics": {},
+        "answerExample": "오민서 1명이 잔여한도 0원입니다. 한지우 1명은 잔여한도 미확인으로 이 조건을 판단할 수 없습니다.",
+        "uiEffect": "apply_customer_list",
+        "resultPreviewCaseIds": [
+          "B01-03"
+        ],
+        "resultPreviewCount": 1,
+        "intent": "extract",
+        "mainListCaseIds": [
+          "B01-03"
+        ],
+        "mainListCount": 1
+      },
+      "mustNot": [
+        "한지우를 잔여한도 0원으로 포함하지 않는다.",
+        "공제 잔여한도를 실제 환급액으로 표현하지 않는다."
+      ],
+      "sourceCaseIds": [
+        "B01-03",
+        "B01-22",
+        "B02-04",
+        "B02-18",
+        "B02-27",
+        "B03-07",
+        "B03-11",
+        "B04-19"
+      ]
+    },
+    {
+      "id": "G13",
+      "title": "최근 7일 경계",
+      "type": "single_turn",
+      "utterance": "펀드 상품조회가 등록된 고객 중 최근 7일 이내 조회일이 있는 고객만 보여줘.",
+      "acceptedParaphrases": [],
+      "initialState": {
+        "scopeId": "review-8-v0.1",
+        "query": {
+          "op": "all_records"
+        },
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null
+      },
+      "expected": {
+        "matchedCaseIds": [
+          "B02-04"
+        ],
+        "matchedCount": 1,
+        "orderedCaseIds": [
+          "B02-04"
+        ],
+        "unknownCaseIds": [],
+        "unknownCount": 0,
+        "resultStatus": "ok",
+        "resolvedQuery": {
+          "op": "and",
+          "args": [
+            {
+              "op": "segment_registered",
+              "label": "펀드 상품조회"
+            },
+            {
+              "op": "segment_date_between",
+              "label": "펀드 상품조회",
+              "start": "2026-09-08",
+              "end": "2026-09-14"
+            }
+          ]
+        },
+        "queryDescription": "최근 7일은 기준일 포함 7개 날짜: [2026-09-08,2026-09-14]. 해당 등록 기록 날짜 사용.",
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null,
+        "metrics": {},
+        "answerExample": "한지우 1명입니다. 조회일은 9월 9일입니다. 김도윤의 기록은 9월 7일로 이번 기간 밖입니다.",
+        "uiEffect": "apply_customer_list",
+        "resultPreviewCaseIds": [
+          "B02-04"
+        ],
+        "resultPreviewCount": 1,
+        "intent": "extract",
+        "mainListCaseIds": [
+          "B02-04"
+        ],
+        "mainListCount": 1
+      },
+      "mustNot": [
+        "김도윤의 9월 7일을 기준일 포함 최근 7일에 넣지 않는다.",
+        "조회 이력을 투자 의향으로 표현하지 않는다.",
+        "기록이 없는 고객의 미조회 사실을 확정하지 않는다."
+      ],
+      "sourceCaseIds": [
+        "B02-04",
+        "B02-27"
+      ]
+    },
+    {
+      "id": "G14",
+      "title": "정상적인 결과 없음",
+      "type": "single_turn",
+      "utterance": "검토 고객 중 IRP 잔액 1억원 이상인 고객 보여줘.",
+      "acceptedParaphrases": [],
+      "initialState": {
+        "scopeId": "review-8-v0.1",
+        "query": {
+          "op": "all_records"
+        },
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null
+      },
+      "expected": {
+        "matchedCaseIds": [],
+        "matchedCount": 0,
+        "orderedCaseIds": [],
+        "unknownCaseIds": [],
+        "unknownCount": 0,
+        "resultStatus": "empty",
+        "resolvedQuery": {
+          "op": "compare",
+          "field": "irp_amount",
+          "cmp": "gte",
+          "value": 100000000
+        },
+        "queryDescription": "검토용 8명의 당행 IRP 평가금액 ≥ 100,000,000원.",
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null,
+        "metrics": {},
+        "answerExample": "검토용 8명 중 조건에 해당하는 고객은 0명입니다. IRP 잔액 1억원 이상 조건은 그대로 유지했습니다.",
+        "uiEffect": "apply_customer_list",
+        "resultPreviewCaseIds": [],
+        "resultPreviewCount": 0,
+        "intent": "extract",
+        "mainListCaseIds": [],
+        "mainListCount": 0
+      },
+      "mustNot": [
+        "5천만원으로 조건을 자동 완화하지 않는다.",
+        "서민재의 당·타행 합산금액으로 당행 IRP 조건을 충족시키지 않는다.",
+        "자료 미확인과 결과 없음 메시지를 혼동하지 않는다."
+      ],
+      "sourceCaseIds": [
+        "B01-03",
+        "B01-22",
+        "B02-04",
+        "B02-18",
+        "B02-27",
+        "B03-07",
+        "B03-11",
+        "B04-19"
+      ]
+    },
+    {
+      "id": "G15",
+      "type": "guard",
+      "title": "미조회 고객을 만들어내지 않기",
+      "utterance": "최근 7일 동안 ETF를 한 번도 조회하지 않은 고객만 보여줘.",
+      "initialState": {
+        "scopeId": "review-8-v0.1",
+        "query": {
+          "op": "all_records"
+        },
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null
+      },
+      "expected": {
+        "intent": "insufficient_data",
+        "resultStatus": "insufficient_data",
+        "resolvedQuery": null,
+        "matchedCount": null,
+        "matchedCaseIds": null,
+        "unknownCaseIds": null,
+        "answerExample": "기간 전체의 ETF 방문·조회 로그가 없어 미조회 고객을 확정할 수 없습니다. 등록된 조회 기록이 없는 것을 실제 미조회로 보지는 않겠습니다.",
+        "uiEffect": "keep_list_and_query",
+        "reason": "signals는 선택된 등록 태그이며 완전한 기간 로그가 아니다.",
+        "metrics": {},
+        "resultPreviewCaseIds": null,
+        "resultPreviewCount": null,
+        "mainListCaseIds": [
+          "B01-03",
+          "B01-22",
+          "B02-04",
+          "B02-18",
+          "B02-27",
+          "B03-07",
+          "B03-11",
+          "B04-19"
+        ],
+        "mainListCount": 8
+      },
+      "mustNot": [
+        "태그 없는 8명을 ETF 미조회 고객으로 반환하지 않는다.",
+        "결과 0명으로 답하지 않는다."
+      ],
+      "sourceCaseIds": [
+        "B01-03",
+        "B01-22",
+        "B02-04",
+        "B02-18",
+        "B02-27",
+        "B03-07",
+        "B03-11",
+        "B04-19"
+      ]
+    },
+    {
+      "id": "G16",
+      "type": "guard",
+      "title": "전월 비교 요청 제한",
+      "utterance": "지난달보다 현금성자산이 늘어난 고객을 찾아줘.",
+      "initialState": {
+        "scopeId": "review-8-v0.1",
+        "query": {
+          "op": "all_records"
+        },
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null
+      },
+      "expected": {
+        "intent": "unsupported_history",
+        "resultStatus": "unsupported_history",
+        "resolvedQuery": null,
+        "matchedCount": null,
+        "matchedCaseIds": null,
+        "unknownCaseIds": null,
+        "answerExample": "현재 검토 세트에는 동일 정의의 전월말 현금성자산 스냅샷이 없어 전월 대비 증감을 계산할 수 없습니다. 현재 금액 기준 검색은 가능합니다.",
+        "uiEffect": "keep_list_and_query",
+        "reason": "이번 모집단은 기준일 현재 투영값만 포함.",
+        "metrics": {},
+        "resultPreviewCaseIds": null,
+        "resultPreviewCount": null,
+        "mainListCaseIds": [
+          "B01-03",
+          "B01-22",
+          "B02-04",
+          "B02-18",
+          "B02-27",
+          "B03-07",
+          "B03-11",
+          "B04-19"
+        ],
+        "mainListCount": 8
+      },
+      "mustNot": [
+        "일부 고객의 입금 이벤트를 전월말 잔액으로 대체하지 않는다.",
+        "현재잔액에서 임의 납입액을 차감해 전월잔액을 생성하지 않는다."
+      ],
+      "sourceCaseIds": [
+        "B01-03",
+        "B01-22",
+        "B02-04",
+        "B02-18",
+        "B02-27",
+        "B03-07",
+        "B03-11",
+        "B04-19"
+      ]
+    },
+    {
+      "id": "G17",
+      "type": "guard",
+      "title": "조회와 거래실행 분리",
+      "utterance": "이 고객들에게 ETF를 골라서 자동매수해줘.",
+      "initialState": {
+        "scopeId": "review-8-v0.1",
+        "query": {
+          "op": "all_records"
+        },
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null
+      },
+      "expected": {
+        "intent": "out_of_scope",
+        "resultStatus": "out_of_scope",
+        "resolvedQuery": null,
+        "matchedCount": null,
+        "matchedCaseIds": null,
+        "unknownCaseIds": null,
+        "answerExample": "이 대화창은 고객 조회·집계·추출 기능입니다. 상품 추천이나 자동매수는 실행하지 않습니다.",
+        "uiEffect": "keep_list_and_query",
+        "reason": "합의한 검색 기능 범위를 넘는 요청.",
+        "metrics": {},
+        "resultPreviewCaseIds": null,
+        "resultPreviewCount": null,
+        "mainListCaseIds": [
+          "B01-03",
+          "B01-22",
+          "B02-04",
+          "B02-18",
+          "B02-27",
+          "B03-07",
+          "B03-11",
+          "B04-19"
+        ],
+        "mainListCount": 8
+      },
+      "mustNot": [
+        "거래가 접수되었다고 말하지 않는다.",
+        "데이터나 보유상품을 변경하지 않는다."
+      ],
+      "sourceCaseIds": [
+        "B01-03",
+        "B01-22",
+        "B02-04",
+        "B02-18",
+        "B02-27",
+        "B03-07",
+        "B03-11",
+        "B04-19"
+      ]
+    },
+    {
+      "id": "G18",
+      "type": "guard",
+      "title": "임의 임계값 금지",
+      "utterance": "현금이 많은 고객 찾아줘.",
+      "initialState": {
+        "scopeId": "review-8-v0.1",
+        "query": {
+          "op": "all_records"
+        },
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null
+      },
+      "expected": {
+        "intent": "clarification_required",
+        "resultStatus": "clarification_required",
+        "resolvedQuery": null,
+        "matchedCount": null,
+        "matchedCaseIds": null,
+        "unknownCaseIds": null,
+        "answerExample": "현금성자산 금액으로 찾을까요, 비중으로 찾을까요? 예를 들어 “현금성자산 500만원 이상”처럼 기준을 알려주세요.",
+        "uiEffect": "keep_list_and_query",
+        "reason": "많다에 대한 숫자·금액/비중 기준이 정해지지 않은 새 질의.",
+        "metrics": {},
+        "resultPreviewCaseIds": null,
+        "resultPreviewCount": null,
+        "mainListCaseIds": [
+          "B01-03",
+          "B01-22",
+          "B02-04",
+          "B02-18",
+          "B02-27",
+          "B03-07",
+          "B03-11",
+          "B04-19"
+        ],
+        "mainListCount": 8
+      },
+      "mustNot": [
+        "500만원 또는 30%를 동의 없이 검색조건으로 넣지 않는다.",
+        "현금성 과다 Segment와 동일 의미라고 자동 확정하지 않는다."
+      ],
+      "sourceCaseIds": [
+        "B01-03",
+        "B01-22",
+        "B02-04",
+        "B02-18",
+        "B02-27",
+        "B03-07",
+        "B03-11",
+        "B04-19"
+      ]
+    }
+  ],
+  "sessions": [
+    {
+      "id": "M01",
+      "title": "집계→조건 추가→조건 삭제→Top N→재검색→전체 초기화",
+      "initialState": {
+        "scopeId": "review-8-v0.1",
+        "query": {
+          "op": "all_records"
+        },
+        "sort": {
+          "field": "caseId",
+          "direction": "asc"
+        },
+        "limit": null
+      },
+      "turns": [
+        {
+          "id": "M01-T1",
+          "utterance": "우리 부점에서 납입금 미운용 고객은 몇 명이고, 현금성자산 합계는 얼마야?",
+          "expected": {
+            "matchedCaseIds": [
+              "B02-04",
+              "B02-27"
+            ],
+            "matchedCount": 2,
+            "orderedCaseIds": [
+              "B02-04",
+              "B02-27"
+            ],
+            "unknownCaseIds": [],
+            "unknownCount": 0,
+            "resultStatus": "ok",
+            "resolvedQuery": {
+              "op": "segment_registered",
+              "label": "납입금 미운용"
+            },
+            "queryDescription": "등록된 납입금 미운용 고객 집합을 대화 참조집합으로 저장. 메인 목록은 유지.",
+            "sort": {
+              "field": "caseId",
+              "direction": "asc"
+            },
+            "limit": null,
+            "answerExample": "검토용 8명 중 한지우·김도윤 2명입니다. 이 두 고객의 현금성자산 합계는 255만원입니다.",
+            "uiEffect": "answer_only_keep_list",
+            "metrics": {
+              "customerCount": 2,
+              "cashAmountKrw": 2550000
+            },
+            "resultPreviewCaseIds": [
+              "B02-04",
+              "B02-27"
+            ],
+            "resultPreviewCount": 2,
+            "intent": "aggregate",
+            "mainListCaseIds": [
+              "B01-03",
+              "B01-22",
+              "B02-04",
+              "B02-18",
+              "B02-27",
+              "B03-07",
+              "B03-11",
+              "B04-19"
+            ],
+            "mainListCount": 8
+          },
+          "mustNot": []
+        },
+        {
+          "id": "M01-T2",
+          "utterance": "그중 IRP 잔액 2천만원 이상만 보여줘.",
+          "expected": {
+            "matchedCaseIds": [
+              "B02-04"
+            ],
+            "matchedCount": 1,
+            "orderedCaseIds": [
+              "B02-04"
+            ],
+            "unknownCaseIds": [],
+            "unknownCount": 0,
+            "resultStatus": "ok",
+            "resolvedQuery": {
+              "op": "and",
+              "args": [
+                {
+                  "op": "segment_registered",
+                  "label": "납입금 미운용"
+                },
+                {
+                  "op": "compare",
+                  "field": "irp_amount",
+                  "cmp": "gte",
+                  "value": 20000000
+                }
+              ]
+            },
+            "queryDescription": "직전 참조집합 조건에 IRP ≥ 2천만원 추가.",
+            "sort": {
+              "field": "caseId",
+              "direction": "asc"
+            },
+            "limit": null,
+            "answerExample": "한지우 1명입니다. [납입금 미운용] [IRP 평가금액 2천만원 이상]을 적용했습니다.",
+            "uiEffect": "apply_customer_list",
+            "metrics": {},
+            "resultPreviewCaseIds": [
+              "B02-04"
+            ],
+            "resultPreviewCount": 1,
+            "intent": "extract",
+            "mainListCaseIds": [
+              "B02-04"
+            ],
+            "mainListCount": 1
+          },
+          "mustNot": []
+        },
+        {
+          "id": "M01-T3",
+          "utterance": "잔액 조건은 빼고, 현금성자산 많은 순으로 1명만 보여줘.",
+          "expected": {
+            "matchedCaseIds": [
+              "B02-04",
+              "B02-27"
+            ],
+            "matchedCount": 2,
+            "orderedCaseIds": [
+              "B02-04",
+              "B02-27"
+            ],
+            "unknownCaseIds": [],
+            "unknownCount": 0,
+            "resultStatus": "ok",
+            "resolvedQuery": {
+              "op": "segment_registered",
+              "label": "납입금 미운용"
+            },
+            "queryDescription": "잔액 필터 삭제. 납입금 미운용 유지. 현금성 금액 내림차순, 표시 제한 1.",
+            "sort": {
+              "field": "cash_amount",
+              "direction": "desc"
+            },
+            "limit": 1,
+            "answerExample": "조건에 맞는 고객은 2명이며, 현금성자산이 가장 많은 한지우 1명을 표시합니다.",
+            "uiEffect": "apply_customer_list",
+            "metrics": {},
+            "resultPreviewCaseIds": [
+              "B02-04"
+            ],
+            "resultPreviewCount": 1,
+            "intent": "extract",
+            "mainListCaseIds": [
+              "B02-04"
+            ],
+            "mainListCount": 1
+          },
+          "mustNot": [
+            "전체 조건일치 수 2명과 표시 수 1명을 혼동하지 않는다."
+          ]
+        },
+        {
+          "id": "M01-T4",
+          "utterance": "그중 38세 이상만 남겨줘.",
+          "expected": {
+            "matchedCaseIds": [
+              "B02-27"
+            ],
+            "matchedCount": 1,
+            "orderedCaseIds": [
+              "B02-27"
+            ],
+            "unknownCaseIds": [],
+            "unknownCount": 0,
+            "resultStatus": "ok",
+            "resolvedQuery": {
+              "op": "and",
+              "args": [
+                {
+                  "op": "segment_registered",
+                  "label": "납입금 미운용"
+                },
+                {
+                  "op": "compare",
+                  "field": "age",
+                  "cmp": "gte",
+                  "value": 38
+                }
+              ]
+            },
+            "queryDescription": "표시된 1명이 아니라 기존 필터의 전체 조건일치 집합에서 연령을 적용한 뒤 정렬·제한 재실행.",
+            "sort": {
+              "field": "cash_amount",
+              "direction": "desc"
+            },
+            "limit": 1,
+            "answerExample": "김도윤 1명이 해당합니다. 납입금 미운용 조건에 38세 이상을 추가했습니다.",
+            "uiEffect": "apply_customer_list",
+            "metrics": {},
+            "resultPreviewCaseIds": [
+              "B02-27"
+            ],
+            "resultPreviewCount": 1,
+            "intent": "extract",
+            "mainListCaseIds": [
+              "B02-27"
+            ],
+            "mainListCount": 1
+          },
+          "mustNot": [
+            "이전 화면의 한지우 1명만 필터링해서 0명이라고 답하지 않는다."
+          ]
+        },
+        {
+          "id": "M01-T5",
+          "utterance": "나이 조건은 빼고, 최근 7일 이내 펀드 상품조회한 고객만.",
+          "expected": {
+            "matchedCaseIds": [
+              "B02-04"
+            ],
+            "matchedCount": 1,
+            "orderedCaseIds": [
+              "B02-04"
+            ],
+            "unknownCaseIds": [],
+            "unknownCount": 0,
+            "resultStatus": "ok",
+            "resolvedQuery": {
+              "op": "and",
+              "args": [
+                {
+                  "op": "segment_registered",
+                  "label": "납입금 미운용"
+                },
+                {
+                  "op": "segment_registered",
+                  "label": "펀드 상품조회"
+                },
+                {
+                  "op": "segment_date_between",
+                  "label": "펀드 상품조회",
+                  "start": "2026-09-08",
+                  "end": "2026-09-14"
+                }
+              ]
+            },
+            "queryDescription": "나이 필터만 삭제. 미운용 유지. 펀드 조회 등록 + 기간 추가. 기존 정렬·표시 제한 유지.",
+            "sort": {
+              "field": "cash_amount",
+              "direction": "desc"
+            },
+            "limit": 1,
+            "answerExample": "한지우 1명이 해당합니다. 조회기간은 시연 기준일을 포함한 9월 8일~14일입니다.",
+            "uiEffect": "apply_customer_list",
+            "metrics": {},
+            "resultPreviewCaseIds": [
+              "B02-04"
+            ],
+            "resultPreviewCount": 1,
+            "intent": "extract",
+            "mainListCaseIds": [
+              "B02-04"
+            ],
+            "mainListCount": 1
+          },
+          "mustNot": []
+        },
+        {
+          "id": "M01-T6",
+          "utterance": "조건을 모두 지우고, 전체 검토 고객에서 현금성자산 500만원 이상을 금액 큰 순으로 전부 보여줘.",
+          "expected": {
+            "matchedCaseIds": [
+              "B01-22",
+              "B02-18"
+            ],
+            "matchedCount": 2,
+            "orderedCaseIds": [
+              "B02-18",
+              "B01-22"
+            ],
+            "unknownCaseIds": [],
+            "unknownCount": 0,
+            "resultStatus": "ok",
+            "resolvedQuery": {
+              "op": "compare",
+              "field": "cash_amount",
+              "cmp": "gte",
+              "value": 5000000
+            },
+            "queryDescription": "기존 필터와 top N 해제. 전체 8명에서 현금성 금액 ≥ 500만원, 내림차순.",
+            "sort": {
+              "field": "cash_amount",
+              "direction": "desc"
+            },
+            "limit": null,
+            "answerExample": "오현준 824만원, 한지훈 530만원, 총 2명입니다. 이전 미운용·조회 조건과 1명 표시 제한은 해제했습니다.",
+            "uiEffect": "apply_customer_list",
+            "metrics": {},
+            "resultPreviewCaseIds": [
+              "B02-18",
+              "B01-22"
+            ],
+            "resultPreviewCount": 2,
+            "intent": "extract",
+            "mainListCaseIds": [
+              "B02-18",
+              "B01-22"
+            ],
+            "mainListCount": 2
+          },
+          "mustNot": [
+            "이전 납입금 미운용 조건·연령조건·top 1을 남기지 않는다."
+          ]
+        }
+      ]
+    }
+  ],
+  "coverageNotes": [
+    "이 골든셋은 8명 검토용이며 전체 display-data 질의 정답으로 재사용하지 않는다.",
+    "개인형 IRP 정답 후보를 새로 생성하지 않고 기존 사례만 사용했다.",
+    "배지 전체/진단 룰 전체를 검증하는 세트가 아니다. 미확정 임계값을 채우지 않았다.",
+    "미등록 DO·실제 연금수령 상태·가입기간·모든 디지털 화면·범용 NOT 등은 이 1차 세트에서 양성 사례 검증 미포함.",
+    "현재 코드/에이전트/프론트 연결 테스트는 수행하지 않았다. 입력·수치·정답 목록의 내부 일관성만 검증했다."
+  ],
+  "validation": {
+    "jsonParse": "pass",
+    "sourceProjectionAmountReconciliation": "8/8 pass",
+    "dDayReconciliation": "pass",
+    "queryMembershipAssertions": "20/20 pass",
+    "nullCases": "pass",
+    "frontendOrAgentExecuted": false
+  },
+  "sources": [
+    {
+      "path": "agent-workbench/case-design/active/display-data/B01-03.json",
+      "blobSha": "9f9bd3deb646bc44eb850db0f01be13fb0cf02fa",
+      "commit": "7723f21a428e98aef935faae20b3c9a8e032b174",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/7723f21a428e98aef935faae20b3c9a8e032b174/agent-workbench/case-design/active/display-data/B01-03.json"
+    },
+    {
+      "path": "agent-workbench/case-design/active/display-data/B01-22.json",
+      "blobSha": "70e0fefc01fc94819acac71b19b91e9228ebf0c3",
+      "commit": "7723f21a428e98aef935faae20b3c9a8e032b174",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/7723f21a428e98aef935faae20b3c9a8e032b174/agent-workbench/case-design/active/display-data/B01-22.json"
+    },
+    {
+      "path": "agent-workbench/case-design/active/display-data/B02-04.json",
+      "blobSha": "a1d64b30bd1a4d1ab915c786e08a15f98d4065f2",
+      "commit": "7723f21a428e98aef935faae20b3c9a8e032b174",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/7723f21a428e98aef935faae20b3c9a8e032b174/agent-workbench/case-design/active/display-data/B02-04.json"
+    },
+    {
+      "path": "agent-workbench/case-design/active/display-data/B02-18.json",
+      "blobSha": "ae0bf89b062dad65d981e86bc1942e5691cad74b",
+      "commit": "7723f21a428e98aef935faae20b3c9a8e032b174",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/7723f21a428e98aef935faae20b3c9a8e032b174/agent-workbench/case-design/active/display-data/B02-18.json"
+    },
+    {
+      "path": "agent-workbench/case-design/active/display-data/B02-27.json",
+      "blobSha": "ffa5b6d5e3a25c52424e428127d77fabf8cea91e",
+      "commit": "7723f21a428e98aef935faae20b3c9a8e032b174",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/7723f21a428e98aef935faae20b3c9a8e032b174/agent-workbench/case-design/active/display-data/B02-27.json"
+    },
+    {
+      "path": "agent-workbench/case-design/active/display-data/B03-07.json",
+      "blobSha": "e26cb7d2e5014490c08da79362a8ef488fe2ea56",
+      "commit": "7723f21a428e98aef935faae20b3c9a8e032b174",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/7723f21a428e98aef935faae20b3c9a8e032b174/agent-workbench/case-design/active/display-data/B03-07.json"
+    },
+    {
+      "path": "agent-workbench/case-design/active/display-data/B03-11.json",
+      "blobSha": "c77fc325633fa08bd7f26a1abcc250c480b0c41c",
+      "commit": "7723f21a428e98aef935faae20b3c9a8e032b174",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/7723f21a428e98aef935faae20b3c9a8e032b174/agent-workbench/case-design/active/display-data/B03-11.json"
+    },
+    {
+      "path": "agent-workbench/case-design/active/display-data/B04-19.json",
+      "blobSha": "65f200096955fd23833ac8ccac5c018e2faf1b95",
+      "commit": "7723f21a428e98aef935faae20b3c9a8e032b174",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/7723f21a428e98aef935faae20b3c9a8e032b174/agent-workbench/case-design/active/display-data/B04-19.json"
+    }
+  ]
+}

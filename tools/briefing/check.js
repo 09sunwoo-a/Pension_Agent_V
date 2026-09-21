@@ -291,10 +291,113 @@ async function chatPanelCheck() {
   assert.ok(note.isSys && /주입되지 않아/.test(note.text) && calls.length === 5, 'Empty chat block: question kept, no call, NOCONFIG note');
   bare.componentWillUnmount(); delete ctx.window.__PENSION_FABRIX_CONFIG; delete ctx.fetch;
 }
+// 부점 AI (current main-list search): golden regression of the deterministic evaluator and session on the
+// 8 review customers (test-only input; expected answers are never read at runtime), then the built page's
+// real main list projected read-only. No customer row is injected, replaced or mutated.
+async function branchSearchCheck() {
+  const C = require('../../frontend/src/briefing/branch-search-core');
+  const S = require('../../frontend/src/briefing/branch-search-session');
+  const golden = path.join(ROOT, 'tests/branch-search/golden');
+  const I = JSON.parse(fs.readFileSync(path.join(golden, 'golden.input.json'), 'utf8'));
+  const E = JSON.parse(fs.readFileSync(path.join(golden, 'golden.expected.json'), 'utf8'));
+  const records = I.records, asOf = I.metadata.asOfDate, before = JSON.stringify(records);
+  const keys = ['intent', 'resultStatus', 'resolvedQuery', 'matchedCaseIds', 'matchedCount', 'unknownCaseIds', 'metrics', 'uiEffect', 'resultPreviewCaseIds', 'resultPreviewCount', 'mainListCaseIds', 'mainListCount', 'sort', 'limit', 'orderedCaseIds', 'unknownCount'];
+  const checkCase = (c, state) => { const got = C.step(records, state, c.utterance, asOf); keys.forEach(k => { if (k in c.expected) assert.deepEqual(got.result[k], c.expected[k], c.id + ' ' + k); }); return got.state; };
+  let turns = 0;
+  for (const c of E.cases) { checkCase(c, C.initialState(records)); turns++; }
+  for (const session of E.sessions) { let state = C.initialState(records); for (const t of session.turns) { state = checkCase(t, state); turns++; } }
+  assert.equal(JSON.stringify(records), before, 'Golden input is never mutated');
+  assert.ok(!fs.readFileSync(path.join(ROOT, 'frontend/src/briefing/branch-search-core.js'), 'utf8').includes('golden.expected.json'), 'Runtime never reads golden answers');
+  { const changed = copy(records); changed.find(r => C.idOf(r) === 'B02-27').irpAccount.valuationAmountKrw = 21000000;
+    assert.equal(C.step(changed, C.initialState(changed), E.cases[1].utterance, asOf).result.matchedCount, 2, 'Answers are computed from data, not baked in'); }
+  assert.equal(C.run([...records, copy(records[0])], C.all()).matchedCount, 8, 'Duplicate customer does not inflate the count');
+  { const q = C.and(C.segment('납입금 미운용'), C.compare('age', 'gte', 38), C.compare('irp_amount', 'gte', 10000000)), q2 = C.remove(q, x => x.field === 'age');
+    assert.deepEqual([C.run(records, q2).matchedCount, C.chips(q2).length], [2, 2], 'Chip removal changes only that condition'); }
+  { const prev = C.step(records, C.initialState(records), E.cases[1].utterance, asOf).state, r = C.step(records, prev, '은행장님이 좋아할 고객 10명', asOf);
+    assert.equal(r.result.resultStatus, 'unsupported_mock'); assert.deepEqual(r.state, prev, 'Unknown input keeps main list and reference'); }
+  assert.equal(C.step(records, C.initialState(records), C.turns[1], asOf).result.resultStatus, 'clarification_required', 'Follow-up without reference asks');
+  assert.deepEqual([C.dateAdd(asOf, -6), C.dateAdd(asOf, 30)], ['2026-09-08', '2026-10-14'], 'Dates come from the snapshot, not the clock');
+  assert.equal(C.step(records, C.initialState(records), '현금성자산 500만원 이상 그리고 부자들만', asOf).result.resultStatus, 'unsupported_mock', 'Unrecognised clause is not partially executed');
+  { const r = C.run(records, C.compare('tax_remaining', 'eq', 0)); assert.deepEqual([r.matchedCaseIds, r.unknownCaseIds], [['B01-03'], ['B02-04']], 'Zero is known, null is unknown'); }
+  assert.equal(C.evaluate(records[2], { op: 'or', args: [C.compare('tax_remaining', 'eq', 0), C.segment('납입금 미운용')] }), true);
+  assert.deepEqual(C.run(records, { op: 'holding_exists', productId: 'SAV-013', minAmountKrw: 30000000 }).matchedCaseIds, ['B04-19']);
+  assert.equal(C.run(records, C.all(), { field: 'tax_remaining', direction: 'desc' }).orderedCaseIds.at(-1), 'B02-04', 'Unknown sorts last');
+  assert.equal(C.step(records, C.initialState(records), '현금성자산 30% 이상', asOf).result.resultStatus, 'clarification_required', 'Wrong unit is rejected');
+  // Session: latest request wins; manual change, new conversation, failure and destroy never leave a stale list.
+  const pending = () => { const queue = []; const session = S.create(I, { mode: 'local', provider: (text, state) => new Promise((resolve, reject) => queue.push({ text, state, resolve, reject })) }); return { session, queue, resolve: i => queue[i].resolve(C.resolve(queue[i].text, queue[i].state, asOf)) }; };
+  { const { session: s, resolve } = pending(); const p1 = s.send(C.questions[1][1]), p2 = s.send(C.questions[2][1]); resolve(1); await p2; resolve(0); await p1;
+    assert.deepEqual(s.get().state.mainListCaseIds, ['B02-18'], 'Latest request wins'); assert.ok(s.get().messages[1].cancelled); s.destroy(); }
+  { const { session: s, resolve } = pending(); const p = s.send(C.questions[1][1]); s.apply({ query: C.compare('cash_amount', 'gte', 5000000), sort: { field: 'caseId', direction: 'asc' }, limit: null }); resolve(0); await p;
+    assert.deepEqual(s.get().state.mainListCaseIds, ['B01-22', 'B02-18'], 'Manual condition invalidates the pending reply'); s.destroy(); }
+  { const { session: s, resolve } = pending(); s.apply({ query: C.segment('납입금 미운용'), limit: null }); const p = s.send(C.questions[2][1]); s.newConversation(); resolve(0); await p;
+    assert.deepEqual([s.get().state.mainListCaseIds, s.get().messages.length, s.get().state.reference], [['B02-04', 'B02-27'], 0, null], 'New conversation keeps the list'); s.destroy(); }
+  { const { session: s, queue } = pending(); s.apply({ query: C.segment('납입금 미운용'), limit: null }); const prev = s.get().state; const p = s.send(C.questions[2][1]); queue[0].reject(new Error('unavailable')); await p;
+    assert.deepEqual(s.get().state, prev); assert.ok(s.get().messages.at(-1).error, 'Failure keeps query and list'); s.destroy(); }
+  { const { session: s, resolve } = pending(); let events = 0; s.subscribe(() => events++); const p = s.send(C.questions[0][1]); s.destroy(); const n = events; resolve(0); await p; assert.equal(events, n, 'Destroy cancels in-flight updates'); }
+  { const s = S.create(I, { mode: 'local' }); const a = await s.send(C.turns[0]); assert.deepEqual([a.uiEffect, s.get().state.mainListCaseIds.length], ['answer_only_keep_list', 8], 'Default session keeps the list on an aggregate answer (golden semantics)'); s.destroy(); }
+  { const s = S.create(I, { mode: 'local', applyAggregate: true }); const a = await s.send(C.turns[0]); assert.deepEqual([a.uiEffect, s.get().state.mainListCaseIds], ['apply_customer_list', ['B02-04', 'B02-27']], 'Screen session applies an aggregate answer to the list at once'); await s.send(C.turns[1]); assert.deepEqual(s.get().state.mainListCaseIds, ['B02-04'], 'Follow-up narrows the applied list'); s.destroy(); }
+  { const s = S.create(I, { mode: 'local' }), original = JSON.stringify(I); s.records()[0].customer.name = 'CHANGED'; assert.notEqual(s.records()[0].customer.name, 'CHANGED'); const x = s.get(); x.state.mainListCaseIds = []; assert.equal(s.get().state.mainListCaseIds.length, 8); await s.send(C.turns[0]); assert.equal(JSON.stringify(I), original, 'Snapshots are copies'); s.destroy(); }
+  { const s = S.create(I, { mode: 'local' }); await s.send(C.turns[0]); const prev = s.get().state; assert.equal((await s.send('절대로 해석하면 안 되는 임의의 문장')).resultStatus, 'unsupported_mock'); assert.deepEqual(s.get().state, prev); s.destroy(); }
+  { const s = S.create(I, { mode: 'local' }); let notice = ''; s.subscribe(e => { if (e.notice) notice = e.notice; }); assert.equal(await s.send('가'.repeat(1201)), null); assert.ok(notice && s.get().messages.length === 0, 'Oversized input is not executed'); s.destroy(); }
+  { const s = S.create(I, { mode: 'local', latency: 80 }); const types = []; s.subscribe(e => types.push(e.type)); const t0 = Date.now(); const p = s.send(C.turns[0]); assert.deepEqual([s.get().busy, types], [true, ['pending']], 'Latency keeps the reply pending'); const r = await p; assert.ok(r && Date.now() - t0 >= 75 && !s.get().busy && types.at(-1) === 'answer', 'Mock answer arrives after the thinking time'); const p2 = s.send(C.turns[1]); s.cancel(); assert.deepEqual([await p2, s.get().messages.at(-1).cancelled, s.get().busy], [null, true, false], 'Stop during the thinking time cancels the reply'); s.destroy(); }
+  // Bundle level: the built page's real main list (legacy demo rows + case customers), projected read-only.
+  const w = ctx.window, page = new w.TestComponent({}); page.setState = patch => Object.assign(page.state, typeof patch === 'function' ? patch(page.state) : patch);
+  const queue = page.renderVals().queue, rowsBefore = JSON.stringify(queue.map(r => [r.id, r.name, r.bal, r.ret, r.tags.map(t => t.t)]));
+  const ids = plain(queue.map(r => r.id)), D = w.PensionBranchCurrentData;
+  assert.deepEqual(ids.slice().sort(), plain(page.DATA.map(c => c.id)).sort(), 'Main-list rows carry the original customer ids');
+  const fixtureIds = new Set(customers.map(c => c.briefingMeta.caseId)), structured = ids.filter(id => fixtureIds.has(id) || id === 'ksy');
+  const source = D.fromCurrentRows(queue, w.PensionBriefingFixtures, page.DATA, c => page.profileOf(c));
+  await require('../../tests/branch-search/conversation.test')(source);
+  assert.deepEqual(plain([source.metadata.recordCount, source.metadata.structuredCount, source.metadata.displayOnlyCount, source.records.map(C.idOf)]), [ids.length, structured.length, ids.length - structured.length, ids], 'Population is exactly the current main list; case rows and ksy (DEMO-01) use their structured snapshot, legacy rows are display-only');
+  assert.equal(JSON.stringify(queue.map(r => [r.id, r.name, r.bal, r.ret, r.tags.map(t => t.t)])), rowsBefore); assert.equal(w.PensionBriefingFixtures.customers.length, 42, 'Rows and fixtures are read, never changed');
+  const withBadge = label => ids.filter(id => queue.find(r => r.id === id).tags.some(t => t.t === label));
+  const balance = id => D.money(queue.find(r => r.id === id).bal);
+  const provider = w.PensionBranchCurrentProvider.create(source), query = (text, state) => w.PensionBranchSearchCore.execute(source.records, state, provider(text, state), source.metadata.asOfDate);
+  let state = w.PensionBranchSearchCore.initialState(source.records), out;
+  out = query('DO 미등록 고객 보여줘', state); state = out.state;
+  assert.deepEqual(plain([out.result.matchedCaseIds, out.state.mainListCaseIds]), [withBadge('DO 미등록').slice().sort(), withBadge('DO 미등록')], 'Badge search = rows showing that badge, in original list order');
+  assert.ok(withBadge('DO 미등록').length >= 2 && !/undefined|적용했습니다|유지했습니다|판단하지 않았습니다/.test(out.result.answer), 'Answer text has no undefined field and no list-status trailer');
+  out = query('IRP 잔액 2억원 이상 보여줘', state); state = out.state;
+  const rich = ids.filter(id => balance(id) >= 200000000);
+  assert.deepEqual(plain([out.result.matchedCaseIds, out.result.unknownCount, out.state.mainListCaseIds]), [rich.slice().sort(), 0, rich], 'Displayed balances (decimal 억원 included) parse exactly; results keep the original list order');
+  out = query('우리 부점 IRP 고객 현황을 요약해줘.', state);
+  assert.deepEqual(plain([out.result.intent, out.result.metrics.customerCount, out.result.metrics.assetAllocation[2].unknownCount, out.state.mainListCaseIds]), ['aggregate', ids.length, ids.length - structured.length, rich], 'Overview counts the whole list, marks legacy rows as unknown cash and keeps the applied list');
+  const before1 = state;
+  out = query('우리 부점에서 납입금 미운용 고객은 몇 명이고, 현금성자산 합계는 얼마야?', state); state = out.state;
+  const idle = withBadge('납입금 미운용');
+  assert.deepEqual(plain(w.PensionBranchSearchCore.execute(source.records, before1, provider('우리 부점에서 납입금 미운용 고객은 몇 명이고, 현금성자산 합계는 얼마야?', before1), source.metadata.asOfDate, { applyAggregate: true }).state.mainListCaseIds), idle, 'With applyAggregate (the screen setting) the aggregate answer narrows the list to those customers');
+  assert.deepEqual(plain([out.result.intent, out.result.matchedCaseIds, out.state.mainListCaseIds]), ['aggregate', idle.slice().sort(), rich], 'M01 turn 1 aggregates over the current list without changing it');
+  out = query('그중 IRP 잔액 2천만원 이상만 보여줘.', state); state = out.state;
+  assert.deepEqual(plain(out.state.mainListCaseIds), idle.filter(id => balance(id) >= 20000000), 'M01 turn 2 narrows the previous condition on the current data');
+  assert.equal(out.result.matchedCount, query('납입금 미운용 고객 중 IRP 잔액 2천만원 이상만 보여줘.', w.PensionBranchSearchCore.initialState(source.records)).result.matchedCount, 'Golden G02 gives the same customers as the follow-up, computed from current data');
+  assert.equal(w.PensionBranchSearchStyles.replace(/--pad-branch-css:"[0-9a-f]{12}"/, '--pad-branch-css:"PAD_BRANCH_CSS_VERSION"'), fs.readFileSync(path.join(ROOT, 'frontend/src/briefing/branch-search.css'), 'utf8'), 'Bundled fallback copy of branch-search.css matches the source (version stamp aside)');
+  assert.ok(/--pad-branch-css:"[0-9a-f]{12}"/.test(w.PensionBranchSearchStyles) && /--pad-branch-css:"[0-9a-f]{12}"/.test(fs.readFileSync(path.join(OUT, 'pensionAgentDemo.css'), 'utf8')), 'CSS version stamp present in bundle and stylesheet');
+  assert.ok(js.includes('data-branch-style'), 'Widget injects the fallback stylesheet when the page CSS lacks its rules');
+  // Renderer hooks, list markup and namespaced CSS in the built page.
+  const html = fs.readFileSync(path.join(OUT, 'mnPensionAgentDemo.html'), 'utf8');
+  for (const marker of ['PensionBranchSearchAdapter.mount(instance, params || {})', 'PensionBranchSearchAdapter.beforeRender(instance)', 'PensionBranchSearchAdapter.afterRender(instance)', 'PensionBranchSearchAdapter.destroy()']) assert.equal(js.split(marker).length, 2, 'Renderer hook: ' + marker);
+  assert.deepEqual([(html.match(/data-branch-list/g) || []).length, (html.match(/data-branch-customer-id="\{\{ c\.id \}\}"/g) || []).length], [1, 1], 'List identity attributes');
+  assert.ok(!/extToggle|extOpen|extOn\b|조건 추출/.test(html) && !/PensionBranchPreserveUI|resultbar|결과 위치 보기|해당 고객 보기/.test(js), '조건 추출 UI, result bar and reveal/apply buttons removed');
+  for (const gone of ['6턴 시연 가이드', '조회 취소', '실제 AI 미연결', '<i></i>고객 조회', 'pad-branch-mode-gate', 'pad-branch-scope', 'pad-branch-live-dot', 'pad-branch-answer-meta', 'pad-branch-author', 'pad-branch-tour']) assert.ok(!js.includes(gone), 'Removed chat element still in the bundle: ' + gone);
+  assert.ok(/height:min\(640px,calc\(100vh - 118px\)\)/.test(fs.readFileSync(path.join(OUT, 'pensionAgentDemo.css'), 'utf8')), 'Chat window height 640px');
+  assert.ok(js.includes('<div class="floating_chat" role="button" tabindex="0"') && js.includes('>퇴직연금 사후관리 에이전트</div>') && !js.includes('pad-branch-launcher"'), 'Launcher is the shell .floating_chat div');
+  for (const part of ['branchSearchLatency', 'pad-branch-progress', 'pad-branch-query-donut', 'pad-branch-skeleton-active', 'padBranchResultReveal', 'padBranchBorderLight', 'pad-branch-followups', 'pad-branch-caret', 'has-unread', 'is-stop']) assert.ok(js.includes(part), 'Waiting/completion UI piece in the bundle: ' + part);
+  const css = fs.readFileSync(path.join(OUT, 'pensionAgentDemo.css'), 'utf8'), base = fs.readFileSync(path.join(ROOT, 'frontend/src/briefing/pensionAgentDemo.css'), 'utf8');
+  assert.ok(css.startsWith(base), 'Original stylesheet stays an exact prefix');
+  let depth = 0, buf = ''; const selectors = [];
+  for (const ch of css.slice(base.length)) { if (ch === '{') { if (!depth) selectors.push(buf.replace(/\/\*[\s\S]*?\*\//g, '').trim()); depth++; buf = ''; } else if (ch === '}') { depth--; buf = ''; } else if (!depth) buf += ch; }
+  // The widget is mounted on document.body (the shell's .pt-page is transformed, which breaks position:fixed),
+  // so its rules are scoped by the .pad-branch- class prefix; no tag or global selector is allowed.
+  const stray = selectors.filter(s => !/^(#pensionAgentDemo\b|\.pad-branch-)/.test(s) && !/^@(keyframes padBranch|media)/.test(s));
+  assert.deepEqual(stray, [], 'Added CSS stays namespaced (.pad-branch- classes or #pensionAgentDemo)');
+  console.log('PASS: 부점 AI golden regression (' + turns + ' turns, 8 review customers, test-only), session ordering/cancel/failure, real main list projected (' + ids.length + ' rows, ' + structured.length + ' structured), renderer hooks, list markup, namespaced CSS.');
+}
+
 autoRequestCheck().then(
   () => console.log('PASS: injected FabriX config (onParam params / window global), auto request on case select, one request per loaded case, SSE answer rendered, invalid or missing config never calls.'))
   .then(chatPanelCheck).then(
-  () => console.log('PASS: chat panel with injected chat config: question -> replayed real SSE turns -> answer/list/quote/sources/followups rendered, session per customer, error note, empty config never calls.'),
+  () => console.log('PASS: chat panel with injected chat config: question -> replayed real SSE turns -> answer/list/quote/sources/followups rendered, session per customer, error note, empty config never calls.'))
+  .then(branchSearchCheck).catch(
   error => { console.error(error); process.exitCode = 1; });
 
 if (process.argv[2] === '--agent') {

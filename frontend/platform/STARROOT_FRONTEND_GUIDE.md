@@ -93,8 +93,8 @@ pensionAgentDemo.js       ← 한 파일 유지
 HTML head (현재 `frontend/app/mnPensionAgentDemo.html`):
 
 ```html
-<link rel="stylesheet" href="/mnbank/app/css/bfe/pension/pensionAgentDemo.css">
-<script id="PENSION_AGENT_DEMO" src="/mnbank/app/js/bfe/pension/pensionAgentDemo.js"></script>
+<link rel="stylesheet" href="/mnbank/app/html/bfe/asstmgt/asst/pensionAgentDemo.css">
+<script id="PENSION_AGENT_DEMO" src="/mnbank/app/html/bfe/asstmgt/asst/pensionAgentDemo.js"></script>
 ```
 
 > `frontend/app/local_preview.html` 은 **로컬 확인 전용**으로 상대경로를 쓴다.
@@ -332,6 +332,18 @@ root.style.setProperty('--starroot-top-offset', overlap + 'px');
 
 ```css
 height: calc(100vh - 44px - var(--starroot-top-offset, 0px));
+```
+
+---
+
+## 13-1. 플로팅 요소는 `.pt-page` 밖에 둔다
+
+`.pt-page`에는 `transform`이 걸려 있어 그 안의 `position: fixed`는 뷰포트가 아니라 `.pt-page` 기준으로 잡힌다. 페이지를 스크롤하면 같이 움직이고 창이 화면 밖에 열린다(부점 AI 채팅창에서 실제 발생).
+
+```text
+✅ 플로팅 런처·팝업은 document.body에 append하고 onBeforeUnload에서 제거한다.
+✅ 그 요소의 CSS는 #pensionAgentDemo 대신 고유 클래스 접두사(.pad-branch-*)로만 범위를 잡는다. 태그·전역 선택자는 여전히 금지.
+❌ 뷰포트 좌표(getBoundingClientRect)로 계산한 값을 .pt-page 안의 fixed 요소에 그대로 쓰지 않는다.
 ```
 
 ---

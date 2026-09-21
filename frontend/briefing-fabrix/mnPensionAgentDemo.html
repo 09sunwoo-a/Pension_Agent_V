@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="format-detection" content="telephone=no">
   <title>퇴직연금 AI 대시보드</title>
-  <!-- TODO: 실제 배포 path로 변경 -->
-  <link rel="stylesheet" href="/mnbank/app/css/bfe/pension/pensionAgentDemo.css">
-  <script id="PENSION_AGENT_DEMO" src="/mnbank/app/js/bfe/pension/pensionAgentDemo.js"></script>
+  <!-- 사내 배포 경로: HTML과 같은 폴더(/mnbank/app/html/bfe/asstmgt/asst/)의 CSS·JS. 2026-09-18 사내 화면에서 확인한 실제 로드 경로 -->
+  <link rel="stylesheet" href="/mnbank/app/html/bfe/asstmgt/asst/pensionAgentDemo.css">
+  <script id="PENSION_AGENT_DEMO" src="/mnbank/app/html/bfe/asstmgt/asst/pensionAgentDemo.js"></script>
 </head>
 <body>
   <!-- FabriX 연결 설정: 사내 배포본에서만 값을 채웁니다. Git 원본에는 항상 빈 값으로 둡니다.
@@ -25,7 +25,14 @@
         agentId: '',          // 대화 Agent assetId (문자열)
         openapiToken: '',     // Secret. 브리핑 Agent와 다른 토큰
         generativeAiClient: '' // Secret
+      },
+      branch: {               // 부점 AI(퇴직연금 사후관리 에이전트). 비워 두면 대화창에 연결 미설정 안내만 표시
+        endpointUrl: '',      // 사내 FabriX base URL (https). /openapi/agent-chat/… 뒤는 프론트가 붙임. /chat·로컬 주소 금지
+        agentId: 0,           // 부점 전용 Connector의 Agent ID (양의 정수). 기존 S1~S5 ID 재사용 금지
+        openapiToken: '',     // Secret: x-openapi-token. 부점 Agent 전용 토큰
+        generativeAiClient: '' // Secret: x-generative-ai-client
       }
+      // xClientUser(직원 ID)는 위 공통 값을 부점 AI도 함께 사용. onParam(params).fabrix.branch 가 있으면 그쪽이 우선
     };
   </script>
   <div id="pensionAgentDemo">
@@ -144,53 +151,15 @@
 <button sc-camel-on-click="{{ filterAll }}" class="pad-chip pad-chip--dark">{{ subChipLabel }} ✕</button>
 </sc-if>
 <div class="pad-vsep2"></div>
-<button sc-camel-on-click="{{ extToggle }}" class="pad-chip-ico" style="border:1px solid {{ extBtnBd }};background:{{ extBtnBg }};color:{{ extBtnFg }}">
-<svg height="12" sc-camel-view-box="0 0 16 16" width="12"><path d="M2 3h12L9.5 8.5V13l-3-1.5V8.5L2 3Z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="1.6"></path></svg>
-        조건 추출
-      </button>
 <button sc-camel-on-click="{{ xlsTap }}" title="현재 조건 명단 엑셀 다운로드" class="pad-chip-ico pad-chip-ico--line">
 <svg height="12" sc-camel-view-box="0 0 16 16" width="12"><path d="M8 2v8M4.5 7 8 10.5 11.5 7M3 13h10" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"></path></svg>
         엑셀
       </button>
 </div>
 </div>
-<sc-if value="{{ extOpen }}">
-<div class="pad-ext pad-in">
-<div class="pad-col pad-g9">
-<sc-for as="g" list="{{ extGroups }}">
-<div class="pad-row pad-g12">
-<div class="pad-ext__label">{{ g.label }}</div>
-<div class="pad-flex pad-g6 pad-wrap">
-<sc-for as="o" list="{{ g.opts }}">
-<button sc-camel-on-click="{{ o.onTap }}" class="pad-opt" style="border:1px solid {{ o.bd }};background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button>
-</sc-for>
-</div>
-</div>
-</sc-for>
-</div>
-<div class="pad-ext__foot">
-<div class="pad-t-13-sub">조건 일치 <span class="pad-b pad-c-dark">{{ extPreviewN }}명</span></div>
-<div class="pad-flex pad-g8">
-<button sc-camel-on-click="{{ extReset }}" class="pad-btn pad-btn--line pad-p-6-14">초기화</button>
-<button sc-camel-on-click="{{ extApply }}" class="pad-btn pad-btn--brand pad-p-6-16">이 조건으로 추출</button>
-</div>
-</div>
-</div>
-</sc-if>
-<sc-if value="{{ extOn }}">
-<div class="pad-row pad-g6 pad-wrap pad-mb10 pad-in">
-<span class="pad-t-12b-muted">내 추출 조건</span>
-<sc-for as="ec" list="{{ extChips }}">
-<span class="pad-chip-cond">{{ ec.label }}</span>
-</sc-for>
-<button sc-camel-on-click="{{ extClear }}" class="pad-textbtn pad-p-3-6">모두 해제 ✕</button>
-<span class="pad-flex1"></span>
-<span class="pad-t-12-sub">{{ extResultN }}명 추출됨</span>
-</div>
-</sc-if>
-<div class="pad-col pad-g8">
+<div class="pad-col pad-g8" data-branch-list>
 <sc-for as="c" list="{{ queue }}">
-<div sc-camel-on-click="{{ c.onTap }}" class="pad-queue-item" style="opacity:{{ c.op }};animation:{{ c.anim }}">
+<div data-branch-customer-id="{{ c.id }}" sc-camel-on-click="{{ c.onTap }}" class="pad-queue-item" style="opacity:{{ c.op }};animation:{{ c.anim }}">
 <div class="pad-queue-item__bar" style="background:{{ c.bar }}"></div>
 <sc-if value="{{ c.done }}">
 <svg height="18" sc-camel-view-box="0 0 18 18" width="18" class="pad-none"><circle cx="9" cy="9" fill="#E6F6EF" r="8"></circle><polyline fill="none" points="5.5,9.2 8,11.7 12.5,6.5" stroke="#059669" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></polyline></svg>

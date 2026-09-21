@@ -28,8 +28,8 @@ frontend/briefing-fabrix/
 HTML의 리소스 경로는 검증본과 같습니다.
 
 ```text
-/mnbank/app/js/bfe/pension/pensionAgentDemo.js
-/mnbank/app/css/bfe/pension/pensionAgentDemo.css
+/mnbank/app/html/bfe/asstmgt/asst/pensionAgentDemo.js
+/mnbank/app/html/bfe/asstmgt/asst/pensionAgentDemo.css
 ```
 
 반입 JS의 `STARROOT_FILE_CODE`는 빌드 기본값 `1288272`입니다(다른 코드는 `node tools/briefing/build.js <파일코드>`). `PG_<파일코드>.onParam()` 초기화, `onBeforeUnload()` 정리를 사용합니다. `DOMContentLoaded`에 의존하지 않습니다. 파일 경로·파일코드 설정은 최초 배포 작업이며 FabriX 인증 설정과 별개입니다.

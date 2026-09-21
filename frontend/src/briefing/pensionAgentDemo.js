@@ -244,6 +244,7 @@
       return;
     }
 
+    if (window.PensionBranchSearchAdapter) window.PensionBranchSearchAdapter.beforeRender(instance);
     var uiSnap = captureRenderUiState(mount);
 
     var holder = document.createElement('template');
@@ -254,6 +255,7 @@
     suppressReplayEntryAnimations(frag);
     mount.replaceChildren(frag);
     restoreRenderUiState(mount, uiSnap);
+    if (window.PensionBranchSearchAdapter) window.PensionBranchSearchAdapter.afterRender(instance);
 
     lastRenderedState = Object.assign({}, instance.state);
     if (prevState && typeof instance.componentDidUpdate === 'function') {
@@ -292,6 +294,8 @@
       starrootParams: params || {}
     });
     installSetState(instance);
+    // 부점 AI: searches the current main list only; skipped when params.branchSearch === false.
+    if (window.PensionBranchSearchAdapter) window.PensionBranchSearchAdapter.mount(instance, params || {});
     renderNow();
 
     if (typeof instance.componentDidMount === 'function') {
@@ -302,6 +306,7 @@
   }
 
   function destroy() {
+    if (window.PensionBranchSearchAdapter) window.PensionBranchSearchAdapter.destroy();
     if (!instance) return;
     if (typeof instance.componentWillUnmount === 'function') {
       try { instance.componentWillUnmount(); } catch (err) { console.error(err); }
@@ -320,7 +325,7 @@
 class Component {
   constructor(props) {
     this.props = props || {};
-    this.state = { sel: null, filter: 'all', done: { sjh: 1, lth: 1, hkg: 1 }, holdOpen: false, panelOpen: true, chat: [], chips: [], input: '', tone: {}, copied: null, searchQ: '', busy: false, streamIdx: -1, streamN: 0, extOpen: false, ext: null, extA: null, listAnimK: 0, toastMsg: null, bfSol: null, bfReact: null, agInput: '', agBusy: false, agChat: [], agDone: {}, agAnimI: -1, agStreamN: 0, agBlockN: 0, agFootOn: false, agStatusI: 0, agCta: null, agEvidOpen: {}, agGuardOpen: {} };
+    this.state = { sel: null, filter: 'all', done: { sjh: 1, lth: 1, hkg: 1 }, holdOpen: false, panelOpen: true, chat: [], chips: [], input: '', tone: {}, copied: null, searchQ: '', busy: false, streamIdx: -1, streamN: 0, listAnimK: 0, toastMsg: null, bfSol: null, bfReact: null, agInput: '', agBusy: false, agChat: [], agDone: {}, agAnimI: -1, agStreamN: 0, agBlockN: 0, agFootOn: false, agStatusI: 0, agCta: null, agEvidOpen: {}, agGuardOpen: {} };
     this.chatRef = { current: null };
   }
 
@@ -1483,13 +1488,6 @@ class Component {
     };
     const TAX = { ksy: 400, pjh: 300, pey: 520, lsc: 240, jmr: 180, cjh: 900, ysr: 420, msy: 700, hsw: 600, oks: 360, sjh: 900, hkg: 800 };
     const taxPaidOf = c => TAX[c.id] != null ? TAX[c.id] : c.taxPaid;
-    const depositEok = c => c.depositEok != null ? c.depositEok : parseFloat(c.deposit);
-    const INVG = p => (p === '안정형' || p === '안정추구형') ? 'st' : p === '위험중립형' ? 'nu' : 'ag';
-    const extMatch = (c, E) => !E ? true :
-      (E.prod === 'all' || c.product === E.prod) &&
-      (E.dep === 'all' || (E.dep === 'lt1' ? depositEok(c) < 1 : E.dep === '1to2' ? (depositEok(c) >= 1 && depositEok(c) < 2) : depositEok(c) >= 2)) &&
-      (E.inv === 'all' || INVG(c.profile) === E.inv) &&
-      (!E.taxOnly || (taxPaidOf(c) != null && taxPaidOf(c) < 900));
     // 관리 필요도 순: D-day badge (closest first) -> 이탈·상품 문제 -> 운용 공백 -> the rest; ties keep list order.
     const DDAY = / D-(\d+)$/;
     const prio = c => {
@@ -1504,8 +1502,7 @@ class Component {
     };
     const rank = c => prio(c) * 1000 + DATA.indexOf(c);
     const showCompleted = this.props.showCompleted ?? true;
-    let visible = DATA.filter(match).filter(c => extMatch(c, S.extA)).filter(c => showCompleted || !isDone(c)).slice().sort((a, b) => rank(a) - rank(b));
-    if (S.extA && S.extA.topN) visible = visible.slice(0, S.extA.topN);
+    let visible = DATA.filter(match).filter(c => showCompleted || !isDone(c)).slice().sort((a, b) => rank(a) - rank(b));
     const MGL = { new: ['신규 선정', '#FFF3C2', '#7A6108'], on: ['지속 관리', '#F2F3F5', '#696E76'], done: ['처리완료', '#F2F3F5', '#696E76'], res: ['관리 해소', '#E6F6EF', '#047857'] };
     const mkTags = sig => sig.map(p => ({ t: p[0], bg: C[p[1] + 'T'], fg: C[p[1] + 'F'] }));
     const retC = r => (r.charAt(0) === '−' || r.charAt(0) === '-') ? '#B91C1C' : '#696E76';
@@ -1546,31 +1543,6 @@ class Component {
         hasSrc: !!m.src && !streaming, src: m.src || '', hasWarn: !!m.warn && !streaming, warn: m.warn || '', copyLabel: S.copied === 'm' + i ? '복사됨 ✓' : '복사', onCopy: () => this.copy('m' + i, alt ? m.mentAlt : m.ment),
       };
     });
-    const DEFX = { trig: 'all', prod: 'all', dep: 'all', inv: 'all', topN: 0, taxOnly: false };
-    const Ed = S.ext || DEFX;
-    const setE = (k, v) => this.setState(s => ({ ext: { ...(s.ext || DEFX), [k]: v } }));
-    const grp = (label, k, opts) => ({ label, opts: opts.map(([v, l]) => { const on = Ed[k] === v; return { label: l, bg: on ? '#26282C' : '#fff', fg: on ? '#fff' : '#696E76', bd: on ? '#26282C' : '#E2E4E8', onTap: () => setE(k, v) }; }) });
-    const extGroups = [
-      grp('트리거', 'trig', [['all', '전체'], ['risk', '이탈위험'], ['mat', '만기·방치'], ['imp', '운용개선'], ['opp', '기회']]),
-      grp('적립금', 'dep', [['all', '전체'], ['lt1', '1억 미만'], ['1to2', '1~2억'], ['gt2', '2억 이상']]),
-      grp('투자성향', 'inv', [['all', '전체'], ['st', '안정·안정추구'], ['nu', '위험중립'], ['ag', '적극·공격']]),
-      grp('인원 수', 'topN', [[0, '전체'], [5, '상위 5명'], [10, '상위 10명']]),
-      { label: '세액공제', opts: [{ label: Ed.taxOnly ? '✓ 잔여 한도 있는 고객만' : '잔여 한도 있는 고객만', bg: Ed.taxOnly ? '#26282C' : '#fff', fg: Ed.taxOnly ? '#fff' : '#696E76', bd: Ed.taxOnly ? '#26282C' : '#E2E4E8', onTap: () => setE('taxOnly', !Ed.taxOnly) }] }
-    ];
-    const pvList = DATA.filter(c => Ed.trig === 'all' ? true : !!c[Ed.trig]).filter(c => extMatch(c, Ed));
-    const extPreviewN = Ed.topN ? Math.min(Ed.topN, pvList.length) : pvList.length;
-    const EAp = S.extA, extChipL = [];
-    if (EAp) {
-      const TL = { risk: '이탈위험', mat: '만기·방치', imp: '운용개선', opp: '기회' };
-      const DL = { lt1: '적립금 1억 미만', '1to2': '적립금 1~2억', gt2: '적립금 2억 이상' };
-      const IL = { st: '안정·안정추구', nu: '위험중립', ag: '적극·공격' };
-      if (TL[EAp.trig]) extChipL.push(TL[EAp.trig]);
-      if (EAp.prod !== 'all') extChipL.push(EAp.prod);
-      if (DL[EAp.dep]) extChipL.push(DL[EAp.dep]);
-      if (IL[EAp.inv]) extChipL.push(IL[EAp.inv]);
-      if (EAp.topN) extChipL.push('상위 ' + EAp.topN + '명');
-      if (EAp.taxOnly) extChipL.push('세액공제 잔여');
-    }
     const BF = c ? this.BRIEFS[c.id] : null;
     const bfOpenTile = BF ? BF.s3.tiles.find(t => t.k === S.bfSol) : null;
     const bfProds = (bfOpenTile && bfOpenTile.prods) || [];
@@ -1585,15 +1557,6 @@ class Component {
       queueTotal: targetCount, kNewN: mgCount('new'), kOnN: mgCount('on'), kResN: RESOLVED.length,
       isaCount: DATA.filter(c => hasIsa(c) && !isDone(c)).length, dashDateLabel, dashAsOfLabel,
       filterIsa: () => this.setState(s => ({ filter: 'isa', listAnimK: s.listAnimK + 1 })),
-      extOpen: !!S.extOpen,
-      extBtnBd: S.extOpen || extChipL.length ? '#26282C' : '#E2E4E8', extBtnBg: S.extOpen || extChipL.length ? '#26282C' : '#fff', extBtnFg: S.extOpen || extChipL.length ? '#fff' : '#696E76',
-      extToggle: () => this.setState(s => ({ extOpen: !s.extOpen, ext: s.ext || { ...DEFX, trig: ({ risk: 1, mat: 1, imp: 1, opp: 1 })[s.filter] ? s.filter : 'all' } })),
-      extGroups, extPreviewN,
-      extApply: () => this.setState(s => ({ extA: { ...(s.ext || DEFX) }, filter: (s.ext || DEFX).trig, extOpen: false, listAnimK: s.listAnimK + 1 })),
-      extReset: () => this.setState({ ext: { ...DEFX } }),
-      extClear: () => this.setState(s => ({ extA: null, ext: null, filter: 'all', listAnimK: s.listAnimK + 1 })),
-      extOn: extChipL.length > 0, extChips: extChipL.map(l => ({ label: l })),
-      extResultN: queue.length,
       xlsTap: () => { clearTimeout(this._toastT); this.setState({ toastMsg: '현재 조건 ' + queue.length + '명 — 타겟고객_명단.xlsx 다운로드 (모형)' }); this._toastT = setTimeout(() => this.setState({ toastMsg: null }), 2400); },
       toastOn: !!S.toastMsg, toastMsg: S.toastMsg || '',
       ...this.agVals(c),
@@ -1688,6 +1651,20 @@ class Component {
   if (window.PensionBriefingAdapter) window.PensionBriefingAdapter.install(Component);
   if (window.PensionFabrix) window.PensionFabrix.install(Component);
   if (window.PensionChat) window.PensionChat.install(Component);
+
+  // Explicit, opt-in build hook. No DOM/lifecycle/network work or source rewriting.
+  // The build reads the same default queue and profiles used by the main screen.
+  if (typeof window.__PensionBuildExtract === 'function') {
+    window.__PensionBuildExtract(function extractCurrentRows() {
+      const page = new Component({});
+      const modelRows = page.DATA;
+      return {
+        mainRows: page.renderVals().queue,
+        modelRows,
+        profiles: Object.fromEntries(modelRows.map(row => [row.id, page.profileOf(row)]))
+      };
+    });
+  }
 
   // Starroot adapter
   // 빌드(tools/briefing/build.js)가 아래 자리표시를 실제 파일코드(기본 1288272)로 치환합니다.

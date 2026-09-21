@@ -1,65 +1,71 @@
-# 작업 기록
+# 작업 기록·미완료
 
-## 2026-09-16 — 이전 및 핵심 파일 정리
+현재 상태는 README, 부점 AI 목표는 [구현 기획](BRANCH_AI_SEARCH_DESIGN.md), 코드 현황은 [AS-IS](BRANCH_AI_FRONTEND_AS_IS.md). 이전 UI 수치·폐기안·전체 실행 로그는 기본 컨텍스트에서 제외한다.
 
-- 외부 작업본을 저장소 내부로 이전했고, 30명 + 김서연 고객/브리핑 JSON과 원래 김서연 UI를 보존했습니다.
-- 상단 고객정보와 Agent S1–S5 응답을 분리하고, 선택 필드 숨김·추천상품·요청 취소/실패/늦은 응답 처리를 구현했습니다. 상담 후 확인 기록은 제거했습니다.
-- API는 `customer-briefing-api.v1`. Python이 구조를 고정하고 LLM은 문장을 생성하는 내부 구현이 남았습니다.
-- 정리: 중복 명세·스키마/예시, 구버전 프론트, 별도 fixture, Markdown 변환/override, 모의 서버/브라우저 시뮬레이션/이전 검사와 중복 안내 문서 총 76개를 제거했습니다. contracts는 2개, frontend/src/briefing은 11개, tools/briefing은 2개 파일만 남겼습니다.
-- 현재 수정 원본은 고객 JSON + 브리핑 JSON + Vanilla 모듈입니다. 중간 문서 JSON을 만들지 않습니다. 도구는 `build.js`와 `check.js` 두 개로 통합했습니다.
-- 기존 상품/전략 지식과 사내 플랫폼 reference, Agent 실행·배포 코드는 보존했습니다. 기능에 필요한 렌더러/연동 모듈을 파일 수만 줄이려고 합치지는 않았습니다.
+## 2026-09-20 — 부점 AI 기능 검토·문구·문서 정리
 
-## 확인한 범위
+- 사용자 방향: 검색 결과 이름 나열 제거, ‘중점 관리 고객’은 추천, ‘부점 현황’은 통계. 개별 고객은 상황+관리 방향의 짧은 브리핑. 최종 목표 사내 시연 완료.
+- 일반 검색의 ‘누구누구 찾았습니다’·Top N 괄호 이름·고객별 자동 상세줄 제거. 검색 집합·금액·미확인 처리 유지.
+- 원본 기반 실행: 전체48명 통계, ISA 뱃지3명/30일 내1명, IRP 7천만원 이상35명 확인. ‘오늘 부점 현황’, ‘몇명이냐’, ‘운용금액’, 통합 추천의 정확 문장은 아직 미지원.
+- 구현 기획/AS-IS의 중복 설명·전체 질문 실행 로그·폐기된 시연안·장기 확장 표를 축약. 기능·골든 ID·근거·현재 제한·수정 위치는 유지.
+- 이 문구·문서 정리 다음 작업에서 프론트 골든 구현을 진행했다(아래 기록). 실제 Agent·사내 E2E는 남아 있다.
 
-이전 직후 31건 Chrome 화면·모의 FabriX 오류/취소/상단 격리와 임시 폴더 독립 재생성을 확인했습니다. 해당 일회성 도구는 정리에서 제거했습니다. 정리 후 현재 `check.js`로 31건/필드/렌더링 매핑/요청 식별/빌드 일치 검사를 통과했습니다. 고객 JSON 30건·브리핑 JSON 31건은 정리 전과 동일하고 반입 HTML/CSS도 끝 줄바꿈 외에 동일합니다.
+## 2026-09-20 — 프론트 골든 시연 구현
 
-남긴 핵심 폴더만 임시 위치에 복제한 뒤에도 빌드/검증을 통과했습니다. 숫자 Starroot 파일코드로 빌드하는 경로도 그 복사본에서 확인했으며, 저장소 반입본에는 실제 파일코드를 아직 설정하지 않았습니다.
+- 검색/현황/추천 분리, 데이터 근거 추천3명, 짧은 브리핑, 조건 이력·Top N·복원·명확화·0명 복구 연결. 통계는 목록 유지, 대상 보기로 적용.
+- 카드 브리핑·조건 Chip·의도별 로딩, 상단 현재 통계 반영. 이름 나열 없음. 원본 고객·Python Agent 수정 없음.
+- 빌드/기존 검사+신규 대화 검증, 로컬 Chrome shell 재현·클릭·상세 복귀·취소·재진입 확인. 실제 부점 Agent/사내 E2E는 다음 단계.
 
-고객·브리핑 의미, 현행 제도·상품 근거를 모두 검토한 것은 아닙니다. 대표 DEMO-01·B01-22·B06-13 외 28건 문장 개선이 남았고 모든 사례는 draft입니다. 알려진 날짜·상품 매핑 이슈와 의도적 고객 예외는 사례 색인/JSON에 남아 있습니다.
+## 2026-09-20 — 메인 화면 변경 롤백
 
-실제 사내 FabriX 인증·CORS·Starroot/WebView 및 최신 Agent E2E는 미검증입니다. [사내 체크리스트](../../COMPANY_DEPLOY_CHECKLIST.md)를 따릅니다.
+- 사용자 요청으로 직전 추가한 카드 브리핑·추천 근거·목록 조건 버튼·상단 문구 변경을 되돌림. 메인 HTML/JS는 변경 전과 동일. 부점 AI 대화·검색 로직과 기존 조회 효과 유지.
+- 브리핑/조건 제거/0명 복구는 대화창에서만 제공. 이후 메인 UI를 임의 확장하지 않는 범위를 README·골든 기준에 반영.
+- 로컬 Starroot 재현 검사에 원래 카드/상단 보존·Function 로더·CSS 폴백·스크롤·정리 검증 추가. 실제 사내 WAS/WebView E2E는 미검증.
 
-삭제한 기존 추적 파일은 Git 이력, 이전에 복사한 개발 자료는 저장소 바깥의 기존 작업본에서 복구할 수 있습니다. 외부 작업본과 Git 이력은 삭제하지 않았습니다.
+## 2026-09-21 — 부점 Agent 작업01 계약 구현
 
-## LLM 없는 고정 Agent 및 사내 준비
+- `integration/`의 FabriX 계약/실제 샘플과 플랫폼 원본 reference의 관련 절을 확인했다. POST 스트림·CHUNK 포장·평면 import·Nexus·개별 COPY 조건을 새 계약과 후속 작업에 반영했다.
+- 신규 `branch-agent/deploy/branch_models.py`를 schema 원본으로 만들고 공유 JSON schema·JS 검증기·9개 정상/오류 샘플·검사 도구를 구현했다. 기존 S1~S5 계약·`agent/`·메인 HTML/JS/CSS 원본은 변경하지 않았다.
+- 요청 식별값·버전·State·UI keep/replace/reset·숫자/ID 관계를 교차 검증한다. 완성된 answer도 정상 EOF까지 보류하고 오류·중복 최종·불완전 응답·취소는 거절한다. 계산/문장 의미의 정답은 아직 후속 작업이다.
+- PASS: build, check, check --agent의 고정 lookup/SSE,125개 Python/JS 공통+outer4개, schema 최신성, Python3.10 문법/Docker 정적 검사, 로컬 Chrome의 원래 카드/상단·대화·취소·Starroot 수명 검사.
+- SKIP: 기존 Agent HTTP 기동(기본 Python에 FastAPI/Pydantic 없음). 계약 검사만 격리 Python3.13/Pydantic2.13.4로 수행했다. 로컬 Nexus 설치 실패 후 승인된 공개 PyPI로 검증했으며 배포 Docker는 사내 Nexus를 유지한다. 실제 Python3.10 이미지·새 HTTP Agent·Gemma·사내 E2E는 미검증이다.
+- [세션 안내](branch-agent/README.md)에02 프론트·03 데이터·04 Agent 시작 프롬프트를 저장했다.02/03 시작 가능,04는03 이후. 현재 Docker는 계약용 stage이며 바로 배포할 HTTP 서비스는 아니다.
 
-- `main.py`를 브리핑 전용으로 교체하고 LLM import/호출과 원시 입출력 로그를 제거했습니다. `llm_client.py`와 기존 requirements는 변경하지 않았습니다.
-- `briefing.py`가 case_id·고객 ID·기준일·전체 스냅샷을 확인하고 저장된 S1–S5를 선택합니다. 임의 사례/변경 입력은 정상 브리핑으로 대체하지 않습니다.
-- 동일 빌드가 `agent/briefing_data.json`도 생성합니다. 별도 수정 원본/규격을 늘리지 않고 프론트 계약 스키마를 그대로 묶어 Python에서 검사합니다.
-- Pydantic으로 answer/error envelope를 고정하고 FabriX Agent CHUNK 하나 + SSE EOF를 반환합니다. Docker COPY에 새 두 파일을 반영하고 이 단계에서 불필요한 `.env` COPY는 제거했습니다.
-- `check.js --agent`: 31건 Python 응답/SSE와 프론트 규격 일치, 오류 입력/스냅샷, 응답 객체 격리, Python 3.10 문법, LLM import 없음 확인.
-- 로컬 FastAPI/Pydantic 미설치로 HTTP 앱 기동 검사는 SKIP입니다. 실제 사내 기동·배포·연동까지 완료했다고 보지 않습니다.
-- 루트 `COMPANY_DEPLOY_CHECKLIST.md`에 내일 반입할 파일, 파일코드/cfg, 사내 flat repo/tag/Portal, health/API/오류 확인 순서를 통합했습니다.
+## 2026-09-21 — 로직 완성 후 로컬 실제 Gemma 검증 확정
 
-## 브리핑 화면 실제 API 전환 (사내 체크리스트 통과 후)
+- 사용자가 키 제공처를 Google AI Studio로 확인했고, Agent 구현 뒤 로컬 프론트와 실제 모델을 연결해 응답·화면을 검증하도록 요청했다. Google 공식 문서의 `gemma-4-31b-it` API 지원을 확인했다. 개인 키로 실제 호출은 아직 하지 않았다.
+- 02·04·05·06과 세션 프롬프트를 갱신했다. 업무 로직·데이터·계약은 공통으로 유지하고 validation에 Google 호출기·localhost FabriX 형식 브리지를 구현한다. 사내 Gemma 호출기/패키지와 분리하며 Google 키는 로컬 서버에서만 읽는다.
+- 진행 순서:02/03 →04 Agent/stub →05 Google live·로컬 UI →06 사내 E2E. 이번 변경은 계획 문서이며 새로운 live 서버가 구현된 것은 아니다.
 
-- 연결 설정 입력 폼·실제 브리핑 호출 버튼·더미로 복원을 제거했습니다. 설정 다섯 값은 `PG_<파일코드>.onParam(params).fabrix` 또는 `window.__PENSION_FABRIX_CONFIG`로 화면 진입 시 주입하며 메모리에만 보관합니다. 주입이 없으면 `NOCONFIG`, 형식 오류면 `CONFIG`로 표시하고 호출하지 않습니다.
-- 구조화 고객을 선택하면 즉시 FabriX를 호출합니다. 같은 화면 세션에서 수신한 고객은 재선택 시 재요청하지 않고 **다시 요청**으로만 갱신합니다. 취소·늦은 응답·오류 처리와 transport·계약·Agent는 그대로입니다.
-- 반입 JS에서 브리핑 문장 31건을 제거했습니다(`PensionBriefingFixtures.customers`만 포함). 요청 스냅샷과 Agent SNAPSHOT 검증에 필요한 고객 데이터는 유지하며 `agent/briefing_data.json`은 같은 빌드로 계속 생성합니다. 사용처가 없어진 store의 `setOutput`/`status`도 제거했습니다.
-- `check.js`에 반입본 수준 검사를 추가했습니다: 주입 설정 → 선택 시 자동 요청 → 가짜 fetch의 SSE 1프레임 → 화면 반영, 수신 고객 재요청 없음, 잘못된/누락 설정 시 미호출. 로컬 Chromium + 가짜 SSE 서버(loopback endpoint)로 `NOCONFIG`·자동 호출·고객 전환·다시 요청 화면 동작도 확인했습니다.
-- 사내 확인 항목은 [체크리스트](../../COMPANY_DEPLOY_CHECKLIST.md) 5단계입니다. WAS 쪽 설정 주입과 실제 Origin에서의 자동 호출은 미검증입니다. 토큰이 브라우저에 내려가는 구조는 그대로이므로 운영 전 WAS 프록시 등 인증 방식 검토가 남아 있습니다.
+## 2026-09-21 — 부점04 구현·05 로컬 검증
 
-## 실시간 상담 패널 — 대화 Agent 연결
+- 02 remote·03 실제48명 데이터 생성/검증 완료를 재확인한 뒤 공통 Python 서비스·상태 전이·Gemma 해석/문장·HTTP SSE를 구현했다. 원본 데이터·외부 계약·기존 `agent/`는 유지했다.
+- validation에 같은 call 인터페이스의 Google 호출기·localhost FabriX 브리지·Starroot 하네스·36개 서비스 골든·실제 HTTP/브라우저 runner를 추가했다. 키는 서버 환경변수만 읽고 Git/로그에서 제외한다.
+- build/check/check --agent, 데이터·계약·remote 전송, stub36/36, 실제 HTTP/SSE·timeout/취소, validation 없는 배포 파일 기동 PASS. 기존 Agent ASGI도 venv에서 실행해 이전 미설치 SKIP을 해소했다.
+- 실제 Google `gemma-4-31b-it`108/108, 로컬 remote UI19/19 PASS. 문장 대체·중간429/해석 실패 이력은 [05](branch-agent/05-GOLDEN.md)에 별도 기록한다. 사내 E2E는 미실행이다.
+- 루트 [내일 배포 안내](../../BRANCH_AGENT_DEPLOY_TOMORROW.md)에 프론트3파일·FabriX API 설정·Python10파일·6개 직접 의존성·사내 점검 순서를 정리했다. 사내 Nexus 접근 대신 승인된 공개 PyPI 로컬 venv로 검사했고, 실제 사내 이미지 설치 성공을 주장하지 않는다.
+- 사용자가 오늘 로컬 변경의 GitHub commit/push를 추가 요청했다. 해당 요청 범위로 반영하며 실제 사내 배포는 하지 않는다.
 
-- 사내 브리핑 화면 콘솔에서 대화 Agent Connector로 브라우저 직접 호출이 되는 것을 확인했고, 실제 3턴 응답을 `integration/contracts/chat.example.json`으로 보관했습니다. 규격·매핑은 `CHAT_AGENT_CONTRACT.md`.
-- `fabrix-chat-transport.js`(이벤트 스트림, 연속 JSON·CHUNK 포장·오류 문구 속 CHUNK 처리)와 `pensionChat.js`(고객별 세션·대화 기록, 답변 파싱, 패널 매핑)를 추가했습니다. 31명 구조화 고객에서 패널을 켜고, 기존 데모 3명은 mock을 유지합니다.
-- 설정 블록에 `chat: { endpointUrl, agentId(assetId 문자열), openapiToken, generativeAiClient }`를 추가했습니다(브리핑과 다른 토큰). `xClientUser`는 공유하며 7자리 사번으로 시작해야 합니다.
-- 실제 샘플에서 우리 `customerId`를 보내도 Agent가 자기 시연 고객(이준호, 198734-1205842)으로 답합니다. 그래서 상담 시작 시 "고객 식별자를 입력해 주세요."만 띄우고 첫 입력을 식별자로 받습니다(추천 칩 없음). 식별자를 정하면 새 `session_id`, 헤더 **고객 변경**으로 재시작. Agent 고객 저장소에 우리 31건이 들어가면 우리 `customerId`를 그대로 입력하면 됩니다.
-- 답변 본문 규칙(실측): 첫 문단 lead, `- ` 줄 목록, 큰따옴표 문단은 복사 가능한 화법, 꼬리 `── 참고한 자료 / · 유형`은 배지. 근거는 `doc`별로 묶어 표시. `progress`는 마지막 문구만 표시. Enter 전송은 change 이벤트보다 먼저 오는 keydown이라 입력값을 직접 읽도록 했습니다.
-- `check.js`에 이벤트 추출·설정·샘플 파싱·반입본 수준 패널 재생 검사를 추가했고, 로컬 Chromium + 샘플 재생 서버로 진행 문구·목록·근거·추천질문·화법 복사·네/아니오·선택지·오류·고객 전환·대화 유지를 확인했습니다. `action`·`clarify`·`error`·`주의` role은 문서 기준 구현이며 실제 응답은 미확인입니다.
-- 사내 실제 응답 확인 후 UI 보완: 추천질문을 첫 화면과 같은 칩 버튼으로, Enter 전송 시 늦게 오는 change 이벤트가 입력창을 다시 채우던 문제(입력 요소 값을 직접 비움), 새 답변이 오면 대화창을 답변 시작 위치로 스크롤(진행 중에는 맨 아래).
-- 사내 화면에서 상단에 불필요한 여백을 만들던 `.browserHeader.on` 겹침 자동 보정(`--starroot-top-offset` padding-top)을 제거했습니다.
+## 보존할 구현 이력
 
-## 메인화면 30케이스 합류 및 Dynamic Segment 뱃지 정렬
+- **2026-09-20 실제 부점 Agent 설계:** `docs/handover/branch-agent/`에 계약→프론트→데이터→Agent/상태→골든→사내 검증을 분리. 지정 모델 `gemma-4-31b-it`, 신규 `branch-agent/deploy/`·`validation/` 폴더 구성. 기존 agent/프론트 실행 코드는 이번 문서 작업에서 변경하지 않음. 신규 계약·Agent·검사 도구는 아직 미구현. 전달된 인증 키는 저장/사용하지 않음.
 
-- 고객 JSON의 `signals`를 Dynamic Segment 카탈로그 뱃지(label/date/source)로 재정비했습니다. 근거는 각 JSON의 `에이전트맥락데이터`에만 두고 `가상설정메모`에 추가 사실을 적었습니다. 디폴트옵션명은 뿔려드림으로 통일했습니다.
-- 메인 목록(오늘의 중점관리 고객)에 레거시 18명과 함께 30케이스가 들어갑니다. 행 데이터는 `pensionCustomerView.row`(뱃지=signals, 잔액·수익률·세액공제 도넛=irpAccount)이고, `pensionBriefingAdapter`가 `DATA`에 합류시킵니다. DEMO-01 김서연은 레거시 ksy와 같은 인물이라 드롭다운·검색에만 남깁니다.
-- 뱃지 색은 `pensionCustomerView`의 카탈로그 분류 한 곳에서 정합니다(빨강 이탈·상품 문제, 주황 일정·운용 공백, 초록 연금개시·납입·외부자산, 노랑 구성·DO·디지털 행동). 메인 목록과 브리핑 헤더가 같은 함수를 씁니다. 레거시 QMETA·BRIEFS 뱃지 문구도 같은 카탈로그로 바꿨고, 해당 Segment가 없는 홍성우·서정화는 비웠습니다.
-- 정렬은 D-day 임박 → 이탈·상품 문제 → 운용 공백 → 나머지, 처리완료는 뒤. 신규 선정은 D-day 뱃지나 계약이전 신청이 있는 고객. 상단 KPI·"중점관리 고객 N명"·관리완료 수·부점 브리핑의 ISA 만기 인원·기준일(9월 14일)은 목록에서 계산합니다. `check.js`에 목록 48행·뱃지=signals·색 일치·카탈로그 밖 문구 없음·정렬 검사를 추가했습니다.
+- **2026-09-16 이전·정리:** 30명+김서연 원본/브리핑 보존. 상단 고객정보와 S1~S5 분리. 중복 명세·구버전 프론트·MD 변환/override·일회성 도구 정리. 수정 원본은 고객 JSON·브리핑 JSON·Vanilla 모듈.
+- **고정 Agent:** case_id·고객ID·기준일·전체 스냅샷 검증 후 저장된 S1~S5 반환. LLM 미사용, 평면 import·Docker COPY·Pydantic envelope·SSE 유지. `llm_client.call` 인터페이스/requirements 변경 없음.
+- **브리핑 자동 호출:** 구조화 고객 선택 시 FabriX 호출, 수신 고객은 세션 내 재사용·‘다시 요청’으로 갱신. 설정은 onParam/window 주입, 없거나 잘못되면 미호출. 반입 JS에는 고객 스냅샷만, 브리핑 문장은 API에서 수신.
+- **실시간 상담:** 별도 Connector로 사내 실제3턴 확인, 샘플은 `integration/contracts/chat.example.json`. 고객별 대화 세션·SSE/연속JSON/CHUNK 파싱·근거/후속 질문 표시. 직원이 대화 Agent용 고객 식별자를 입력하며 현재 저장소31건과 자동 연결된 것은 아님.
+- **메인 목록·뱃지:** 레거시18+케이스30, 김서연 중복 제외. 뱃지 원천은 signals/카탈로그, `pensionCustomerView`에서 색·표시 공통 처리. 목록 정렬과 일부 KPI는 목록 기반이며 AI 검색 집계와 자동 연동된 것으로 간주하지 않음.
+- **2026-09-18 부점 AI:** 규칙 기반 플로팅 검색 통합, 현재 메인48행 투영. 집계도 목록 적용, 기존 목록/상세 진입/복귀 연결. 조건 추출·추가 안내줄 제거.
+- **Starroot 보정:** transform 조상으로 인한 fixed 오류를 body 위젯으로 해결. 사내 옛 CSS 진단 후 번들 CSS 폴백 추가. 자산 경로를 `/mnbank/app/html/bfe/asstmgt/asst/`로 정정. 플랫폼 원본 reference는 유지.
 
-## 기준일 2026-09-29 통일, 대화 Agent 시연 고객 12명 합류
+- **2026-09-17 뱃지 정렬:** `signals`를 Dynamic Segment 카탈로그 뱃지로 재정비(근거는 `에이전트맥락데이터`·`가상설정메모`), 디폴트옵션명 뿔려드림, 메인 목록 30케이스 합류·색·정렬·KPI 계산은 위 항목과 같음.
+- **2026-09-21 기준일 9/29 통일·C01 합류:** 30케이스 기준일 9/29 재계산(D-day·일수 지표·브리핑 문장, B02-18 DO 실행 10/3, B02-27 9/21 입금 반영). 동료 대화 Agent 시연 고객 12명 `C01-01~12`(엑셀 9명+실측 답변 3명, 카탈로그 뱃지만, 가정은 가상설정메모). 빌드가 브리핑 없는 고객 허용(`noBriefing`, FabriX 미요청·준비 중 표시, Agent 데이터 30건). DEMO-01 빌드 제외·브리핑 삭제, 레거시 ksy·lsm·pjh 숨김 후 C01 버전으로 대체.
+- **2026-09-21 부점 AI 모집단 57행 적응:** 메인 목록 투영이 48행→57행(구조화42+레거시15), 기준일 2026-09-29. `branch-data.js` 인원 검사를 소스 metadata 기반으로, 계약 `row_ids`·Pydantic `MAX_ROWS`를 64로 상향, 스키마 재출력. check_data/check_frontend/check_service/check_http/check_live_ui·conversation.test 기대값과 stub 36골든(`scenarios.json`, data_version 재계산, S-02 50대→40대, 추천 B04-23·B06-13·C01-10)을 현재 데이터로 재산출. 로컬 gate·build/check/--agent PASS. **Google Gemma 108골든·remote UI 19건은 옛 48행 기준이라 재실행 전까지 stale.**
 
-- 30케이스 기준일을 2026-09-14에서 2026-09-29로 옮겼습니다. D-day 뱃지·일수 지표·산출기준일과 브리핑 문장의 일수(B01-22·B03-11·B05-28·B06-13·B07-29·B08-01)를 다시 계산했고, 지나가 버리는 이벤트는 데이터에 반영했습니다(B02-18 DO 실행예정일 9/18→10/3, B02-27 9/21 자동이체 입금 60만원 반영·현금성 180만원).
-- 동료의 대화 Agent 시연 고객 12명을 `C01-01`~`C01-12`로 추가했습니다. 9명은 엑셀(9 Cases v3), 3명(김서연·박정호·이수민)은 실측 답변 기준이며, 엑셀과 답변이 다르면 답변을 따랐습니다(오세훈 만기 10/9, 송도윤 당해 미납). 뱃지는 기존 카탈로그로만 매핑했고 세액공제 잔여·위험자산 한도 초과·장기 미접촉은 카탈로그에 없어 계산지표·특이사항에만 남겼습니다. 성별·일부 보유상품은 시연용 가정으로 `가상설정메모`에 적었습니다.
-- 빌드는 브리핑 JSON 없는 고객을 허용합니다(`noBriefing` 목록을 반입 JS에 실어 FabriX 요청을 보내지 않고 "준비 중"으로 표시, Agent 데이터에는 브리핑 있는 30건만). DEMO-01은 빌드에서 빠졌고 `briefing-json/DEMO-01.json`은 삭제했습니다. 레거시 김서연·이수민·박정호(ksy·lsm·pjh)는 화면에서 숨기고 대화 Agent 버전으로 대체했습니다.
-- `check.js`: 42명·브리핑 30건·기준일 통일·숨긴 레거시 행·브리핑 없는 고객 미요청 검사 추가.
+## 검증·미완료
+
+- 과거: 31건 화면·가짜 SSE/오류/취소·자동 호출·실시간 상담 샘플 재생·shell 재현 브라우저 검사 수행. 삭제한 일회성 도구가 현재 존재한다고 가정하지 않는다.
+- 현재 검사: `node tools/briefing/build.js`, `node tools/briefing/check.js`. Agent 변경 시 `--agent`도 실행. 과거 Agent 검사는 로컬 FastAPI/Pydantic 미설치로 HTTP 기동 **SKIP**이었으며 사내 기동 완료 근거가 아니다.
+- 고객 내용은 모두 draft. 대표 DEMO-01·B01-22·B06-13 외28건 문장 개선, 날짜/상품 매핑 검토가 남음. [사례 색인](../../agent-workbench/case-design/review/CASE_INDEX.md)과 해당 JSON만 확인.
+- 최신 브리핑 자동 호출의 실제 WAS 설정·Origin, 부점 AI의 사내 인증·사내 E2E 미검증. 부점 공통 Agent의 로컬 구현/검사는 위04·05 기록 참조. 과거 대화 Agent 실제 응답 확인과 구분.
+- 부점 반입/배포는 [내일 안내](../../BRANCH_AGENT_DEPLOY_TOMORROW.md), 기존 고정 Agent는 [사내 체크리스트](../../COMPANY_DEPLOY_CHECKLIST.md). Secret 저장 금지. 요청 없는 commit/push/사내 배포 금지.
