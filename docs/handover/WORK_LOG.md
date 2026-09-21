@@ -61,6 +61,7 @@
 - **2026-09-17 뱃지 정렬:** `signals`를 Dynamic Segment 카탈로그 뱃지로 재정비(근거는 `에이전트맥락데이터`·`가상설정메모`), 디폴트옵션명 뿔려드림, 메인 목록 30케이스 합류·색·정렬·KPI 계산은 위 항목과 같음.
 - **2026-09-21 기준일 9/29 통일·C01 합류:** 30케이스 기준일 9/29 재계산(D-day·일수 지표·브리핑 문장, B02-18 DO 실행 10/3, B02-27 9/21 입금 반영). 동료 대화 Agent 시연 고객 12명 `C01-01~12`(엑셀 9명+실측 답변 3명, 카탈로그 뱃지만, 가정은 가상설정메모). 빌드가 브리핑 없는 고객 허용(`noBriefing`, FabriX 미요청·준비 중 표시, Agent 데이터 30건). DEMO-01 빌드 제외·브리핑 삭제, 레거시 ksy·lsm·pjh 숨김 후 C01 버전으로 대체.
 - **2026-09-21 부점 AI 모집단 57행 적응:** 메인 목록 투영이 48행→57행(구조화42+레거시15), 기준일 2026-09-29. `branch-data.js` 인원 검사를 소스 metadata 기반으로, 계약 `row_ids`·Pydantic `MAX_ROWS`를 64로 상향, 스키마 재출력. check_data/check_frontend/check_service/check_http/check_live_ui·conversation.test 기대값과 stub 36골든(`scenarios.json`, data_version 재계산, S-02 50대→40대, 추천 B04-23·B06-13·C01-10)을 현재 데이터로 재산출. 로컬 gate·build/check/--agent PASS. **Google Gemma 108골든·remote UI 19건은 옛 48행 기준이라 재실행 전까지 stale.**
+- **2026-09-21 뱃지 카탈로그 문서화:** `agent-workbench/case-design/review/BADGE_CATALOG.md` 신설(39종 정의·색·42케이스+레거시 사용 현황, 미사용 2종·변형 1종 명시). CASE_INDEX를 42건·기준일 9/29·C01 12행으로 갱신하고 DEMO-01 행 제거. 스키마 문서 12절에 카탈로그 우선 안내 추가.
 
 ## 검증·미완료
 

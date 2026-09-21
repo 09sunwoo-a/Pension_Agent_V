@@ -493,6 +493,8 @@ RAW DATA를 바탕으로 계산하거나 Rule에 의해 생성되는 정보.
 
 # 12. Badge
 
+> **2026-09-21:** 실제 사용하는 뱃지 문구·색·정의는 [review/BADGE_CATALOG.md](../../review/BADGE_CATALOG.md)의 Dynamic Segment 39종이 기준이다. 아래 목록과 `뱃지코드` 예시는 초기 설계안이며 고객 JSON `signals`에는 쓰이지 않는다.
+
 Badge는 고객의 최종 관리방향이 아니다.
 
 직원이 고객 목록을 봤을 때 **왜 이 고객을 지금 봐야 하는지 빠르게 인지하기 위한 Fact / Signal**이다.
