@@ -114,7 +114,7 @@ Stage: ARG ENV_FILE_PATH → ENV_PATH
 | `langchain-openai` | 기존 AzureChatOpenAI 호출 |
 | `openai` | Azure 호환 SDK |
 
-Google용 SDK는 쓰지 않으며 Google 호출기는 validation의 Python 표준 라이브러리 구현이다. 사내 requirements/Docker에 Google 전용 파일·패키지가 없다. 신규 호출기는 서버 환경변수를 직접 읽으므로 `.env` 파일과 python-dotenv는 필수가 아니다.
+Google용 SDK는 쓰지 않으며 Google 호출기는 validation의 Python 표준 라이브러리 구현이다. 사내 requirements/Docker에 Google 전용 파일·패키지가 없다. 호출기는 기존 배포본과 같이 `/custom/.env`(배포 repo 루트의 `.env`를 Dockerfile이 복사)와 서버 환경변수를 읽는다. python-dotenv는 필요 없다. `.env`는 Git에 두지 않는다.
 
 Nexus 주소는 Dockerfile에 유지했다.
 
@@ -128,12 +128,12 @@ https://stg-nexus-genaihub.kbonecloud.com/repository/pypi/simple
 |---|---|
 | `ENV_PATH` | `training` / `serving`에 따라 TRNN/SERV 선택 |
 | `LLM_MODEL` | `gemma-4-31b-it` |
-| `LLM_DEPLOYMENT_NAME` | 해당 모델에 연결된 사내 deployment 별칭. 반드시 확인·설정 |
+| `LLM_DEPLOYMENT_NAME` | 해당 모델에 연결된 사내 deployment 별칭. 미설정이면 기존 배포본과 같은 `gemma-4-31b-nvidia-fp4-h100` 사용 |
 | `LLM_BASE_URL_TRNN`, `LLM_BASE_URL_SERV` | 기존 사내 Gemma endpoint. 공통 `LLM_BASE_URL`도 기존 우선순위로 지원 |
 | `LLM_API_KEY_TRNN`, `LLM_API_KEY_SERV` | 해당 stage의 런타임 Secret. 공통 `LLM_API_KEY`도 기존 우선순위로 지원 |
 | `LLM_API_VERSION` | 기존 기본값 문자열 `1` |
 
-모델 ID와 Azure deployment 별칭은 다른 개념이다. 과거 `gemma-4-31b-nvidia-fp4-h100` 별칭으로 자동 대체하지 않는다. 기존 `kb-key`와 직원 식별자에 임의 suffix를 붙인 `x-client-user` 인증 방식은 유지한다. Google용 `GEMINI_API_KEY`는 사내에 설정할 필요 없다.
+모델 ID와 Azure deployment 별칭은 다른 개념이다. 별칭 기본값은 기존 배포본 `llm_client.py`와 같은 `gemma-4-31b-nvidia-fp4-h100`이며 `LLM_DEPLOYMENT_NAME`으로 바꾼다. 기존 `kb-key`와 직원 식별자에 임의 suffix를 붙인 `x-client-user` 인증 방식은 유지한다. Google용 `GEMINI_API_KEY`는 사내에 설정할 필요 없다.
 
 ## 5. 배포할 때 확인할 순서
 

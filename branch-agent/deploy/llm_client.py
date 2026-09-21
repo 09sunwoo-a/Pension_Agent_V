@@ -5,6 +5,9 @@ import re
 import string
 
 MODEL_ID = "gemma-4-31b-it"
+# Same defaults as the previously deployed llm_client.py: deployment alias and API version used when .env omits them.
+DEFAULT_DEPLOYMENT_NAME = "gemma-4-31b-nvidia-fp4-h100"
+DEFAULT_API_VERSION = "1"
 _env_file = None
 
 
@@ -62,6 +65,7 @@ def readiness():
     return {"stage": stage, "env_file": bool(_env_file),
             "model_ok": _model() == MODEL_ID,
             "deployment_name_set": bool(os.getenv("LLM_DEPLOYMENT_NAME", "").strip()),
+            "deployment_default_used": not os.getenv("LLM_DEPLOYMENT_NAME", "").strip(),
             "api_key_set": bool(os.getenv("LLM_API_KEY_" + stage, "").strip() or os.getenv("LLM_API_KEY", "").strip()),
             "base_url_set": bool(os.getenv("LLM_BASE_URL_" + stage, "").strip() or os.getenv("LLM_BASE_URL", "").strip()),
             "sdk_importable": sdk}
@@ -84,14 +88,14 @@ def call(messages: list[dict[str, str]], *, system: str = "", model: str = "",
     endpoint = (os.getenv("LLM_BASE_URL_" + stage, "").strip() or os.getenv("LLM_BASE_URL", "").strip()
                 or "https://cm-hea-genai-stg-apim.azure-api.net/" + ("serv" if stage == "SERV" else "trnn") + "/gemma-4")
     key = os.getenv("LLM_API_KEY_" + stage, "").strip() or os.getenv("LLM_API_KEY", "").strip()
-    deployment = model.strip() or os.getenv("LLM_DEPLOYMENT_NAME", "").strip()
-    missing = [name for name, ok in (("LLM_API_KEY_" + stage + "|LLM_API_KEY", key), ("LLM_DEPLOYMENT_NAME", deployment),
+    deployment = model.strip() or os.getenv("LLM_DEPLOYMENT_NAME", "").strip() or DEFAULT_DEPLOYMENT_NAME
+    missing = [name for name, ok in (("LLM_API_KEY_" + stage + "|LLM_API_KEY", key),
                                      ("LLM_MODEL=gemma-4-31b-it", _model() == MODEL_ID)) if not ok]
     if missing:
         raise _fail("LLM_CONFIG", "stage=" + stage + " missing: " + ", ".join(missing))
     suffix = "".join(random.choice(string.ascii_letters + string.digits) for _ in range(5))
     headers = {"kb-key": key, "x-client-user": (x_client_user or "system") + "-" + suffix}
-    llm = AzureChatOpenAI(openai_api_version=os.getenv("LLM_API_VERSION", "1"),
+    llm = AzureChatOpenAI(openai_api_version=os.getenv("LLM_API_VERSION", "").strip() or DEFAULT_API_VERSION,
         deployment_name=deployment, streaming=False, stream_usage=True, default_headers=headers,
         api_key=key, azure_endpoint=endpoint, model_kwargs={"extra_headers": headers},
         max_tokens=max_tokens, timeout=20, max_retries=0)
@@ -108,3 +112,18 @@ def call(messages: list[dict[str, str]], *, system: str = "", model: str = "",
     if not isinstance(response.content, str):
         raise RuntimeError("LLM_OUTPUT")
     return response.content
+
+
+if __name__ == "__main__":
+    # Same standalone connection test as the previous llm_client.py. Prints presence, never values.
+    import json
+    print("=" * 60)
+    print("Gemma4 connection test (branch agent)")
+    print("=" * 60)
+    print(json.dumps(readiness(), ensure_ascii=False))
+    print("DEPLOYMENT:", os.getenv("LLM_DEPLOYMENT_NAME", "").strip() or DEFAULT_DEPLOYMENT_NAME + " (default)")
+    try:
+        print("[SUCCESS]", call([{"role": "user", "content": "안녕. 한 문장으로 인사해줘."}], x_client_user="llm-client-test", max_tokens=100))
+    except Exception as error:
+        print("[FAIL]", error, "|", getattr(error, "detail", type(error).__name__))
+        raise SystemExit(1)
