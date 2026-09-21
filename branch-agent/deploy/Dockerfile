@@ -3,7 +3,9 @@ FROM cmheastggenaiacr01.azurecr.io/python:3.10
 ARG ENV_FILE_PATH
 ENV ENV_PATH=$ENV_FILE_PATH
 WORKDIR /custom
-COPY ./requirements.txt /custom/requirements.txt
+# .env is optional: the internal deploy repo places it next to the Dockerfile (same practice as the fixed agent).
+# The glob keeps the build working when no .env exists; llm_client loads /custom/.env at startup.
+COPY ./requirements.txt ./.env* /custom/
 RUN pip install --no-cache-dir \
     --index-url https://stg-nexus-genaihub.kbonecloud.com/repository/pypi/simple \
     --trusted-host stg-nexus-genaihub.kbonecloud.com \

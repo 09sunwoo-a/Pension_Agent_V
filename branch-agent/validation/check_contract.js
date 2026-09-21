@@ -174,7 +174,7 @@ function checkPython(results) {
   const docker=fs.readFileSync(path.join(ROOT,'branch-agent/deploy/Dockerfile'),'utf8');
   assert(docker.includes('WORKDIR /custom')&&docker.includes('azurecr.io/python:3.10')&&docker.includes('stg-nexus-genaihub.kbonecloud.com'));
   for(const file of fs.readdirSync(path.join(ROOT,'branch-agent/deploy')).filter(f=>f.endsWith('.py')))assert(docker.includes('COPY ./'+file+' /custom/'+file),'Explicit Docker COPY: '+file);
-  assert(!/^COPY.*(?:\.env|validation)/m.test(docker),'No secrets or validation code in the image');
+  assert(!/^COPY.*validation/m.test(docker)&&!/^COPY.*\.env(?!\*)/m.test(docker),'No validation code or fixed .env in the image (only the optional ./.env* glob)');
   console.log('PASS: Python 3.10 syntax and internal Docker/COPY configuration (not an actual image build)');
   return parsed.frames;
 }

@@ -1,11 +1,54 @@
 """Internal transport: preserve the established call signature, stage and authentication."""
 import os
 import random
+import re
 import string
+
+MODEL_ID = "gemma-4-31b-it"
+_env_file = None
+
+
+def _load_env_file():
+    """Same deployment practice as the fixed agent: a .env copied into /custom by the internal Dockerfile.
+    Loaded once at import, never overriding variables the platform already injected. No python-dotenv needed."""
+    global _env_file
+    here = os.path.dirname(os.path.abspath(__file__))
+    candidates = [os.getenv("ENV_PATH", "").strip(), os.path.join(here, ".env"), "/custom/.env", os.path.join(os.getcwd(), ".env")]
+    for path in candidates:
+        if not path or not os.path.isfile(path):
+            continue
+        try:
+            with open(path, encoding="utf-8") as handle:
+                for line in handle:
+                    line = line.strip()
+                    if not line or line.startswith("#") or "=" not in line:
+                        continue
+                    key, value = line[7:].split("=", 1) if line.startswith("export ") else line.split("=", 1)
+                    key, value = key.strip(), value.strip()
+                    if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+                        value = value[1:-1]
+                    elif " #" in value:
+                        value = value.split(" #", 1)[0].rstrip()
+                    if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", key) and key not in os.environ:
+                        os.environ[key] = value
+        except OSError:
+            continue
+        _env_file = path
+        return path
+    return None
+
+
+_load_env_file()
 
 
 def _stage():
-    return "SERV" if os.getenv("ENV_PATH", "").strip().lower() in ("serv", "serving") else "TRNN"
+    # Jenkins passes training|serving; tolerate a file path such as /custom/.env.serving as well.
+    value = os.path.basename(os.getenv("ENV_PATH", "").strip().lower())
+    return "SERV" if any(token in ("serv", "serving") for token in re.split(r"[^a-z]+", value)) else "TRNN"
+
+
+def _model():
+    return os.getenv("LLM_MODEL", "").strip() or MODEL_ID  # An empty LLM_MODEL= line means the default.
 
 
 def readiness():
@@ -16,8 +59,8 @@ def readiness():
         sdk = True
     except Exception:
         sdk = False
-    return {"stage": stage,
-            "model_ok": os.getenv("LLM_MODEL", "gemma-4-31b-it") == "gemma-4-31b-it",
+    return {"stage": stage, "env_file": bool(_env_file),
+            "model_ok": _model() == MODEL_ID,
             "deployment_name_set": bool(os.getenv("LLM_DEPLOYMENT_NAME", "").strip()),
             "api_key_set": bool(os.getenv("LLM_API_KEY_" + stage, "").strip() or os.getenv("LLM_API_KEY", "").strip()),
             "base_url_set": bool(os.getenv("LLM_BASE_URL_" + stage, "").strip() or os.getenv("LLM_BASE_URL", "").strip()),
@@ -43,7 +86,7 @@ def call(messages: list[dict[str, str]], *, system: str = "", model: str = "",
     key = os.getenv("LLM_API_KEY_" + stage, "").strip() or os.getenv("LLM_API_KEY", "").strip()
     deployment = model.strip() or os.getenv("LLM_DEPLOYMENT_NAME", "").strip()
     missing = [name for name, ok in (("LLM_API_KEY_" + stage + "|LLM_API_KEY", key), ("LLM_DEPLOYMENT_NAME", deployment),
-                                     ("LLM_MODEL=gemma-4-31b-it", os.getenv("LLM_MODEL", "gemma-4-31b-it") == "gemma-4-31b-it")) if not ok]
+                                     ("LLM_MODEL=gemma-4-31b-it", _model() == MODEL_ID)) if not ok]
     if missing:
         raise _fail("LLM_CONFIG", "stage=" + stage + " missing: " + ", ".join(missing))
     suffix = "".join(random.choice(string.ascii_letters + string.digits) for _ in range(5))

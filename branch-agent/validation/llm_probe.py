@@ -28,9 +28,14 @@ def flag(name):
 
 
 def main():
-    stage = "SERV" if os.getenv("ENV_PATH", "").strip().lower() in ("serv", "serving") else "TRNN"
+    try:
+        import llm_client as _lc  # loads /custom/.env exactly as the Agent does
+        stage = _lc._stage()
+        print("env file loaded :", _lc._env_file or "none (/custom/.env, ENV_PATH file, cwd/.env not found)")
+    except Exception:
+        stage = "SERV" if os.getenv("ENV_PATH", "").strip().lower() in ("serv", "serving") else "TRNN"
     print("ENV_PATH        :", repr(os.getenv("ENV_PATH")), "-> stage", stage)
-    print("LLM_MODEL       :", repr(os.getenv("LLM_MODEL", "gemma-4-31b-it")), "(must be gemma-4-31b-it)")
+    print("LLM_MODEL       :", repr(os.getenv("LLM_MODEL") or "gemma-4-31b-it"), "(must be gemma-4-31b-it; empty = default)")
     for name in ("LLM_DEPLOYMENT_NAME", "LLM_API_KEY_" + stage, "LLM_API_KEY", "LLM_BASE_URL_" + stage, "LLM_BASE_URL", "LLM_API_VERSION"):
         print("%-16s: %s" % (name, flag(name)))
     endpoint = (os.getenv("LLM_BASE_URL_" + stage, "").strip() or os.getenv("LLM_BASE_URL", "").strip()
