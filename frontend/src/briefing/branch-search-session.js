@@ -88,7 +88,10 @@ function createRemote(input,options){
   if(code==='MANIFEST'||code==='DATA_VERSION')return '부점 AI 데이터 버전을 확인할 수 없습니다. 같은 빌드의 데이터와 화면으로 다시 진입해 주세요.';
   if(code==='AUTH')return '부점 AI 인증 설정을 확인해 주세요. 기존 목록과 조건은 유지했습니다.';
   if(code==='TIMEOUT')return '응답 시간이 초과되었습니다. 기존 목록과 조건은 유지했습니다. 다시 시도해 주세요.';
-  return '응답을 확인하지 못했습니다. 기존 목록과 조건은 유지했습니다. 다시 시도해 주세요.';
+  // Stage codes so a failed call can be located without reading the response: HTTP/CONTENT_TYPE/STREAM (gateway),
+  // SSE/JSON/GATEWAY/TRUNCATED/LIMIT (stream shape), VERSION/IDENTITY/DATA_VERSION/REVISION/SCHEMA/RESULT/UI/STATE/ACTION (contract),
+  // LLM_TIMEOUT/LLM_OUTPUT/INTERNAL/INVALID_REQUEST (Agent error event), NETWORK (fetch/CORS).
+  return '응답을 확인하지 못했습니다'+(code?' (코드: '+code+')':'')+'. 기존 목록과 조건은 유지했습니다. 다시 시도해 주세요.';
  }
  async function send(text,action){
   text=String(text||'').trim();if(!text||disposed)return null;
@@ -122,6 +125,7 @@ function createRemote(input,options){
   }catch(e){
    if(disposed||token!==ticket)return null;
    busy=false;controller=null;reply.pending=false;reply.error=true;reply.code=e.code||'NETWORK';reply.text=notice(reply.code,e.field);
+   if(typeof console!=='undefined'&&reply.code!=='ABORTED')console.warn('[Branch AI] request failed: '+reply.code+(e.field?' ('+e.field+')':'')+' · Network 탭에서 agent-messages 응답의 status/content-type/본문을 확인하세요. 응답 내용은 기록하지 않습니다.');
    emit('error');return null;
   }
  }
