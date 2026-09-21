@@ -372,6 +372,7 @@ async function branchSearchCheck() {
   assert.ok(!/extToggle|extOpen|extOn\b|조건 추출/.test(html) && !/PensionBranchPreserveUI|resultbar|결과 위치 보기|해당 고객 보기/.test(js), '조건 추출 UI, result bar and reveal/apply buttons removed');
   for (const gone of ['6턴 시연 가이드', '조회 취소', '실제 AI 미연결', '<i></i>고객 조회', 'pad-branch-mode-gate', 'pad-branch-scope', 'pad-branch-live-dot', 'pad-branch-answer-meta', 'pad-branch-author', 'pad-branch-tour']) assert.ok(!js.includes(gone), 'Removed chat element still in the bundle: ' + gone);
   assert.ok(/height:min\(640px,calc\(100vh - 118px\)\)/.test(fs.readFileSync(path.join(OUT, 'pensionAgentDemo.css'), 'utf8')), 'Chat window height 640px');
+  assert.ok(js.includes('<div class="floating_chat" role="button" tabindex="0"') && js.includes('>퇴직연금 사후관리 에이전트</div>') && !js.includes('pad-branch-launcher"'), 'Launcher is the shell .floating_chat div');
   for (const part of ['branchSearchLatency', 'pad-branch-progress', 'pad-branch-query-donut', 'pad-branch-skeleton-active', 'padBranchResultReveal', 'padBranchBorderLight', 'pad-branch-followups', 'pad-branch-caret', 'has-unread', 'is-stop']) assert.ok(js.includes(part), 'Waiting/completion UI piece in the bundle: ' + part);
   const css = fs.readFileSync(path.join(OUT, 'pensionAgentDemo.css'), 'utf8'), base = fs.readFileSync(path.join(ROOT, 'frontend/src/briefing/pensionAgentDemo.css'), 'utf8');
   assert.ok(css.startsWith(base), 'Original stylesheet stays an exact prefix');

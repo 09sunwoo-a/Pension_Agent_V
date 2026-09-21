@@ -26,13 +26,16 @@ function mount(container,session,options){
  '<div class="pad-branch-body" data-branch-scroll><div class="pad-branch-welcome"><div class="pad-branch-welcome-title">오늘 우리 부점,<br>어떤 고객을 먼저 살펴볼까요?</div><p class="pad-branch-welcome-desc">우리 부점 고객 현황을 살펴보고, 관리가 필요한 고객을 찾아보세요.</p><p class="pad-branch-welcome-note">찾은 고객은 메인 고객 목록에서 바로 확인할 수 있어요.</p><div class="pad-branch-suggestions"></div></div><div class="pad-branch-messages" role="log" aria-live="polite" aria-relevant="additions text" aria-label="부점 AI 대화"></div></div>'+
  '<div class="pad-branch-examples" hidden></div>'+
  '<div class="pad-branch-footer"><div class="pad-branch-tools"><button type="button" data-action="examples" aria-expanded="false">예시 질문</button><button type="button" data-action="restore" title="검색 결과를 해제하고 기존 목록으로">기존 목록</button></div><form class="pad-branch-composer"><textarea rows="1" maxlength="1200" aria-label="궁금한 부점 현황이나 찾고 싶은 고객 조건" placeholder="궁금한 현황이나 고객 조건을 물어보세요"></textarea><button type="submit" aria-label="질문 전송" class="pad-branch-send" disabled>'+icons.arrow+'</button></form><div class="pad-branch-disclaimer">확인된 데이터만 조회해요.</div></div></div>'+
- '<button type="button" class="pad-branch-launcher" aria-label="부점 AI 열기" aria-controls="pad-branch-window" aria-expanded="false">'+icons.chat+'<span>부점 AI</span></button>';
+ // Launcher: the company shell styles .floating_chat as its chatbot button, so the markup carries only that class.
+ '<div class="floating_chat" role="button" tabindex="0" aria-label="퇴직연금 사후관리 에이전트 열기" aria-controls="pad-branch-window" aria-expanded="false">퇴직연금 사후관리 에이전트</div>';
  container.appendChild(rootEl);
- // Fallback for a stale or partially deployed pensionAgentDemo.css: if the launcher is not positioned by the
+ // Fallback for a stale or partially deployed pensionAgentDemo.css: if the window is not positioned by the
  // page stylesheet, inject the bundled copy of branch-search.css once (removed again on destroy).
  let styleEl=null;
- if(root.PensionBranchSearchStyles&&getComputedStyle(rootEl.querySelector('.pad-branch-launcher')).position!=='fixed'){styleEl=document.createElement('style');styleEl.setAttribute('data-branch-style','');styleEl.textContent=root.PensionBranchSearchStyles;(document.head||document.body).appendChild(styleEl);console.warn('[Branch AI] pensionAgentDemo.css has no .pad-branch-* rules (old file or cache); using the bundled copy.');}
- const find=s=>rootEl.querySelector(s),panel=find('.pad-branch-window'),launcher=find('.pad-branch-launcher'),input=find('textarea'),sendBtn=find('.pad-branch-send'),body=find('.pad-branch-body'),log=find('.pad-branch-messages');
+ if(root.PensionBranchSearchStyles&&getComputedStyle(rootEl.querySelector('.pad-branch-window')).position!=='fixed'){styleEl=document.createElement('style');styleEl.setAttribute('data-branch-style','');styleEl.textContent=root.PensionBranchSearchStyles;(document.head||document.body).appendChild(styleEl);console.warn('[Branch AI] pensionAgentDemo.css has no .pad-branch-* rules (old file or cache); using the bundled copy.');}
+ const find=s=>rootEl.querySelector(s),panel=find('.pad-branch-window'),launcher=find('.floating_chat'),input=find('textarea'),sendBtn=find('.pad-branch-send'),body=find('.pad-branch-body'),log=find('.pad-branch-messages');
+ // No stylesheet positions .floating_chat (local preview, shell without the class): use the bundled pill look.
+ if(getComputedStyle(launcher).position==='static')launcher.classList.add('pad-branch-launcher-fallback');
  const welcome=find('.pad-branch-welcome'),context=find('.pad-branch-context'),examples=find('.pad-branch-examples');
  const nodes=new Map(),streams=new Map();let lastMessageIds='',current=session.get(),statusTimer=null,statusIndex=0,statusEl=null,pendingIds=new Set(),focusTimer=null,scrollFrame=null;
  // The send button turns into a stop button while the answer is being prepared or typed out.
@@ -43,8 +46,9 @@ function mount(container,session,options){
  input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&!composing&&e.keyCode!==229){e.preventDefault();submit();}});
  find('form').addEventListener('submit',e=>{e.preventDefault();if(current.busy){session.cancel();return;}if(streams.size){finishStreams();return;}if(!composing)submit();});
  function submit(text,action){const q=text===undefined?input.value:text;if(!q.trim())return;finishStreams();input.value='';refreshDraft();examplesOpen=false;examples.hidden=true;find('[data-action="examples"]').setAttribute('aria-expanded','false');session.send(q,action);}
- function setOpen(value,focus){open=value;panel.hidden=!open;launcher.setAttribute('aria-expanded',String(open));launcher.setAttribute('aria-label',open?'부점 AI 최소화':'부점 AI 열기');launcher.classList.toggle('is-open',open);if(open)launcher.classList.remove('has-unread');if(focusTimer)clearTimeout(focusTimer);if(open&&focus!==false)focusTimer=setTimeout(()=>{if(!disposed&&open&&visible)input.focus({preventScroll:true});},80);if(!open&&focus!==false)launcher.focus({preventScroll:true});}
+ function setOpen(value,focus){open=value;panel.hidden=!open;launcher.setAttribute('aria-expanded',String(open));launcher.setAttribute('aria-label',open?'퇴직연금 사후관리 에이전트 최소화':'퇴직연금 사후관리 에이전트 열기');launcher.classList.toggle('is-open',open);if(open)launcher.classList.remove('has-unread');if(focusTimer)clearTimeout(focusTimer);if(open&&focus!==false)focusTimer=setTimeout(()=>{if(!disposed&&open&&visible)input.focus({preventScroll:true});},80);if(!open&&focus!==false)launcher.focus({preventScroll:true});}
  launcher.addEventListener('click',()=>setOpen(!open));
+ launcher.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setOpen(!open);}});
  // Welcome and example questions use the supported current-data grammar.
  STARTERS.forEach(item=>{
   const b=document.createElement('button');b.type='button';b.dataset.question=item.question;

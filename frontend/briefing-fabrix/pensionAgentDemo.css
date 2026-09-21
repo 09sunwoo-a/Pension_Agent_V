@@ -475,10 +475,10 @@
 .pad-branch-widget button,.pad-branch-widget textarea{font:inherit}
 .pad-branch-widget button{cursor:pointer;-webkit-appearance:none}
 .pad-branch-widget button:disabled{cursor:default;opacity:.45}
-.pad-branch-widget button:focus-visible,.pad-branch-widget textarea:focus-visible{outline:3px solid #867120;outline-offset:3px}
-.pad-branch-launcher{position:fixed;right:24px;bottom:24px;display:flex;align-items:center;gap:9px;height:52px;min-width:116px;padding:0 18px;border:1px solid #e6b800;border-radius:28px;background:#ffcc00;color:#26282c;font-size:14px;font-weight:700;box-shadow:0 6px 18px #47390024;transition:transform .16s,box-shadow .16s}
-.pad-branch-launcher:hover{transform:translateY(-2px);box-shadow:0 9px 23px #47390032}
-.pad-branch-launcher.is-open{background:#282a2e;border-color:#282a2e;color:#fff}
+.pad-branch-widget .floating_chat:focus-visible,.pad-branch-widget button:focus-visible,.pad-branch-widget textarea:focus-visible{outline:3px solid #867120;outline-offset:3px}
+.pad-branch-launcher-fallback{cursor:pointer;position:fixed;right:24px;bottom:24px;display:flex;align-items:center;gap:9px;height:52px;min-width:116px;padding:0 18px;border:1px solid #e6b800;border-radius:28px;background:#ffcc00;color:#26282c;font-size:14px;font-weight:700;box-shadow:0 6px 18px #47390024;transition:transform .16s,box-shadow .16s}
+.pad-branch-launcher-fallback:hover{transform:translateY(-2px);box-shadow:0 9px 23px #47390032}
+.pad-branch-launcher-fallback.is-open{background:#282a2e;border-color:#282a2e;color:#fff}
 .pad-branch-window{position:fixed;right:24px;bottom:88px;width:min(380px,calc(100vw - 32px));height:min(640px,calc(100dvh - 118px));height:min(640px,calc(100vh - 118px));display:flex;flex-direction:column;border:1px solid #dedfdc;border-radius:18px;background:#fff;box-shadow:0 18px 60px #20252b26,0 3px 12px #20252b12;overflow:hidden;transform-origin:bottom right;animation:padBranchOpen .18s ease-out}
 .pad-branch-header{height:66px;min-height:66px;display:flex;align-items:center;gap:10px;padding:12px 14px 12px 18px;border-bottom:1px solid #f0f0ed}
 .pad-branch-logo{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:7px;background:#FFCC00;color:#26282C;font-size:11px;font-weight:700;letter-spacing:-.03em;flex:none}
@@ -529,7 +529,7 @@
 @keyframes padBranchOpen{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}
 @keyframes padBranchMessage{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 @keyframes padBranchDot{0%,70%,100%{opacity:.3;transform:translateY(0)}35%{opacity:1;transform:translateY(-3px)}}
-@media(prefers-reduced-motion:reduce){.pad-branch-widget *{animation:none!important;transition:none!important}.pad-branch-launcher:hover{transform:none}}
+@media(prefers-reduced-motion:reduce){.pad-branch-widget *{animation:none!important;transition:none!important}.pad-branch-launcher-fallback:hover{transform:none}}
 .pad-branch-widget{font-family:'KBFG Text','KBText','Pretendard Variable','Malgun Gothic',sans-serif}
 @media(prefers-reduced-motion:reduce){.pad-branch-widget *{animation:none!important;transition:none!important}}
 /* Waiting and completion states. Main-list effects stay inside the business-page root. */
@@ -539,7 +539,7 @@
 .pad-branch-followups{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .pad-branch-followups button{padding:5px 11px;border:1px solid #e3d9ae;border-radius:999px;background:#fffbea;color:#6b5a2c;font-size:11px;line-height:1.5;cursor:pointer}
 .pad-branch-followups button:hover{background:#fff3c2;border-color:#d9c77a}
-.pad-branch-launcher.has-unread::after{content:'';position:absolute;top:-3px;right:-3px;width:12px;height:12px;border-radius:50%;background:#dc2626;border:2px solid #fff}
+.pad-branch-widget .floating_chat.has-unread::after{content:'';position:absolute;top:-3px;right:-3px;width:12px;height:12px;border-radius:50%;background:#dc2626;border:2px solid #fff}
 #pensionAgentDemo .pad-branch-list--busy{cursor:wait}
 #pensionAgentDemo .pad-branch-list--busy .pad-queue-item,#pensionAgentDemo .pad-branch-skeleton-card{position:relative;background:#fff;border-color:#E6EAF0;box-shadow:none;opacity:1!important;animation:none!important;pointer-events:none}
 #pensionAgentDemo .pad-branch-list--busy .pad-queue-item > *{visibility:hidden}

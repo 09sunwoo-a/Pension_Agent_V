@@ -127,8 +127,8 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('nod
     await new Promise(r=>setTimeout(r,200));
     check(document.querySelectorAll('[data-branch-style]').length===1,'Stale CSS fallback injected once');
     check(document.querySelector('.pad-branch-widget').parentElement===document.body,'Widget outside transformed shell');
-    const launcher=document.querySelector('.pad-branch-launcher'),panel=document.querySelector('.pad-branch-window');
-    check(getComputedStyle(launcher).position==='fixed','Fallback fixed positioning');
+    const launcher=document.querySelector('.pad-branch-widget .floating_chat'),panel=document.querySelector('.pad-branch-window');
+    check(getComputedStyle(panel).position==='fixed'&&launcher.classList.contains('pad-branch-launcher-fallback')&&getComputedStyle(launcher).position==='fixed','Fallback fixed positioning');
     const before=launcher.getBoundingClientRect();window.scrollTo(0,0);await new Promise(r=>requestAnimationFrame(r));window.scrollTo(0,300);await new Promise(r=>requestAnimationFrame(r));
     const after=launcher.getBoundingClientRect(),bounds=panel.getBoundingClientRect();
     check(Math.abs(before.top-after.top)<1&&Math.abs(before.right-after.right)<1,'Launcher fixed while shell scrolls');
