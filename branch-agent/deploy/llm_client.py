@@ -54,6 +54,22 @@ def _model():
     return os.getenv("LLM_MODEL", "").strip() or MODEL_ID  # An empty LLM_MODEL= line means the default.
 
 
+def _number(name, default, low, high, cast=float):
+    try:
+        return min(high, max(low, cast(os.getenv(name, "").strip() or default)))
+    except (TypeError, ValueError):
+        return default
+
+
+def _timeout():
+    # Per-call budget. Default 20s; .env LLM_TIMEOUT may raise it, capped below the 85s request budget.
+    return _number("LLM_TIMEOUT", 20, 5, 80)
+
+
+def _retries():
+    return _number("LLM_MAX_RETRIES", 0, 0, 2, int)
+
+
 def readiness():
     """Presence-only view of the LLM settings for /health. Never returns values, and never calls the model."""
     stage = _stage()
@@ -68,7 +84,7 @@ def readiness():
             "deployment_default_used": not os.getenv("LLM_DEPLOYMENT_NAME", "").strip(),
             "api_key_set": bool(os.getenv("LLM_API_KEY_" + stage, "").strip() or os.getenv("LLM_API_KEY", "").strip()),
             "base_url_set": bool(os.getenv("LLM_BASE_URL_" + stage, "").strip() or os.getenv("LLM_BASE_URL", "").strip()),
-            "sdk_importable": sdk}
+            "timeout_s": _timeout(), "max_retries": _retries(), "sdk_importable": sdk}
 
 
 def _fail(code, detail):
@@ -98,15 +114,19 @@ def call(messages: list[dict[str, str]], *, system: str = "", model: str = "",
     llm = AzureChatOpenAI(openai_api_version=os.getenv("LLM_API_VERSION", "").strip() or DEFAULT_API_VERSION,
         deployment_name=deployment, streaming=False, stream_usage=True, default_headers=headers,
         api_key=key, azure_endpoint=endpoint, model_kwargs={"extra_headers": headers},
-        max_tokens=max_tokens, timeout=20, max_retries=0)
+        max_tokens=max_tokens, timeout=_timeout(), max_retries=_retries())
     translated = [SystemMessage(content=system)] if system else []
     types = {"system": SystemMessage, "assistant": AIMessage, "user": HumanMessage}
     translated.extend(types.get(m.get("role"), HumanMessage)(content=m.get("content", "")) for m in messages)
+    import time
+    started = time.monotonic()
     try:
         response = llm.invoke(translated)
     except Exception as error:
         if "timeout" in type(error).__name__.lower():
-            raise TimeoutError("LLM_TIMEOUT") from None
+            timeout = TimeoutError("LLM_TIMEOUT")
+            timeout.detail = "stage=%s timeout=%gs elapsed=%.1fs retries=%d" % (stage, _timeout(), time.monotonic() - started, _retries())
+            raise timeout from None
         status = getattr(error, "status_code", None) or getattr(getattr(error, "response", None), "status_code", None)
         raise _fail("LLM_PROVIDER", "stage=" + stage + " " + type(error).__name__ + (" status=" + str(status) if status else "")) from None
     if not isinstance(response.content, str):
@@ -122,8 +142,11 @@ if __name__ == "__main__":
     print("=" * 60)
     print(json.dumps(readiness(), ensure_ascii=False))
     print("DEPLOYMENT:", os.getenv("LLM_DEPLOYMENT_NAME", "").strip() or DEFAULT_DEPLOYMENT_NAME + " (default)")
+    import time
+    started = time.monotonic()
     try:
-        print("[SUCCESS]", call([{"role": "user", "content": "안녕. 한 문장으로 인사해줘."}], x_client_user="llm-client-test", max_tokens=100))
+        answer = call([{"role": "user", "content": "안녕. 한 문장으로 인사해줘."}], x_client_user="llm-client-test", max_tokens=100)
+        print("[SUCCESS] %.1fs" % (time.monotonic() - started), answer)
     except Exception as error:
-        print("[FAIL]", error, "|", getattr(error, "detail", type(error).__name__))
+        print("[FAIL] %.1fs" % (time.monotonic() - started), error, "|", getattr(error, "detail", type(error).__name__))
         raise SystemExit(1)

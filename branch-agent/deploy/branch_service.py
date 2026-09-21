@@ -118,8 +118,8 @@ class Service:
             return validate_event(event, req, self.data.manifest, self.data.by_id)
         except (ContractError, LanguageError) as error:
             return fault_event(outer, error.code)
-        except TimeoutError:
-            return fault_event(outer, "LLM_TIMEOUT")
+        except TimeoutError as error:
+            return fault_event(outer, "LLM_TIMEOUT", getattr(error, "detail", None))
         except Exception as error:
             # The exception text itself is never forwarded; only the masked detail set by llm_client.
             return fault_event(outer, "INTERNAL", getattr(error, "detail", None) or type(error).__name__)
