@@ -5,7 +5,7 @@
 (function (window) {
   'use strict';
   if (window.PensionChat && window.PensionChat.destroy) window.PensionChat.destroy();
-  var transport = window.PensionChatTransport, bridge = window.PensionBriefingAdapter;
+  var transport = window.PensionChatTransport, bridge = window.PensionBriefingAdapter, customerView = window.PensionCustomerView;
   var cfg = null, configCode = 'NOCONFIG', active = null, serial = 0, sessions = new Map();
   var ID_PATTERN = /^[A-Za-z0-9._-]{3,40}$/;
   var ASK_ID = '고객 식별자를 입력해 주세요.';
@@ -323,7 +323,8 @@
     var customerId = s.customerId;
     items.forEach(function (m, i) { if (m.k === 'ans') lastAnswer = i; });
     base.agentOn = true; base.agentOff = false;
-    base.agName = customerId ? customer.customer.name + ' · ' + customerId : customer.customer.name;
+    // Header shows the 5자리-5자리 screen form; customer_id in the request stays the original value.
+    base.agName = customerId ? customer.customer.name + ' · ' + customerView.displayId(customerId) : customer.customer.name;
     base.agResetOn = !!customerId && !busy; base.agReset = function () { resetCustomer(id); };
     base.panelOpen = !!S.panelOpen; base.panelClosed = !S.panelOpen;
     base.agMsgs = items.map(function (m, i) { return message(component, id, m, i, i === lastAnswer && lastAnswer === items.length - 1, busy); });

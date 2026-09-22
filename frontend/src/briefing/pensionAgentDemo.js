@@ -1600,12 +1600,13 @@ class Component {
         if (!S.searched) return [];
         const q = S.searchQ.trim().toLowerCase(), qd = q.replace(/\D/g, '');
         const inQ = x => DATA.indexOf(x) >= 0;
-        return this.DIR.filter(x => x.name.toLowerCase().includes(q) || (qd && (x.cno.replace(/\D/g, '').includes(qd) || x.phone.replace(/\D/g, '').includes(qd)))).slice(0, 6)
-          .map(x => ({ name: x.name, product: x.product, cno: x.cno, phone: x.phone,
+        const nos = x => [x.cno, x.cnoLabel || '', x.phone].map(v => String(v).replace(/\D/g, ''));
+        return this.DIR.filter(x => x.name.toLowerCase().includes(q) || (qd && nos(x).some(n => n.includes(qd)))).slice(0, 6)
+          .map(x => ({ name: x.name, product: x.product, cno: x.cnoLabel || x.cno, phone: x.phone,
             tag: inQ(x) ? '오늘 타겟' : '타겟 외', tagBg: inQ(x) ? '#FFF3C2' : '#F2F3F5', tagFg: inQ(x) ? '#7A6108' : '#9298A2',
             onTap: () => this.select(x.id) }));
       })(),
-      searchEmpty: !!S.searched && !this.DIR.some(x => { const q = S.searchQ.trim().toLowerCase(), qd = q.replace(/\D/g, ''); return x.name.toLowerCase().includes(q) || (qd && (x.cno.replace(/\D/g, '').includes(qd) || x.phone.replace(/\D/g, '').includes(qd))); }),
+      searchEmpty: !!S.searched && !this.DIR.some(x => { const q = S.searchQ.trim().toLowerCase(), qd = q.replace(/\D/g, ''); return x.name.toLowerCase().includes(q) || (qd && [x.cno, x.cnoLabel || '', x.phone].some(v => String(v).replace(/\D/g, '').includes(qd))); }),
       queue,
       selName: c ? c.name : '', selMeta: c ? c.product + ' · 적립금 ' + c.deposit + ' · ' + c.profile : '', selPa: c ? (c.pa || '26.4') : '', selPaColor: c && c.stale ? '#D99000' : '#696E76',
       pfPin: pf.pin, pfRows: [{ l: '나이 · 성별', v: pf.age + '세 · ' + pf.sex }, { l: '스타클럽 등급', v: pf.club }, { l: '투자성향', v: c ? c.profile : '' }],

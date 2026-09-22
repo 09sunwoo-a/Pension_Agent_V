@@ -43,10 +43,16 @@
     return list.length ? 3000 : 4000;
   }
   var TAX_LIMIT_KRW = 9000000;
+  // Screen-only identifier: every customer number shows as 5자리-5자리. Longer parts (C01 6-7자리)
+  // are cut to their first five digits. Requests keep the original customerId untouched.
+  function displayId(value) {
+    var m = /^(\d+)-(\d+)$/.exec(String(value == null ? '' : value));
+    return m ? m[1].slice(0, 5) + '-' + m[2].slice(0, 5) : String(value == null ? '' : value);
+  }
 
   function stub(record) {
     var c = record.customer;
-    return { id: record.briefingMeta.caseId, name: c.name, cno: c.customerId, phone: '', product: 'IRP', profile: c.investmentProfile || '확인 필요', deposit: contract.money(record.irpAccount.valuationAmountKrw).replace(/원$/, ''), depositEok: record.irpAccount.valuationAmountKrw / 100000000, bar: '#FFCC00', hold: [], tags: [], chips: [] };
+    return { id: record.briefingMeta.caseId, name: c.name, cno: c.customerId, cnoLabel: displayId(c.customerId), phone: '', product: 'IRP', profile: c.investmentProfile || '확인 필요', deposit: contract.money(record.irpAccount.valuationAmountKrw).replace(/원$/, ''), depositEok: record.irpAccount.valuationAmountKrw / 100000000, bar: '#FFCC00', hold: [], tags: [], chips: [] };
   }
   // Main-list row for a structured customer, in the shape the legacy queue renderer reads.
   // Badges are the customer's Dynamic Segments (signals); 신규 선정 = an imminent event
@@ -75,6 +81,7 @@
   function build(record) {
     var base = {}, customer = record.customer, account = record.irpAccount, d = customer.defaultOption;
     base.selName = customer.name;
+    base.pfPin = displayId(customer.customerId);
     base.pfRows = [{ l: '나이 · 성별', v: (customer.age == null ? '확인 필요' : customer.age + '세') + ' · ' + (customer.gender || '확인 필요') }, { l: '스타클럽 등급', v: customer.starClubGrade || '확인 필요' }, { l: '투자성향', v: customer.investmentProfile || '확인 필요' }];
     base.pfAmt = contract.money(account.valuationAmountKrw);
     base.pfRet = contract.percent(account.oneYearReturnPct);
@@ -100,5 +107,5 @@
 
     return base;
   }
-  return { stub: stub, row: row, profile: profile, build: build, badge: badge, keyOf: keyOf, priority: priority, labels: labels };
+  return { stub: stub, row: row, profile: profile, build: build, badge: badge, keyOf: keyOf, priority: priority, labels: labels, displayId: displayId };
 });
