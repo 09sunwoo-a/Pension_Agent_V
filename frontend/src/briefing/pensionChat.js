@@ -17,6 +17,11 @@
   var FENCE = /```[\s\S]*?```\n*/;
   // Terminal deep links the agent computes (effects/screens.py); the page never assembles one itself.
   var SCREEN_LINK = /^mystar-link:\/\//i;
+  // Older agent builds put the deep link URL in the answer text instead of (or as well as) answer.links.
+  var URL_IN_TEXT = /mystar-link:\/\/[^\s"'<>)\]]+/gi;
+  var SCREEN_NO = /\d{2}-\d{2}-\d{3}/g;
+  // Replies the agent itself reads as consent (nodes/act.py _YES); an answer with a link after one of these is an accepted proposal.
+  var YES_WORDS = ['네', '예', '웅', '응', '그래', '좋아', '열어', '연계', '해줘', '해주세요', '부탁', '보내', 'ok', 'yes'];
   var SOURCE_COLORS = { '본부 공식 자료': ['#FFF3C2', '#7A6108'], '직원 교육자료': ['#E8ECF3', '#3D4A5C'], '영업점 현장 노하우': ['#F9EFD8', '#A96A00'],
     '상담 이력': ['#F2F3F5', '#696E76'], '이번 상담 기록': ['#F2F3F5', '#696E76'], '안내 콘텐츠': ['#E6F6EF', '#047857'] };
   var messages = {
@@ -133,7 +138,8 @@
     if (answer) {
       s.items.push({ k: 'ans', answer: answer });
       // "네" to a screen proposal: the agent answers with the proposal label and the deep link; open it right away.
-      if (answer.intent === 'confirm_action' && answer.links.length) {
+      var lastUser = s.items.filter(function (it) { return it.k === 'user'; }).pop();
+      if (answer.links.length && (answer.intent === 'confirm_action' || saidYes(lastUser && lastUser.text))) {
         var first = answer.links[0], auto = openScreen(first.url);
         // Browsers may refuse a script-started custom-scheme navigation once the click's user activation has
         // expired (the agent takes seconds to answer), so the transcript always keeps a button the employee can press.
@@ -195,6 +201,14 @@
     var links = (Array.isArray(answer.links) ? answer.links : []).filter(function (l) {
       return l && typeof l.screen === 'string' && l.screen && typeof l.url === 'string' && l.url;
     }).map(function (l) { return { screen: l.screen, url: l.url, label: String(l.label || l.screen) }; });
+    String(answer.text == null ? '' : answer.text).split(/\n/).forEach(function (line) {
+      (line.match(URL_IN_TEXT) || []).forEach(function (url) {
+        if (links.some(function (l) { return l.url === url; })) return;
+        var before = line.slice(0, line.indexOf(url)), nos = before.match(SCREEN_NO), digits = (/scnNo=(\d{7})/.exec(url) || [])[1];
+        var screen = nos ? nos[nos.length - 1] : digits ? digits.slice(0, 2) + '-' + digits.slice(2, 4) + '-' + digits.slice(4) : '';
+        links.push({ screen: screen, url: url, label: screen ? screen + ' 화면' : '단말 화면' });
+      });
+    });
     var listOf = function (type) {
       return events.filter(function (e) { return e.type === type; }).reduce(function (all, e) { return all.concat(Array.isArray(e.items) ? e.items : []); }, []);
     };
@@ -230,25 +244,38 @@
     var s = String(text == null ? '' : text), out = [], pos = 0;
     if (!links || !links.length) return [{ t: s, isText: true, isLink: false, url: '', label: '' }];
     var hits = [];
-    links.forEach(function (l) { var at = s.indexOf(l.screen); while (at >= 0) { hits.push({ at: at, link: l }); at = s.indexOf(l.screen, at + l.screen.length); } });
+    links.forEach(function (l) {
+      [l.url, l.screen].forEach(function (needle) {
+        if (!needle) return;
+        var at = s.indexOf(needle);
+        while (at >= 0) { hits.push({ at: at, len: needle.length, link: l }); at = s.indexOf(needle, at + needle.length); }
+      });
+    });
     hits.sort(function (a, b) { return a.at - b.at; });
     hits.forEach(function (h) {
       if (h.at < pos) return;
       if (h.at > pos) out.push({ t: s.slice(pos, h.at), isText: true, isLink: false, url: '', label: '' });
-      out.push({ t: h.link.screen, isText: false, isLink: true, url: h.link.url, label: h.link.label });
-      pos = h.at + h.link.screen.length;
+      out.push({ t: s.slice(h.at, h.at + h.len), isText: false, isLink: true, url: h.link.url, label: h.link.label });
+      pos = h.at + h.len;
     });
     if (pos < s.length || !out.length) out.push({ t: s.slice(pos), isText: true, isLink: false, url: '', label: '' });
     return out;
   }
-  function openScreen(url) {
+  function openScreen(url, viaNewWindow) {
     if (!SCREEN_LINK.test(String(url || ''))) return false;
-    try { window.location.href = url; return true; } catch (_) { return false; }
+    try {
+      if (viaNewWindow && typeof window.open === 'function' && window.open(url, '_blank')) return true;
+      window.location.href = url; return true;
+    } catch (_) { return false; }
+  }
+  function saidYes(text) {
+    var t = String(text == null ? '' : text).trim().toLowerCase();
+    return YES_WORDS.some(function (w) { return t.indexOf(w) >= 0; });
   }
   function message(component, id, m, i, offers, busy) {
     var out = Object.assign({ isSys: m.k === 'sys', isUser: m.k === 'user', isStatus: m.k === 'status', isAns: m.k === 'ans', isOpen: m.k === 'open',
       openText: m.k === 'open' ? (m.auto ? '단말 화면 열기를 요청했어요. 열리지 않으면 아래 버튼을 눌러 주세요.' : '단말 화면을 열 수 있어요.') : '',
-      openLabel: m.k === 'open' ? m.label + ' (' + m.screen + ')' : '', openUrl: m.k === 'open' ? m.url : '', onOpen: m.k === 'open' ? function () { openScreen(m.url); } : noop,
+      openLabel: m.k === 'open' ? m.label + ' (' + m.screen + ')' : '', openUrl: m.k === 'open' ? m.url : '', onOpen: m.k === 'open' ? function (e) { if (e && e.preventDefault) e.preventDefault(); openScreen(m.url, true); } : noop,
       text: m.text || '', statusLabel: m.k === 'status' ? m.text : '', onEvid: noop, onGuard: noop, onCtaYes: noop, onCtaNo: noop,
       leadSegs: [{ t: m.text || '', isText: true, isLink: false, url: '', label: '' }], hasLinkRows: false, linkRows: [] }, EMPTY);
     if (m.k !== 'ans') return out;

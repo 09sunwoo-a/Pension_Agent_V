@@ -228,6 +228,7 @@ async function chatPanelCheck() {
     const turn = chatSample.turns.find(t => t.message === inner.message);
     const scripted = {
       'IRP 계좌 해지는 몇 번 화면에서 하지?': [{ type: 'answer', text: '04-12-646 지급/해지조회 화면에서 처리해요.\n\n— «금리 변화기» 안내 문구로 75-08-110 발송 화면 열기, 연계해드릴까요? (네 / 아니오)', intent: 'guide', links: [{ screen: '04-12-646', url: 'mystar-link://scnNo=0412646&mode=D', label: '지급/해지조회' }] }, { type: 'action', kind: 'lms', label: '«금리 변화기» 안내 문구로 75-08-110 발송 화면 열기', prompt: '«금리 변화기» 안내 문구로 75-08-110 발송 화면 열기, 연계해드릴까요? (네 / 아니오)' }, { type: 'sources', items: [] }, { type: 'followups', items: [] }, { type: 'done' }],
+      '01-12-213 화면 열어줘': [{ type: 'answer', text: '01-12-213 화면열기 - mystar-link://scnNo=0112213&mode=D', intent: 'situation' }, { type: 'sources', items: [] }, { type: 'followups', items: [] }, { type: 'done' }],
       '네': [{ type: 'answer', text: '«금리 변화기» 안내 문구로 75-08-110 발송 화면 열기\n화면이 열리면 이 문구를 넣어 주세요 — "고객님, 안내드립니다."', intent: 'confirm_action', links: [{ screen: '75-08-110', url: 'mystar-link://scnNo=7508110&mode=D', label: '개인고객용메시지발송(등록)' }] }, { type: 'sources', items: [] }, { type: 'followups', items: [] }, { type: 'done' }]
     };
     const events = turn ? turn.events : scripted[inner.message] || [{ type: 'error', text: '알 수 없는 질문' }, { type: 'done' }];
@@ -308,12 +309,20 @@ async function chatPanelCheck() {
   assert.deepEqual([calls[calls.length - 1].inner.message, ans.isAns, plain(ans.leadSegs).map(x => x.isLink), ctx.window.location.href, opened.isOpen, opened.openLabel, opened.openUrl],
     ['네', true, [false, true, false], 'mystar-link://scnNo=7508110&mode=D', true, '개인고객용메시지발송(등록) (75-08-110)', 'mystar-link://scnNo=7508110&mode=D'], '네 on a screen proposal opens the agent deep link and leaves a button');
   ctx.window.location.href = ''; opened.onOpen(); assert.equal(ctx.window.location.href, 'mystar-link://scnNo=7508110&mode=D', 'Button re-opens the same link on a user click');
+  ctx.window.location.href = ''; ctx.window.open = (url) => { ctx.window.opened = url; return {}; };
+  opened.onOpen({ preventDefault() {} }); assert.deepEqual([ctx.window.opened, ctx.window.location.href], ['mystar-link://scnNo=7508110&mode=D', ''], 'Button click opens in a new window when available');
+  // Older agent build: URL inside the answer text, no links, no intent — still recognised after a 네.
+  type(live, '01-12-213 화면 열어줘'); await settle();
+  v = live.renderVals(); const legacyOpen = v.agMsgs[v.agMsgs.length - 1], legacyAns = v.agMsgs[v.agMsgs.length - 2];
+  assert.deepEqual([legacyAns.isAns, plain(legacyAns.leadSegs).map(x => [x.t, x.isLink]), plain(legacyAns.linkRows), legacyOpen.isOpen, ctx.window.location.href],
+    [true, [['01-12-213', true], [' 화면열기 - ', false], ['mystar-link://scnNo=0112213&mode=D', true]], [{ screen: '01-12-213', url: 'mystar-link://scnNo=0112213&mode=D', label: '01-12-213 화면' }], true, 'mystar-link://scnNo=0112213&mode=D'], 'URL written in the answer text is parsed into a link and opened after a consent word');
+  delete ctx.window.open; delete ctx.window.opened;
   delete ctx.window.location;
   live.componentWillUnmount();
   const bare = mount({ starrootParams: { fabrix: { ...briefingCfg, chat: { endpointUrl: '', agentId: '', openapiToken: '', generativeAiClient: '' } } } });
   bare.state.sel = FIRST; type(bare, '질문');
   const note = bare.renderVals().agMsgs.pop();
-  assert.ok(note.isSys && /주입되지 않아/.test(note.text) && calls.length === 7, 'Empty chat block: question kept, no call, NOCONFIG note');
+  assert.ok(note.isSys && /주입되지 않아/.test(note.text) && calls.length === 8, 'Empty chat block: question kept, no call, NOCONFIG note');
   bare.componentWillUnmount(); delete ctx.window.__PENSION_FABRIX_CONFIG; delete ctx.fetch;
 }
 // 부점 AI (current main-list search): golden regression of the deterministic evaluator and session on the
