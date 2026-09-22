@@ -473,7 +473,7 @@ print(json.dumps({'events': events, 'http_checked': http_checked}, ensure_ascii=
     assert.deepEqual(event.data.briefing, contract.contentOf(servedBriefings[i]));
   });
   console.log('PASS: Python fixed lookup + SSE for 42 cases validated by frontend contract; invalid input/snapshot rejection; no LLM import; Python 3.10 syntax.');
-  console.log(checked.http_checked ? 'PASS: FastAPI ASGI /health, 30 /chat responses and error handling.' : 'SKIP: FastAPI/Pydantic not installed in local Python. HTTP application startup must be checked in the internal environment.');
+  console.log(checked.http_checked ? 'PASS: FastAPI ASGI /health, ' + requests.length + ' /chat responses and error handling.' : 'SKIP: FastAPI/Pydantic not installed in local Python. HTTP application startup must be checked in the internal environment.');
 }
 
 // Optional real-response check. Inputs must be sanitized logical JSON objects,
