@@ -18,7 +18,7 @@
 |---|---|
 | `main.py` | FastAPI 요청, Pydantic 고정 envelope, 오류 처리, SSE |
 | `briefing.py` | 엄격한 입력 파싱, case_id 조회, 고객 스냅샷 일치 검사, 공유 스키마 검사 |
-| `briefing_data.json` | 31건 고객/브리핑 및 공유 스키마를 포함하는 배포 생성물. 직접 수정 금지 |
+| `briefing_data.json` | 브리핑이 있는 30건 고객/브리핑(기준일 2026-09-29) 및 공유 스키마를 포함하는 배포 생성물. 브리핑 없는 C01 12명은 포함하지 않는다. 직접 수정 금지 |
 | `llm_client.py` | Gemma4 transport (`AzureChatOpenAI` + `kb-key` 헤더). `call()` 인터페이스 유지 |
 | `Dockerfile` | Python 3.10 / 사내 Nexus / `WORKDIR /custom` / `uvicorn main:app` |
 | `requirements.txt` | 최소 의존성 |
@@ -63,7 +63,7 @@ uvicorn main:app --host 0.0.0.0 --port 8000
 curl localhost:8000/health
 ```
 
-`/health` 기대값은 `mode: fixed_briefing`, `llm_enabled: false`, `case_count: 31`이다. `.env`는 현재 기동·Docker build에 필요하지 않다. LLM 호출 단독 테스트도 이 단계에서는 실행하지 않는다.
+`/health` 기대값은 `mode: fixed_briefing`, `llm_enabled: false`, `case_count: 30`이다. `.env`는 현재 기동·Docker build에 필요하지 않다. LLM 호출 단독 테스트도 이 단계에서는 실행하지 않는다.
 
 `/chat`은 기존 FabriX outer body `{input_value: JSON문자열, message_hists?: ...}`를 받는다. 내부 JSON은 프론트가 만드는 `customer-briefing-api.v1` 요청 그대로 사용한다. case_id만 받는 별도 간이 규격은 추가하지 않는다. `case_id/customer_id/as_of_date/customer_data`가 배포 묶음과 일치할 때 저장된 S1–S5를 반환하고 `request_id`는 요청마다 그대로 돌려준다.
 
