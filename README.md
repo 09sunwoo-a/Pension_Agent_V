@@ -8,7 +8,7 @@
 |---|---|
 | Agent 내부 구현 | [agent/](agent/), [입출력 명세](integration/contracts/AGENT_FRONTEND_CONTRACT.md) |
 | 부점 AI 실제 Agent 신규 구현 | [세션별 작업 안내](docs/handover/branch-agent/README.md)부터. 사내 배포용 `branch-agent/deploy/`, 구현 검증용 `branch-agent/validation/`. 기존 `agent/`는 참고용 |
-| 고객 데이터·브리핑 개선 | [30건 색인](agent-workbench/case-design/review/CASE_INDEX.md)의 해당 고객 JSON과 S1–S5 JSON. C01 고객은 고객 JSON만 |
+| 고객 데이터·브리핑 개선 | [30건 색인](agent-workbench/case-design/review/CASE_INDEX.md)의 해당 고객 JSON과 S1–S5 JSON. C01 고객은 [C01 초안·기반지식](agent-workbench/case-design/review/C01-knowledge/README.md)과 S1–S5 JSON |
 | 화면 레이아웃 | `frontend/src/briefing/mnPensionAgentDemo.html`, `pensionAgentDemo.css` |
 | S1–S5·추천상품 렌더링 | `frontend/src/briefing/pensionBriefingView.js` |
 | 상단 고객·계좌 렌더링 | `frontend/src/briefing/pensionCustomerView.js` |
@@ -53,7 +53,7 @@ node tools/briefing/build.js --preview
 
 ## 현재 단계
 
-- 프론트·브리핑 규격·30건 브리핑 + 12건 고객 스냅샷 구조 연결: 로컬 검증.
+- 프론트·브리핑 규격·42건 브리핑(B 30건 + C01 12건) 구조 연결: 로컬 검증.
 - 브리핑 화면은 고객 선택 시 FabriX를 자동 호출하고 API 응답만 표시합니다. 반입 JS에 더미 브리핑 문장은 없습니다(고객 스냅샷만 포함). 자동 호출 경로는 `check.js`와 로컬 브라우저·가짜 SSE 서버로 확인했고, 사내 WAS의 설정 주입과 실제 Origin 호출은 미검증입니다.
 - 브리핑 내용: 모두 draft, 대표 3건만 1차 개선. 검토 이슈는 각 JSON의 `reviewNotes`와 사례 색인.
 - **LLM 없는 고정 Agent 구현 완료**: 선택한 사례의 저장된 S1–S5를 반환하며 요청 식별값/고객 스냅샷이 다르면 오류. Python 응답은 프론트 계약으로 검증했습니다.

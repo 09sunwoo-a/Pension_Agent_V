@@ -1,0 +1,231 @@
+{
+  "s1": {
+    "items": [
+      {
+        "text": "IRP **800만원 중 600만원(75%)이 현금성자산으로 697일째 대기 중**입니다.",
+        "dataRefs": [
+          "/irpAccount",
+          "/holdings/0",
+          "/에이전트맥락데이터/계산지표"
+        ],
+        "sourceIds": [
+          "refined"
+        ]
+      },
+      {
+        "text": "나머지 200만원은 정기예금과 단기채 펀드로 운용 중입니다.",
+        "dataRefs": [
+          "/holdings"
+        ],
+        "sourceIds": [
+          "refined"
+        ]
+      },
+      {
+        "text": "현재 **디폴트옵션과 입금 시 매수상품이 모두 미설정** 상태입니다.",
+        "dataRefs": [
+          "/customer/defaultOption",
+          "/에이전트맥락데이터/계좌운영"
+        ],
+        "sourceIds": [
+          "refined"
+        ]
+      }
+    ]
+  },
+  "s2": {
+    "lead": "장기간 대기 중인 현금의 이유를 확인하고, **실제로 운용할 자금의 첫 운용방향과 향후 설정을 함께 정합니다.**",
+    "why": "계좌의 대부분이 장기간 현금으로 남아 있습니다. 사용계획이 없는 노후자금이라면 고객의 투자기간과 손실감내 수준에 맞는 운용방법을 검토할 시점입니다.",
+    "checks": [
+      "현금 600만원을 **남겨둔 이유와 사용할 계획이 있는지**",
+      "장기간 운용할 금액은 **원금보장 중심으로 둘지, 일부 투자상품도 검토할지**",
+      "앞으로 들어오는 자금도 **자동으로 운용되도록 설정할 의향이 있는지**"
+    ],
+    "sourceIds": [
+      "refined"
+    ]
+  },
+  "s3": {
+    "lead": "현재 현금의 운용방향을 정하고, 이후 반복되는 운용공백까지 함께 줄입니다.",
+    "options": [
+      {
+        "id": "option-1",
+        "title": "장기 운용하며 변동성을 수용할 자금 — 분산운용",
+        "summary": "일부 자금은 TDF 등 **주식·채권에 나누어 운용하는 방식**을 비교합니다.",
+        "sourceIds": [
+          "refined",
+          "draft"
+        ],
+        "products": [
+          {
+            "productId": "MF-001",
+            "name": "KB 온국민 TDF 시리즈",
+            "reason": "장기 보유와 변동성 수용이 확인된 부분에만 TDF 방식 비교.",
+            "notes": [
+              "KB 온국민 TDF 시리즈 자료. 은퇴/사용 목표시점에 맞는 빈티지·클래스를 고른 뒤 그 상품의 위험등급·비용·적격 여부를 확인한다. 시리즈 전체에 한 빈티지 성과를 적용하지 않는다.",
+              "선택 전 확인: 시리즈 자료이므로 정확한 빈티지·클래스와 위험등급을 별도 선택. 2030 성과를 다른 빈티지에 전용하지 않음."
+            ],
+            "sourceIds": [
+              "product-MF-001",
+              "draft"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "option-2",
+        "title": "안정적으로 운용할 자금 — 원리금보장형",
+        "summary": "원금손실을 원하지 않는 금액은 **유지기간에 맞는 정기예금 등**을 비교합니다.",
+        "sourceIds": [
+          "refined",
+          "draft"
+        ],
+        "products": [
+          {
+            "productId": "DEP-002",
+            "name": "농협은행 퇴직연금 정기예금",
+            "reason": "원금손실을 원하지 않는 부분의 예금 조건 비교.",
+            "notes": [
+              "자료상 원리금보장 정기예금. 2026년 9월 기간별 금리 자료이며 거래월의 금리·제공한도를 다시 확인한다.",
+              "선택 전 확인: 사용시점에 맞는 만기·거래일 금리·제공한도 확인."
+            ],
+            "sourceIds": [
+              "product-DEP-002",
+              "draft"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "option-3",
+        "title": "향후 운용공백 방지 — 기본 설정",
+        "summary": "입금 시 매수상품과 디폴트옵션의 역할을 설명하고, 원하는 경우 **향후 미운용자금이 반복되지 않도록 설정**합니다.",
+        "sourceIds": [
+          "refined",
+          "draft"
+        ],
+        "products": [
+          {
+            "productId": "DO-002",
+            "name": "알파드림",
+            "reason": "미등록 상태에서 저위험 분산형 지정의 비교 후보.",
+            "notes": [
+              "저위험 알파드림의 지정 비교 자료. 예금과 TDF를 포함하는 구성으로 원금손실 가능성이 있다. 지정만으로 현재 현금이 즉시 매수되지 않는다.",
+              "선택 전 확인: 예금과 TDF 혼합이며 원금보장 아님. 지정만으로 현금 600만원이 즉시 이동하지 않음."
+            ],
+            "sourceIds": [
+              "product-DO-002",
+              "draft"
+            ]
+          }
+        ]
+      }
+    ],
+    "notes": []
+  },
+  "s4": {
+    "opening": "김현수 고객님, IRP에 상품을 선택하지 않은 현금성자산 600만원이 남아 있어 연락드렸어요. 이 금액은 따로 사용하실 계획이 있으신가요?",
+    "reactions": [
+      {
+        "label": "아, 있는 줄 잘 몰랐어요.",
+        "paragraphs": [
+          "IRP는 예금이나 펀드 같은 상품을 선택해서 운용하실 수 있습니다. 우선 언제까지 둘 수 있는 자금인지 확인하고 그 기간에 맞는 방법을 같이 살펴보겠습니다."
+        ]
+      },
+      {
+        "label": "어떻게 하면 되나요?",
+        "paragraphs": [
+          "원금손실을 원하지 않는 금액과 장기간 투자해볼 금액을 나눠보시면 됩니다. 방향을 정하시면 스타뱅킹에서 변경하실 수 있는 방법도 안내드릴게요."
+        ]
+      },
+      {
+        "label": "디폴트옵션은 잘 모르겠어요.",
+        "paragraphs": [
+          "운용지시를 놓쳤을 때 사용할 방법을 고객님이 미리 정해두는 제도입니다. 원리금보장형부터 투자상품이 포함된 구성까지 비교한 뒤 직접 선택하실 수 있습니다."
+        ]
+      }
+    ],
+    "notices": [
+      "펀드나 투자상품이 포함된 디폴트옵션은 원금손실 가능성이 있습니다. 현재 600만원의 운용과 향후 기본 설정은 구분해서 결정하겠습니다."
+    ],
+    "sourceIds": [
+      "refined"
+    ]
+  },
+  "s5": {
+    "tips": [],
+    "actions": [
+      {
+        "screenCode": "04-12-644",
+        "title": "거래내역 조회",
+        "description": "현금 발생·장기대기 원인 확인"
+      },
+      {
+        "screenCode": "06-12-611",
+        "title": "보유상품변경",
+        "description": "고객이 선택한 현재 현금 운용"
+      },
+      {
+        "screenCode": "06-12-610",
+        "title": "입금예정상품 등록/변경",
+        "description": "향후 기본 설정"
+      },
+      {
+        "screenCode": "04-12-640",
+        "title": "상품운용내역조회",
+        "description": "실제 매수·설정 적용 여부 확인"
+      },
+      {
+        "screenCode": null,
+        "title": "상담 후 확인",
+        "description": "현금의 사용목적과 운용방향을 기록하고, 실제 상품매수와 향후 설정이 반영됐는지 확인합니다."
+      }
+    ],
+    "sourceIds": [
+      "refined",
+      "workflow"
+    ]
+  },
+  "sources": [
+    {
+      "id": "refined",
+      "title": "C01 고객별 S1~S5 브리핑 정제본 · 2026-09-22",
+      "description": "S1 핵심 Fact 3개 · S2 상담 목적/왜 지금/고객과 확인 · S3 관리 방향 · S4 knowledge_pack 근거 화법 · S5 실제 업무 흐름. 화면용 문장은 정제본 문장을 변형 없이 옮겼다.",
+      "url": null
+    },
+    {
+      "id": "draft",
+      "title": "C01-01 김현수 · S1~S5 브리핑 초안 v0.1 · 2026-09-21",
+      "description": "S3 상품 후보와 상품별 연결 이유·자료상 성격·선택 전 확인은 초안 「2. 상품 펼쳐보기」에서 옮겼다. 자료 기준의 상담용 비교 후보이며 금액·배분과 실제 매수가능 여부는 고객 의사 및 거래시점 확인 후 정한다.",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/agent-workbench/case-design/review/C01-knowledge/C01-01/briefing_draft.md"
+    },
+    {
+      "id": "product-MF-001",
+      "title": "MF-001 · KB 온국민 TDF 시리즈 · PRODUCT_MASTER v1.0 L3858–3923",
+      "description": "[자료상 성격] KB 온국민 TDF 시리즈 자료. 은퇴/사용 목표시점에 맞는 빈티지·클래스를 고른 뒤 그 상품의 위험등급·비용·적격 여부를 확인한다. 시리즈 전체에 한 빈티지 성과를 적용하지 않는다. runtime_verified: false 상태를 유지하며, 9월 금리를 10월 이후 거래에 약속하지 않는다.",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/41ae9a44357ccabde98dec76d99965e6b038b2a6/knowledge/corpus/05_%EC%83%81%ED%92%88_%EA%B8%B0%EB%B0%98%EC%A7%80%EC%8B%9D/PRODUCT_MASTER.md#L3858-L3923"
+    },
+    {
+      "id": "product-DEP-002",
+      "title": "DEP-002 · 농협은행 퇴직연금 정기예금 · PRODUCT_MASTER v1.0 L227–288",
+      "description": "[자료상 성격] 자료상 원리금보장 정기예금. 2026년 9월 기간별 금리 자료이며 거래월의 금리·제공한도를 다시 확인한다. runtime_verified: false 상태를 유지하며, 9월 금리를 10월 이후 거래에 약속하지 않는다.",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/41ae9a44357ccabde98dec76d99965e6b038b2a6/knowledge/corpus/05_%EC%83%81%ED%92%88_%EA%B8%B0%EB%B0%98%EC%A7%80%EC%8B%9D/PRODUCT_MASTER.md#L227-L288"
+    },
+    {
+      "id": "product-DO-002",
+      "title": "DO-002 · 알파드림 · PRODUCT_MASTER v1.0 L7456–7555",
+      "description": "[자료상 성격] 저위험 알파드림의 지정 비교 자료. 예금과 TDF를 포함하는 구성으로 원금손실 가능성이 있다. 지정만으로 현재 현금이 즉시 매수되지 않는다. runtime_verified: false 상태를 유지하며, 9월 금리를 10월 이후 거래에 약속하지 않는다.",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/41ae9a44357ccabde98dec76d99965e6b038b2a6/knowledge/corpus/05_%EC%83%81%ED%92%88_%EA%B8%B0%EB%B0%98%EC%A7%80%EC%8B%9D/PRODUCT_MASTER.md#L7456-L7555"
+    },
+    {
+      "id": "workflow",
+      "title": "퇴직연금 주요거래 화면번호 안내 · 업무 참조자료 · 기준일 미표기",
+      "description": "화면번호는 상담 후 직원이 직접 조회·처리할 업무의 안내이며 거래 실행을 뜻하지 않음.",
+      "url": null
+    }
+  ],
+  "reviewNotes": [
+    "2026-09-22 C01 정제본의 S1~S5 문장을 변형 없이 옮겼다. 상품 후보는 briefing_draft.md v0.1 「상품 펼쳐보기」에서 정제본 S3의 해당 옵션에 연결했다.",
+    "상품의 현재 판매가능·법규 적합성·거래 가능성은 미검증(runtime_verified: false). 사내 단말 실행·Hot Tip 로그인 접속 미검증."
+  ]
+}

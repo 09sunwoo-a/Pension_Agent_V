@@ -1,0 +1,228 @@
+{
+  "s1": {
+    "items": [
+      {
+        "text": "IRP **4억8,000만원 중 현금성자산이 2억5,000만원(52%)**이며, 최근 한 달간 1억7,000만원 증가했습니다.",
+        "dataRefs": [
+          "/irpAccount",
+          "/holdings/0",
+          "/에이전트맥락데이터/계산지표"
+        ],
+        "sourceIds": [
+          "refined"
+        ]
+      },
+      {
+        "text": "나머지 자산은 주식형 펀드와 미국 나스닥·S&P500 ETF 중심입니다.",
+        "dataRefs": [
+          "/holdings"
+        ],
+        "sourceIds": [
+          "refined"
+        ]
+      },
+      {
+        "text": "지난 상담에서 **증권사의 ETF 거래 편의성과 상품 선택 폭을 문의**했으며, 실제 이전 신청은 확인되지 않았습니다.",
+        "dataRefs": [
+          "/에이전트맥락데이터/상담이력"
+        ],
+        "sourceIds": [
+          "refined"
+        ]
+      }
+    ]
+  },
+  "s2": {
+    "lead": "증권사 이전을 전제로 하기보다 **고객이 원하는 ETF와 거래기능을 구체적으로 확인하고, 늘어난 현금의 운용목적을 점검**합니다.",
+    "why": "ETF 관련 문의 이후 현금이 크게 증가했습니다. 매수대기인지, 사용예정인지, 이전을 고려한 현금화인지에 따라 제안이 달라질 수 있습니다.",
+    "checks": [
+      "원하는 것이 **특정 ETF인지, 주문방식·거래편의인지**",
+      "현금 2억5,000만원은 **어떤 목적으로 대기 중인지**",
+      "추가 운용 시 기존 미국주식 비중을 **더 늘릴지, 다른 자산으로 분산할지**"
+    ],
+    "sourceIds": [
+      "refined"
+    ]
+  },
+  "s3": {
+    "lead": "원하는 거래환경을 확인한 뒤 현금의 목적에 맞게 운용방향을 나눕니다.",
+    "options": [
+      {
+        "id": "option-1",
+        "title": "원하는 ETF·기능 — 실제 제공조건 비교",
+        "summary": "희망 종목의 취급 여부와 주문·매도·정산 등 **실제 거래조건을 확인**합니다.",
+        "sourceIds": [
+          "refined"
+        ]
+      },
+      {
+        "id": "option-2",
+        "title": "단기간 대기할 자금 — 단기 운용",
+        "summary": "가까운 사용계획은 없지만 짧게 대기할 금액은 **단기 운용상품과 현금 유지**를 비교합니다.",
+        "sourceIds": [
+          "refined",
+          "draft"
+        ],
+        "products": [
+          {
+            "productId": "ETF-002",
+            "name": "RISE 머니마켓액티브",
+            "reason": "짧은 대기 목적 자금에서 머니마켓형 ETF 방식 비교.",
+            "notes": [
+              "머니마켓형 액티브 ETF. 단기 운용의 비교 후보이며 비용·가격변동·매매/정산조건을 확인한다. 예금처럼 원금이 보장되지 않는다.",
+              "선택 전 확인: 원금보장 아님. 비용·가격변동·매매 및 정산 방식 확인."
+            ],
+            "sourceIds": [
+              "product-ETF-002",
+              "draft"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "option-3",
+        "title": "장기 운용할 자금 — 기존 주식 노출 보완",
+        "summary": "추가 자금은 기존 나스닥·S&P500과의 중복을 확인하고 **주식·채권 등을 나누는 분산방식**도 비교합니다.",
+        "sourceIds": [
+          "refined",
+          "draft"
+        ],
+        "products": [
+          {
+            "productId": "ETF-004",
+            "name": "KODEX TRF3070",
+            "reason": "기존 주식형 ETF와 다른 주식/채권 혼합 역할 비교.",
+            "notes": [
+              "주식·채권 혼합형 TRF ETF. 마스터상 100% 운용가능 표기와 고객의 실제 매수가능 금액·적합성을 구분한다.",
+              "선택 전 확인: 실제 자산 구성·중복과 위험을 확인. “100% 가능”은 규정상 표기."
+            ],
+            "sourceIds": [
+              "product-ETF-004",
+              "draft"
+            ]
+          },
+          {
+            "productId": "ETF-006",
+            "name": "RISE 미국S&P500",
+            "reason": "이미 보유한 S&P500 노출의 유지/중복 점검용.",
+            "notes": [
+              "미국 S&P500 노출을 가진 ETF. 나스닥·기술주·TDF의 미국 주식과 중복될 수 있어 합산 노출을 확인한다.",
+              "선택 전 확인: 나스닥 등과 합산한 미국 주식 노출 확인. 신규 매수로 자동 연결하지 않음."
+            ],
+            "sourceIds": [
+              "product-ETF-006",
+              "draft"
+            ]
+          }
+        ]
+      }
+    ],
+    "notes": []
+  },
+  "s4": {
+    "opening": "윤가영 고객님, 지난번에 증권사의 ETF 거래 편의성과 상품 종류를 문의하셨는데요. 구체적으로 원하시는 ETF가 있으신지, 아니면 주문방식에서 불편한 점이 있으신지 먼저 확인해보고 싶습니다.",
+    "reactions": [
+      {
+        "label": "증권사가 ETF 종류가 더 많지 않나요?",
+        "paragraphs": [
+          "선택할 수 있는 상품 범위에는 차이가 있을 수 있습니다. 다만 고객님이 실제로 원하는 투자대상이나 종목을 먼저 확인하면 비교가 더 정확합니다.",
+          "원하시는 상품의 제공 여부와 거래방법을 직접 확인해드리겠습니다."
+        ]
+      },
+      {
+        "label": "ETF 거래가 편한 곳으로 옮기는 게 낫지 않을까요?",
+        "paragraphs": [
+          "어떤 기능을 가장 중요하게 보시는지부터 확인해보시면 좋겠습니다. 고객님이 원하는 종목과 주문방식이 실제로 가능한지를 비교해서 판단하실 수 있도록 안내드릴게요."
+        ]
+      },
+      {
+        "label": "디폴트옵션도 등록해야 하나요?",
+        "paragraphs": [
+          "직접 ETF를 운용하시는 것과 운용지시가 없을 때 대비하는 디폴트옵션은 별개입니다. 원하시면 향후 기본 설정도 함께 설명드릴 수 있습니다."
+        ]
+      }
+    ],
+    "notices": [
+      "ETF는 원금손실과 시장가격 변동 가능성이 있으며, 상품별 거래·정산 조건도 다릅니다. 현금 증가만으로 이전 의사를 단정하지 않습니다."
+    ],
+    "sourceIds": [
+      "refined"
+    ]
+  },
+  "s5": {
+    "tips": [],
+    "actions": [
+      {
+        "screenCode": "04-12-644",
+        "title": "거래내역 조회",
+        "description": "최근 현금 증가 원인 확인"
+      },
+      {
+        "screenCode": "04-12-640",
+        "title": "상품운용내역조회",
+        "description": "진행 중 주문 여부 확인"
+      },
+      {
+        "screenCode": null,
+        "title": "New퇴직연금상품조회",
+        "description": "화면 04-12-17A · 희망 ETF의 실제 제공·한도 확인"
+      },
+      {
+        "screenCode": "06-12-610",
+        "title": "입금예정상품 등록/변경",
+        "description": "필요 시 · 향후 DO 설정"
+      },
+      {
+        "screenCode": null,
+        "title": "상담 후 확인",
+        "description": "고객이 중요하게 보는 ETF 종목·거래기능과 현금의 운용목적을 기록하고, 실제 비교 결과를 다시 안내합니다."
+      }
+    ],
+    "sourceIds": [
+      "refined",
+      "workflow"
+    ]
+  },
+  "sources": [
+    {
+      "id": "refined",
+      "title": "C01 고객별 S1~S5 브리핑 정제본 · 2026-09-22",
+      "description": "S1 핵심 Fact 3개 · S2 상담 목적/왜 지금/고객과 확인 · S3 관리 방향 · S4 knowledge_pack 근거 화법 · S5 실제 업무 흐름. 화면용 문장은 정제본 문장을 변형 없이 옮겼다.",
+      "url": null
+    },
+    {
+      "id": "draft",
+      "title": "C01-08 윤가영 · S1~S5 브리핑 초안 v0.1 · 2026-09-21",
+      "description": "S3 상품 후보와 상품별 연결 이유·자료상 성격·선택 전 확인은 초안 「2. 상품 펼쳐보기」에서 옮겼다. 자료 기준의 상담용 비교 후보이며 금액·배분과 실제 매수가능 여부는 고객 의사 및 거래시점 확인 후 정한다.",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/agent-workbench/case-design/review/C01-knowledge/C01-08/briefing_draft.md"
+    },
+    {
+      "id": "product-ETF-002",
+      "title": "ETF-002 · RISE 머니마켓액티브 · PRODUCT_MASTER v1.0 L5772–5847",
+      "description": "[자료상 성격] 머니마켓형 액티브 ETF. 단기 운용의 비교 후보이며 비용·가격변동·매매/정산조건을 확인한다. 예금처럼 원금이 보장되지 않는다. runtime_verified: false 상태를 유지하며, 9월 금리를 10월 이후 거래에 약속하지 않는다.",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/41ae9a44357ccabde98dec76d99965e6b038b2a6/knowledge/corpus/05_%EC%83%81%ED%92%88_%EA%B8%B0%EB%B0%98%EC%A7%80%EC%8B%9D/PRODUCT_MASTER.md#L5772-L5847"
+    },
+    {
+      "id": "product-ETF-004",
+      "title": "ETF-004 · KODEX TRF3070 · PRODUCT_MASTER v1.0 L5930–6005",
+      "description": "[자료상 성격] 주식·채권 혼합형 TRF ETF. 마스터상 100% 운용가능 표기와 고객의 실제 매수가능 금액·적합성을 구분한다. runtime_verified: false 상태를 유지하며, 9월 금리를 10월 이후 거래에 약속하지 않는다.",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/41ae9a44357ccabde98dec76d99965e6b038b2a6/knowledge/corpus/05_%EC%83%81%ED%92%88_%EA%B8%B0%EB%B0%98%EC%A7%80%EC%8B%9D/PRODUCT_MASTER.md#L5930-L6005"
+    },
+    {
+      "id": "product-ETF-006",
+      "title": "ETF-006 · RISE 미국S&P500 · PRODUCT_MASTER v1.0 L6089–6166",
+      "description": "[자료상 성격] 미국 S&P500 노출을 가진 ETF. 나스닥·기술주·TDF의 미국 주식과 중복될 수 있어 합산 노출을 확인한다. runtime_verified: false 상태를 유지하며, 9월 금리를 10월 이후 거래에 약속하지 않는다.",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/41ae9a44357ccabde98dec76d99965e6b038b2a6/knowledge/corpus/05_%EC%83%81%ED%92%88_%EA%B8%B0%EB%B0%98%EC%A7%80%EC%8B%9D/PRODUCT_MASTER.md#L6089-L6166"
+    },
+    {
+      "id": "workflow",
+      "title": "퇴직연금 주요거래 화면번호 안내 · 업무 참조자료 · 기준일 미표기",
+      "description": "화면번호는 상담 후 직원이 직접 조회·처리할 업무의 안내이며 거래 실행을 뜻하지 않음.",
+      "url": null
+    }
+  ],
+  "reviewNotes": [
+    "2026-09-22 C01 정제본의 S1~S5 문장을 변형 없이 옮겼다. 상품 후보는 briefing_draft.md v0.1 「상품 펼쳐보기」에서 정제본 S3의 해당 옵션에 연결했다.",
+    "상품의 현재 판매가능·법규 적합성·거래 가능성은 미검증(runtime_verified: false). 사내 단말 실행·Hot Tip 로그인 접속 미검증."
+  ]
+}

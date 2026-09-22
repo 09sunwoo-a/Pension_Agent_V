@@ -1,0 +1,230 @@
+{
+  "s1": {
+    "items": [
+      {
+        "text": "**9월 10일 만기된 정기예금 4,050만원이 현재 운용대기 상태**입니다.",
+        "dataRefs": [
+          "/holdings/1",
+          "/에이전트맥락데이터/최근사건/0"
+        ],
+        "sourceIds": [
+          "refined"
+        ]
+      },
+      {
+        "text": "IRP에는 글로벌 주식형 펀드와 미국 나스닥100 ETF 등 성장자산을 함께 보유하고 있습니다.",
+        "dataRefs": [
+          "/holdings"
+        ],
+        "sourceIds": [
+          "refined"
+        ]
+      },
+      {
+        "text": "지난 상담에서 **만기자금 일부를 실적배당상품으로 운용하는 데 관심**을 보였습니다.",
+        "dataRefs": [
+          "/에이전트맥락데이터/상담이력"
+        ],
+        "sourceIds": [
+          "refined"
+        ]
+      }
+    ]
+  },
+  "s2": {
+    "lead": "만기자금의 실제 상태를 확인하고, **기존에 보였던 일부 투자 의향을 구체적인 재운용방향으로 연결**합니다.",
+    "why": "만기 후 자금이 별도 운용 없이 대기 중입니다. 이미 성장자산을 보유하고 있어 새 자금은 같은 위험을 반복해서 늘리기보다 **안정 운용과 분산 역할을 나눠 판단할 필요**가 있습니다.",
+    "checks": [
+      "지난 상담의 **일부 투자 의향이 현재도 같은지**",
+      "4,050만원 중 **예금으로 둘 금액과 투자할 금액을 어떻게 나눌지**",
+      "투자한다면 **기존 글로벌·기술주 노출을 더 늘릴지, 다른 자산으로 분산할지**"
+    ],
+    "sourceIds": [
+      "refined"
+    ]
+  },
+  "s3": {
+    "lead": "만기자금을 안정 운용과 일부 분산운용으로 나누어 비교합니다.",
+    "options": [
+      {
+        "id": "option-1",
+        "title": "안정적으로 유지할 금액 — 정기예금",
+        "summary": "유지할 기간에 맞는 **원리금보장상품으로 재운용**합니다.",
+        "sourceIds": [
+          "refined",
+          "draft"
+        ],
+        "products": [
+          {
+            "productId": "DEP-007",
+            "name": "기업은행 퇴직연금 정기예금",
+            "reason": "기존 기업은행 예금의 동일 역할 재운용 비교.",
+            "notes": [
+              "자료상 원리금보장 정기예금. 기존 만기예금의 재운용 비교 후보이며 다음 거래월의 조건을 다시 확인한다.",
+              "선택 전 확인: 만기 상환과 현재 제공기간/금리를 조회."
+            ],
+            "sourceIds": [
+              "product-DEP-007",
+              "draft"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "option-2",
+        "title": "일부 투자할 금액 — 자산배분형",
+        "summary": "기존 글로벌·나스닥 노출과 겹치지 않도록 **주식·채권 등 여러 자산에 분산하는 방식**을 비교합니다.",
+        "sourceIds": [
+          "refined",
+          "draft"
+        ],
+        "products": [
+          {
+            "productId": "MF-010",
+            "name": "KB 드림스타 자산배분 안정형 (혼합-재간접)",
+            "reason": "기존 성장자산과 다른 역할의 분산 후보.",
+            "notes": [
+              "국내외 ETF를 통해 글로벌 주식·채권·대체자산에 분산하는 펀드군. 월간 표 위험 표기는 ‘보통’이며 실제 클래스 미확정. 이름의 ‘안정형’은 원금보장을 뜻하지 않는다.",
+              "선택 전 확인: 안정형 명칭이 원금보장을 의미하지 않음. 구성자산 중복·손실감내 확인."
+            ],
+            "sourceIds": [
+              "product-MF-010",
+              "draft"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "option-3",
+        "title": "다음 운용공백 대비 — 기본 설정",
+        "summary": "현재 디폴트옵션 지정이 향후 운용의향과 맞는지도 별도로 점검합니다.",
+        "sourceIds": [
+          "refined",
+          "draft"
+        ],
+        "products": [
+          {
+            "productId": "DO-006",
+            "name": "불려드림II",
+            "reason": "앞으로 기본 운용을 중위험으로 바꾸길 원할 때 비교.",
+            "notes": [
+              "중위험 불려드림II의 지정 비교 자료. 현재 설정을 변경할 의향이 있을 때 구성자산·손실 가능성을 비교하며 실제 보유 교체와 분리한다.",
+              "선택 전 확인: 현재 저위험 지정 유지 선택과 비교; 현재 만기자금 처리와 분리."
+            ],
+            "sourceIds": [
+              "product-DO-006",
+              "draft"
+            ]
+          }
+        ]
+      }
+    ],
+    "notes": []
+  },
+  "s4": {
+    "opening": "이준호 고객님, 지난번에 예금이 만기되면 일부를 투자상품으로 운용해보는 데 관심이 있다고 하셨는데요. 9월 10일 만기된 4,050만원이 현재 대기 중이라 지금도 같은 생각이신지 여쭤보려고요.",
+    "reactions": [
+      {
+        "label": "일부는 투자해보고 싶어요.",
+        "paragraphs": [
+          "그러시면 안정적으로 유지할 금액과 투자해볼 금액을 먼저 나눠보겠습니다. 이미 보유하신 글로벌주식과 나스닥 ETF까지 함께 보고 새로운 자금의 역할을 정하겠습니다."
+        ]
+      },
+      {
+        "label": "펀드는 어떤 걸 골라야 할지 어려워요.",
+        "paragraphs": [
+          "상품을 하나씩 직접 고르시는 게 부담스러우시면 여러 자산에 나누어 운용하는 방식도 비교하실 수 있습니다.",
+          "고객님의 투자성향과 현재 보유상품을 함께 보고 후보를 좁혀드릴게요."
+        ]
+      },
+      {
+        "label": "생각 좀 해볼게요.",
+        "paragraphs": [
+          "네, 바로 결정하지 않으셔도 됩니다. 관련 상품과 운용방식만 확인해보시고 다시 결정하시면 됩니다."
+        ]
+      }
+    ],
+    "notices": [
+      "실적배당상품은 원금손실 가능성이 있으며, 기존 성장자산과 투자대상이 중복될 수 있어 전체 포트폴리오를 함께 확인하겠습니다."
+    ],
+    "sourceIds": [
+      "refined"
+    ]
+  },
+  "s5": {
+    "tips": [],
+    "actions": [
+      {
+        "screenCode": "04-12-644",
+        "title": "거래내역 조회",
+        "description": "9월 10일 만기·상환 확인"
+      },
+      {
+        "screenCode": "04-12-640",
+        "title": "상품운용내역조회",
+        "description": "진행 중인 운용지시 확인"
+      },
+      {
+        "screenCode": "06-12-611",
+        "title": "보유상품변경",
+        "description": "고객이 결정한 만기자금 운용"
+      },
+      {
+        "screenCode": "06-12-610",
+        "title": "입금예정상품 등록/변경",
+        "description": "향후 설정 점검"
+      },
+      {
+        "screenCode": null,
+        "title": "상담 후 확인",
+        "description": "만기자금의 안정운용·투자운용 금액과 실제 변경 결과를 기록합니다."
+      }
+    ],
+    "sourceIds": [
+      "refined",
+      "workflow"
+    ]
+  },
+  "sources": [
+    {
+      "id": "refined",
+      "title": "C01 고객별 S1~S5 브리핑 정제본 · 2026-09-22",
+      "description": "S1 핵심 Fact 3개 · S2 상담 목적/왜 지금/고객과 확인 · S3 관리 방향 · S4 knowledge_pack 근거 화법 · S5 실제 업무 흐름. 화면용 문장은 정제본 문장을 변형 없이 옮겼다.",
+      "url": null
+    },
+    {
+      "id": "draft",
+      "title": "C01-03 이준호 · S1~S5 브리핑 초안 v0.1 · 2026-09-21",
+      "description": "S3 상품 후보와 상품별 연결 이유·자료상 성격·선택 전 확인은 초안 「2. 상품 펼쳐보기」에서 옮겼다. 자료 기준의 상담용 비교 후보이며 금액·배분과 실제 매수가능 여부는 고객 의사 및 거래시점 확인 후 정한다.",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/agent-workbench/case-design/review/C01-knowledge/C01-03/briefing_draft.md"
+    },
+    {
+      "id": "product-DEP-007",
+      "title": "DEP-007 · 기업은행 퇴직연금 정기예금 · PRODUCT_MASTER v1.0 L552–613",
+      "description": "[자료상 성격] 자료상 원리금보장 정기예금. 기존 만기예금의 재운용 비교 후보이며 다음 거래월의 조건을 다시 확인한다. runtime_verified: false 상태를 유지하며, 9월 금리를 10월 이후 거래에 약속하지 않는다.",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/41ae9a44357ccabde98dec76d99965e6b038b2a6/knowledge/corpus/05_%EC%83%81%ED%92%88_%EA%B8%B0%EB%B0%98%EC%A7%80%EC%8B%9D/PRODUCT_MASTER.md#L552-L613"
+    },
+    {
+      "id": "product-MF-010",
+      "title": "MF-010 · KB 드림스타 자산배분 안정형 (혼합-재간접) · PRODUCT_MASTER v1.0 L4492–4557",
+      "description": "[자료상 성격] 국내외 ETF를 통해 글로벌 주식·채권·대체자산에 분산하는 펀드군. 월간 표 위험 표기는 ‘보통’이며 실제 클래스 미확정. 이름의 ‘안정형’은 원금보장을 뜻하지 않는다. runtime_verified: false 상태를 유지하며, 9월 금리를 10월 이후 거래에 약속하지 않는다.",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/41ae9a44357ccabde98dec76d99965e6b038b2a6/knowledge/corpus/05_%EC%83%81%ED%92%88_%EA%B8%B0%EB%B0%98%EC%A7%80%EC%8B%9D/PRODUCT_MASTER.md#L4492-L4557"
+    },
+    {
+      "id": "product-DO-006",
+      "title": "DO-006 · 불려드림II · PRODUCT_MASTER v1.0 L7870–7970",
+      "description": "[자료상 성격] 중위험 불려드림II의 지정 비교 자료. 현재 설정을 변경할 의향이 있을 때 구성자산·손실 가능성을 비교하며 실제 보유 교체와 분리한다. runtime_verified: false 상태를 유지하며, 9월 금리를 10월 이후 거래에 약속하지 않는다.",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/41ae9a44357ccabde98dec76d99965e6b038b2a6/knowledge/corpus/05_%EC%83%81%ED%92%88_%EA%B8%B0%EB%B0%98%EC%A7%80%EC%8B%9D/PRODUCT_MASTER.md#L7870-L7970"
+    },
+    {
+      "id": "workflow",
+      "title": "퇴직연금 주요거래 화면번호 안내 · 업무 참조자료 · 기준일 미표기",
+      "description": "화면번호는 상담 후 직원이 직접 조회·처리할 업무의 안내이며 거래 실행을 뜻하지 않음.",
+      "url": null
+    }
+  ],
+  "reviewNotes": [
+    "2026-09-22 C01 정제본의 S1~S5 문장을 변형 없이 옮겼다. 상품 후보는 briefing_draft.md v0.1 「상품 펼쳐보기」에서 정제본 S3의 해당 옵션에 연결했다.",
+    "상품의 현재 판매가능·법규 적합성·거래 가능성은 미검증(runtime_verified: false). 사내 단말 실행·Hot Tip 로그인 접속 미검증."
+  ]
+}

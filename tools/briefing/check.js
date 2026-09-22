@@ -13,8 +13,8 @@ const { create } = require('../../frontend/src/briefing/pensionBriefingStore');
 const copy = x => JSON.parse(JSON.stringify(x));
 const { customers, briefings, noBriefing } = inputs();
 assert.equal(customers.length, 42, 'Expected 30 case customers + 12 conversational-agent demo customers. Update intentionally when adding cases.');
-assert.equal(briefings.filter(Boolean).length, 30, 'Expected 30 stored briefings');
-assert.deepEqual(noBriefing, customers.filter(c => /^C/.test(c.briefingMeta.caseId)).map(c => c.briefingMeta.caseId), 'C cases ship without a briefing');
+assert.equal(briefings.filter(Boolean).length, 42, 'Expected 42 stored briefings (30 B cases + 12 C01 customers)');
+assert.deepEqual(noBriefing, [], 'Every customer ships with a stored briefing');
 const FIRST = customers[briefings.findIndex(Boolean)].briefingMeta.caseId;
 const js = fs.readFileSync(path.join(OUT, 'pensionAgentDemo.js'), 'utf8');
 const code = js.match(/^\s*var STARROOT_FILE_CODE = '([^']+)'/m)[1];
@@ -155,7 +155,7 @@ const clarifyTurn = composeTurn({ events: [{ type: 'answer', text: '어느 계�
 assert.deepEqual([clarifyTurn.lead, clarifyTurn.blocks, clarifyTurn.clarify.options], ['어느 계좌 기준으로 안내할까요?', [], ['개인형IRP', '연금저축']], 'Clarify options rendered as buttons only, not as body bullets');
 assert.deepEqual(JSON.parse(fs.readFileSync(path.join(ROOT, 'integration/contracts/response.example.json'), 'utf8')), wire.answer(wire.request(kim, 'example-request-001', 'TEST_EMPLOYEE'), content));
 assert.deepEqual(JSON.parse(fs.readFileSync(path.join(ROOT, 'agent/briefing_data.json'), 'utf8')), agentData({ customers, briefings }), 'Rebuild Agent data together with the frontend');
-console.log('PASS: 42 customers (30 with briefings), totals, render mappings, optional fields, customer isolation, request identity, SSE parser, current three-file build, main list = legacy rows + 42 cases with catalog badges.');
+console.log('PASS: 42 customers (42 with briefings), totals, render mappings, optional fields, customer isolation, request identity, SSE parser, current three-file build, main list = legacy rows + 42 cases with catalog badges.');
 
 // Bundle-level run of the real path: injected config -> auto request on select ->
 // fake fetch answering one SSE frame -> answer rendered. No network, no secrets.
@@ -190,9 +190,6 @@ async function autoRequestCheck() {
   assert.deepEqual([v.fabrixDiagnosticCode, v.hasAiBrief, v.bfS1Lines.length], ['SUCCESS', true, content.s1.items.length]);
   v.goBack(); live.select(FIRST, true);
   assert.equal(calls.length, 1, 'A loaded case is not requested again in the same mount');
-  live.select('C01-01', true);
-  await settle();
-  assert.deepEqual([calls.length, live.renderVals().fabrixEnabled, live.renderVals().briefingAvailable, live.renderVals().noAiBrief], [1, false, false, true], 'A customer without a stored briefing is never requested');
   live.select('B01-22', true);
   assert.equal(calls.length, 2, 'Another case is requested');
   live.componentWillUnmount();
@@ -513,8 +510,8 @@ print(json.dumps({'events': events, 'http_checked': http_checked}, ensure_ascii=
     assert.equal(wire.validate(event, requests[i]).ok, true, requests[i].case_id);
     assert.deepEqual(event.data.briefing, contract.contentOf(servedBriefings[i]));
   });
-  console.log('PASS: Python fixed lookup + SSE for 30 cases validated by frontend contract; invalid input/snapshot rejection; no LLM import; Python 3.10 syntax.');
-  console.log(checked.http_checked ? 'PASS: FastAPI ASGI /health, 30 /chat responses and error handling.' : 'SKIP: FastAPI/Pydantic not installed in local Python. HTTP application startup must be checked in the internal environment.');
+  console.log('PASS: Python fixed lookup + SSE for 42 cases validated by frontend contract; invalid input/snapshot rejection; no LLM import; Python 3.10 syntax.');
+  console.log(checked.http_checked ? 'PASS: FastAPI ASGI /health, ' + requests.length + ' /chat responses and error handling.' : 'SKIP: FastAPI/Pydantic not installed in local Python. HTTP application startup must be checked in the internal environment.');
 }
 
 // Optional real-response check. Inputs must be sanitized logical JSON objects,

@@ -4,7 +4,7 @@
 
 **LLM을 호출하지 않고, 화면에서 선택한 고객의 저장된 S1–S5 브리핑을 실제 사내 Agent/FabriX 경로로 받아 표시하는지 확인합니다.** 문장은 저장소 브리핑 JSON과 같으며 반입 JS에는 더미 문장이 없습니다. API 수신 상태와 실제 Network 요청으로 연동 성공을 판단합니다.
 
-- 로컬 통과: 42건 고객(브리핑 30건 + 브리핑 없는 시연 고객 C01 12건), Python 고정 반환·SSE 포장, 프론트 응답 검증, 잘못된 입력·다른 고객·변경된 스냅샷 거부, LLM import 없음.
+- 로컬 통과: 42건 고객(B 케이스 브리핑 30건 + C01 시연 고객 브리핑 12건), Python 고정 반환·SSE 포장, 프론트 응답 검증, 잘못된 입력·다른 고객·변경된 스냅샷 거부, LLM import 없음.
 - **미검증:** 로컬에 FastAPI/Pydantic이 없어 실제 앱 기동/ASGI 검사는 SKIP했습니다. 사내 Docker build·기동·Gateway·Origin/CORS·Starroot/WebView는 아래 순서로 확인해야 합니다.
 - 모든 고객 데이터는 시연용입니다. 금융 내용 승인/실제 추천 적합성 검증과는 별개입니다.
 
@@ -18,7 +18,7 @@ node tools/briefing/check.js
 node tools/briefing/check.js --agent
 ```
 
-`--agent` 검사는 Python이 필요합니다. FastAPI/Pydantic 설치 환경에서는 `/health`, 30건 `/chat`, 오류 응답도 검사합니다. 없으면 Python 반환부 검사까지만 통과하고 HTTP 검사 SKIP을 표시합니다. 의존성 설치는 사내 Nexus/기존 requirements 정책을 따릅니다.
+`--agent` 검사는 Python이 필요합니다. FastAPI/Pydantic 설치 환경에서는 `/health`, 42건 `/chat`, 오류 응답도 검사합니다. 없으면 Python 반환부 검사까지만 통과하고 HTTP 검사 SKIP을 표시합니다. 의존성 설치는 사내 Nexus/기존 requirements 정책을 따릅니다.
 
 빌드는 **프론트와 Agent 데이터를 함께** 생성합니다. 고객/브리핑 JSON을 수정했다면 양쪽을 같은 빌드 결과로 반입합니다. 생성 파일은 직접 수정하지 않습니다.
 
@@ -45,7 +45,7 @@ Node·개별 고객 JSON·프론트 원본 모듈은 WAS에 올리지 않습니�
 - [ ] HTML/CSS/JS가 모두 200으로 로드되는지 확인합니다. Starroot에서 JS가 XHR로 보여도 정상일 수 있습니다.
 - [ ] **실제 로드 경로와 캐시 확인 (2026-09-18 사내 화면에서 확인)**: 브라우저 테스트 환경은 CSS를 `/mnbank/app/html/bfe/asstmgt/asst/pensionAgentDemo.css`에서 읽었고, 이후 HTML·체크리스트의 경로를 여기에 맞췄습니다. 반입 후 F12 → Network에서 실제 로드된 CSS/JS의 URL과 크기가 이번 반입본과 같은지 보고, 다르면 그 경로의 파일을 교체하고 캐시를 비운 뒤(Ctrl+Shift+R 또는 Disable cache) 다시 확인합니다. 콘솔에서 `getComputedStyle(document.querySelector('.pad-branch-launcher')).position`이 `fixed`면 CSS가 적용된 것입니다. 옛 CSS가 남아 있어도 JS에 실린 사본으로 부점 AI 버튼은 뜨지만 콘솔에 `[Branch AI] … using the bundled copy` 경고가 남습니다.
 - [ ] Shell이 `PG_<파일코드>.onParam()`을 호출해 화면을 초기화하는지 확인합니다. `DOMContentLoaded`를 추가하지 않습니다.
-- [ ] 목록에 57행(기존 카드 15 + B 사례 30 + C01 시연 고객 12)이 표시되고 상단 기준일이 **9월 29일 화요일**인지 확인합니다. `DEMO-01`과 기존 김서연·이수민·박정호 카드는 2026-09-21부터 목록에 없고 C01-10·C01-12·C01-11로 대체됐습니다. C01 고객을 선택하면 S1–S5 자리에 **AI 브리핑 준비 중**만 보이고 요청이 나가지 않는 것이 정상입니다.
+- [ ] 목록에 57행(기존 카드 15 + B 사례 30 + C01 시연 고객 12)이 표시되고 상단 기준일이 **9월 29일 화요일**인지 확인합니다. `DEMO-01`과 기존 김서연·이수민·박정호 카드는 2026-09-21부터 목록에 없고 C01-10·C01-12·C01-11로 대체됐습니다. 2026-09-22 빌드부터 C01 12명도 저장 브리핑이 있어 B 사례와 같이 선택 즉시 요청이 나갑니다(Agent 설정 주입 전에는 `NOCONFIG`).
 - [ ] 상단 고객정보/IRP/보유상품이 표시되는지 확인합니다. 상담 후 확인 기록은 없습니다.
 
 이 단계에서는 로컬 고객 스냅샷만 확인합니다. 반입 JS에 브리핑 문장이 없으므로 Agent 배포·설정 주입 전에는 고객을 선택해도 S1–S5 영역이 `NOCONFIG` 안내와 함께 비어 있는 것이 정상입니다. S3 추천상품 펼침·S4 고객 반응·S5 TIP/업무는 5단계에서 확인합니다. 우측 실시간 상담은 이번 S1–S5 API 대상이 아닙니다.
@@ -82,7 +82,7 @@ Node·개별 고객 JSON·프론트 원본 모듈은 WAS에 올리지 않습니�
 - [ ] `/health`가 아래처럼 응답하는지 확인합니다.
 
 ```json
-{"status":"ok","mode":"fixed_briefing","llm_enabled":false,"case_count":30}
+{"status":"ok","mode":"fixed_briefing","llm_enabled":false,"case_count":42}
 ```
 
 기존 `gemma-text-only-fixed-template-test-2`가 보이면 구버전 main.py가 배포된 것입니다. `ModuleNotFoundError`면 평면 import/COPY/설치 결과부터 확인합니다.
@@ -102,7 +102,7 @@ Node·개별 고객 JSON·프론트 원본 모듈은 WAS에 올리지 않습니�
 
 설정은 메모리에만 보관되며 화면 종료 시 제거되므로 화면 진입마다 주입되어야 합니다. 소스·문서·콘솔 기록에 인증값을 넣지 않습니다. Network에는 헤더가 보이므로 HAR/스크린샷/전체 요청을 공유할 때 비밀값과 식별정보를 포함하지 않습니다.
 
-- [ ] **B01-22 한지훈**(또는 B06-13 신경호)을 선택합니다. 선택 즉시 요청이 나갑니다(호출 버튼 없음). C01 12명과 기존 카드 15명은 API 호출 대상이 아닙니다.
+- [ ] **B01-22 한지훈**(또는 B06-13 신경호, C01-03 이준호)을 선택합니다. 선택 즉시 요청이 나갑니다(호출 버튼 없음). B 30명과 C01 12명이 호출 대상이고, 기존 카드 15명만 API 호출 대상이 아닙니다.
 - [ ] 화면 상단 **브리핑 수신** 줄이 `LOADING`이었다가 **`SUCCESS` · 정상 수신 · 내용 검토 전 초안입니다**로 바뀌는지 확인합니다. `NOCONFIG`면 주입이 안 된 것이고, `CONFIG`면 주입값 형식 오류입니다.
 - [ ] POST URL이 `{endpointUrl}/openapi/agent-chat/v1/agent-messages`인지 확인합니다.
 - [ ] `contents[0]`이 JSON 문자열이고 `isStream: true`인지 확인합니다. FabriX가 그 문자열을 Agent `/chat`의 `input_value`에 전달합니다.
@@ -123,7 +123,7 @@ Agent는 `event: CHUNK`, 문자열 `content`, 빈 `references/recommend_queries/
 - [ ] 연계 제안이 나오면 **네** 버튼으로 다음 턴이 나가는지, 되묻기가 나오면 선택지 버튼으로 나가는지 확인합니다(실제 응답 형태는 [규격](integration/contracts/CHAT_AGENT_CONTRACT.md)과 대조).
 - [ ] 헤더의 **고객 변경**을 누르면 식별자를 다시 묻고, 새 식별자로 시작하면 `session_id`가 바뀌는지 확인합니다. 다른 고객 화면으로 바꾸면 그 고객의 상담은 식별자부터 새로 시작하고, 원래 고객으로 돌아오면 이전 대화가 유지되는지 확인합니다.
 
-우리 `customerId`(예: `54182-30764`)를 입력해 답하게 하려면 대화 Agent의 고객 저장소에 `agent/briefing_data.json`의 30건이 같은 `customerId`로 들어가야 합니다. C01 12명은 동료 대화 Agent가 이미 보유한 고객이라 그쪽 식별자(예: 이준호 `198734-1205842`)를 그대로 씁니다.
+우리 `customerId`(예: `54182-30764`)를 입력해 답하게 하려면 대화 Agent의 고객 저장소에 `agent/briefing_data.json`의 42건이 같은 `customerId`로 들어가야 합니다. C01 12명은 동료 대화 Agent가 이미 보유한 고객이라 그쪽 식별자(예: 이준호 `198734-1205842`)를 그대로 씁니다.
 
 ## 6. 오류·화면 수명 확인
 
@@ -137,7 +137,7 @@ Agent는 `event: CHUNK`, 문자열 `content`, 빈 `references/recommend_queries/
 | OPTIONS 405 또는 fetch 실패 | 실제 Origin/CORS/네트워크/인증서. 브라우저 보안 우회 금지 |
 | HTTP 422 | Agent 요청이 `{input_value: JSON문자열}`인지 |
 | `AGENT` 오류 | Agent 로그의 안전한 코드 확인: INPUT/UNKNOWN_CASE/IDENTITY/SNAPSHOT/DATA |
-| IDENTITY / SNAPSHOT | 프론트와 Agent를 같은 고객 JSON 빌드 결과로 배포했는지. **2026-09-21 빌드부터 30건 전부 기준일이 2026-09-29로 바뀌어 옛 Agent(9/14 데이터)는 모든 요청을 IDENTITY로 거부합니다.** 묶음 교체 후 Agent 재시작/재배포 |
+| IDENTITY / SNAPSHOT | 프론트와 Agent를 같은 고객 JSON 빌드 결과로 배포했는지. **2026-09-21 빌드부터 30건 전부 기준일이 2026-09-29로 바뀌어 옛 Agent(9/14 데이터)는 모든 요청을 IDENTITY로 거부합니다. 2026-09-22 빌드부터 C01 12명이 추가되어 옛 Agent(30건)는 C01 요청을 UNKNOWN_CASE로 거부합니다.** 묶음 교체 후 Agent 재시작/재배포 |
 | VERSION/SCHEMA | 구버전 fact Agent 또는 계약/프론트 버전 불일치 |
 | 200인데 계속 대기 | SSE 빈 줄 종료·완성된 answer·스트림 EOF 여부 |
 

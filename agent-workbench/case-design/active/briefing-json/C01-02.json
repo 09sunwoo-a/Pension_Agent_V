@@ -1,0 +1,229 @@
+{
+  "s1": {
+    "items": [
+      {
+        "text": "IRP **3,200만원 중 TDF·미국 S&P500 ETF 등 실적배당형 비중이 75%**입니다.",
+        "dataRefs": [
+          "/irpAccount",
+          "/holdings"
+        ],
+        "sourceIds": [
+          "refined"
+        ]
+      },
+      {
+        "text": "지난 상담에서 **단기 변동성을 감수하면서 현재 운용방향을 유지하고 싶다**고 했습니다.",
+        "dataRefs": [
+          "/에이전트맥락데이터/상담이력"
+        ],
+        "sourceIds": [
+          "refined"
+        ]
+      },
+      {
+        "text": "투자성향은 적극투자형이지만, 디폴트옵션은 **저위험 알파드림으로 지정·미적용** 상태입니다.",
+        "dataRefs": [
+          "/customer/investmentProfile",
+          "/customer/defaultOption"
+        ],
+        "sourceIds": [
+          "refined"
+        ]
+      }
+    ]
+  },
+  "s2": {
+    "lead": "현재 성장 중심 운용을 유지하되 **실제 위험자산 한도와 자산 중복을 확인하고, 향후 디폴트옵션 설정도 현재 의향과 맞는지 점검**합니다.",
+    "why": "TDF와 미국주식 ETF를 함께 보유하고 있어 실제 주식 노출을 확인할 필요가 있습니다. 실적배당형 75%라는 수치만으로 한도 초과를 단정하지 않고 실제 산정 결과를 먼저 확인합니다.",
+    "checks": [
+      "현재도 **성장 중심 운용을 유지하고 싶은지**",
+      "TDF와 S&P500의 **미국주식 중복 노출을 어느 정도 유지할지**",
+      "디폴트옵션을 저위험으로 둔 것이 **의도적인 선택인지**"
+    ],
+    "sourceIds": [
+      "refined"
+    ]
+  },
+  "s3": {
+    "lead": "현재 운용 유지 여부와 향후 기본 설정을 나누어 판단합니다.",
+    "options": [
+      {
+        "id": "option-1",
+        "title": "실제 한도와 구성이 적정하다면 — 현재 운용 유지",
+        "summary": "고객의 의향이 같다면 TDF와 ETF를 불필요하게 교체하지 않습니다.",
+        "sourceIds": [
+          "refined"
+        ]
+      },
+      {
+        "id": "option-2",
+        "title": "중복 또는 한도 조정이 필요하다면 — 일부 안정자산 보완",
+        "summary": "필요한 범위만 원리금보장형·단기채 등으로 조정해 **전체 비중을 맞추는 방안**을 검토합니다.",
+        "sourceIds": [
+          "refined",
+          "draft"
+        ],
+        "products": [
+          {
+            "productId": "DEP-004",
+            "name": "하나은행 퇴직연금용 정기예금",
+            "reason": "실제 조정 필요 시 기존 예금과 같은 안정 운용 역할 비교.",
+            "notes": [
+              "자료상 원리금보장 정기예금. 고객의 기존 보유와 같은 역할을 비교하며 현재 매수금리·만기·해지조건을 확인한다.",
+              "선택 전 확인: 매도손익·중도해지와 실제 한도 산정 확인."
+            ],
+            "sourceIds": [
+              "product-DEP-004",
+              "draft"
+            ]
+          },
+          {
+            "productId": "ETF-001",
+            "name": "KODEX 단기채권PLUS",
+            "reason": "자료상 100% 운용가능 단기채 ETF를 잔여자금 후보로 비교.",
+            "notes": [
+              "단기채권 ETF. 마스터에는 IRP 운용가능비율 100%로 기재돼 있으나 원금보장 또는 전액 매수 권고를 의미하지 않는다.",
+              "선택 전 확인: 원금보장 아님. ETF 거래방식·현재 운용가능 비율 확인."
+            ],
+            "sourceIds": [
+              "product-ETF-001",
+              "draft"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "option-3",
+        "title": "향후 운용설정 — 디폴트옵션 재점검",
+        "summary": "현재 저위험 설정을 유지할지, 다른 위험수준을 선택할지는 **현재 보유상품과 별도로 결정**합니다.",
+        "sourceIds": [
+          "refined",
+          "draft"
+        ],
+        "products": [
+          {
+            "productId": "DO-006",
+            "name": "불려드림II",
+            "reason": "향후 기본 설정을 바꾸려는 의사가 있을 때만 중위험 구성 비교.",
+            "notes": [
+              "중위험 불려드림II의 지정 비교 자료. 현재 설정을 변경할 의향이 있을 때 구성자산·손실 가능성을 비교하며 실제 보유 교체와 분리한다.",
+              "선택 전 확인: 현재 알파드림 유지도 가능. 성향·손실감내·구성비를 재확인."
+            ],
+            "sourceIds": [
+              "product-DO-006",
+              "draft"
+            ]
+          }
+        ]
+      }
+    ],
+    "notes": []
+  },
+  "s4": {
+    "opening": "박지민 고객님, 지난 상담에서는 변동성을 감수하시면서 현재 운용방향을 유지하고 싶다고 하셨는데요. 지금도 같은 생각이신지 확인하고 향후 기본 운용설정도 같이 살펴보려고 합니다.",
+    "reactions": [
+      {
+        "label": "디폴트옵션은 꼭 지금 운용하는 상품이랑 똑같이 맞춰야 하나요?",
+        "paragraphs": [
+          "그렇지는 않습니다. 평소 직접 운용하시는 자산과 운용지시를 놓쳤을 때 사용할 디폴트옵션은 별도로 선택하실 수 있습니다.",
+          "현재 저위험 설정을 일부러 선택하신 것이라면 그대로 유지하셔도 됩니다."
+        ]
+      },
+      {
+        "label": "디폴트옵션은 잘 모르겠어요.",
+        "paragraphs": [
+          "원하지 않는 상품에 강제로 가입하는 절차가 아니라, 운용지시가 없을 때 사용할 방법을 미리 정해두는 제도입니다.",
+          "현재 투자목적에 맞는 위험수준을 비교한 뒤 직접 선택하시면 됩니다."
+        ]
+      },
+      {
+        "label": "추가로 납입할 수도 있는데요.",
+        "paragraphs": [
+          "추가납입을 검토하신다면 먼저 올해 납입내역과 남은 한도를 확인하겠습니다. 새로 넣으실 자금의 운용방향도 기존 포트폴리오를 함께 보고 정하시면 됩니다."
+        ]
+      }
+    ],
+    "notices": [
+      "실적배당형 비중과 규정상 위험자산 비중은 동일하지 않을 수 있어 실제 한도를 먼저 확인합니다. 투자상품과 디폴트옵션에는 원금손실 가능성이 있습니다."
+    ],
+    "sourceIds": [
+      "refined"
+    ]
+  },
+  "s5": {
+    "tips": [],
+    "actions": [
+      {
+        "screenCode": "04-12-354",
+        "title": "컴플라이언스 위반점검현황 조회",
+        "description": "실제 위험자산 한도 확인"
+      },
+      {
+        "screenCode": null,
+        "title": "New퇴직연금상품조회",
+        "description": "화면 04-12-17A · TDF 유형·상품별 운용가능비율 확인"
+      },
+      {
+        "screenCode": "06-12-610",
+        "title": "입금예정상품 등록/변경",
+        "description": "디폴트옵션 유지·변경"
+      },
+      {
+        "screenCode": "06-12-611",
+        "title": "보유상품변경",
+        "description": "필요 시 · 동의한 범위만 조정"
+      },
+      {
+        "screenCode": null,
+        "title": "상담 후 확인",
+        "description": "한도 확인 결과와 현재 운용 유지 의향, 디폴트옵션을 선택한 이유를 기록합니다."
+      }
+    ],
+    "sourceIds": [
+      "refined",
+      "workflow"
+    ]
+  },
+  "sources": [
+    {
+      "id": "refined",
+      "title": "C01 고객별 S1~S5 브리핑 정제본 · 2026-09-22",
+      "description": "S1 핵심 Fact 3개 · S2 상담 목적/왜 지금/고객과 확인 · S3 관리 방향 · S4 knowledge_pack 근거 화법 · S5 실제 업무 흐름. 화면용 문장은 정제본 문장을 변형 없이 옮겼다.",
+      "url": null
+    },
+    {
+      "id": "draft",
+      "title": "C01-02 박지민 · S1~S5 브리핑 초안 v0.1 · 2026-09-21",
+      "description": "S3 상품 후보와 상품별 연결 이유·자료상 성격·선택 전 확인은 초안 「2. 상품 펼쳐보기」에서 옮겼다. 자료 기준의 상담용 비교 후보이며 금액·배분과 실제 매수가능 여부는 고객 의사 및 거래시점 확인 후 정한다.",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/agent-workbench/case-design/review/C01-knowledge/C01-02/briefing_draft.md"
+    },
+    {
+      "id": "product-DEP-004",
+      "title": "DEP-004 · 하나은행 퇴직연금용 정기예금 · PRODUCT_MASTER v1.0 L357–418",
+      "description": "[자료상 성격] 자료상 원리금보장 정기예금. 고객의 기존 보유와 같은 역할을 비교하며 현재 매수금리·만기·해지조건을 확인한다. runtime_verified: false 상태를 유지하며, 9월 금리를 10월 이후 거래에 약속하지 않는다.",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/41ae9a44357ccabde98dec76d99965e6b038b2a6/knowledge/corpus/05_%EC%83%81%ED%92%88_%EA%B8%B0%EB%B0%98%EC%A7%80%EC%8B%9D/PRODUCT_MASTER.md#L357-L418"
+    },
+    {
+      "id": "product-ETF-001",
+      "title": "ETF-001 · KODEX 단기채권PLUS · PRODUCT_MASTER v1.0 L5693–5768",
+      "description": "[자료상 성격] 단기채권 ETF. 마스터에는 IRP 운용가능비율 100%로 기재돼 있으나 원금보장 또는 전액 매수 권고를 의미하지 않는다. runtime_verified: false 상태를 유지하며, 9월 금리를 10월 이후 거래에 약속하지 않는다.",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/41ae9a44357ccabde98dec76d99965e6b038b2a6/knowledge/corpus/05_%EC%83%81%ED%92%88_%EA%B8%B0%EB%B0%98%EC%A7%80%EC%8B%9D/PRODUCT_MASTER.md#L5693-L5768"
+    },
+    {
+      "id": "product-DO-006",
+      "title": "DO-006 · 불려드림II · PRODUCT_MASTER v1.0 L7870–7970",
+      "description": "[자료상 성격] 중위험 불려드림II의 지정 비교 자료. 현재 설정을 변경할 의향이 있을 때 구성자산·손실 가능성을 비교하며 실제 보유 교체와 분리한다. runtime_verified: false 상태를 유지하며, 9월 금리를 10월 이후 거래에 약속하지 않는다.",
+      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/41ae9a44357ccabde98dec76d99965e6b038b2a6/knowledge/corpus/05_%EC%83%81%ED%92%88_%EA%B8%B0%EB%B0%98%EC%A7%80%EC%8B%9D/PRODUCT_MASTER.md#L7870-L7970"
+    },
+    {
+      "id": "workflow",
+      "title": "퇴직연금 주요거래 화면번호 안내 · 업무 참조자료 · 기준일 미표기",
+      "description": "화면번호는 상담 후 직원이 직접 조회·처리할 업무의 안내이며 거래 실행을 뜻하지 않음.",
+      "url": null
+    }
+  ],
+  "reviewNotes": [
+    "2026-09-22 C01 정제본의 S1~S5 문장을 변형 없이 옮겼다. 상품 후보는 briefing_draft.md v0.1 「상품 펼쳐보기」에서 정제본 S3의 해당 옵션에 연결했다.",
+    "상품의 현재 판매가능·법규 적합성·거래 가능성은 미검증(runtime_verified: false). 사내 단말 실행·Hot Tip 로그인 접속 미검증."
+  ]
+}
