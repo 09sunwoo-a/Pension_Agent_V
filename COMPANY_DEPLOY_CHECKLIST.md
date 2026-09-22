@@ -4,7 +4,7 @@
 
 **LLM을 호출하지 않고, 화면에서 선택한 고객의 저장된 S1–S5 브리핑을 실제 사내 Agent/FabriX 경로로 받아 표시하는지 확인합니다.** 문장은 저장소 브리핑 JSON과 같으며 반입 JS에는 더미 문장이 없습니다. API 수신 상태와 실제 Network 요청으로 연동 성공을 판단합니다.
 
-- 로컬 통과: 42건 고객(브리핑 30건 + 브리핑 없는 시연 고객 C01 12건), Python 고정 반환·SSE 포장, 프론트 응답 검증, 잘못된 입력·다른 고객·변경된 스냅샷 거부, LLM import 없음.
+- 로컬 통과: 42건 고객(B 케이스 브리핑 30건 + C01 시연 고객 브리핑 12건), Python 고정 반환·SSE 포장, 프론트 응답 검증, 잘못된 입력·다른 고객·변경된 스냅샷 거부, LLM import 없음.
 - **미검증:** 로컬에 FastAPI/Pydantic이 없어 실제 앱 기동/ASGI 검사는 SKIP했습니다. 사내 Docker build·기동·Gateway·Origin/CORS·Starroot/WebView는 아래 순서로 확인해야 합니다.
 - 모든 고객 데이터는 시연용입니다. 금융 내용 승인/실제 추천 적합성 검증과는 별개입니다.
 
@@ -18,7 +18,7 @@ node tools/briefing/check.js
 node tools/briefing/check.js --agent
 ```
 
-`--agent` 검사는 Python이 필요합니다. FastAPI/Pydantic 설치 환경에서는 `/health`, 30건 `/chat`, 오류 응답도 검사합니다. 없으면 Python 반환부 검사까지만 통과하고 HTTP 검사 SKIP을 표시합니다. 의존성 설치는 사내 Nexus/기존 requirements 정책을 따릅니다.
+`--agent` 검사는 Python이 필요합니다. FastAPI/Pydantic 설치 환경에서는 `/health`, 42건 `/chat`, 오류 응답도 검사합니다. 없으면 Python 반환부 검사까지만 통과하고 HTTP 검사 SKIP을 표시합니다. 의존성 설치는 사내 Nexus/기존 requirements 정책을 따릅니다.
 
 빌드는 **프론트와 Agent 데이터를 함께** 생성합니다. 고객/브리핑 JSON을 수정했다면 양쪽을 같은 빌드 결과로 반입합니다. 생성 파일은 직접 수정하지 않습니다.
 
@@ -82,7 +82,7 @@ Node·개별 고객 JSON·프론트 원본 모듈은 WAS에 올리지 않습니�
 - [ ] `/health`가 아래처럼 응답하는지 확인합니다.
 
 ```json
-{"status":"ok","mode":"fixed_briefing","llm_enabled":false,"case_count":30}
+{"status":"ok","mode":"fixed_briefing","llm_enabled":false,"case_count":42}
 ```
 
 기존 `gemma-text-only-fixed-template-test-2`가 보이면 구버전 main.py가 배포된 것입니다. `ModuleNotFoundError`면 평면 import/COPY/설치 결과부터 확인합니다.
@@ -123,7 +123,7 @@ Agent는 `event: CHUNK`, 문자열 `content`, 빈 `references/recommend_queries/
 - [ ] 연계 제안이 나오면 **네** 버튼으로 다음 턴이 나가는지, 되묻기가 나오면 선택지 버튼으로 나가는지 확인합니다(실제 응답 형태는 [규격](integration/contracts/CHAT_AGENT_CONTRACT.md)과 대조).
 - [ ] 헤더의 **고객 변경**을 누르면 식별자를 다시 묻고, 새 식별자로 시작하면 `session_id`가 바뀌는지 확인합니다. 다른 고객 화면으로 바꾸면 그 고객의 상담은 식별자부터 새로 시작하고, 원래 고객으로 돌아오면 이전 대화가 유지되는지 확인합니다.
 
-우리 `customerId`(예: `54182-30764`)를 입력해 답하게 하려면 대화 Agent의 고객 저장소에 `agent/briefing_data.json`의 30건이 같은 `customerId`로 들어가야 합니다. C01 12명은 동료 대화 Agent가 이미 보유한 고객이라 그쪽 식별자(예: 이준호 `198734-1205842`)를 그대로 씁니다.
+우리 `customerId`(예: `54182-30764`)를 입력해 답하게 하려면 대화 Agent의 고객 저장소에 `agent/briefing_data.json`의 42건이 같은 `customerId`로 들어가야 합니다. C01 12명은 동료 대화 Agent가 이미 보유한 고객이라 그쪽 식별자(예: 이준호 `198734-1205842`)를 그대로 씁니다.
 
 ## 6. 오류·화면 수명 확인
 
