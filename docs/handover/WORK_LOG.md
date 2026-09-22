@@ -53,7 +53,7 @@
 - **2026-09-16 이전·정리:** 30명+김서연 원본/브리핑 보존. 상단 고객정보와 S1~S5 분리. 중복 명세·구버전 프론트·MD 변환/override·일회성 도구 정리. 수정 원본은 고객 JSON·브리핑 JSON·Vanilla 모듈.
 - **고정 Agent:** case_id·고객ID·기준일·전체 스냅샷 검증 후 저장된 S1~S5 반환. LLM 미사용, 평면 import·Docker COPY·Pydantic envelope·SSE 유지. `llm_client.call` 인터페이스/requirements 변경 없음.
 - **브리핑 자동 호출:** 구조화 고객 선택 시 FabriX 호출, 수신 고객은 세션 내 재사용·‘다시 요청’으로 갱신. 설정은 onParam/window 주입, 없거나 잘못되면 미호출. 반입 JS에는 고객 스냅샷만, 브리핑 문장은 API에서 수신.
-- **실시간 상담:** 별도 Connector로 사내 실제3턴 확인, 샘플은 `integration/contracts/chat.example.json`. 고객별 대화 세션·SSE/연속JSON/CHUNK 파싱·근거/후속 질문 표시. 직원이 대화 Agent용 고객 식별자를 입력하며 현재 저장소31건과 자동 연결된 것은 아님.
+- **실시간 상담:** 별도 Connector로 사내 실제3턴 확인, 샘플은 `integration/contracts/chat.example.json`. 고객별 대화 세션·SSE/연속JSON/CHUNK 파싱·근거/후속 질문 표시. 2026-09-22부터 선택한 고객의 `customerId`로 바로 시작하며(고객 변경으로 식별자 수동 입력 가능), 대화 Agent가 아는 고객은 C01 12명.
 - **메인 목록·뱃지:** 레거시18+케이스30, 김서연 중복 제외. 뱃지 원천은 signals/카탈로그, `pensionCustomerView`에서 색·표시 공통 처리. 목록 정렬과 일부 KPI는 목록 기반이며 AI 검색 집계와 자동 연동된 것으로 간주하지 않음.
 - **2026-09-18 부점 AI:** 규칙 기반 플로팅 검색 통합, 현재 메인48행 투영. 집계도 목록 적용, 기존 목록/상세 진입/복귀 연결. 조건 추출·추가 안내줄 제거.
 - **Starroot 보정:** transform 조상으로 인한 fixed 오류를 body 위젯으로 해결. 사내 옛 CSS 진단 후 번들 CSS 폴백 추가. 자산 경로를 `/mnbank/app/html/bfe/asstmgt/asst/`로 정정. 플랫폼 원본 reference는 유지.
@@ -61,6 +61,7 @@
 - **2026-09-17 뱃지 정렬:** `signals`를 Dynamic Segment 카탈로그 뱃지로 재정비(근거는 `에이전트맥락데이터`·`가상설정메모`), 디폴트옵션명 뿔려드림, 메인 목록 30케이스 합류·색·정렬·KPI 계산은 위 항목과 같음.
 - **2026-09-21 기준일 9/29 통일·C01 합류:** 30케이스 기준일 9/29 재계산(D-day·일수 지표·브리핑 문장, B02-18 DO 실행 10/3, B02-27 9/21 입금 반영). 동료 대화 Agent 시연 고객 12명 `C01-01~12`(엑셀 9명+실측 답변 3명, 카탈로그 뱃지만, 가정은 가상설정메모). 빌드가 브리핑 없는 고객 허용(`noBriefing`, FabriX 미요청·준비 중 표시, Agent 데이터 30건). DEMO-01 빌드 제외·브리핑 삭제, 레거시 ksy·lsm·pjh 숨김 후 C01 버전으로 대체.
 - **2026-09-21 부점 AI 모집단 57행 적응:** 메인 목록 투영이 48행→57행(구조화42+레거시15), 기준일 2026-09-29. `branch-data.js` 인원 검사를 소스 metadata 기반으로, 계약 `row_ids`·Pydantic `MAX_ROWS`를 64로 상향, 스키마 재출력. check_data/check_frontend/check_service/check_http/check_live_ui·conversation.test 기대값과 stub 36골든(`scenarios.json`, data_version 재계산, S-02 50대→40대, 추천 B04-23·B06-13·C01-10)을 현재 데이터로 재산출. 로컬 gate·build/check/--agent PASS. **Google Gemma 108골든·remote UI 19건은 옛 48행 기준이라 재실행 전까지 stale.**
+- **2026-09-22 진입 흐름 정리:** 테스트용 '고객별 브리핑' 버튼(목록 헤더)·드롭다운(상세 상단) 제거. 진입은 목록 행 클릭 → 준비 화면(4초 고정) → 상세만 남김. 실시간 상담 패널은 식별자 입력 대신 선택 고객의 `customerId`로 바로 시작하고 인트로를 "OOO 고객님 상담을 시작해요. 상담 중 궁금한 내용을 바로 물어보세요."로 변경, 고객 변경은 유지. check.js 갱신, 전 gate PASS.
 - **2026-09-21 뱃지 카탈로그 문서화:** `agent-workbench/case-design/review/BADGE_CATALOG.md` 신설(39종 정의·색·42케이스+레거시 사용 현황, 미사용 2종·변형 1종 명시). CASE_INDEX를 42건·기준일 9/29·C01 12행으로 갱신하고 DEMO-01 행 제거. 스키마 문서 12절에 카탈로그 우선 안내 추가.
 
 ## 검증·미완료

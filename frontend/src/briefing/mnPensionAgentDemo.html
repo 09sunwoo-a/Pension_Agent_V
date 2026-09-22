@@ -142,7 +142,6 @@
 <div class="pad-section-head">
 <div class="pad-rowb pad-g10">
 <div class="pad-h2">오늘의 중점관리 고객 · {{ queueTotal }}명</div>
-<sc-if value="{{ hasCaseLibrary }}"><button class="pad-btn-sm" sc-camel-on-click="{{ openCaseLibrary }}">{{ caseLibraryLabel }}</button></sc-if>
 <div class="pad-t-12-muted">관리 필요도 순</div>
 </div>
 <div class="pad-row pad-g6">
@@ -211,14 +210,6 @@
     <svg height="14" sc-camel-view-box="0 0 16 16" width="14"><polyline fill="none" points="6,3 11,8 6,13" stroke="#4E545C" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></polyline></svg>
 </button>
 </div>
-<sc-if value="{{ hasCaseLibrary }}">
-<div class="pad-case-picker">
-<label for="briefing-case">고객별 브리핑</label>
-<select id="briefing-case" aria-label="브리핑 고객 선택" sc-camel-on-change="{{ onCaseChange }}">
-<sc-for as="cc" list="{{ caseChoices }}"><option value="{{ cc.id }}" selected="{{ cc.selected }}">{{ cc.label }}</option></sc-for>
-</select>
-</div>
-</sc-if>
 <div class="pad-brief-layout">
 <div data-scroll-key="briefing-main" class="pad-brief-main">
 <div class="pad-brief-inner">

@@ -492,7 +492,6 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
     instance.setState(patch);
   });
   var records = store.customers();
-  var sampleLabels = { 'B01-22': '대표 · 업무 제안', 'B06-13': '대표 · 미확인 정보' };
   var noBriefing = {};
   (fixtures.noBriefing || []).forEach(function (id) { noBriefing[id] = true; });
   // The main list shows the case customers next to the legacy demo rows. Cases kept out of the
@@ -510,14 +509,6 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
   function view(component, base) {
     var id = component.state.sel, record = store.customer(id), entry = store.read(id);
     base.briefingLabels = BriefingView.labels;
-    base.hasCaseLibrary = true;
-    base.caseLibraryLabel = '고객별 브리핑 · ' + records.length + '명';
-    base.openCaseLibrary = function () { component.select('B01-22', true); };
-    base.caseChoices = records.map(function (r) {
-      return { id: r.briefingMeta.caseId, label: (sampleLabels[r.briefingMeta.caseId] || r.briefingMeta.caseId) + ' · ' + r.customer.name, selected: id === r.briefingMeta.caseId };
-    });
-    if (!record && id) base.caseChoices.unshift({ id: id, label: '기존 데모 · ' + base.selName, selected: true });
-    base.onCaseChange = function (e) { component.select(e.target.value, true); };
     base.structuredBrief = !!record; base.legacyBrief = !record;
     base.briefingTilesClass = record ? 'pad-tiles--structured' : '';
     base.hasBriefingState = false;
@@ -1058,10 +1049,16 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
     if (typeof text.toWellFormed === 'function') return text.toWellFormed();
     return text.replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/g, function (_, before) { return (before || '') + '�'; });
   }
-  // A consultation starts once the employee names the customer; that also starts a new session id.
+  // A consultation starts on the selected customer's own id with a fresh session id;
+  // 고객 변경 lets the employee switch to another identifier by typing it.
+  function intro(customer) { return customer.customer.name + ' 고객님 상담을 시작해요. 상담 중 궁금한 내용을 바로 물어보세요.'; }
   function session(caseId) {
     var s = sessions.get(caseId);
-    if (!s) { s = { id: uuid(), customerId: null, items: [{ k: 'sys', text: ASK_ID }] }; sessions.set(caseId, s); }
+    if (!s) {
+      var customer = bridge.getCustomerForRequest(caseId);
+      s = { id: uuid(), customerId: customer.customer.customerId, items: [{ k: 'sys', text: intro(customer) }] };
+      sessions.set(caseId, s);
+    }
     return s;
   }
   function startCustomer(s, customerId) {
@@ -1226,8 +1223,8 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
     var id = component.state.sel, customer = id ? bridge.getCustomerForRequest(id) : null;
     if (!customer) return base;
     var S = component.state, busy = !!active && active.caseId === id;
-    var s = sessions.get(id), items = s ? s.items : [{ k: 'sys', text: ASK_ID }], lastAnswer = -1;
-    var customerId = s ? s.customerId : null;
+    var s = session(id), items = s.items, lastAnswer = -1;
+    var customerId = s.customerId;
     items.forEach(function (m, i) { if (m.k === 'ans') lastAnswer = i; });
     base.agentOn = true; base.agentOff = false;
     base.agName = customerId ? customer.customer.name + ' · ' + customerId : customer.customer.name;

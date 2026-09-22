@@ -15,7 +15,6 @@
     instance.setState(patch);
   });
   var records = store.customers();
-  var sampleLabels = { 'B01-22': '대표 · 업무 제안', 'B06-13': '대표 · 미확인 정보' };
   var noBriefing = {};
   (fixtures.noBriefing || []).forEach(function (id) { noBriefing[id] = true; });
   // The main list shows the case customers next to the legacy demo rows. Cases kept out of the
@@ -33,14 +32,6 @@
   function view(component, base) {
     var id = component.state.sel, record = store.customer(id), entry = store.read(id);
     base.briefingLabels = BriefingView.labels;
-    base.hasCaseLibrary = true;
-    base.caseLibraryLabel = '고객별 브리핑 · ' + records.length + '명';
-    base.openCaseLibrary = function () { component.select('B01-22', true); };
-    base.caseChoices = records.map(function (r) {
-      return { id: r.briefingMeta.caseId, label: (sampleLabels[r.briefingMeta.caseId] || r.briefingMeta.caseId) + ' · ' + r.customer.name, selected: id === r.briefingMeta.caseId };
-    });
-    if (!record && id) base.caseChoices.unshift({ id: id, label: '기존 데모 · ' + base.selName, selected: true });
-    base.onCaseChange = function (e) { component.select(e.target.value, true); };
     base.structuredBrief = !!record; base.legacyBrief = !record;
     base.briefingTilesClass = record ? 'pad-tiles--structured' : '';
     base.hasBriefingState = false;
