@@ -141,6 +141,18 @@ assert.equal(composeTurn(turnFact).evidence[0].points[0], turnFact.events.find(e
 const withAction = composeTurn({ events: turnFact.events.concat([{ type: 'action', kind: 'memo', label: '쪽지로 보내드릴까요?', prompt: '네/아니오', title: '안내', text: '본문', to: '3902173' }, { type: 'clarify', question: '어느 상품?', options: ['A', { label: 'B' }] }, { type: 'sources', items: [{ id: 'g1', title: '원금보장 오인 금지', doc: '상담 원칙 (2026)', role: '주의' }] }]) });
 assert.deepEqual([withAction.blocks[withAction.blocks.length - 1], withAction.guard, withAction.clarify.options.length, withAction.evidence.length],
   [{ t: 'msg', x: '받는 사람: 3902173\n제목: 안내\n\n본문' }, [{ doc: '상담 원칙', meta: '2026', point: '원금보장 오인 금지' }], 2, 1], 'Action memo, clarify and 주의 sources');
+// Agent shapes from the colleague repo (nodes/act.py, nodes/clarify.py, effects/screens.py): offer trailer, memo fence,
+// clarify bullets and deep links are handled in compose()/segments(), not left in the body.
+const offerTurn = composeTurn({ events: [{ type: 'answer', text: 'MyStar 단말 [04-12-642] 적립금 및 수익률 조회 화면에서 확인하세요.\n\n— «만기예금 보유» 고객에게 쓰는 화법 2건, 보여드릴까요? (네 / 아니오)', intent: 'situation', links: [{ screen: '04-12-642', url: 'mystar-link://scnNo=0412642&mode=D', label: '적립금및수익률조회' }] }, { type: 'action', kind: 'pitch', label: '«만기예금 보유» 고객에게 쓰는 화법 2건', prompt: '«만기예금 보유» 고객에게 쓰는 화법 2건, 보여드릴까요? (네 / 아니오)' }, { type: 'sources', items: [] }, { type: 'followups', items: [] }, { type: 'done' }] });
+assert.deepEqual([offerTurn.lead, offerTurn.blocks, offerTurn.links, offerTurn.intent], ['MyStar 단말 [04-12-642] 적립금 및 수익률 조회 화면에서 확인하세요.', [], [{ screen: '04-12-642', url: 'mystar-link://scnNo=0412642&mode=D', label: '적립금및수익률조회' }], 'situation'], 'Offer trailer removed only with an action; links kept');
+assert.deepEqual(plain(ctx.window.PensionChat.segments(offerTurn.lead, offerTurn.links)).map(x => [x.t, x.isLink, x.url]), [['MyStar 단말 [', false, ''], ['04-12-642', true, 'mystar-link://scnNo=0412642&mode=D'], ['] 적립금 및 수익률 조회 화면에서 확인하세요.', false, '']], 'Screen number wrapped inside the brackets with the agent url');
+assert.deepEqual(composeTurn({ events: [{ type: 'answer', text: '본문.\n\n— 쪽지를 보낼 받는 사람을 알 수 없어요 — 로그인 사번이 넘어오지 않았습니다.', intent: 'situation', links: [] }, { type: 'sources', items: [] }, { type: 'done' }] }).blocks.map(b => b.x), ['— 쪽지를 보낼 받는 사람을 알 수 없어요 — 로그인 사번이 넘어오지 않았습니다.'], 'A notice line without an action stays in the body');
+const offerThenMarks = composeTurn({ events: [{ type: 'answer', text: '본문.\n\n— 화법 2건, 보여드릴까요? (네 / 아니오)\n\n── 참고한 자료\n· 본부 공식 자료', intent: 'situation', links: [] }, { type: 'action', kind: 'pitch', label: '화법 2건', prompt: '화법 2건, 보여드릴까요? (네 / 아니오)' }, { type: 'sources', items: [] }, { type: 'done' }] });
+assert.deepEqual([offerThenMarks.lead, offerThenMarks.blocks, offerThenMarks.badges], ['본문.', [], ['본부 공식 자료']], 'Offer line removed even when the 참고한 자료 block follows it');
+const memoTurn = composeTurn({ events: [{ type: 'answer', text: '```\n[제목] 과세이연 등록 상담 정리\n\n고객님과 나눈 내용입니다.\n```\n\n— 이대로 쪽지를 보낼까요? 받는 사람은 본인이에요. (네 / 아니오)', intent: 'situation', links: [] }, { type: 'action', kind: 'memo', label: '이 쪽지 보내기(받는 사람: 본인)', prompt: '이대로 쪽지를 보낼까요? 받는 사람은 본인이에요. (네 / 아니오)', title: '과세이연 등록 상담 정리', text: '고객님과 나눈 내용입니다.', to: '본인' }, { type: 'sources', items: [] }, { type: 'done' }] });
+assert.deepEqual([memoTurn.lead, memoTurn.blocks], ['', [{ t: 'msg', x: '받는 사람: 본인\n제목: 과세이연 등록 상담 정리\n\n고객님과 나눈 내용입니다.' }]], 'Memo draft shown once from the action fields; fence and offer line dropped');
+const clarifyTurn = composeTurn({ events: [{ type: 'answer', text: '어느 계좌 기준으로 안내할까요?\n\n· 개인형IRP\n· 연금저축', intent: 'situation', links: [] }, { type: 'clarify', question: '어느 계좌 기준으로 안내할까요?', options: ['개인형IRP', '연금저축'] }, { type: 'sources', items: [] }, { type: 'followups', items: [] }, { type: 'done' }] });
+assert.deepEqual([clarifyTurn.lead, clarifyTurn.blocks, clarifyTurn.clarify.options], ['어느 계좌 기준으로 안내할까요?', [], ['개인형IRP', '연금저축']], 'Clarify options rendered as buttons only, not as body bullets');
 assert.deepEqual(JSON.parse(fs.readFileSync(path.join(ROOT, 'integration/contracts/response.example.json'), 'utf8')), wire.answer(wire.request(kim, 'example-request-001', 'TEST_EMPLOYEE'), content));
 assert.deepEqual(JSON.parse(fs.readFileSync(path.join(ROOT, 'agent/briefing_data.json'), 'utf8')), agentData({ customers, briefings }), 'Rebuild Agent data together with the frontend');
 console.log('PASS: 42 customers (30 with briefings), totals, render mappings, optional fields, customer isolation, request identity, SSE parser, current three-file build, main list = legacy rows + 42 cases with catalog badges.');
@@ -214,7 +226,11 @@ async function chatPanelCheck() {
     const inner = JSON.parse(JSON.parse(init.body).contents[0]);
     calls.push({ url, headers: init.headers, agentId: JSON.parse(init.body).agentId, inner });
     const turn = chatSample.turns.find(t => t.message === inner.message);
-    const events = turn ? turn.events : [{ type: 'error', text: '알 수 없는 질문' }, { type: 'done' }];
+    const scripted = {
+      'IRP 계좌 해지는 몇 번 화면에서 하지?': [{ type: 'answer', text: '04-12-646 지급/해지조회 화면에서 처리해요.\n\n— «금리 변화기» 안내 문구로 75-08-110 발송 화면 열기, 연계해드릴까요? (네 / 아니오)', intent: 'guide', links: [{ screen: '04-12-646', url: 'mystar-link://scnNo=0412646&mode=D', label: '지급/해지조회' }] }, { type: 'action', kind: 'lms', label: '«금리 변화기» 안내 문구로 75-08-110 발송 화면 열기', prompt: '«금리 변화기» 안내 문구로 75-08-110 발송 화면 열기, 연계해드릴까요? (네 / 아니오)' }, { type: 'sources', items: [] }, { type: 'followups', items: [] }, { type: 'done' }],
+      '네': [{ type: 'answer', text: '«금리 변화기» 안내 문구로 75-08-110 발송 화면 열기\n화면이 열리면 이 문구를 넣어 주세요 — "고객님, 안내드립니다."', intent: 'confirm_action', links: [{ screen: '75-08-110', url: 'mystar-link://scnNo=7508110&mode=D', label: '개인고객용메시지발송(등록)' }] }, { type: 'sources', items: [] }, { type: 'followups', items: [] }, { type: 'done' }]
+    };
+    const events = turn ? turn.events : scripted[inner.message] || [{ type: 'error', text: '알 수 없는 질문' }, { type: 'done' }];
     const frames = [];
     for (let i = 0; i < events.length; i++) {
       if (events[i].type === 'answer' && events[i + 1] && events[i + 1].type === 'sources') { frames.push(frame(JSON.stringify(events[i]) + JSON.stringify(events[i + 1]))); i++; }
@@ -280,11 +296,23 @@ async function chatPanelCheck() {
   assert.ok(/형식/.test(live.renderVals().agMsgs.pop().text) && calls.length === 4, 'Malformed id after 고객 변경 is rejected without calling the agent');
   type(live, demoId); type(live, turnFact.message); await settle();
   assert.deepEqual([calls[4].inner.customer_id, calls[4].inner.session_id !== calls[0].inner.session_id], [demoId, true], 'Typed id replaces the customer and starts a new session');
+  // Offer turn: prompt (not label) above the buttons, offer line gone from the body, screen number wrapped as a link, no copy button on 화법.
+  ctx.window.location = { href: '' };
+  type(live, 'IRP 계좌 해지는 몇 번 화면에서 하지?'); await settle();
+  v = live.renderVals(); ans = v.agMsgs[v.agMsgs.length - 1];
+  assert.deepEqual([ans.ctaOn, ans.ctaAsk, ans.blocks.length, plain(ans.leadSegs).map(x => [x.t, x.isLink]), ans.hasLinkRows, plain(ans.linkRows)[0].url, ctx.window.location.href],
+    [true, '«금리 변화기» 안내 문구로 75-08-110 발송 화면 열기, 연계해드릴까요?', 0, [['04-12-646', true], [' 지급/해지조회 화면에서 처리해요.', false]], true, 'mystar-link://scnNo=0412646&mode=D', ''], 'Offer turn: prompt on the CTA, trailer stripped, inline deep link, no auto-open');
+  assert.equal(plain(live.renderVals().agMsgs.filter(m => m.isAns).map(m => m.blocks.filter(b => b.isQuote).map(b => b.copyOn)).flat()).some(Boolean), false, 'Quoted 화법 carries no copy button');
+  ans.onCtaYes(); await settle();
+  v = live.renderVals(); ans = v.agMsgs[v.agMsgs.length - 2]; const opened = v.agMsgs[v.agMsgs.length - 1];
+  assert.deepEqual([calls[calls.length - 1].inner.message, ans.isAns, plain(ans.leadSegs).map(x => x.isLink), ctx.window.location.href, opened.isSys, opened.text],
+    ['네', true, [false, true, false], 'mystar-link://scnNo=7508110&mode=D', true, '단말 화면을 열었어요 — 개인고객용메시지발송(등록) (75-08-110)'], '네 on a screen proposal opens the agent deep link and notes it');
+  delete ctx.window.location;
   live.componentWillUnmount();
   const bare = mount({ starrootParams: { fabrix: { ...briefingCfg, chat: { endpointUrl: '', agentId: '', openapiToken: '', generativeAiClient: '' } } } });
   bare.state.sel = FIRST; type(bare, '질문');
   const note = bare.renderVals().agMsgs.pop();
-  assert.ok(note.isSys && /주입되지 않아/.test(note.text) && calls.length === 5, 'Empty chat block: question kept, no call, NOCONFIG note');
+  assert.ok(note.isSys && /주입되지 않아/.test(note.text) && calls.length === 7, 'Empty chat block: question kept, no call, NOCONFIG note');
   bare.componentWillUnmount(); delete ctx.window.__PENSION_FABRIX_CONFIG; delete ctx.fetch;
 }
 // 부점 AI (current main-list search): golden regression of the deterministic evaluator and session on the

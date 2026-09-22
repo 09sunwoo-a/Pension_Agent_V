@@ -9,6 +9,8 @@
 
 ## 1. 반드시 고칠 것 (배포 화면에서 내용이 빠지거나 대화 경로가 끊김)
 
+> **2026-09-22 결정·반영:** 1-1 반영(본문 화면번호를 딥링크로, 본문 아래 링크 줄, **「네」 승낙 턴(`intent: confirm_action` + `links`)은 `links[0].url`을 바로 연다**). 1-2 반영(1-6과 묶임 — 본문의 제안 문장을 떼면 질문이 사라지므로 버튼 위에 `prompt`를 쓴다). 1-3·1-4·1-5·1-6 반영. **1-7·1-8은 사용자 결정으로 보류(그대로 둠).** 추가: 큰따옴표 화법 카드의 「복사」 버튼 제거(Agent compose 프롬프트가 복사 버튼을 전제하지만 화면 결정), 답변 본문의 단일 줄바꿈 유지(`white-space: pre-line`). 검증: `tools/briefing/check.js`에 offer·memo·clarify·links·승낙 자동 열기 케이스 추가, 헤드리스 캡처 확인.
+
 ### 1-1. `answer.links[]`(단말 화면 딥링크)를 프론트가 전혀 읽지 않는다 — blocker
 - Agent: 모든 answer 이벤트에 `links`가 온다(없으면 `[]`). 항목 `{screen:"04-12-642", url:"mystar-link://scnNo=0412642&mode=D", label:"적립금및수익률조회"}`. `main.py:250-260`, `effects/screens.py:82-92,139-158`. LMS 제안에 「네」 한 뒤의 답변은 본문이 제안 라벨 한 줄뿐이고 **유일한 실행 수단이 `links[0].url`**이다(`nodes/act.py:584-591`). `client/README.md:95-113`: 본문 속 `screen` 문자열을 `url`로 감싸고, URL을 프론트가 조립하지 말 것, 커스텀 스킴을 sanitizer 허용 목록에 넣을 것.
 - 프론트: `compose()`가 `answer.text`만 읽는다(`pensionChat.js:181`). 근거 링크 `↗ 원문 보기`만 있고 `/^https:\/\//`로 걸러(`:171`) `mystar-link://`는 통과 못 한다. 레거시 코드는 `mode=D`를 하드코딩해 URL을 직접 만든다(`pensionAgentDemo.js:649,1396`) — Agent 규약 위반.
