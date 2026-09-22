@@ -231,10 +231,16 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
     return list.length ? 3000 : 4000;
   }
   var TAX_LIMIT_KRW = 9000000;
+  // Screen-only identifier: every customer number shows as 5자리-5자리. Longer parts (C01 6-7자리)
+  // are cut to their first five digits. Requests keep the original customerId untouched.
+  function displayId(value) {
+    var m = /^(\d+)-(\d+)$/.exec(String(value == null ? '' : value));
+    return m ? m[1].slice(0, 5) + '-' + m[2].slice(0, 5) : String(value == null ? '' : value);
+  }
 
   function stub(record) {
     var c = record.customer;
-    return { id: record.briefingMeta.caseId, name: c.name, cno: c.customerId, phone: '', product: 'IRP', profile: c.investmentProfile || '확인 필요', deposit: contract.money(record.irpAccount.valuationAmountKrw).replace(/원$/, ''), depositEok: record.irpAccount.valuationAmountKrw / 100000000, bar: '#FFCC00', hold: [], tags: [], chips: [] };
+    return { id: record.briefingMeta.caseId, name: c.name, cno: c.customerId, cnoLabel: displayId(c.customerId), phone: '', product: 'IRP', profile: c.investmentProfile || '확인 필요', deposit: contract.money(record.irpAccount.valuationAmountKrw).replace(/원$/, ''), depositEok: record.irpAccount.valuationAmountKrw / 100000000, bar: '#FFCC00', hold: [], tags: [], chips: [] };
   }
   // Main-list row for a structured customer, in the shape the legacy queue renderer reads.
   // Badges are the customer's Dynamic Segments (signals); 신규 선정 = an imminent event
@@ -263,6 +269,7 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
   function build(record) {
     var base = {}, customer = record.customer, account = record.irpAccount, d = customer.defaultOption;
     base.selName = customer.name;
+    base.pfPin = displayId(customer.customerId);
     base.pfRows = [{ l: '나이 · 성별', v: (customer.age == null ? '확인 필요' : customer.age + '세') + ' · ' + (customer.gender || '확인 필요') }, { l: '스타클럽 등급', v: customer.starClubGrade || '확인 필요' }, { l: '투자성향', v: customer.investmentProfile || '확인 필요' }];
     base.pfAmt = contract.money(account.valuationAmountKrw);
     base.pfRet = contract.percent(account.oneYearReturnPct);
@@ -288,7 +295,7 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
 
     return base;
   }
-  return { stub: stub, row: row, profile: profile, build: build, badge: badge, keyOf: keyOf, priority: priority, labels: labels };
+  return { stub: stub, row: row, profile: profile, build: build, badge: badge, keyOf: keyOf, priority: priority, labels: labels, displayId: displayId };
 });
 
 ;
@@ -997,7 +1004,7 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
 (function (window) {
   'use strict';
   if (window.PensionChat && window.PensionChat.destroy) window.PensionChat.destroy();
-  var transport = window.PensionChatTransport, bridge = window.PensionBriefingAdapter;
+  var transport = window.PensionChatTransport, bridge = window.PensionBriefingAdapter, customerView = window.PensionCustomerView;
   var cfg = null, configCode = 'NOCONFIG', active = null, serial = 0, sessions = new Map();
   var ID_PATTERN = /^[A-Za-z0-9._-]{3,40}$/;
   var ASK_ID = '고객 식별자를 입력해 주세요.';
@@ -1315,7 +1322,8 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
     var customerId = s.customerId;
     items.forEach(function (m, i) { if (m.k === 'ans') lastAnswer = i; });
     base.agentOn = true; base.agentOff = false;
-    base.agName = customerId ? customer.customer.name + ' · ' + customerId : customer.customer.name;
+    // Header shows the 5자리-5자리 screen form; customer_id in the request stays the original value.
+    base.agName = customerId ? customer.customer.name + ' · ' + customerView.displayId(customerId) : customer.customer.name;
     base.agResetOn = !!customerId && !busy; base.agReset = function () { resetCustomer(id); };
     base.panelOpen = !!S.panelOpen; base.panelClosed = !S.panelOpen;
     base.agMsgs = items.map(function (m, i) { return message(component, id, m, i, i === lastAnswer && lastAnswer === items.length - 1, busy); });
@@ -4610,12 +4618,13 @@ class Component {
         if (!S.searched) return [];
         const q = S.searchQ.trim().toLowerCase(), qd = q.replace(/\D/g, '');
         const inQ = x => DATA.indexOf(x) >= 0;
-        return this.DIR.filter(x => x.name.toLowerCase().includes(q) || (qd && (x.cno.replace(/\D/g, '').includes(qd) || x.phone.replace(/\D/g, '').includes(qd)))).slice(0, 6)
-          .map(x => ({ name: x.name, product: x.product, cno: x.cno, phone: x.phone,
+        const nos = x => [x.cno, x.cnoLabel || '', x.phone].map(v => String(v).replace(/\D/g, ''));
+        return this.DIR.filter(x => x.name.toLowerCase().includes(q) || (qd && nos(x).some(n => n.includes(qd)))).slice(0, 6)
+          .map(x => ({ name: x.name, product: x.product, cno: x.cnoLabel || x.cno, phone: x.phone,
             tag: inQ(x) ? '오늘 타겟' : '타겟 외', tagBg: inQ(x) ? '#FFF3C2' : '#F2F3F5', tagFg: inQ(x) ? '#7A6108' : '#9298A2',
             onTap: () => this.select(x.id) }));
       })(),
-      searchEmpty: !!S.searched && !this.DIR.some(x => { const q = S.searchQ.trim().toLowerCase(), qd = q.replace(/\D/g, ''); return x.name.toLowerCase().includes(q) || (qd && (x.cno.replace(/\D/g, '').includes(qd) || x.phone.replace(/\D/g, '').includes(qd))); }),
+      searchEmpty: !!S.searched && !this.DIR.some(x => { const q = S.searchQ.trim().toLowerCase(), qd = q.replace(/\D/g, ''); return x.name.toLowerCase().includes(q) || (qd && [x.cno, x.cnoLabel || '', x.phone].some(v => String(v).replace(/\D/g, '').includes(qd))); }),
       queue,
       selName: c ? c.name : '', selMeta: c ? c.product + ' · 적립금 ' + c.deposit + ' · ' + c.profile : '', selPa: c ? (c.pa || '26.4') : '', selPaColor: c && c.stale ? '#D99000' : '#696E76',
       pfPin: pf.pin, pfRows: [{ l: '나이 · 성별', v: pf.age + '세 · ' + pf.sex }, { l: '스타클럽 등급', v: pf.club }, { l: '투자성향', v: c ? c.profile : '' }],

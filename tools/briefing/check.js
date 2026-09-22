@@ -44,6 +44,8 @@ for (const [i, c] of customers.entries()) {
   const v = app.renderVals(), normalized = contract.normalizeContent(contract.contentOf(b));
   assert.equal(v.selName, c.customer.name, id);
   assert.equal(v.pfAmt, contract.money(c.irpAccount.valuationAmountKrw), id);
+  assert.equal(v.pfPin, ctx.window.PensionCustomerView.displayId(c.customer.customerId), id + ': header shows the 5자리-5자리 screen id');
+  assert.ok(/^\d{5}-\d{5}$/.test(v.pfPin), id + ': screen id is 5자리-5자리');
   assert.equal(v.bfS1Lines.length, b.s1.items.length, id);
   assert.equal(v.bfTiles.length, normalized.s3.options.length, id);
   assert.equal(v.bfReacts.length, normalized.s4.reactions.length, id);
@@ -279,6 +281,10 @@ async function chatPanelCheck() {
   v = live.renderVals();
   const b0122 = customers.find(c => c.briefingMeta.caseId === 'B01-22').customer.customerId;
   assert.deepEqual([kinds(v.agMsgs), v.agChipsOn, v.agResetOn, v.agName], [['sys'], false, true, '한지훈 · ' + b0122], 'Another customer starts on its own id');
+  live.select('C01-10', true);
+  assert.equal(live.renderVals().agName, '김서연 · 17120-48150', 'C01 header shows the cut 5자리-5자리 id');
+  assert.equal(ctx.window.PensionCustomerView.displayId('171203-4815062'), '17120-48150');
+  live.select('B01-22', true);
   type(live, turnPitch.message); await settle();
   assert.equal(calls[3].inner.customer_id, b0122, 'Selected customer id is sent as customer_id');
   assert.notEqual(calls[3].inner.session_id, calls[0].inner.session_id, 'New customer, new session');
