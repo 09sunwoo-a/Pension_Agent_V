@@ -1125,7 +1125,12 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
     if (answer) {
       s.items.push({ k: 'ans', answer: answer });
       // "네" to a screen proposal: the agent answers with the proposal label and the deep link; open it right away.
-      if (answer.intent === 'confirm_action' && answer.links.length && openScreen(answer.links[0].url)) s.items.push({ k: 'sys', text: '단말 화면을 열었어요 — ' + answer.links[0].label + ' (' + answer.links[0].screen + ')' });
+      if (answer.intent === 'confirm_action' && answer.links.length) {
+        var first = answer.links[0], auto = openScreen(first.url);
+        // Browsers may refuse a script-started custom-scheme navigation once the click's user activation has
+        // expired (the agent takes seconds to answer), so the transcript always keeps a button the employee can press.
+        s.items.push({ k: 'open', url: first.url, label: first.label, screen: first.screen, auto: auto });
+      }
     }
     var failure = pending.events.filter(function (e) { return e.type === 'error'; })[0];
     if (failure) s.items.push({ k: 'sys', text: '답변에 실패했습니다. ' + String(failure.text || '').slice(0, 300) });
@@ -1233,7 +1238,9 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
     try { window.location.href = url; return true; } catch (_) { return false; }
   }
   function message(component, id, m, i, offers, busy) {
-    var out = Object.assign({ isSys: m.k === 'sys', isUser: m.k === 'user', isStatus: m.k === 'status', isAns: m.k === 'ans',
+    var out = Object.assign({ isSys: m.k === 'sys', isUser: m.k === 'user', isStatus: m.k === 'status', isAns: m.k === 'ans', isOpen: m.k === 'open',
+      openText: m.k === 'open' ? (m.auto ? '단말 화면 열기를 요청했어요. 열리지 않으면 아래 버튼을 눌러 주세요.' : '단말 화면을 열 수 있어요.') : '',
+      openLabel: m.k === 'open' ? m.label + ' (' + m.screen + ')' : '', openUrl: m.k === 'open' ? m.url : '', onOpen: m.k === 'open' ? function () { openScreen(m.url); } : noop,
       text: m.text || '', statusLabel: m.k === 'status' ? m.text : '', onEvid: noop, onGuard: noop, onCtaYes: noop, onCtaNo: noop,
       leadSegs: [{ t: m.text || '', isText: true, isLink: false, url: '', label: '' }], hasLinkRows: false, linkRows: [] }, EMPTY);
     if (m.k !== 'ans') return out;

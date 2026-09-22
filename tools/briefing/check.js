@@ -305,8 +305,9 @@ async function chatPanelCheck() {
   assert.equal(plain(live.renderVals().agMsgs.filter(m => m.isAns).map(m => m.blocks.filter(b => b.isQuote).map(b => b.copyOn)).flat()).some(Boolean), false, 'Quoted 화법 carries no copy button');
   ans.onCtaYes(); await settle();
   v = live.renderVals(); ans = v.agMsgs[v.agMsgs.length - 2]; const opened = v.agMsgs[v.agMsgs.length - 1];
-  assert.deepEqual([calls[calls.length - 1].inner.message, ans.isAns, plain(ans.leadSegs).map(x => x.isLink), ctx.window.location.href, opened.isSys, opened.text],
-    ['네', true, [false, true, false], 'mystar-link://scnNo=7508110&mode=D', true, '단말 화면을 열었어요 — 개인고객용메시지발송(등록) (75-08-110)'], '네 on a screen proposal opens the agent deep link and notes it');
+  assert.deepEqual([calls[calls.length - 1].inner.message, ans.isAns, plain(ans.leadSegs).map(x => x.isLink), ctx.window.location.href, opened.isOpen, opened.openLabel, opened.openUrl],
+    ['네', true, [false, true, false], 'mystar-link://scnNo=7508110&mode=D', true, '개인고객용메시지발송(등록) (75-08-110)', 'mystar-link://scnNo=7508110&mode=D'], '네 on a screen proposal opens the agent deep link and leaves a button');
+  ctx.window.location.href = ''; opened.onOpen(); assert.equal(ctx.window.location.href, 'mystar-link://scnNo=7508110&mode=D', 'Button re-opens the same link on a user click');
   delete ctx.window.location;
   live.componentWillUnmount();
   const bare = mount({ starrootParams: { fabrix: { ...briefingCfg, chat: { endpointUrl: '', agentId: '', openapiToken: '', generativeAiClient: '' } } } });

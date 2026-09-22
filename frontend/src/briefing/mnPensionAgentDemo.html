@@ -558,6 +558,9 @@
 <sc-if value="{{ m.isUser }}">
 <div class="pad-flex pad-end"><div class="pad-msg-user">{{ m.text }}</div></div>
 </sc-if>
+<sc-if value="{{ m.isOpen }}">
+<div class="pad-msg-sys pad-open-note"><div>{{ m.openText }}</div><a href="{{ m.openUrl }}" sc-camel-on-click="{{ m.onOpen }}" class="pad-btn pad-btn--brand pad-p-7-16 pad-open-btn">▶ 화면 열기 · {{ m.openLabel }}</a></div>
+</sc-if>
 <sc-if value="{{ m.isStatus }}">
 <div class="pad-status">
 <span class="pad-dots">

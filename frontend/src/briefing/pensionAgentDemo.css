@@ -406,6 +406,8 @@
 #pensionAgentDemo .pad-step__body {padding:0 0 12px}
 #pensionAgentDemo .pad-step__title {font-size:var(--pad-fs-13);font-weight:var(--pad-fw-bold);line-height:var(--pad-lh-tight)}
 #pensionAgentDemo .pad-step__desc {font-size:var(--pad-fs-12);color:var(--pad-c-sub);line-height:var(--pad-lh-tight);margin-top:1px;word-break:keep-all}
+#pensionAgentDemo .pad-open-note {display:flex;flex-direction:column;gap:8px}
+#pensionAgentDemo .pad-open-btn {display:inline-flex;align-self:flex-start;text-decoration:none}
 #pensionAgentDemo .pad-scn-link {color:var(--pad-c-accent);font-weight:var(--pad-fw-bold);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 #pensionAgentDemo .pad-scn-links {display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:9px;font-size:var(--pad-fs-12)}
 #pensionAgentDemo .pad-scn-link--row {text-decoration:none}
