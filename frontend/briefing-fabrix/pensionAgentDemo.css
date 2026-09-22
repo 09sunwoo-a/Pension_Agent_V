@@ -397,15 +397,21 @@
 #pensionAgentDemo .pad-typing {background:var(--pad-c-bg-2);border-radius:var(--pad-r-lg);padding:14px 15px;display:flex;gap:5px;align-items:center}
 #pensionAgentDemo .pad-caret {display:inline-block;width:2px;height:13px;background:var(--pad-c-accent);margin-left:2px;vertical-align:-2px;animation:om-blink .9s steps(1) infinite}
 #pensionAgentDemo .pad-ans {border:1px solid var(--pad-c-line);border-radius:var(--pad-r-md);padding:14px 15px;background:var(--pad-c-white)}
-#pensionAgentDemo .pad-ans__lead {font-size:var(--pad-fs-14);font-weight:var(--pad-fw-bold);line-height:var(--pad-lh-base);margin-top:9px;word-break:keep-all}
+#pensionAgentDemo .pad-ans__lead {white-space:pre-line;font-size:var(--pad-fs-14);font-weight:var(--pad-fw-bold);line-height:var(--pad-lh-base);margin-top:9px;word-break:keep-all}
 #pensionAgentDemo .pad-ans__leadsub {font-size:var(--pad-fs-11);font-weight:var(--pad-fw-regular);color:var(--pad-c-muted);margin-left:6px}
-#pensionAgentDemo .pad-ans__p {font-size:var(--pad-fs-13);color:var(--pad-c-deep);line-height:var(--pad-lh-relaxed);margin-top:10px;word-break:keep-all}
+#pensionAgentDemo .pad-ans__p {white-space:pre-line;font-size:var(--pad-fs-13);color:var(--pad-c-deep);line-height:var(--pad-lh-relaxed);margin-top:10px;word-break:keep-all}
 #pensionAgentDemo .pad-ans__foot {border-top:1px solid var(--pad-c-bg-2);margin-top:13px;padding-top:11px}
 #pensionAgentDemo .pad-li {display:flex;gap:7px;font-size:var(--pad-fs-13);color:var(--pad-c-dark);line-height:var(--pad-lh-base);word-break:keep-all}
 #pensionAgentDemo .pad-li__bullet {flex:none;color:var(--pad-c-accent);font-weight:var(--pad-fw-bold)}
 #pensionAgentDemo .pad-step__body {padding:0 0 12px}
 #pensionAgentDemo .pad-step__title {font-size:var(--pad-fs-13);font-weight:var(--pad-fw-bold);line-height:var(--pad-lh-tight)}
 #pensionAgentDemo .pad-step__desc {font-size:var(--pad-fs-12);color:var(--pad-c-sub);line-height:var(--pad-lh-tight);margin-top:1px;word-break:keep-all}
+#pensionAgentDemo .pad-open-note {display:flex;flex-direction:column;gap:8px}
+#pensionAgentDemo .pad-open-btn {display:inline-flex;align-self:flex-start;text-decoration:none}
+#pensionAgentDemo .pad-scn-link {color:var(--pad-c-accent);font-weight:var(--pad-fw-bold);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+#pensionAgentDemo .pad-scn-links {display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:9px;font-size:var(--pad-fs-12)}
+#pensionAgentDemo .pad-scn-link--row {text-decoration:none}
+#pensionAgentDemo .pad-scn-link--row:hover {text-decoration:underline}
 #pensionAgentDemo .pad-msg-box {background:var(--pad-c-bg);border-radius:var(--pad-r-sm);padding:11px 13px}
 #pensionAgentDemo .pad-pre {font-size:var(--pad-fs-13);color:var(--pad-c-dark);line-height:var(--pad-lh-relaxed);white-space:pre-line;word-break:keep-all;overflow-wrap:anywhere}
 #pensionAgentDemo .pad-tbl {border:1px solid var(--pad-c-bg-2);border-radius:var(--pad-r-sm);overflow:hidden;margin-top:10px}

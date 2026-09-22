@@ -694,17 +694,17 @@ class Component {
       const blockSrc = anim ? (a.blocks || []).slice(0, S.agBlockN) : (a.blocks || []);
       return { ...base,
         typeLabel: tp[0], typeBg: tp[1], typeFg: tp[2],
-        lead: anim ? lead.slice(0, S.agStreamN) : lead, streaming,
+        lead: anim ? lead.slice(0, S.agStreamN) : lead, streaming, leadSegs: [{ t: anim ? lead.slice(0, S.agStreamN) : lead, isText: true, isLink: false, url: '', label: '' }], hasLinkRows: false, linkRows: [],
         hasLeadSub: !!a.leadSub && !streaming, leadSub: a.leadSub || '',
         blocks: blockSrc.map((b, bi) => {
           const key = 'ag' + i + '-' + bi;
           return {
             isP: b.t === 'p', isList: b.t === 'list', isSteps: b.t === 'steps', isQuote: b.t === 'quote', isMsg: b.t === 'msg', isTable: b.t === 'table', isCaution: b.t === 'caution', isMemory: b.t === 'memoryNote', isLink: b.t === 'link', isEvCard: b.t === 'eventCard',
-            x: b.x || '', title: b.title || '', hasTitle: !!b.title,
+            x: b.x || '', segs: [{ t: b.x || '', isText: true, isLink: false, url: '', label: '' }], copyOn: true, title: b.title || '', hasTitle: !!b.title,
             kind: b.kind || '', icon: b.icon || '', when: b.when || '', desc: b.desc || '', msg: b.msg || '',
             msgOpen: !!S.agEvOpen && !!S.agEvOpen[key], msgRot: (S.agEvOpen && S.agEvOpen[key]) ? '180deg' : '0deg',
             onMsgToggle: () => this.setState(s => ({ agEvOpen: { ...(s.agEvOpen || {}), [key]: !(s.agEvOpen || {})[key] } })),
-            items: (b.items || []).map((it, ii, arr) => (typeof it === 'string' ? { no: ii + 1, t: it, title: '', desc: '', hasLine: ii < arr.length - 1 } : { no: ii + 1, t: '', title: it.title || '', desc: it.desc || '', hasLine: ii < arr.length - 1 })),
+            items: (b.items || []).map((it, ii, arr) => (typeof it === 'string' ? { no: ii + 1, t: it, segs: [{ t: it, isText: true, isLink: false, url: '', label: '' }], title: '', desc: '', hasLine: ii < arr.length - 1 } : { no: ii + 1, t: '', segs: [], title: it.title || '', desc: it.desc || '', hasLine: ii < arr.length - 1 })),
             rows: (b.rows || []).map(r => ({ k: r[0], v: r[1] })),
             copyLabel: S.copied === key ? '복사됨 ✓' : '복사',
             onCopy: () => this.copy(key, b.msg || b.x || '')

@@ -558,6 +558,9 @@
 <sc-if value="{{ m.isUser }}">
 <div class="pad-flex pad-end"><div class="pad-msg-user">{{ m.text }}</div></div>
 </sc-if>
+<sc-if value="{{ m.isOpen }}">
+<div class="pad-msg-sys pad-open-note"><div>{{ m.openText }}</div><a href="{{ m.openUrl }}" target="_blank" rel="noopener" sc-camel-on-click="{{ m.onOpen }}" class="pad-btn pad-btn--brand pad-p-7-16 pad-open-btn">▶ 화면 열기 · {{ m.openLabel }}</a></div>
+</sc-if>
 <sc-if value="{{ m.isStatus }}">
 <div class="pad-status">
 <span class="pad-dots">
@@ -571,16 +574,16 @@
 <sc-if value="{{ m.isAns }}">
 <div class="pad-ans">
 <div><span class="pad-type-tag" style="color:{{ m.typeFg }};background:{{ m.typeBg }}">{{ m.typeLabel }}</span></div>
-<div class="pad-ans__lead">{{ m.lead }}<sc-if value="{{ m.streaming }}"><span class="pad-caret"></span></sc-if><sc-if value="{{ m.hasLeadSub }}"><span class="pad-ans__leadsub">{{ m.leadSub }}</span></sc-if></div>
+<div class="pad-ans__lead"><sc-for as="seg" list="{{ m.leadSegs }}"><sc-if value="{{ seg.isText }}">{{ seg.t }}</sc-if><sc-if value="{{ seg.isLink }}"><a href="{{ seg.url }}" title="{{ seg.label }}" class="pad-scn-link">{{ seg.t }}</a></sc-if></sc-for><sc-if value="{{ m.streaming }}"><span class="pad-caret"></span></sc-if><sc-if value="{{ m.hasLeadSub }}"><span class="pad-ans__leadsub">{{ m.leadSub }}</span></sc-if></div>
 <sc-for as="b" list="{{ m.blocks }}">
 <div class="pad-in">
-<sc-if value="{{ b.isP }}"><div class="pad-ans__p">{{ b.x }}</div></sc-if>
+<sc-if value="{{ b.isP }}"><div class="pad-ans__p"><sc-for as="seg" list="{{ b.segs }}"><sc-if value="{{ seg.isText }}">{{ seg.t }}</sc-if><sc-if value="{{ seg.isLink }}"><a href="{{ seg.url }}" title="{{ seg.label }}" class="pad-scn-link">{{ seg.t }}</a></sc-if></sc-for></div></sc-if>
 <sc-if value="{{ b.isList }}">
 <div class="pad-mt10">
 <sc-if value="{{ b.hasTitle }}"><div class="pad-t-12b-sub pad-mb6">{{ b.title }}</div></sc-if>
 <div class="pad-col pad-g5">
 <sc-for as="b2" list="{{ b.items }}">
-<div class="pad-li"><span class="pad-li__bullet">•</span><span>{{ b2.t }}</span></div>
+<div class="pad-li"><span class="pad-li__bullet">•</span><span><sc-for as="seg" list="{{ b2.segs }}"><sc-if value="{{ seg.isText }}">{{ seg.t }}</sc-if><sc-if value="{{ seg.isLink }}"><a href="{{ seg.url }}" title="{{ seg.label }}" class="pad-scn-link">{{ seg.t }}</a></sc-if></sc-for></span></div>
 </sc-for>
 </div>
 </div>
@@ -606,7 +609,7 @@
 <div class="pad-t-12b-sub">💬 고객에게 이렇게 말씀해 보세요</div>
 <div class="pad-quote-card">
 <div class="pad-quote pad-t-13">“{{ b.x }}”</div>
-<button sc-camel-on-click="{{ b.onCopy }}" class="pad-copy-btn">{{ b.copyLabel }}</button>
+<sc-if value="{{ b.copyOn }}"><button sc-camel-on-click="{{ b.onCopy }}" class="pad-copy-btn">{{ b.copyLabel }}</button></sc-if>
 </div>
 </div>
 </sc-if>
@@ -659,6 +662,28 @@
 </sc-if>
 </div>
 </sc-for>
+<sc-if value="{{ m.hasLinkRows }}">
+<div class="pad-scn-links pad-in">
+<sc-for as="lk" list="{{ m.linkRows }}"><a href="{{ lk.url }}" class="pad-scn-link pad-scn-link--row">↗ {{ lk.label }} ({{ lk.screen }})</a></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ m.ctaOn }}">
+<div class="pad-cta pad-in">
+<div class="pad-cta__ask">{{ m.ctaAsk }}</div>
+<div class="pad-flex pad-g8 pad-mt9">
+<button sc-camel-on-click="{{ m.onCtaYes }}" class="pad-btn pad-btn--brand pad-p-7-16">{{ m.ctaYes }}</button>
+<button sc-camel-on-click="{{ m.onCtaNo }}" class="pad-btn pad-btn--line pad-p-7-16">아니오</button>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ m.clarifyOn }}">
+<div class="pad-cta pad-in">
+<sc-if value="{{ m.hasClarifyQuestion }}"><div class="pad-cta__ask">{{ m.clarifyQuestion }}</div></sc-if>
+<div class="pad-flex pad-wrap pad-g6 pad-mt9">
+<sc-for as="op" list="{{ m.clarify }}"><button sc-camel-on-click="{{ op.onTap }}" class="pad-sugg">{{ op.label }}</button></sc-for>
+</div>
+</div>
+</sc-if>
 <sc-if value="{{ m.footOn }}">
 <div class="pad-ans__foot pad-in">
 <div class="pad-row pad-g7 pad-wrap">
@@ -712,23 +737,6 @@
 <div class="pad-t-13-sub pad-mt5 pad-keep">· {{ fo.t }}</div>
 </sc-for>
 </sc-if>
-</div>
-</sc-if>
-<sc-if value="{{ m.ctaOn }}">
-<div class="pad-cta pad-in">
-<div class="pad-cta__ask">{{ m.ctaAsk }}</div>
-<div class="pad-flex pad-g8 pad-mt9">
-<button sc-camel-on-click="{{ m.onCtaYes }}" class="pad-btn pad-btn--brand pad-p-7-16">{{ m.ctaYes }}</button>
-<button sc-camel-on-click="{{ m.onCtaNo }}" class="pad-btn pad-btn--line pad-p-7-16">아니오</button>
-</div>
-</div>
-</sc-if>
-<sc-if value="{{ m.clarifyOn }}">
-<div class="pad-cta pad-in">
-<div class="pad-cta__ask">{{ m.clarifyQuestion }}</div>
-<div class="pad-flex pad-wrap pad-g6 pad-mt9">
-<sc-for as="op" list="{{ m.clarify }}"><button sc-camel-on-click="{{ op.onTap }}" class="pad-sugg">{{ op.label }}</button></sc-for>
-</div>
 </div>
 </sc-if>
 </div>

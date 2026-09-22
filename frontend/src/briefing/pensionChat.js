@@ -9,6 +9,19 @@
   var cfg = null, configCode = 'NOCONFIG', active = null, serial = 0, sessions = new Map();
   var ID_PATTERN = /^[A-Za-z0-9._-]{3,40}$/;
   var ASK_ID = '고객 식별자를 입력해 주세요.';
+  // The agent leaves its own offer sentence as the last line of answer.text ("— … (네 / 아니오)") and
+  // sends the same sentence as action.prompt; the buttons replace that line (agent tools/history.py regex).
+  var OFFER_TRAILER = /\n*— [^\n]*\(네 \/ 아니오\)\s*$/;
+  // Same line when the material-marks block ("── 참고한 자료") follows it instead of ending the text.
+  var OFFER_BEFORE_MARKS = /\n*— [^\n]*\(네 \/ 아니오\)\s*(?=\n\s*\n──\s*참고한 자료)/;
+  var FENCE = /```[\s\S]*?```\n*/;
+  // Terminal deep links the agent computes (effects/screens.py); the page never assembles one itself.
+  var SCREEN_LINK = /^mystar-link:\/\//i;
+  // Older agent builds put the deep link URL in the answer text instead of (or as well as) answer.links.
+  var URL_IN_TEXT = /mystar-link:\/\/[^\s"'<>)\]]+/gi;
+  var SCREEN_NO = /\d{2}-\d{2}-\d{3}/g;
+  // Replies the agent itself reads as consent (nodes/act.py _YES); an answer with a link after one of these is an accepted proposal.
+  var YES_WORDS = ['네', '예', '웅', '응', '그래', '좋아', '열어', '연계', '해줘', '해주세요', '부탁', '보내', 'ok', 'yes'];
   var SOURCE_COLORS = { '본부 공식 자료': ['#FFF3C2', '#7A6108'], '직원 교육자료': ['#E8ECF3', '#3D4A5C'], '영업점 현장 노하우': ['#F9EFD8', '#A96A00'],
     '상담 이력': ['#F2F3F5', '#696E76'], '이번 상담 기록': ['#F2F3F5', '#696E76'], '안내 콘텐츠': ['#E6F6EF', '#047857'] };
   var messages = {
@@ -25,7 +38,7 @@
   };
   var EMPTY = { lead: '', hasLeadSub: false, leadSub: '', streaming: false, blocks: [], footOn: false, srcBadges: [], hasGuard: false, guardSummary: '',
     evidN: 0, evidOpen: false, evid: [], guardN: 0, guardOpen: false, guard: [], hasFollow: false, followChips: false, follow: [], ctaOn: false, ctaAsk: '', ctaYes: '',
-    clarifyOn: false, clarifyQuestion: '', clarify: [], typeLabel: '', typeBg: 'transparent', typeFg: 'transparent' };
+    clarifyOn: false, clarifyQuestion: '', hasClarifyQuestion: false, clarify: [], typeLabel: '', typeBg: 'transparent', typeFg: 'transparent' };
   function noop() {}
   function refresh() {
     var app = window.PensionAgentDemoInstance;
@@ -122,7 +135,17 @@
     var s = sessions.get(pending.caseId);
     s.items = s.items.filter(notStatus);
     var answer = compose(pending.events);
-    if (answer) s.items.push({ k: 'ans', answer: answer });
+    if (answer) {
+      s.items.push({ k: 'ans', answer: answer });
+      // "네" to a screen proposal: the agent answers with the proposal label and the deep link; open it right away.
+      var lastUser = s.items.filter(function (it) { return it.k === 'user'; }).pop();
+      if (answer.links.length && (answer.intent === 'confirm_action' || saidYes(lastUser && lastUser.text))) {
+        var first = answer.links[0], auto = openScreen(first.url);
+        // Browsers may refuse a script-started custom-scheme navigation once the click's user activation has
+        // expired (the agent takes seconds to answer), so the transcript always keeps a button the employee can press.
+        s.items.push({ k: 'open', url: first.url, label: first.label, screen: first.screen, auto: auto });
+      }
+    }
     var failure = pending.events.filter(function (e) { return e.type === 'error'; })[0];
     if (failure) s.items.push({ k: 'sys', text: '답변에 실패했습니다. ' + String(failure.text || '').slice(0, 300) });
     else if (error) s.items.push({ k: 'sys', text: messages[error.code] || messages.NETWORK });
@@ -175,38 +198,101 @@
   function compose(events) {
     var answer = events.filter(function (e) { return e.type === 'answer'; })[0];
     if (!answer) return null;
+    var links = (Array.isArray(answer.links) ? answer.links : []).filter(function (l) {
+      return l && typeof l.screen === 'string' && l.screen && typeof l.url === 'string' && l.url;
+    }).map(function (l) { return { screen: l.screen, url: l.url, label: String(l.label || l.screen) }; });
+    String(answer.text == null ? '' : answer.text).split(/\n/).forEach(function (line) {
+      (line.match(URL_IN_TEXT) || []).forEach(function (url) {
+        if (links.some(function (l) { return l.url === url; })) return;
+        var before = line.slice(0, line.indexOf(url)), nos = before.match(SCREEN_NO), digits = (/scnNo=(\d{7})/.exec(url) || [])[1];
+        var screen = nos ? nos[nos.length - 1] : digits ? digits.slice(0, 2) + '-' + digits.slice(2, 4) + '-' + digits.slice(4) : '';
+        links.push({ screen: screen, url: url, label: screen ? screen + ' 화면' : '단말 화면' });
+      });
+    });
     var listOf = function (type) {
       return events.filter(function (e) { return e.type === type; }).reduce(function (all, e) { return all.concat(Array.isArray(e.items) ? e.items : []); }, []);
     };
-    var parsed = parseAnswer(String(answer.text == null ? '' : answer.text));
     var sources = listOf('sources').filter(function (x) { return x && typeof x === 'object'; });
     var action = events.filter(function (e) { return e.type === 'action'; })[0] || null;
     var clarify = events.filter(function (e) { return e.type === 'clarify'; })[0] || null;
+    var text = String(answer.text == null ? '' : answer.text);
+    if (action) {
+      // A memo offer replaces the body with the fenced draft; the action carries the same title/text/to
+      // for the msg block below, so the fence is dropped rather than shown twice.
+      if (action.kind === 'memo' || /^\s*```/.test(text)) text = text.replace(FENCE, '');
+      text = text.replace(OFFER_TRAILER, '').replace(OFFER_BEFORE_MARKS, '');
+    }
+    var parsed = parseAnswer(text);
+    var options = clarify && Array.isArray(clarify.options) ? clarify.options.map(function (o) { return String(typeof o === 'string' ? o : (o && (o.label || o.text || o.value)) || '').trim(); }) : [];
+    if (clarify && parsed.blocks.length) {
+      // The clarify turn body repeats the options as "· " lines; the buttons replace them.
+      var last = parsed.blocks[parsed.blocks.length - 1];
+      if (last.t === 'list' && last.items.length === options.length && last.items.every(function (it, i) { return it.replace(/^· /, '') === options[i]; })) parsed.blocks.pop();
+    }
     if (action && typeof action.text === 'string' && action.text.trim()) {
       var head = (action.to ? '받는 사람: ' + action.to + '\n' : '') + (action.title ? '제목: ' + action.title + '\n' : '');
       parsed.blocks.push({ t: 'msg', x: head + (head ? '\n' : '') + action.text.trim() });
     }
-    return { lead: parsed.lead, blocks: parsed.blocks, badges: parsed.badges,
+    return { lead: parsed.lead, blocks: parsed.blocks, badges: parsed.badges, links: links, intent: String(answer.intent || ''),
       evidence: group(sources.filter(function (x) { return x.role !== '주의'; })),
       guard: sources.filter(function (x) { return x.role === '주의'; }).map(function (x) { var d = docParts(x.doc); return { doc: d.name || '상담 원칙', meta: d.meta, point: String(x.title == null ? '' : x.title) }; }),
       follow: listOf('followups').map(function (f) { return String(f == null ? '' : f).trim(); }).filter(Boolean),
       action: action, clarify: clarify };
   }
+  // Split text into plain and deep-link segments at every occurrence of a link's screen number.
+  function segments(text, links) {
+    var s = String(text == null ? '' : text), out = [], pos = 0;
+    if (!links || !links.length) return [{ t: s, isText: true, isLink: false, url: '', label: '' }];
+    var hits = [];
+    links.forEach(function (l) {
+      [l.url, l.screen].forEach(function (needle) {
+        if (!needle) return;
+        var at = s.indexOf(needle);
+        while (at >= 0) { hits.push({ at: at, len: needle.length, link: l }); at = s.indexOf(needle, at + needle.length); }
+      });
+    });
+    hits.sort(function (a, b) { return a.at - b.at; });
+    hits.forEach(function (h) {
+      if (h.at < pos) return;
+      if (h.at > pos) out.push({ t: s.slice(pos, h.at), isText: true, isLink: false, url: '', label: '' });
+      out.push({ t: s.slice(h.at, h.at + h.len), isText: false, isLink: true, url: h.link.url, label: h.link.label });
+      pos = h.at + h.len;
+    });
+    if (pos < s.length || !out.length) out.push({ t: s.slice(pos), isText: true, isLink: false, url: '', label: '' });
+    return out;
+  }
+  function openScreen(url, viaNewWindow) {
+    if (!SCREEN_LINK.test(String(url || ''))) return false;
+    try {
+      if (viaNewWindow && typeof window.open === 'function' && window.open(url, '_blank')) return true;
+      window.location.href = url; return true;
+    } catch (_) { return false; }
+  }
+  function saidYes(text) {
+    var t = String(text == null ? '' : text).trim().toLowerCase();
+    return YES_WORDS.some(function (w) { return t.indexOf(w) >= 0; });
+  }
   function message(component, id, m, i, offers, busy) {
-    var out = Object.assign({ isSys: m.k === 'sys', isUser: m.k === 'user', isStatus: m.k === 'status', isAns: m.k === 'ans',
-      text: m.text || '', statusLabel: m.k === 'status' ? m.text : '', onEvid: noop, onGuard: noop, onCtaYes: noop, onCtaNo: noop }, EMPTY);
+    var out = Object.assign({ isSys: m.k === 'sys', isUser: m.k === 'user', isStatus: m.k === 'status', isAns: m.k === 'ans', isOpen: m.k === 'open',
+      openText: m.k === 'open' ? (m.auto ? '단말 화면 열기를 요청했어요. 열리지 않으면 아래 버튼을 눌러 주세요.' : '단말 화면을 열 수 있어요.') : '',
+      openLabel: m.k === 'open' ? m.label + ' (' + m.screen + ')' : '', openUrl: m.k === 'open' ? m.url : '', onOpen: m.k === 'open' ? function (e) { if (e && e.preventDefault) e.preventDefault(); openScreen(m.url, true); } : noop,
+      text: m.text || '', statusLabel: m.k === 'status' ? m.text : '', onEvid: noop, onGuard: noop, onCtaYes: noop, onCtaNo: noop,
+      leadSegs: [{ t: m.text || '', isText: true, isLink: false, url: '', label: '' }], hasLinkRows: false, linkRows: [] }, EMPTY);
     if (m.k !== 'ans') return out;
     var a = m.answer, S = component.state, key = 'chat' + i;
     var toggle = function (field) {
       return function () { component.setState(function (s) { var next = Object.assign({}, s[field]); next[i] = !next[i]; var patch = {}; patch[field] = next; return patch; }); };
     };
     out.typeLabel = 'AI 답변'; out.typeBg = '#F2F3F5'; out.typeFg = '#696E76';
-    out.lead = a.lead;
+    out.lead = a.lead; out.leadSegs = segments(a.lead, a.links);
+    out.hasLinkRows = a.links.length > 0; out.linkRows = a.links.map(function (l) { return { screen: l.screen, url: l.url, label: l.label }; });
     out.blocks = a.blocks.map(function (b, bi) {
       var bkey = key + '-' + bi;
       return { isP: b.t === 'p', isList: b.t === 'list', isSteps: false, isQuote: b.t === 'quote', isMsg: b.t === 'msg', isTable: false, isCaution: false, isMemory: false, isLink: false, isEvCard: false,
-        x: b.x || '', title: '', hasTitle: false, kind: '', icon: '', when: '', desc: '', msg: '', msgOpen: false, msgRot: '0deg', onMsgToggle: noop, rows: [],
-        items: (b.items || []).map(function (it, ii, arr) { return { no: ii + 1, t: it, title: '', desc: '', hasLine: ii < arr.length - 1 }; }),
+        x: b.x || '', segs: segments(b.x || '', a.links), title: '', hasTitle: false, kind: '', icon: '', when: '', desc: '', msg: '', msgOpen: false, msgRot: '0deg', onMsgToggle: noop, rows: [],
+        items: (b.items || []).map(function (it, ii, arr) { return { no: ii + 1, t: it, segs: segments(it, a.links), title: '', desc: '', hasLine: ii < arr.length - 1 }; }),
+        // Quoted 화법 shows without a copy button (2026-09-22 request); the memo draft keeps one.
+        copyOn: b.t === 'msg',
         copyLabel: S.copied === bkey ? '복사됨 ✓' : '복사', onCopy: function () { component.copy(bkey, b.x || ''); } };
     });
     out.footOn = true;
@@ -217,10 +303,12 @@
     out.hasFollow = a.follow.length > 0; out.followChips = true;
     out.follow = a.follow.map(function (f) { return { t: f, onTap: function () { send(id, f); } }; });
     out.ctaOn = offers && !busy && !!a.action;
-    out.ctaAsk = a.action ? String(a.action.label || a.action.prompt || '연계해드릴까요?') : ''; out.ctaYes = '네';
+    // action.prompt is the question the agent asks; label is the proposal noun. The buttons stand in for "(네 / 아니오)".
+    out.ctaAsk = a.action ? String(a.action.prompt || a.action.label || '연계해드릴까요?').replace(/\s*\(네 \/ 아니오\)\s*$/, '') : ''; out.ctaYes = '네';
     out.onCtaYes = function () { send(id, '네'); }; out.onCtaNo = function () { send(id, '아니오'); };
     out.clarifyOn = offers && !busy && !!a.clarify;
-    out.clarifyQuestion = a.clarify ? String(a.clarify.question || '') : '';
+    out.clarifyQuestion = a.clarify && String(a.clarify.question || '') !== a.lead ? String(a.clarify.question || '') : '';
+    out.hasClarifyQuestion = !!out.clarifyQuestion;
     out.clarify = (a.clarify && Array.isArray(a.clarify.options) ? a.clarify.options : []).map(function (o) {
       var label = String(typeof o === 'string' ? o : (o && (o.label || o.text || o.value)) || '').trim();
       return { label: label, onTap: function () { send(id, label); } };
@@ -291,5 +379,5 @@
     Component.prototype.componentWillUnmount = function () { destroy(); return originalUnmount.apply(this, arguments); };
   }
   window.PensionChat = { configure: configure, send: send, cancel: cancel, resetCustomer: resetCustomer, destroy: destroy, install: install,
-    parseAnswer: parseAnswer, compose: compose };
+    parseAnswer: parseAnswer, compose: compose, segments: segments };
 })(window);
