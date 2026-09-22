@@ -2,6 +2,8 @@
 
 우측 **실시간 상담** 패널이 호출하는 대화 Agent의 요청·응답과 화면 매핑입니다. 원천 규격은 대화 Agent 저장소의 `client/README.md`이며, 이 문서는 프론트가 쓰는 부분과 실제 수신 샘플([chat.example.json](chat.example.json), 3턴)로 확인한 내용만 정리합니다. S1–S5 브리핑 API([AGENT_FRONTEND_CONTRACT.md](AGENT_FRONTEND_CONTRACT.md))와는 **별개 Connector·별개 토큰**입니다.
 
+> **2026-09-22:** 동료 Agent 소스 기준 정합성 분석과 수정 목록은 [CHAT_AGENT_ALIGNMENT.md](CHAT_AGENT_ALIGNMENT.md)에 있다. 이 문서의 `answer.links` 누락, `intent` 값, `label`/`prompt` 우선순위, 모르는 고객 id 답변은 그 문서가 정정한다.
+
 - 수정 원본: [fabrix-chat-transport.js](../../frontend/src/briefing/fabrix-chat-transport.js)(전송·이벤트 추출), [pensionChat.js](../../frontend/src/briefing/pensionChat.js)(세션·답변 파싱·패널 매핑)
 - 패널은 31명 구조화 고객에서 켜집니다. 기존 데모 3명(ksy/lsm/pjh)은 종전 mock 상담을 유지합니다.
 
