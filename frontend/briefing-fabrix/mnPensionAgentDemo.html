@@ -85,7 +85,7 @@
 </sc-if>
 </div>
 <div class="pad-status-pill">
-<span class="pad-status-pill__dot"></span>오전 7:30 · IRP 고객 1,247명 분석 완료
+<span class="pad-status-pill__dot"></span>오전 7:30 · IRP 고객 1,392명 분석 완료
     </div>
 </div>
 </div>
@@ -94,55 +94,50 @@
 <div class="pad-dash">
 <div class="pad-dash__top">
 <div class="pad-brief-card">
-<div class="pad-rowb pad-between pad-g10 pad-mb6"><span class="pad-t-kicker">오늘의 부점 브리핑 · {{ dashDateLabel }}</span></div>
-<div class="pad-brief-card__body pad-in">전일 대비 <span class="pad-b">ISA 만기 예정 고객</span> <span sc-camel-on-click="{{ filterIsa }}" class="pad-hl-link">{{ isaCount }}명이 신규 관리대상</span>으로 선정됐습니다.<br/>현재 KB스타뱅킹에서 <span class="pad-b">ISA 만기자금의 IRP 전환 관련 이벤트</span>가 진행 중인 만큼,<br/>해당 고객군을 우선 확인해 만기자금 활용계획을 점검하고 이벤트를 함께 안내해 보세요.</div>
-<div class="pad-t-13-muted pad-mt8 pad-keep">전일·금일 고객상태 및 관리신호 분석 · {{ dashAsOfLabel }} 07:30 기준</div>
-</div><div class="pad-progress-card">
-<div class="pad-t-kicker">오늘의 사후관리 현황</div>
-<div class="pad-col pad-g4">
-<div class="pad-rowb pad-between pad-g8">
-<span class="pad-t-12b-sub">부점 전체</span>
-<span class="pad-t-12-muted"><span class="pad-t-14b-dark">{{ branchDone }}</span> / {{ branchTotal }}명 관리완료</span>
+<div class="pad-rowb pad-between pad-g10 pad-mb10"><span class="pad-t-kicker">오늘의 부점 브리핑 · {{ dashDateLabel }}</span></div>
+<div class="pad-brief-card__body pad-in">전일 급여가 입금된 고객 중 <span class="pad-b">세액공제 잔여한도가 있고</span>,<br/>과거 <span class="pad-b">추가납입 이력이 있는</span> <span class="pad-hl-link" style="cursor:default">고객 6명</span>을 찾았습니다.<br/>자금 여력을 확인하고, 추가납입 시 세제혜택과 입금 후 운용방법을 함께 안내해 보세요.</div>
+<div class="pad-t-13-muted pad-mt12 pad-keep">전일·금일 고객상태 및 관리신호 분석 · {{ dashAsOfLabel }} 07:30 기준</div>
+</div><div class="pad-card pad-col pad-g0 pad-stats-card">
+<div class="pad-t-kicker2 pad-mb10">부점 핵심지표</div>
+<sc-for as="st" list="{{ branchStats }}">
+<div class="pad-prow">
+<span class="pad-t-13-muted pad-none">{{ st.label }}</span>
+<span class="pad-right pad-keep"><span class="pad-t-13b-dark">{{ st.value }}</span> <span class="pad-t-12b-dark" style="color:{{ st.deltaFg }}">{{ st.delta }}</span></span>
 </div>
-<div class="pad-bar"><div class="pad-bar__fill pad-bar__fill--gray" style="width:{{ branchPct }}"></div></div>
+</sc-for>
+<div class="pad-prow-last">
+<span class="pad-t-13-muted pad-none">올해 계약이전</span>
+<span class="pad-t-13b-dark pad-right">{{ churnTotal }}</span>
 </div>
-<div class="pad-col pad-g4">
-<div class="pad-rowb pad-between pad-g8">
-<span class="pad-t-12b-dark">내 담당</span>
-<span class="pad-t-12-muted"><span class="pad-t-14b-dark">{{ doneCount }}</span> / {{ targetCount }}명 관리완료</span>
-</div>
-<div class="pad-bar"><div class="pad-bar__fill pad-bar__fill--brand" style="width:{{ progressPct }}"></div></div>
-</div>
-<div class="pad-t-12-sub">내 남은 고객 {{ remainCount }}명</div>
 </div>
 </div>
 <div class="pad-kpi-grid">
-<button sc-camel-on-click="{{ kNewTap }}" class="pad-kpi" style="--pad-bd:{{ kNewBd }}">
+<div class="pad-kpi pad-kpi--static" style="--pad-bd:#ECEDF0">
 <div class="pad-min0">
-<div class="pad-row pad-g6"><span class="pad-kpi__dot"></span><span class="pad-t-13b-dark">신규 선정</span><sc-if value="{{ kNewOn }}"><span class="pad-t-11b-dark">✓ 필터 적용 중</span></sc-if></div>
-<div class="pad-t-12-muted pad-mt3 pad-keep">오늘 새롭게 우선관리</div>
+<div class="pad-row pad-g6"><span class="pad-t-13b-dark">우리부점 관리 고객</span></div>
+<div class="pad-t-12-muted pad-mt3 pad-keep">개인형 IRP</div>
 </div>
-<span class="pad-kpi__num pad-c-dark">{{ kNewN }}명</span>
-</button>
-<button sc-camel-on-click="{{ kOnTap }}" class="pad-kpi" style="--pad-bd:{{ kOnBd }}">
+<span class="pad-kpi__num pad-c-ok">1,392명</span>
+</div>
+<div class="pad-kpi pad-kpi--static" style="--pad-bd:#ECEDF0">
 <div class="pad-min0">
-<div class="pad-row pad-g6"><span class="pad-t-13b-dark">지속 관리</span><sc-if value="{{ kOnOn }}"><span class="pad-t-11b-dark">✓ 필터 적용 중</span></sc-if></div>
-<div class="pad-t-12-muted pad-mt3 pad-keep">오늘도 관리 필요</div>
+<div class="pad-row pad-g6"><span class="pad-t-13b-dark">수익률 저조 고객</span></div>
+<div class="pad-t-12-muted pad-mt3 pad-keep">수익률 1% 미만</div>
 </div>
-<span class="pad-kpi__num pad-c-dark">{{ kOnN }}명</span>
-</button>
-<button sc-camel-on-click="{{ kResTap }}" class="pad-kpi" style="--pad-bd:{{ kResBd }}">
+<span class="pad-kpi__num pad-c-ok">210명</span>
+</div>
+<div class="pad-kpi pad-kpi--static" style="--pad-bd:#ECEDF0">
 <div class="pad-min0">
-<div class="pad-row pad-g6"><span class="pad-t-13b-dark">오늘 방문 예정</span><sc-if value="{{ kResOn }}"><span class="pad-t-11b-ok">✓ 필터 적용 중</span></sc-if></div>
-<div class="pad-t-12-muted pad-mt3 pad-keep">금일 영업점 방문 예정</div>
+<div class="pad-row pad-g6"><span class="pad-t-13b-dark">적립금 1억 이상 고객</span></div>
+<div class="pad-t-12-muted pad-mt3 pad-keep">전체 적립금의 45.3%</div>
 </div>
-<span class="pad-kpi__num pad-c-ok">{{ kResN }}명</span>
-</button>
+<span class="pad-kpi__num pad-c-ok">120명</span>
+</div>
 </div>
 <div class="pad-section-head">
 <div class="pad-rowb pad-g10">
 <div class="pad-h2">오늘의 중점관리 고객 · {{ queueTotal }}명</div>
-<div class="pad-t-12-muted">관리 필요도 순</div>
+<div class="pad-t-12-muted">관리 필요도 순 · 내 담당 관리완료 <span class="pad-t-13b-dark">{{ doneCount }}</span>/{{ targetCount }}명</div>
 </div>
 <div class="pad-row pad-g6">
 <button sc-camel-on-click="{{ filterAll }}" class="pad-chip" style="border:1px solid {{ allBd }};background:{{ allBg }};color:{{ allFg }}">전체</button>

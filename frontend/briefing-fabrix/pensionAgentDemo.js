@@ -4540,8 +4540,6 @@ class Component {
           ckBd: isDone(c) ? '#059669' : '#D2D5DA', ckBg: isDone(c) ? '#E6F6EF' : '#fff', ckOp: isDone(c) ? '1' : '0.4', ckStroke: isDone(c) ? '#059669' : '#9298A2' };
       });
     const doneCount = DATA.filter(isDone).length, targetCount = DATA.length;
-    // 부점 전체 is a mock aggregate: three times my own list.
-    const branchTotal = targetCount * 3, branchDone = Math.min(branchTotal, doneCount * 3);
     const mgCount = mg => DATA.filter(c => metaOf(c).mg === mg && !isDone(c)).length;
     const cnt = k => DATA.filter(c => c[k]).length;
     // Dashboard date follows the case data's 기준일 (adapter sets asOfDate); the legacy demo alone used 2026-09-04.
@@ -4549,6 +4547,15 @@ class Component {
     const asOfParts = asOf.split('-').map(Number), asOfDay = new Date(Date.UTC(asOfParts[0], asOfParts[1] - 1, asOfParts[2])).getUTCDay();
     const dashDateLabel = asOfParts[1] + '월 ' + asOfParts[2] + '일 ' + ['일', '월', '화', '수', '목', '금', '토'][asOfDay] + '요일';
     const dashAsOfLabel = asOf.slice(5).replace('-', '.');
+    // 부점 핵심지표·계약이전: 부점 전체 통계(여의도종합금융센터 2026.09.17 분석 자료의 고정값).
+    // 전일 대비 증감(delta)은 하루치 스냅샷만 있어 시연용 임의값이며, 전일 값이 확보되면 여기서 교체한다.
+    const branchStats = [
+      { label: '부점 잔액', value: '526.8억', delta: '(▲ 1.3억)', deltaFg: '#047857' },
+      { label: '부점 수익률', value: '18.96%', delta: '(▲ 0.12%p)', deltaFg: '#047857' },
+      { label: '고유계정대', value: '6.7억', delta: '(▼ 0.4억)', deltaFg: '#B91C1C' },
+      { label: '원리금보장 비중', value: '69.3%', delta: '', deltaFg: '#9298A2' }
+    ];
+    const churnTotal = '89좌 · 62.8억';
     const c = this.sel();
     const pf = this.profileOf(c);
     const selHoldings = (c && c.hold ? c.hold : []).map(h => ({ n: h.n, t: h.t, a: h.a, w: h.w, r: h.r, rc: (h.r || '').indexOf('−') === 0 ? '#B91C1C' : '#26282C', redeem: !!h.redeem }));
@@ -4571,7 +4578,7 @@ class Component {
       bridgeName: (() => { const b = S.bridge && this.DIR.find(x => x.id === S.bridge); return b ? b.name : ''; })(),
       showDashboard: !S.sel, showBriefing: !!S.sel,
       doneCount, targetCount, remainCount: targetCount - doneCount, progressPct: Math.round(doneCount / (targetCount || 1) * 100) + '%',
-      branchDone, branchTotal, branchPct: Math.round(branchDone / (branchTotal || 1) * 100) + '%',
+      branchStats, churnTotal,
       queueTotal: targetCount, kNewN: mgCount('new'), kOnN: mgCount('on'), kResN: RESOLVED.length,
       isaCount: DATA.filter(c => hasIsa(c) && !isDone(c)).length, dashDateLabel, dashAsOfLabel,
       filterIsa: () => this.setState(s => ({ filter: 'isa', listAnimK: s.listAnimK + 1 })),

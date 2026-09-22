@@ -239,10 +239,10 @@
 /* ===== 5. Dashboard ===== */
 #pensionAgentDemo .pad-dash {max-width:1152px;margin:0 auto;padding:32px 32px 72px}
 #pensionAgentDemo .pad-dash__top {display:flex;gap:20px;align-items:stretch}
-#pensionAgentDemo .pad-brief-card {flex:1;background:var(--pad-c-white);border:2px solid var(--pad-c-brand);border-radius:var(--pad-r-lg);padding:16px 28px}
-#pensionAgentDemo .pad-brief-card__body {font-size:var(--pad-fs-15);font-weight:var(--pad-fw-bold);line-height:var(--pad-lh-base);letter-spacing:-.01em;text-wrap:pretty;word-break:keep-all;min-height:72px}
+#pensionAgentDemo .pad-brief-card {flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;background:var(--pad-c-white);border:2px solid var(--pad-c-brand);border-radius:var(--pad-r-lg);padding:16px 28px}
+#pensionAgentDemo .pad-brief-card__body {font-size:var(--pad-fs-16);font-weight:var(--pad-fw-bold);line-height:1.75;letter-spacing:-.01em;text-wrap:pretty;word-break:keep-all;min-height:72px}
 #pensionAgentDemo .pad-hl-link {font-weight:var(--pad-fw-bold);background:var(--pad-c-brand-light);cursor:pointer;padding:0 2px;border-radius:3px}
-#pensionAgentDemo .pad-progress-card {width:300px;background:var(--pad-c-white);border:1px solid var(--pad-c-line);border-radius:var(--pad-r-lg);padding:14px 22px;display:flex;flex-direction:column;justify-content:center;gap:10px}
+#pensionAgentDemo .pad-stats-card {width:320px;flex:none}
 #pensionAgentDemo .pad-bar {height:6px;border-radius:3px;background:var(--pad-c-bg-2);overflow:hidden}
 #pensionAgentDemo .pad-bar__fill {height:100%;border-radius:3px;transition:width .5s}
 #pensionAgentDemo .pad-bar__fill--gray {background:var(--pad-c-gray)}
@@ -250,6 +250,8 @@
 #pensionAgentDemo .pad-kpi-grid {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);gap:12px;margin-top:12px}
 #pensionAgentDemo .pad-kpi {display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--pad-c-white);border-radius:var(--pad-r-lg);padding:13px 16px;cursor:pointer;text-align:left;border:1.5px solid var(--pad-bd)}
 #pensionAgentDemo .pad-kpi:hover {border-color:var(--pad-c-line-hover)}
+#pensionAgentDemo .pad-kpi--static {cursor:default}
+#pensionAgentDemo .pad-kpi--static:hover {border-color:var(--pad-bd)}
 #pensionAgentDemo .pad-kpi__dot {width:7px;height:7px;border-radius:50%;background:var(--pad-c-brand);flex:none}
 #pensionAgentDemo .pad-kpi__num {font-size:var(--pad-fs-22);font-weight:var(--pad-fw-bold);letter-spacing:-.02em;flex:none}
 #pensionAgentDemo .pad-section-head {display:flex;align-items:center;justify-content:space-between;margin:32px 0 12px}
