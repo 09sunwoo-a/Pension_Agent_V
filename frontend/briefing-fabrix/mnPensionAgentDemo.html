@@ -160,6 +160,7 @@
 <div class="pad-grow">
 <div class="pad-row pad-g8 pad-wrap">
 <span class="pad-t-15b">{{ c.name }}</span>
+<sc-if value="{{ c.ageShow }}"><span class="pad-tag">{{ c.age }}</span></sc-if>
 <span class="pad-tag">{{ c.club }}</span>
 <sc-if value="{{ c.mgShow }}"><span class="pad-tag-pill" style="color:{{ c.mgFg }};background:{{ c.mgBg }}">{{ c.mg }}</span></sc-if>
 <sc-for as="tg" list="{{ c.tags }}">

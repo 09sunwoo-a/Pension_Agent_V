@@ -253,7 +253,7 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
     var remain = a.taxDeductionRemainingKrw;
     base.bar = lead ? PALETTE[lead][2] : '#D8D5D0';
     base.tags = badges;
-    base.qm = { club: record.customer.starClubGrade || '', mg: list.some(function (l) { return DDAY.test(l) || l === '계약이전 신청'; }) ? 'new' : 'on',
+    base.qm = { club: record.customer.starClubGrade || '', age: record.customer.age == null ? '' : record.customer.age, mg: list.some(function (l) { return DDAY.test(l) || l === '계약이전 신청'; }) ? 'new' : 'on',
       sig: badges.map(function (b) { return [b.t, b.key]; }), bal: contract.money(a.valuationAmountKrw), ret: contract.percent(a.oneYearReturnPct) };
     base.taxPaid = remain == null ? undefined : Math.max(0, Math.round((TAX_LIMIT_KRW - remain) / 10000));
     base.prio = priority(list);
@@ -4532,7 +4532,9 @@ class Component {
         const qm = metaOf(c);
         const ml = MGL[qm.mg];
         const paid = taxPaidOf(c), has = paid != null, remain = has ? 900 - paid : 0, pct = has ? paid / 900 : 0;
-        return { id: c.id, name: c.name, club: qm.club, mg: ml[0], mgBg: ml[1], mgFg: ml[2], mgShow: qm.mg !== 'new' && qm.mg !== 'on', tags: mkTags(qm.sig), bal: qm.bal, ret: qm.ret, retC: retC(qm.ret),
+        // 나이 뱃지: 구조화 사례는 qm.age(record.customer.age), 레거시 행은 profileOf 의 나이를 그대로 사용
+        const age = qm.age != null && qm.age !== '' ? qm.age : this.profileOf(c).age;
+        return { id: c.id, name: c.name, age: age === '' ? '' : age + '세', ageShow: age !== '' && age != null, club: qm.club, mg: ml[0], mgBg: ml[1], mgFg: ml[2], mgShow: qm.mg !== 'new' && qm.mg !== 'on', tags: mkTags(qm.sig), bal: qm.bal, ret: qm.ret, retC: retC(qm.ret),
           taxOn: has, taxOff: !has, taxColor: remain > 0 ? '#059669' : '#C9CDD3',
           taxDash: (pct * 72.3).toFixed(1) + ' 72.3', taxPctLabel: Math.round(pct * 100) + '%',
           taxRemainLabel: has ? (remain > 0 ? '잔여 ' + remain + '만' : '소진 완료') : '',

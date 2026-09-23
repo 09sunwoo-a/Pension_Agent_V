@@ -65,7 +65,7 @@
     var remain = a.taxDeductionRemainingKrw;
     base.bar = lead ? PALETTE[lead][2] : '#D8D5D0';
     base.tags = badges;
-    base.qm = { club: record.customer.starClubGrade || '', mg: list.some(function (l) { return DDAY.test(l) || l === '계약이전 신청'; }) ? 'new' : 'on',
+    base.qm = { club: record.customer.starClubGrade || '', age: record.customer.age == null ? '' : record.customer.age, mg: list.some(function (l) { return DDAY.test(l) || l === '계약이전 신청'; }) ? 'new' : 'on',
       sig: badges.map(function (b) { return [b.t, b.key]; }), bal: contract.money(a.valuationAmountKrw), ret: contract.percent(a.oneYearReturnPct) };
     base.taxPaid = remain == null ? undefined : Math.max(0, Math.round((TAX_LIMIT_KRW - remain) / 10000));
     base.prio = priority(list);
