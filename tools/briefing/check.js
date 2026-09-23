@@ -448,8 +448,16 @@ async function branchSearchCheck() {
     assert.deepEqual(again.rows.map(r => r[7]), out.rows.map(r => r[7]), '수신평잔 is deterministic per customer');
     const st = out.rows.find(r => r[1] === '박서진'); assert.ok(st && st[3] === 35 && st[9] === 3.2, 'structured record values flow into the sheet');
     const s = S.create(I, { mode: 'local' }); const events = []; s.subscribe(e => events.push(e.type)); const before = s.get();
-    s.note('엑셀로 내려받고 싶어', '내려받았어요'); const after = s.get();
+    await s.note('엑셀로 내려받고 싶어', '내려받았어요'); const after = s.get();
     assert.deepEqual(events, ['answer']); assert.deepEqual(plain(after.messages.map(m => m.role)), ['user', 'assistant']); assert.equal(after.revision, before.revision); assert.deepEqual(after.state, before.state);
+    // 지연 응답: pending(생각 중) 상태를 거친 뒤 answer 함수가 실행된다. 그 사이 취소되면 실행되지 않는다.
+    { const d = S.create(I, { mode: 'local' }); const ev = []; d.subscribe(e => ev.push(e.type)); let ran = 0;
+      const p = d.note('엑셀로', () => { ran++; return '완료'; }, { pendingText: '정리 중', delayMs: 40 });
+      const mid = d.get(); assert.equal(mid.busy, true); assert.equal(mid.messages.at(-1).pending, true); assert.equal(mid.messages.at(-1).text, '정리 중'); assert.equal(ran, 0, 'download work waits for the delay');
+      assert.equal(await p, '완료'); assert.equal(ran, 1); assert.equal(d.get().busy, false); assert.equal(d.get().messages.at(-1).text, '완료'); assert.deepEqual(ev, ['pending', 'answer']);
+      const q = d.note('다시', () => { ran++; return 'x'; }, { delayMs: 40 }); d.cancel(); assert.equal(await q, null); assert.equal(ran, 1, 'cancelled note never runs its work'); assert.equal(d.get().messages.at(-1).cancelled, true); }
+    assert.equal(X.displayId('4730692158-1234567'), '47306-12345'); assert.equal(X.displayId('10274-38562'), '10274-38562'); assert.equal(X.displayId(null), '');
+    for (const r of out.rows) assert.ok(r[2] === '' || /^\d{1,5}-\d{1,5}$/.test(r[2]), '고객번호 5자리-5자리 표시: ' + r[1] + ' ' + r[2]);
     console.log('PASS: 엑셀 내려받기 — intent detection, dependency-free xlsx (' + out.count + ' rows, 2 sheets), session note without Agent/state change.');
   }
   console.log('PASS: 부점 AI golden regression (' + turns + ' turns, 8 review customers, test-only), session ordering/cancel/failure, real main list projected (' + ids.length + ' rows, ' + structured.length + ' structured), renderer hooks, list markup, namespaced CSS.');

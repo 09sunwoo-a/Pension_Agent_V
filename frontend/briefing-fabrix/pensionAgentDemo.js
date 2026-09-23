@@ -2582,6 +2582,16 @@ function createLocal(input,options){
    emit('error');return null;
   }
  }
+ function localNote(userText,answer,options){
+  if(disposed)return Promise.resolve(null);
+  const delay=Math.max(0,Number(options&&options.delayMs)||0);
+  cancel('새 요청으로 이전 조회를 취소했습니다.');const token=++ticket;
+  add('user',String(userText));
+  const finish=reply=>{if(disposed||token!==ticket)return null;busy=false;reply.pending=false;reply.text=String(typeof answer==='function'?answer():answer);emit('answer');return reply.text;};
+  if(!delay){const reply=add('assistant','');return Promise.resolve(finish(reply));}
+  busy=true;const reply=add('assistant',String((options&&options.pendingText)||'요청을 확인하고 있어요.'),{pending:true});emit('pending');
+  return new Promise(resolve=>setTimeout(()=>resolve(finish(reply)),delay));
+ }
  function apply(spec,source){
   cancel('조건이 변경되어 이전 조회를 취소했습니다.');
   const out=C.execute(records,state,{intent:'extract',query:spec.query,sort:spec.sort||C.copy(state.main.sort),limit:spec.limit===undefined?state.main.limit:spec.limit},asOf);
@@ -2591,7 +2601,8 @@ function createLocal(input,options){
  return {
   send,cancel,apply,perform:(action,label)=>send(label||'선택한 요청',action),
   // 프론트가 직접 처리한 요청(예: 엑셀 내려받기)을 대화 기록에 남긴다. Agent/엔진 호출·목록 변경 없음.
-  note:(userText,assistantText)=>{if(disposed)return;add('user',String(userText));add('assistant',String(assistantText));emit('answer');},
+  // options.delayMs 가 있으면 그동안 '생각 중' 상태(pending)를 보여준 뒤 answer(문자열 또는 함수)를 확정한다.
+  note:(userText,answer,options)=>localNote(userText,answer,options),
   reset:()=>{if(!engine)return apply({query:C.all(),sort:{field:data.metadata.scopeId==='current-main-list'?'source_order':'caseId',direction:'asc'},limit:null},'전체 검색조건과 표시 제한을 해제했습니다.');cancel();state=engine.initialState();revision++;add('system','기존 고객 목록으로 돌아왔습니다.');emit('apply');},
   newConversation:()=>{cancel();if(!engine)state.reference=null;else {state.clarification=null;state.aggregate=null;state.selectedCustomerId=null;}state.lastResult=null;messages=[];emit('new_conversation');},
   clearReference:()=>{state.reference=null;emit('reference');},
@@ -2686,7 +2697,17 @@ function createRemote(input,options){
  }
  return {send,cancel,perform:(action,label)=>send(label||'선택한 요청',action),
   // 프론트가 직접 처리한 요청(예: 엑셀 내려받기)을 대화 기록에 남긴다. Agent 호출·state/view 변경 없음.
-  note:(userText,assistantText)=>{if(disposed)return;add('user',String(userText));add('assistant',String(assistantText));emit('answer');},
+  // options.delayMs 가 있으면 그동안 '생각 중' 상태(pending)를 보여준 뒤 answer(문자열 또는 함수)를 확정한다.
+  note:(userText,answer,options)=>{
+   if(disposed)return Promise.resolve(null);
+   const delay=Math.max(0,Number(options&&options.delayMs)||0);
+   cancel('새 요청으로 이전 조회를 취소했습니다.');const token=++ticket;
+   add('user',String(userText));
+   const finish=reply=>{if(disposed||token!==ticket)return null;busy=false;reply.pending=false;reply.text=String(typeof answer==='function'?answer():answer);emit('answer');return reply.text;};
+   if(!delay){const reply=add('assistant','');return Promise.resolve(finish(reply));}
+   busy=true;const reply=add('assistant',String((options&&options.pendingText)||'요청을 확인하고 있어요.'),{pending:true});emit('pending',{listGuess:false});
+   return new Promise(resolve=>setTimeout(()=>resolve(finish(reply)),delay));
+  },
   reset:()=>{if(disposed)return;cancel();state=null;revision++;view={active:false,rowIds:[],sort:null,contextLabel:''};add('system','기존 고객 목록으로 돌아왔습니다.');emit('apply');},
   newConversation:()=>{if(disposed)return;cancel();conversationId=uuid();revision=0;if(state){state.last_aggregate=null;state.clarification=null;}messages=[];emit('new_conversation');},
   get:snapshot,metadata:()=>C.copy(metadata),subscribe:f=>{listeners.add(f);return()=>listeners.delete(f);},mode:'remote',
@@ -2945,6 +2966,11 @@ function protectedPct(record){
  const a=list.find(x=>x&&x.assetType==='원리금보장형');
  return a?num(a.weightPct):null;
 }
+// 고객번호는 화면(브리핑 헤더·검색 결과)과 같은 5자리-5자리 표시형으로 쓴다. 원본이 더 길면(C01 6-7자리) 앞 5자리만.
+function displayId(value){
+ const m=/^(\d+)-(\d+)$/.exec(String(value==null?'':value));
+ return m?m[1].slice(0,5)+'-'+m[2].slice(0,5):String(value==null?'':value);
+}
 function defaultOption(record){
  const d=(record.customer&&record.customer.defaultOption)||{};
  const status=d.registrationStatus||'확인 필요';
@@ -2957,7 +2983,7 @@ function customerRows(items){
   const r=it.record||{},c=r.customer||{},a=r.irpAccount||{},p=it.profile||{};
   const id=(r.briefingMeta&&r.briefingMeta.caseId)||c.customerId||p.pin||String(i);
   const irp=num(a.valuationAmountKrw);
-  return [i+1,text(c.name),text(c.customerId||p.pin),num(c.age)==null?num(p.age):c.age,text(c.gender||p.sex),text(c.starClubGrade||p.club),text(c.investmentProfile),
+  return [i+1,text(c.name),displayId(c.customerId||p.pin),num(c.age)==null?num(p.age):c.age,text(c.gender||p.sex),text(c.starClubGrade||p.club),text(c.investmentProfile),
    depositBalance(id,irp),irp,num(a.oneYearReturnPct),num(a.taxDeductionRemainingKrw),defaultOption(r),
    (r.signals||[]).map(s=>s&&s.label).filter(Boolean).join(', '),protectedPct(r)];
  });
@@ -3058,7 +3084,7 @@ function download(result,doc){
  setTimeout(()=>{a.remove();URL.revokeObjectURL(url);},1000);
  return result.fileName;
 }
-return {isExportRequest,build,download,customerRows,depositBalance,columns:COLUMNS.map(c=>c.h),zip,crc32};
+return {isExportRequest,build,download,customerRows,depositBalance,displayId,columns:COLUMNS.map(c=>c.h),zip,crc32};
 });
 
 ;
@@ -3070,6 +3096,7 @@ return {isExportRequest,build,download,customerRows,depositBalance,columns:COLUM
  */
 (function(root){'use strict';
 const C=root.PensionBranchSearchCore;let current=null;
+const EXPORT_DELAY_MS=3000; // 엑셀 내려받기 전 '정리 중' 표시 시간
 function fullView(component,render){
  const saved=component.state;
  // renderVals is evaluated synchronously. Do not emit a state update or modify
@@ -3119,14 +3146,18 @@ function mount(component,params){
   if(!items.length){session.note(text,'내려받을 고객이 없어요. 먼저 대화로 고객을 좁히거나 전체 목록으로 돌아간 뒤 다시 요청해 주세요.');return true;}
   const snap=session.get(),v=snap.view,s=snap.state||{};
   const condition=ctx.applied?((v?v.contextLabel:s.contextLabel)||'AI 검색 결과'):(vals.subChipOn?String(vals.subChipLabel):'전체 고객');
-  try{
-   const out=X.build({items,asOf:source.metadata.asOfDate,staff,condition,scope:(ctx.applied?'부점 AI 검색 결과':'메인 고객 목록')+' · '+source.metadata.scopeLabel});
-   X.download(out);
-   session.note(text,'현재 목록 '+out.count+'명을 '+out.fileName+' 파일로 내려받았어요. (조건: '+condition+') 파일의 「추출 조건」 시트에 기준일·조건을 함께 남겼습니다.');
-  }catch(e){
-   if(typeof console!=='undefined')console.warn('[Branch AI] export failed: '+(e&&e.message));
-   session.note(text,'엑셀 파일을 만들지 못했어요. 브라우저 다운로드가 허용되어 있는지 확인한 뒤 다시 시도해 주세요.');
-  }
+  const scope=(ctx.applied?'부점 AI 검색 결과':'메인 고객 목록')+' · '+source.metadata.scopeLabel;
+  // Agent 응답처럼 보이도록 3초간 '정리 중' 상태를 보여준 뒤 파일을 만들고 내려받는다.
+  session.note(text,()=>{
+   try{
+    const out=X.build({items,asOf:source.metadata.asOfDate,staff,condition,scope});
+    X.download(out);
+    return '현재 목록 '+out.count+'명을 '+out.fileName+' 파일로 내려받았어요. (조건: '+condition+') 파일의 「추출 조건」 시트에 기준일·조건을 함께 남겼습니다.';
+   }catch(e){
+    if(typeof console!=='undefined')console.warn('[Branch AI] export failed: '+(e&&e.message));
+    return '엑셀 파일을 만들지 못했어요. 브라우저 다운로드가 허용되어 있는지 확인한 뒤 다시 시도해 주세요.';
+   }
+  },{pendingText:'고객 '+items.length+'명의 명세를 정리하고 있어요.',delayMs:EXPORT_DELAY_MS});
   return true;
  }
  ctx.restore=restore;ctx.widget=root.PensionBranchSearchWidget.mount(document.body,session,{onRestore:restore,intercept:exportRequest});

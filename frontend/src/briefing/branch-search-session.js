@@ -38,6 +38,16 @@ function createLocal(input,options){
    emit('error');return null;
   }
  }
+ function localNote(userText,answer,options){
+  if(disposed)return Promise.resolve(null);
+  const delay=Math.max(0,Number(options&&options.delayMs)||0);
+  cancel('새 요청으로 이전 조회를 취소했습니다.');const token=++ticket;
+  add('user',String(userText));
+  const finish=reply=>{if(disposed||token!==ticket)return null;busy=false;reply.pending=false;reply.text=String(typeof answer==='function'?answer():answer);emit('answer');return reply.text;};
+  if(!delay){const reply=add('assistant','');return Promise.resolve(finish(reply));}
+  busy=true;const reply=add('assistant',String((options&&options.pendingText)||'요청을 확인하고 있어요.'),{pending:true});emit('pending');
+  return new Promise(resolve=>setTimeout(()=>resolve(finish(reply)),delay));
+ }
  function apply(spec,source){
   cancel('조건이 변경되어 이전 조회를 취소했습니다.');
   const out=C.execute(records,state,{intent:'extract',query:spec.query,sort:spec.sort||C.copy(state.main.sort),limit:spec.limit===undefined?state.main.limit:spec.limit},asOf);
@@ -47,7 +57,8 @@ function createLocal(input,options){
  return {
   send,cancel,apply,perform:(action,label)=>send(label||'선택한 요청',action),
   // 프론트가 직접 처리한 요청(예: 엑셀 내려받기)을 대화 기록에 남긴다. Agent/엔진 호출·목록 변경 없음.
-  note:(userText,assistantText)=>{if(disposed)return;add('user',String(userText));add('assistant',String(assistantText));emit('answer');},
+  // options.delayMs 가 있으면 그동안 '생각 중' 상태(pending)를 보여준 뒤 answer(문자열 또는 함수)를 확정한다.
+  note:(userText,answer,options)=>localNote(userText,answer,options),
   reset:()=>{if(!engine)return apply({query:C.all(),sort:{field:data.metadata.scopeId==='current-main-list'?'source_order':'caseId',direction:'asc'},limit:null},'전체 검색조건과 표시 제한을 해제했습니다.');cancel();state=engine.initialState();revision++;add('system','기존 고객 목록으로 돌아왔습니다.');emit('apply');},
   newConversation:()=>{cancel();if(!engine)state.reference=null;else {state.clarification=null;state.aggregate=null;state.selectedCustomerId=null;}state.lastResult=null;messages=[];emit('new_conversation');},
   clearReference:()=>{state.reference=null;emit('reference');},
@@ -142,7 +153,17 @@ function createRemote(input,options){
  }
  return {send,cancel,perform:(action,label)=>send(label||'선택한 요청',action),
   // 프론트가 직접 처리한 요청(예: 엑셀 내려받기)을 대화 기록에 남긴다. Agent 호출·state/view 변경 없음.
-  note:(userText,assistantText)=>{if(disposed)return;add('user',String(userText));add('assistant',String(assistantText));emit('answer');},
+  // options.delayMs 가 있으면 그동안 '생각 중' 상태(pending)를 보여준 뒤 answer(문자열 또는 함수)를 확정한다.
+  note:(userText,answer,options)=>{
+   if(disposed)return Promise.resolve(null);
+   const delay=Math.max(0,Number(options&&options.delayMs)||0);
+   cancel('새 요청으로 이전 조회를 취소했습니다.');const token=++ticket;
+   add('user',String(userText));
+   const finish=reply=>{if(disposed||token!==ticket)return null;busy=false;reply.pending=false;reply.text=String(typeof answer==='function'?answer():answer);emit('answer');return reply.text;};
+   if(!delay){const reply=add('assistant','');return Promise.resolve(finish(reply));}
+   busy=true;const reply=add('assistant',String((options&&options.pendingText)||'요청을 확인하고 있어요.'),{pending:true});emit('pending',{listGuess:false});
+   return new Promise(resolve=>setTimeout(()=>resolve(finish(reply)),delay));
+  },
   reset:()=>{if(disposed)return;cancel();state=null;revision++;view={active:false,rowIds:[],sort:null,contextLabel:''};add('system','기존 고객 목록으로 돌아왔습니다.');emit('apply');},
   newConversation:()=>{if(disposed)return;cancel();conversationId=uuid();revision=0;if(state){state.last_aggregate=null;state.clarification=null;}messages=[];emit('new_conversation');},
   get:snapshot,metadata:()=>C.copy(metadata),subscribe:f=>{listeners.add(f);return()=>listeners.delete(f);},mode:'remote',

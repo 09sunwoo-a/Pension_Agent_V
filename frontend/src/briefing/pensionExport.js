@@ -44,6 +44,11 @@ function protectedPct(record){
  const a=list.find(x=>x&&x.assetType==='원리금보장형');
  return a?num(a.weightPct):null;
 }
+// 고객번호는 화면(브리핑 헤더·검색 결과)과 같은 5자리-5자리 표시형으로 쓴다. 원본이 더 길면(C01 6-7자리) 앞 5자리만.
+function displayId(value){
+ const m=/^(\d+)-(\d+)$/.exec(String(value==null?'':value));
+ return m?m[1].slice(0,5)+'-'+m[2].slice(0,5):String(value==null?'':value);
+}
 function defaultOption(record){
  const d=(record.customer&&record.customer.defaultOption)||{};
  const status=d.registrationStatus||'확인 필요';
@@ -56,7 +61,7 @@ function customerRows(items){
   const r=it.record||{},c=r.customer||{},a=r.irpAccount||{},p=it.profile||{};
   const id=(r.briefingMeta&&r.briefingMeta.caseId)||c.customerId||p.pin||String(i);
   const irp=num(a.valuationAmountKrw);
-  return [i+1,text(c.name),text(c.customerId||p.pin),num(c.age)==null?num(p.age):c.age,text(c.gender||p.sex),text(c.starClubGrade||p.club),text(c.investmentProfile),
+  return [i+1,text(c.name),displayId(c.customerId||p.pin),num(c.age)==null?num(p.age):c.age,text(c.gender||p.sex),text(c.starClubGrade||p.club),text(c.investmentProfile),
    depositBalance(id,irp),irp,num(a.oneYearReturnPct),num(a.taxDeductionRemainingKrw),defaultOption(r),
    (r.signals||[]).map(s=>s&&s.label).filter(Boolean).join(', '),protectedPct(r)];
  });
@@ -157,5 +162,5 @@ function download(result,doc){
  setTimeout(()=>{a.remove();URL.revokeObjectURL(url);},1000);
  return result.fileName;
 }
-return {isExportRequest,build,download,customerRows,depositBalance,columns:COLUMNS.map(c=>c.h),zip,crc32};
+return {isExportRequest,build,download,customerRows,depositBalance,displayId,columns:COLUMNS.map(c=>c.h),zip,crc32};
 });

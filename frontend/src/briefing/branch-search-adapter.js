@@ -4,6 +4,7 @@
  */
 (function(root){'use strict';
 const C=root.PensionBranchSearchCore;let current=null;
+const EXPORT_DELAY_MS=3000; // 엑셀 내려받기 전 '정리 중' 표시 시간
 function fullView(component,render){
  const saved=component.state;
  // renderVals is evaluated synchronously. Do not emit a state update or modify
@@ -53,14 +54,18 @@ function mount(component,params){
   if(!items.length){session.note(text,'내려받을 고객이 없어요. 먼저 대화로 고객을 좁히거나 전체 목록으로 돌아간 뒤 다시 요청해 주세요.');return true;}
   const snap=session.get(),v=snap.view,s=snap.state||{};
   const condition=ctx.applied?((v?v.contextLabel:s.contextLabel)||'AI 검색 결과'):(vals.subChipOn?String(vals.subChipLabel):'전체 고객');
-  try{
-   const out=X.build({items,asOf:source.metadata.asOfDate,staff,condition,scope:(ctx.applied?'부점 AI 검색 결과':'메인 고객 목록')+' · '+source.metadata.scopeLabel});
-   X.download(out);
-   session.note(text,'현재 목록 '+out.count+'명을 '+out.fileName+' 파일로 내려받았어요. (조건: '+condition+') 파일의 「추출 조건」 시트에 기준일·조건을 함께 남겼습니다.');
-  }catch(e){
-   if(typeof console!=='undefined')console.warn('[Branch AI] export failed: '+(e&&e.message));
-   session.note(text,'엑셀 파일을 만들지 못했어요. 브라우저 다운로드가 허용되어 있는지 확인한 뒤 다시 시도해 주세요.');
-  }
+  const scope=(ctx.applied?'부점 AI 검색 결과':'메인 고객 목록')+' · '+source.metadata.scopeLabel;
+  // Agent 응답처럼 보이도록 3초간 '정리 중' 상태를 보여준 뒤 파일을 만들고 내려받는다.
+  session.note(text,()=>{
+   try{
+    const out=X.build({items,asOf:source.metadata.asOfDate,staff,condition,scope});
+    X.download(out);
+    return '현재 목록 '+out.count+'명을 '+out.fileName+' 파일로 내려받았어요. (조건: '+condition+') 파일의 「추출 조건」 시트에 기준일·조건을 함께 남겼습니다.';
+   }catch(e){
+    if(typeof console!=='undefined')console.warn('[Branch AI] export failed: '+(e&&e.message));
+    return '엑셀 파일을 만들지 못했어요. 브라우저 다운로드가 허용되어 있는지 확인한 뒤 다시 시도해 주세요.';
+   }
+  },{pendingText:'고객 '+items.length+'명의 명세를 정리하고 있어요.',delayMs:EXPORT_DELAY_MS});
   return true;
  }
  ctx.restore=restore;ctx.widget=root.PensionBranchSearchWidget.mount(document.body,session,{onRestore:restore,intercept:exportRequest});
