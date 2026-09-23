@@ -1534,7 +1534,7 @@ class Component {
     const branchStats = [
       { label: '부점 잔액', value: '526.8억', delta: '(▲ 1.3억)', deltaFg: '#047857' },
       { label: '부점 수익률', value: '18.96%', delta: '(▲ 0.12%p)', deltaFg: '#047857' },
-      { label: '고유계정대', value: '6.7억', delta: '(▼ 0.4억)', deltaFg: '#B91C1C' },
+      { label: '고유계정대 잔액', value: '6.7억', delta: '(▼ 0.4억)', deltaFg: '#B91C1C' },
       { label: '원리금보장 비중', value: '69.3%', delta: '', deltaFg: '#9298A2' }
     ];
     const churnTotal = '89좌 · 62.8억';
