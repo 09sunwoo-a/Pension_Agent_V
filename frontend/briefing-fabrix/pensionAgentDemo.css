@@ -243,11 +243,10 @@
 #pensionAgentDemo .pad-brief-card__body {font-size:var(--pad-fs-16);font-weight:var(--pad-fw-bold);line-height:1.75;letter-spacing:-.01em;text-wrap:pretty;word-break:keep-all;min-height:72px}
 #pensionAgentDemo .pad-hl-link {font-weight:var(--pad-fw-bold);background:var(--pad-c-brand-light);cursor:pointer;padding:0 2px;border-radius:3px}
 #pensionAgentDemo .pad-stats-card {width:320px;flex:none}
-/* 핵심지표 카드는 상단 행 높이를 결정하므로(브리핑 카드가 stretch) 세로 여백을 줄여 컴팩트하게 */
+/* 핵심지표 카드: 제목 없이 지표 행만 두고, 브리핑 카드와 같은 높이(stretch) 안에서 행을 위아래 균등 배치 */
 #pensionAgentDemo .pad-card.pad-stats-card {padding:12px 20px}
-#pensionAgentDemo .pad-stats-card .pad-t-kicker2 {margin-bottom:6px}
-#pensionAgentDemo .pad-stats-card .pad-prow {padding:4px 0}
-#pensionAgentDemo .pad-stats-card .pad-prow-last {padding-top:6px}
+#pensionAgentDemo .pad-stats-card .pad-prow,
+#pensionAgentDemo .pad-stats-card .pad-prow-last {flex:1 1 0;padding:4px 0}
 #pensionAgentDemo .pad-bar {height:6px;border-radius:3px;background:var(--pad-c-bg-2);overflow:hidden}
 #pensionAgentDemo .pad-bar__fill {height:100%;border-radius:3px;transition:width .5s}
 #pensionAgentDemo .pad-bar__fill--gray {background:var(--pad-c-gray)}
