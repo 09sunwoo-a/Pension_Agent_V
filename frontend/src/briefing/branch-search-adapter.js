@@ -33,6 +33,8 @@ function mount(component,params){
   isCurrent:()=>current&&current.component===component&&!component.state.sel,
   prepareAnswer:(_answer,manifest)=>checkManifest(manifest)
  });
+ // 엑셀 추출 시트에 남기는 추출 직원(사번). 로컬 모드는 연결 설정이 없다.
+ let staff='';try{staff=local?'':String(root.PensionBranchAgentTransport.settings(params,root.__PENSION_FABRIX_CONFIG).xClientUser||'');}catch(_){staff='';}
  params=null;
  const motion=root.PensionBranchMotion.create();
  const ctx={component,app,source,session,engine,motion,applied:false,pending:false,busy:false,before:new Map(),oldRender:render,lastSelected:null};current=ctx;
@@ -42,7 +44,26 @@ function mount(component,params){
  // Back to the original list: the 전체 chip, the KPI cards and the chat's 기존 목록 button all end the search mode.
  function restore(keepFilter){ctx.keepFilter=keepFilter===true;try{session.reset();}finally{ctx.keepFilter=false;}}
  // The Starroot shell renders the page inside a transformed .pt-page; position:fixed only works from document.body.
- ctx.restore=restore;ctx.widget=root.PensionBranchSearchWidget.mount(document.body,session,{onRestore:restore});
+ // 대화창의 "엑셀로 내려받고 싶어" 류 요청: Agent 를 부르지 않고 지금 화면에 보이는 고객 목록(AI 검색 결과 또는 필터)을 그대로 xlsx 로 만든다.
+ function exportRequest(text){
+  const X=root.PensionExport;if(!X||!X.isExportRequest(text))return false;
+  let vals;try{vals=component.renderVals();}catch(_){return false;}
+  const byId=new Map(source.records.map(r=>[r.briefingMeta.caseId,r])),models=new Map((component.DATA||[]).map(d=>[d.id,d]));
+  const items=(vals.queue||[]).filter(r=>r.id&&byId.has(r.id)).map(r=>{let profile={};try{profile=component.profileOf(models.get(r.id)||{})||{};}catch(_){}return {record:byId.get(r.id),profile};});
+  if(!items.length){session.note(text,'내려받을 고객이 없어요. 먼저 대화로 고객을 좁히거나 전체 목록으로 돌아간 뒤 다시 요청해 주세요.');return true;}
+  const snap=session.get(),v=snap.view,s=snap.state||{};
+  const condition=ctx.applied?((v?v.contextLabel:s.contextLabel)||'AI 검색 결과'):(vals.subChipOn?String(vals.subChipLabel):'전체 고객');
+  try{
+   const out=X.build({items,asOf:source.metadata.asOfDate,staff,condition,scope:(ctx.applied?'부점 AI 검색 결과':'메인 고객 목록')+' · '+source.metadata.scopeLabel});
+   X.download(out);
+   session.note(text,'현재 목록 '+out.count+'명을 '+out.fileName+' 파일로 내려받았어요. (조건: '+condition+') 파일의 「추출 조건」 시트에 기준일·조건을 함께 남겼습니다.');
+  }catch(e){
+   if(typeof console!=='undefined')console.warn('[Branch AI] export failed: '+(e&&e.message));
+   session.note(text,'엑셀 파일을 만들지 못했어요. 브라우저 다운로드가 허용되어 있는지 확인한 뒤 다시 시도해 주세요.');
+  }
+  return true;
+ }
+ ctx.restore=restore;ctx.widget=root.PensionBranchSearchWidget.mount(document.body,session,{onRestore:restore,intercept:exportRequest});
  ctx.off=session.subscribe(e=>{
   // Waiting only patches the header/list styles, preserving the current DOM and focus.
   // wait: any request in flight (header donut + progress bar only, rows untouched). busy: the list itself will change (skeleton).

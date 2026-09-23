@@ -50,7 +50,8 @@ function mount(container,session,options){
  input.addEventListener('compositionstart',()=>{composing=true;});input.addEventListener('compositionend',()=>{composing=false;refreshDraft();});
  input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&!composing&&e.keyCode!==229){e.preventDefault();submit();}});
  find('form').addEventListener('submit',e=>{e.preventDefault();if(current.busy){session.cancel();return;}if(streams.size){finishStreams();return;}if(!composing)submit();});
- function submit(text,action){const q=text===undefined?input.value:text;if(!q.trim())return;finishStreams();input.value='';refreshDraft();examplesOpen=false;examples.hidden=true;find('[data-action="examples"]').setAttribute('aria-expanded','false');session.send(q,action);}
+ // options.intercept(text): 입력 문장을 프론트가 직접 처리하면 true (예: 엑셀 내려받기). 칩/액션 요청은 가로채지 않는다.
+ function submit(text,action){const q=text===undefined?input.value:text;if(!q.trim())return;finishStreams();input.value='';refreshDraft();examplesOpen=false;examples.hidden=true;find('[data-action="examples"]').setAttribute('aria-expanded','false');if(!action&&options.intercept&&options.intercept(q.trim()))return;session.send(q,action);}
  function setOpen(value,focus){open=value;panel.hidden=!open;launcher.setAttribute('aria-expanded',String(open));launcher.setAttribute('aria-label',open?'퇴직연금 사후관리 에이전트 최소화':'퇴직연금 사후관리 에이전트 열기');launcher.classList.toggle('is-open',open);if(open)launcher.classList.remove('has-unread');if(focusTimer)clearTimeout(focusTimer);if(open&&focus!==false)focusTimer=setTimeout(()=>{if(!disposed&&open&&visible)input.focus({preventScroll:true});},80);if(!open&&focus!==false)launcher.focus({preventScroll:true});}
  launcher.addEventListener('click',()=>setOpen(!open));
  launcher.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setOpen(!open);}});

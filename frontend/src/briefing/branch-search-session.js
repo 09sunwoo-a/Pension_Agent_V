@@ -46,6 +46,8 @@ function createLocal(input,options){
  }
  return {
   send,cancel,apply,perform:(action,label)=>send(label||'선택한 요청',action),
+  // 프론트가 직접 처리한 요청(예: 엑셀 내려받기)을 대화 기록에 남긴다. Agent/엔진 호출·목록 변경 없음.
+  note:(userText,assistantText)=>{if(disposed)return;add('user',String(userText));add('assistant',String(assistantText));emit('answer');},
   reset:()=>{if(!engine)return apply({query:C.all(),sort:{field:data.metadata.scopeId==='current-main-list'?'source_order':'caseId',direction:'asc'},limit:null},'전체 검색조건과 표시 제한을 해제했습니다.');cancel();state=engine.initialState();revision++;add('system','기존 고객 목록으로 돌아왔습니다.');emit('apply');},
   newConversation:()=>{cancel();if(!engine)state.reference=null;else {state.clarification=null;state.aggregate=null;state.selectedCustomerId=null;}state.lastResult=null;messages=[];emit('new_conversation');},
   clearReference:()=>{state.reference=null;emit('reference');},
@@ -139,6 +141,8 @@ function createRemote(input,options){
   }
  }
  return {send,cancel,perform:(action,label)=>send(label||'선택한 요청',action),
+  // 프론트가 직접 처리한 요청(예: 엑셀 내려받기)을 대화 기록에 남긴다. Agent 호출·state/view 변경 없음.
+  note:(userText,assistantText)=>{if(disposed)return;add('user',String(userText));add('assistant',String(assistantText));emit('answer');},
   reset:()=>{if(disposed)return;cancel();state=null;revision++;view={active:false,rowIds:[],sort:null,contextLabel:''};add('system','기존 고객 목록으로 돌아왔습니다.');emit('apply');},
   newConversation:()=>{if(disposed)return;cancel();conversationId=uuid();revision=0;if(state){state.last_aggregate=null;state.clarification=null;}messages=[];emit('new_conversation');},
   get:snapshot,metadata:()=>C.copy(metadata),subscribe:f=>{listeners.add(f);return()=>listeners.delete(f);},mode:'remote',

@@ -427,6 +427,31 @@ async function branchSearchCheck() {
   // so its rules are scoped by the .pad-branch- class prefix; no tag or global selector is allowed.
   const stray = selectors.filter(s => !/^(#pensionAgentDemo\b|\.pad-branch-)/.test(s) && !/^@(keyframes padBranch|media)/.test(s));
   assert.deepEqual(stray, [], 'Added CSS stays namespaced (.pad-branch- classes or #pensionAgentDemo)');
+  // 엑셀 내려받기: 대화 문장 판별, 외부 라이브러리 없는 xlsx(ZIP store) 조립, 세션 기록. Agent 호출 없음.
+  {
+    const X = w.PensionExport;
+    for (const t of ['이 고객 명세를 다운받고 싶어', '엑셀로 추출해줘', '지금 목록 파일로 내려받을래', 'xlsx 로 저장', 'Excel 다운로드']) assert.ok(X.isExportRequest(t), 'export intent: ' + t);
+    for (const t of ['현금성 장기대기 고객 추출해줘', '오늘 부점 현황 말해줘', 'ISA 만기 고객 몇 명이야?', '']) assert.ok(!X.isExportRequest(t), 'not export intent: ' + t);
+    const models = new Map(page.DATA.map(d => [d.id, d]));
+    const items = source.records.map(r => ({ record: r, profile: page.profileOf(models.get(r.briefingMeta.caseId) || {}) }));
+    const out = X.build({ items, asOf: source.metadata.asOfDate, staff: 'TEST', condition: '테스트 조건', now: new Date(2026, 8, 29, 14, 12) });
+    assert.equal(out.fileName, '타겟고객_명단_20260929_1412.xlsx'); assert.equal(out.count, source.records.length);
+    assert.deepEqual(plain(out.columns.slice(6, 9)), ['투자성향', '수신평잔(원)', 'IRP 잔액(원)'], '수신평잔 sits between 투자성향 and IRP 잔액');
+    assert.ok(!out.columns.includes('최근 신호일'));
+    const b = out.bytes; assert.ok(ArrayBuffer.isView(b) && b[0] === 0x50 && b[1] === 0x4B, 'ZIP signature'); // instanceof fails across vm realms
+    const eocd = b.length - 22; assert.equal(b[eocd] | (b[eocd + 1] << 8) | (b[eocd + 2] << 16) | (b[eocd + 3] << 24), 0x06054b50, 'EOCD'); assert.equal(b[eocd + 10] | (b[eocd + 11] << 8), 7, '7 parts: types, rels, workbook, workbook rels, styles, 2 sheets');
+    for (const row of out.rows) {
+      const irp = row[8], dep = row[7];
+      if (irp == null) assert.equal(dep, null); else { assert.ok(dep >= irp * 6 && dep <= irp * 9 && dep % 10000 === 0, '수신평잔 = IRP 잔액 × 6~9, 만원 단위: ' + row[1]); }
+    }
+    const again = X.build({ items, asOf: source.metadata.asOfDate, now: new Date(2026, 8, 29, 14, 12) });
+    assert.deepEqual(again.rows.map(r => r[7]), out.rows.map(r => r[7]), '수신평잔 is deterministic per customer');
+    const st = out.rows.find(r => r[1] === '박서진'); assert.ok(st && st[3] === 35 && st[9] === 3.2, 'structured record values flow into the sheet');
+    const s = S.create(I, { mode: 'local' }); const events = []; s.subscribe(e => events.push(e.type)); const before = s.get();
+    s.note('엑셀로 내려받고 싶어', '내려받았어요'); const after = s.get();
+    assert.deepEqual(events, ['answer']); assert.deepEqual(plain(after.messages.map(m => m.role)), ['user', 'assistant']); assert.equal(after.revision, before.revision); assert.deepEqual(after.state, before.state);
+    console.log('PASS: 엑셀 내려받기 — intent detection, dependency-free xlsx (' + out.count + ' rows, 2 sheets), session note without Agent/state change.');
+  }
   console.log('PASS: 부점 AI golden regression (' + turns + ' turns, 8 review customers, test-only), session ordering/cancel/failure, real main list projected (' + ids.length + ' rows, ' + structured.length + ' structured), renderer hooks, list markup, namespaced CSS.');
 }
 

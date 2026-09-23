@@ -52,7 +52,8 @@ function artifacts(fileCode = DEFAULT_FILE_CODE, data = inputs(), branch = branc
     'fabrix-transport.js', 'pensionFabrix.js', 'fabrix-chat-transport.js', 'pensionChat.js',
     // 부점 AI: current main-list search. Core/data/provider/session precede the DOM modules and the adapter.
     'branch-agent-contract.js', 'branch-agent-transport.js', 'branch-search-core.js', 'branch-search-current-data.js', 'branch-search-current-provider.js', 'branch-search-conversation.js', 'branch-search-session.js',
-    'branch-search-motion.js', 'branch-search-widget.js', 'branch-search-adapter.js', 'pensionAgentDemo.js'];
+    // pensionExport.js: 대화창의 "엑셀로 내려받기" 요청을 프론트에서 처리(xlsx 생성). 어댑터가 실행 시점에 참조.
+    'branch-search-motion.js', 'branch-search-widget.js', 'pensionExport.js', 'branch-search-adapter.js', 'pensionAgentDemo.js'];
   // The widget compares this stamp (a custom property on .pad-branch-widget) with the deployed CSS to detect a stale file.
   const branchSource = read(path.join(SRC, 'branch-search.css'));
   const branchCss = branchSource.replace('PAD_BRANCH_CSS_VERSION', require('crypto').createHash('sha256').update(branchSource).digest('hex').slice(0, 12));
