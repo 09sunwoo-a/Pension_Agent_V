@@ -1,7 +1,7 @@
 {
   "manifest": {
     "dataset_id": "branch-demo.v1",
-    "data_version": "3e6e18066c2424c0820080492ddf9bf7c46c33bc08108c1d51843c7f782b44ee",
+    "data_version": "7abc22b0dbf4302101ddda4a750d89b5a5b6f03c3fcf28fbda64e6f3cb5c609f",
     "rule_version": "branch-rules.v1",
     "projection_version": "current-data.v1",
     "as_of_date": "2026-09-29",
@@ -736,6 +736,10 @@
         {
           "label": "원리금보장 편중",
           "source": "시연용 고객 원본 이벤트·상담"
+        },
+        {
+          "label": "연금저축 보유",
+          "source": "시연용 보강 · 55세 이상 연금 미개시 연금저축 보유 시나리오"
         }
       ],
       "irpAccount": {
@@ -869,7 +873,7 @@
           "risk": false,
           "mat": true,
           "imp": true,
-          "opp": false
+          "opp": true
         }
       },
       "searchSource": {
@@ -1478,13 +1482,17 @@
       },
       "signals": [
         {
+          "label": "이탈징후",
+          "source": "시연용 보강 · 오세훈 시연 케이스"
+        },
+        {
           "source": "동료 IRP Agent 시연 데이터(9 Cases v3)",
           "label": "정기예금 만기 D-10",
           "date": "2026-10-09"
         },
         {
-          "label": "연금개시 가능",
-          "source": "동료 IRP Agent 시연 데이터(9 Cases v3)"
+          "label": "연금저축 보유",
+          "source": "시연용 보강 · 55세 이상 연금 미개시 연금저축 보유 시나리오"
         }
       ],
       "irpAccount": {
@@ -1810,7 +1818,7 @@
         "externalAccounts": [],
         "annualContributionKrw": 2000000,
         "triggers": {
-          "risk": false,
+          "risk": true,
           "mat": true,
           "imp": false,
           "opp": true
@@ -6723,9 +6731,8 @@
           "source": "시연용 고객 사건·상담"
         },
         {
-          "label": "퇴직연금 관리화면 방문",
-          "date": "2026-09-08",
-          "source": "가상 행동로그"
+          "label": "연금저축 보유",
+          "source": "시연용 보강 · 55세 이상 연금 미개시 연금저축 보유 시나리오"
         }
       ],
       "irpAccount": {
@@ -7226,6 +7233,10 @@
           "label": "퇴직연금 관리화면 방문",
           "date": "2026-09-10",
           "source": "가상 행동로그"
+        },
+        {
+          "label": "연금저축 보유",
+          "source": "시연용 보강 · 55세 이상 연금 미개시 연금저축 보유 시나리오"
         }
       ],
       "irpAccount": {
@@ -7380,7 +7391,7 @@
           "risk": false,
           "mat": true,
           "imp": false,
-          "opp": false
+          "opp": true
         }
       },
       "searchSource": {
@@ -8831,6 +8842,10 @@
           "label": "퇴직연금 관리화면 방문",
           "date": "2026-09-08",
           "source": "가상 행동로그"
+        },
+        {
+          "label": "연금저축 보유",
+          "source": "시연용 보강 · 55세 이상 연금 미개시 연금저축 보유 시나리오"
         }
       ],
       "irpAccount": {
@@ -9338,6 +9353,10 @@
           "label": "보유상품 수익률 조회",
           "date": "2026-09-08",
           "source": "가상 행동로그"
+        },
+        {
+          "label": "연금저축 보유",
+          "source": "시연용 보강 · 55세 이상 연금 미개시 연금저축 보유 시나리오"
         }
       ],
       "irpAccount": {
@@ -9547,6 +9566,10 @@
           "label": "퇴직연금 관리화면 방문",
           "date": "2026-09-09",
           "source": "가상 행동로그"
+        },
+        {
+          "label": "연금저축 보유",
+          "source": "시연용 보강 · 55세 이상 연금 미개시 연금저축 보유 시나리오"
         }
       ],
       "irpAccount": {
@@ -10941,6 +10964,10 @@
           "label": "보유상품 수익률 조회",
           "date": "2026-09-11",
           "source": "가상 행동로그"
+        },
+        {
+          "label": "연금저축 보유",
+          "source": "시연용 보강 · 55세 이상 연금 미개시 연금저축 보유 시나리오"
         }
       ],
       "irpAccount": {
@@ -12043,6 +12070,10 @@
         {
           "label": "연금개시 가능",
           "source": "동료 IRP Agent 실측 답변(2026-09-29 기준)"
+        },
+        {
+          "label": "연금저축 보유",
+          "source": "시연용 보강 · 55세 이상 연금 미개시 연금저축 보유 시나리오"
         }
       ],
       "irpAccount": {

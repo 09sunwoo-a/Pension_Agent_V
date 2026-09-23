@@ -27,13 +27,17 @@
   },
   "signals": [
     {
+      "label": "이탈징후",
+      "source": "시연용 보강 · 오세훈 시연 케이스"
+    },
+    {
       "source": "동료 IRP Agent 시연 데이터(9 Cases v3)",
       "label": "정기예금 만기 D-10",
       "date": "2026-10-09"
     },
     {
-      "label": "연금개시 가능",
-      "source": "동료 IRP Agent 시연 데이터(9 Cases v3)"
+      "label": "연금저축 보유",
+      "source": "시연용 보강 · 55세 이상 연금 미개시 연금저축 보유 시나리오"
     }
   ],
   "irpAccount": {
