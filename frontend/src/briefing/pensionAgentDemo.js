@@ -1360,10 +1360,11 @@ class Component {
       const at = (ms, fn) => this._bridgeTimers.push(setTimeout(fn, ms));
       this.setState({ bridge: id, bridgeStep: 1, bridgeFade: false });
       this.select(id, true);
-      at(1000, () => this.setState({ bridgeStep: 2 }));
-      at(2000, () => this.setState({ bridgeStep: 3 }));
-      at(3600, () => this.setState({ bridgeFade: true }));
-      at(4000, () => this.setState({ bridge: null, bridgeStep: 0, bridgeFade: false }));
+      // 고객 클릭 → 브리핑 화면 전환 사이의 로딩 오버레이: 총 8초 (7.6초에 페이드 시작)
+      at(2000, () => this.setState({ bridgeStep: 2 }));
+      at(4000, () => this.setState({ bridgeStep: 3 }));
+      at(7600, () => this.setState({ bridgeFade: true }));
+      at(8000, () => this.setState({ bridge: null, bridgeStep: 0, bridgeFade: false }));
       return;
     }
     clearTimeout(this._tk1); clearTimeout(this._tk2); clearTimeout(this._ss); clearInterval(this._si); clearTimeout(this._agT1); clearInterval(this._agST); clearInterval(this._agSI); clearInterval(this._agT2);
