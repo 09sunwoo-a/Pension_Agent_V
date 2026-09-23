@@ -60,7 +60,7 @@
       }
     ],
     "oneYearReturnPct": 15.6,
-    "taxDeductionRemainingKrw": null,
+    "taxDeductionRemainingKrw": 7000000,
     "latestProductOpening": {
       "holdingId": "H001",
       "productId": "FND-007",

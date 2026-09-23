@@ -1,7 +1,7 @@
 {
   "manifest": {
     "dataset_id": "branch-demo.v1",
-    "data_version": "b059980b851fdb92776fd0f2aba5f3d98c11e97c7cc8d0eb81d62d58e7152ec8",
+    "data_version": "3e6e18066c2424c0820080492ddf9bf7c46c33bc08108c1d51843c7f782b44ee",
     "rule_version": "branch-rules.v1",
     "projection_version": "current-data.v1",
     "as_of_date": "2026-09-29",
@@ -1507,7 +1507,7 @@
           }
         ],
         "oneYearReturnPct": 6.2,
-        "taxDeductionRemainingKrw": 0,
+        "taxDeductionRemainingKrw": 7000000,
         "latestProductOpening": {
           "holdingId": "H003",
           "productId": null,
@@ -1594,7 +1594,7 @@
           "재직상태": "퇴직"
         },
         "납입및세제": {
-          "올해개인부담금납입액원": 9000000,
+          "올해개인부담금납입액원": 2000000,
           "개인부담금납입이력": [
             {
               "연도": 2023,
@@ -1606,12 +1606,12 @@
             },
             {
               "연도": 2025,
-              "납입금액원": 9000000
+              "납입금액원": 2000000
             }
           ],
           "타연금계좌올해납입액원": 0,
           "세액공제기준한도원": 9000000,
-          "세액공제잔여한도원": 0,
+          "세액공제잔여한도원": 7000000,
           "퇴직급여재원금액원": 95000000,
           "개인부담금재원금액원": 70000000
         },
@@ -1808,7 +1808,7 @@
           "retirementDeposits": []
         },
         "externalAccounts": [],
-        "annualContributionKrw": 9000000,
+        "annualContributionKrw": 2000000,
         "triggers": {
           "risk": false,
           "mat": true,
@@ -3347,7 +3347,7 @@
           }
         ],
         "oneYearReturnPct": 32.6,
-        "taxDeductionRemainingKrw": 0,
+        "taxDeductionRemainingKrw": 9000000,
         "latestProductOpening": {
           "holdingId": "H003",
           "productId": "MF-013",
@@ -3439,7 +3439,7 @@
           ],
           "타연금계좌올해납입액원": 0,
           "세액공제기준한도원": 9000000,
-          "세액공제잔여한도원": 0,
+          "세액공제잔여한도원": 9000000,
           "퇴직급여재원금액원": 520000000,
           "개인부담금재원금액원": 0
         },
@@ -3990,7 +3990,7 @@
           }
         ],
         "oneYearReturnPct": 3.4,
-        "taxDeductionRemainingKrw": 0,
+        "taxDeductionRemainingKrw": 6500000,
         "latestProductOpening": {
           "holdingId": "H001",
           "productId": "DEP-002",
@@ -4675,7 +4675,7 @@
           }
         ],
         "oneYearReturnPct": -9.4,
-        "taxDeductionRemainingKrw": 0,
+        "taxDeductionRemainingKrw": 5500000,
         "latestProductOpening": {
           "holdingId": "H002",
           "productId": "SAV-009",
@@ -4764,7 +4764,7 @@
           "재직상태": "재직"
         },
         "납입및세제": {
-          "올해개인부담금납입액원": 9000000,
+          "올해개인부담금납입액원": 3500000,
           "개인부담금납입이력": [
             {
               "연도": 2023,
@@ -4776,12 +4776,12 @@
             },
             {
               "연도": 2025,
-              "납입금액원": 9000000
+              "납입금액원": 3500000
             }
           ],
           "타연금계좌올해납입액원": 0,
           "세액공제기준한도원": 9000000,
-          "세액공제잔여한도원": 0,
+          "세액공제잔여한도원": 5500000,
           "퇴직급여재원금액원": 0,
           "개인부담금재원금액원": 58000000
         },
@@ -4960,7 +4960,7 @@
           "retirementDeposits": []
         },
         "externalAccounts": [],
-        "annualContributionKrw": 9000000,
+        "annualContributionKrw": 3500000,
         "triggers": {
           "risk": true,
           "mat": false,
@@ -5042,7 +5042,7 @@
           }
         ],
         "oneYearReturnPct": 11.4,
-        "taxDeductionRemainingKrw": 0,
+        "taxDeductionRemainingKrw": 7500000,
         "latestProductOpening": {
           "holdingId": "H004",
           "productId": "ETF-006",
@@ -5115,7 +5115,7 @@
           "재직상태": "재직"
         },
         "납입및세제": {
-          "올해개인부담금납입액원": 9000000,
+          "올해개인부담금납입액원": 1500000,
           "개인부담금납입이력": [
             {
               "연도": 2023,
@@ -5127,12 +5127,12 @@
             },
             {
               "연도": 2025,
-              "납입금액원": 9000000
+              "납입금액원": 1500000
             }
           ],
           "타연금계좌올해납입액원": 0,
           "세액공제기준한도원": 9000000,
-          "세액공제잔여한도원": 0,
+          "세액공제잔여한도원": 7500000,
           "퇴직급여재원금액원": 0,
           "개인부담금재원금액원": 480000000
         },
@@ -5311,7 +5311,7 @@
           "retirementDeposits": []
         },
         "externalAccounts": [],
-        "annualContributionKrw": 9000000,
+        "annualContributionKrw": 1500000,
         "triggers": {
           "risk": true,
           "mat": true,
@@ -5806,7 +5806,7 @@
           }
         ],
         "oneYearReturnPct": 15.6,
-        "taxDeductionRemainingKrw": null,
+        "taxDeductionRemainingKrw": 7000000,
         "latestProductOpening": {
           "holdingId": "H001",
           "productId": "FND-007",
@@ -6748,7 +6748,7 @@
           }
         ],
         "oneYearReturnPct": 4.4,
-        "taxDeductionRemainingKrw": 0,
+        "taxDeductionRemainingKrw": 5500000,
         "latestProductOpening": {
           "holdingId": "H001",
           "productId": "GIC-003",
@@ -7033,7 +7033,7 @@
           }
         ],
         "oneYearReturnPct": 26.9,
-        "taxDeductionRemainingKrw": 0,
+        "taxDeductionRemainingKrw": 4000000,
         "latestProductOpening": {
           "holdingId": "H001",
           "productId": "ETF-010",
@@ -7709,7 +7709,7 @@
           }
         ],
         "oneYearReturnPct": -1.8,
-        "taxDeductionRemainingKrw": 0,
+        "taxDeductionRemainingKrw": 9000000,
         "latestProductOpening": {
           "holdingId": "H002",
           "productId": "DEP-005",
@@ -7785,7 +7785,7 @@
           ],
           "타연금계좌올해납입액원": 0,
           "세액공제기준한도원": 9000000,
-          "세액공제잔여한도원": 0,
+          "세액공제잔여한도원": 9000000,
           "퇴직급여재원금액원": 0,
           "개인부담금재원금액원": 8000000
         },
@@ -8023,7 +8023,7 @@
           }
         ],
         "oneYearReturnPct": 13.7,
-        "taxDeductionRemainingKrw": 0,
+        "taxDeductionRemainingKrw": 5000000,
         "latestProductOpening": {
           "holdingId": "H002",
           "productId": "DEP-007",
@@ -8096,7 +8096,7 @@
           "재직상태": "재직"
         },
         "납입및세제": {
-          "올해개인부담금납입액원": 9000000,
+          "올해개인부담금납입액원": 4000000,
           "개인부담금납입이력": [
             {
               "연도": 2023,
@@ -8108,12 +8108,12 @@
             },
             {
               "연도": 2025,
-              "납입금액원": 9000000
+              "납입금액원": 4000000
             }
           ],
           "타연금계좌올해납입액원": 0,
           "세액공제기준한도원": 9000000,
-          "세액공제잔여한도원": 0,
+          "세액공제잔여한도원": 5000000,
           "퇴직급여재원금액원": 0,
           "개인부담금재원금액원": 125000000
         },
@@ -8301,7 +8301,7 @@
           "retirementDeposits": []
         },
         "externalAccounts": [],
-        "annualContributionKrw": 9000000,
+        "annualContributionKrw": 4000000,
         "triggers": {
           "risk": false,
           "mat": true,
@@ -8387,7 +8387,7 @@
           }
         ],
         "oneYearReturnPct": 3.1,
-        "taxDeductionRemainingKrw": 0,
+        "taxDeductionRemainingKrw": 6000000,
         "latestProductOpening": {
           "holdingId": "H003",
           "productId": "DEP-004",
@@ -8446,7 +8446,7 @@
           "재직상태": "재직"
         },
         "납입및세제": {
-          "올해개인부담금납입액원": 9000000,
+          "올해개인부담금납입액원": 3000000,
           "개인부담금납입이력": [
             {
               "연도": 2023,
@@ -8458,12 +8458,12 @@
             },
             {
               "연도": 2025,
-              "납입금액원": 9000000
+              "납입금액원": 3000000
             }
           ],
           "타연금계좌올해납입액원": 0,
           "세액공제기준한도원": 9000000,
-          "세액공제잔여한도원": 0,
+          "세액공제잔여한도원": 6000000,
           "퇴직급여재원금액원": 80000000,
           "개인부담금재원금액원": 180000000
         },
@@ -8662,7 +8662,7 @@
           "retirementDeposits": []
         },
         "externalAccounts": [],
-        "annualContributionKrw": 9000000,
+        "annualContributionKrw": 3000000,
         "triggers": {
           "risk": false,
           "mat": true,
@@ -8853,7 +8853,7 @@
           }
         ],
         "oneYearReturnPct": 3.7,
-        "taxDeductionRemainingKrw": 0,
+        "taxDeductionRemainingKrw": 7500000,
         "latestProductOpening": {
           "holdingId": "H002",
           "productId": "GIC-001",
@@ -9360,7 +9360,7 @@
           }
         ],
         "oneYearReturnPct": 19.9,
-        "taxDeductionRemainingKrw": 0,
+        "taxDeductionRemainingKrw": 2000000,
         "latestProductOpening": {
           "holdingId": "H002",
           "productId": "SAV-003",
@@ -9569,7 +9569,7 @@
           }
         ],
         "oneYearReturnPct": 4.7,
-        "taxDeductionRemainingKrw": 0,
+        "taxDeductionRemainingKrw": 7000000,
         "latestProductOpening": {
           "holdingId": "H001",
           "productId": "GIC-001",
@@ -9982,7 +9982,7 @@
           }
         ],
         "oneYearReturnPct": 4.6,
-        "taxDeductionRemainingKrw": 0,
+        "taxDeductionRemainingKrw": 7500000,
         "latestProductOpening": {
           "holdingId": "H001",
           "productId": "GIC-001",
@@ -11429,7 +11429,7 @@
           }
         ],
         "oneYearReturnPct": 16.4,
-        "taxDeductionRemainingKrw": 0,
+        "taxDeductionRemainingKrw": 1500000,
         "latestProductOpening": {
           "holdingId": "H002",
           "productId": "ETF-010",

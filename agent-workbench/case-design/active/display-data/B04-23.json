@@ -61,7 +61,7 @@
       }
     ],
     "oneYearReturnPct": 3.4,
-    "taxDeductionRemainingKrw": 0,
+    "taxDeductionRemainingKrw": 6500000,
     "latestProductOpening": {
       "holdingId": "H001",
       "productId": "DEP-002",

@@ -338,7 +338,7 @@ class Component {
       lsm: { pin: '10391-52847', age: 51, sex: '여', club: '그랜드', dopt: false, ret: '+2.8%', acct: '2014.05.20', recent: { d: '2025.09.26', n: 'OK저축은행 정기예금 1년', a: '7,000만원' } },
       pjh: { pin: '10428-91635', age: 58, sex: '남', club: 'VVIP', dopt: true, doptName: '알파드림 1호', ret: '+3.2%', acct: '2021.11.05', recent: { d: '2026.03.10', n: 'KB저축은행 정기예금 1년', a: '2,000만원' } }
     };
-    const TAXP = { ksy: 400, pjh: 300, pey: 520, lsc: 240, jmr: 180, cjh: 900, ysr: 420, msy: 700, hsw: 600, oks: 360, sjh: 900, hkg: 800 };
+    const TAXP = { ksy: 400, pjh: 300, pey: 520, lsc: 240, jmr: 180, cjh: 620, ysr: 420, msy: 700, hsw: 600, oks: 360, sjh: 560, hkg: 800, khj: 350, kdy: 480, jmj: 270, lth: 690, bjh: 150 };
     let h = 0; for (let i = 0; i < c.id.length; i++) h = (h * 31 + c.id.charCodeAt(i)) >>> 0;
     const CLUBS = ['VVIP', 'VIP', '그랜드', '베스트'];
     const DON = { '안정형': '지켜드림', '안정추구형': '알파드림 ' + (h % 3 + 1) + '호', '위험중립형': '뿔려드림 ' + (h % 3 + 1) + '호' };
@@ -1487,7 +1487,7 @@ class Component {
       if (S.filter === 'resolved') return false;
       return S.filter === 'risk' ? c.risk : S.filter === 'mat' ? c.mat : S.filter === 'imp' ? c.imp : S.filter === 'opp' ? c.opp : S.filter === 'perf' ? c.perf : S.filter === 'brief' ? c.brief : true;
     };
-    const TAX = { ksy: 400, pjh: 300, pey: 520, lsc: 240, jmr: 180, cjh: 900, ysr: 420, msy: 700, hsw: 600, oks: 360, sjh: 900, hkg: 800 };
+    const TAX = { ksy: 400, pjh: 300, pey: 520, lsc: 240, jmr: 180, cjh: 620, ysr: 420, msy: 700, hsw: 600, oks: 360, sjh: 560, hkg: 800, khj: 350, kdy: 480, jmj: 270, lth: 690, bjh: 150 };
     const taxPaidOf = c => TAX[c.id] != null ? TAX[c.id] : c.taxPaid;
     // 관리 필요도 순: D-day badge (closest first) -> 이탈·상품 문제 -> 운용 공백 -> the rest; ties keep list order.
     const DDAY = / D-(\d+)$/;

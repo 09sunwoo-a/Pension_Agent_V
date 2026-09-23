@@ -60,7 +60,7 @@
       }
     ],
     "oneYearReturnPct": 26.9,
-    "taxDeductionRemainingKrw": 0,
+    "taxDeductionRemainingKrw": 4000000,
     "latestProductOpening": {
       "holdingId": "H001",
       "productId": "ETF-010",

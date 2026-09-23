@@ -53,7 +53,7 @@
       }
     ],
     "oneYearReturnPct": 4.6,
-    "taxDeductionRemainingKrw": 0,
+    "taxDeductionRemainingKrw": 7500000,
     "latestProductOpening": {
       "holdingId": "H001",
       "productId": "GIC-001",

@@ -56,7 +56,7 @@
       }
     ],
     "oneYearReturnPct": 32.6,
-    "taxDeductionRemainingKrw": 0,
+    "taxDeductionRemainingKrw": 9000000,
     "latestProductOpening": {
       "holdingId": "H003",
       "productId": "MF-013",
@@ -148,7 +148,7 @@
       ],
       "타연금계좌올해납입액원": 0,
       "세액공제기준한도원": 9000000,
-      "세액공제잔여한도원": 0,
+      "세액공제잔여한도원": 9000000,
       "퇴직급여재원금액원": 520000000,
       "개인부담금재원금액원": 0
     },
