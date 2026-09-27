@@ -34,6 +34,8 @@ class AnswerData(FixedModel):
     # All nested fields are validated by the shared generated contract in
     # briefing.build_answer(), before this fixed Pydantic envelope is assembled.
     briefing: dict[str, Any]
+    # Optional construction evidence for the fixed briefing (C01-07); absent for other cases.
+    analysis_trace: dict[str, Any] | None = None
 
 
 class AnswerEvent(FixedModel):
@@ -78,6 +80,7 @@ def chat(req: FabrixRequest):
         logical = ErrorEvent.model_validate(error_event(request_id))
 
     # Exactly one complete logical event in one Agent CHUNK, then EOF.
-    return StreamingResponse(iter([sse_frame(logical.model_dump())]),
+    # exclude_unset: analysis_trace is emitted only when build_answer set it (C01-07); nulls inside the briefing dict stay as they are.
+    return StreamingResponse(iter([sse_frame(logical.model_dump(exclude_unset=True))]),
                              media_type="text/event-stream",
                              headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})

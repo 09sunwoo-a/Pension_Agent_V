@@ -144,13 +144,21 @@ function zip(files,now){
  return out;
 }
 // ----- 조립 -----
-// opts: {items:[{record,profile}], asOf:'YYYY-MM-DD', staff:'사번', condition:'적용 조건 문구', scope:'추출 범위 문구', now:Date}
+// opts: {items:[{record,profile}], asOf:'YYYY-MM-DD', staff:'사번', condition:'적용 조건 문구', scope:'추출 범위 문구', now:Date,
+//        onPhase:(phase,info)=>void  — 처리 이력용 단계 알림: 'rows'(고객 데이터 행 구성) → 'sheets'(시트 구성) → 'zip'(XLSX 생성). 없으면 무시}
 function build(opts){
  const now=opts.now&&typeof opts.now.getFullYear==='function'?opts.now:new Date(); // instanceof 는 vm 컨텍스트 간에 실패
+ const phase=typeof opts.onPhase==='function'?opts.onPhase:()=>{};
  const rows=customerRows(opts.items||[]);
+ phase('rows',{rowCount:rows.length,columnCount:COLUMNS.length,columns:COLUMNS.map(c=>c.h)});
  const meta=[['기준일',text(opts.asOf)||'확인 필요'],['추출 일시',stamp(now)],['추출 직원',text(opts.staff)||'—'],['적용 조건',text(opts.condition)||'전체 고객'],['고객 수',rows.length+'명'],['추출 범위',text(opts.scope)||'현재 메인 고객 목록']];
  const sheets=[{name:'고객 명단',columns:COLUMNS,rows,freeze:true},{name:'추출 조건',columns:[{h:'항목',w:14},{h:'값',w:60}],rows:meta,freeze:false}];
- return {fileName:'타겟고객_명단_'+fileStamp(now)+'.xlsx',bytes:zip(workbookFiles(sheets),now),count:rows.length,rows,columns:COLUMNS.map(c=>c.h)};
+ const files=workbookFiles(sheets);
+ phase('sheets',{sheetNames:sheets.map(s=>s.name),partCount:files.length});
+ const bytes=zip(files,now);
+ const out={fileName:'타겟고객_명단_'+fileStamp(now)+'.xlsx',bytes,count:rows.length,rows,columns:COLUMNS.map(c=>c.h),sheetNames:sheets.map(s=>s.name),byteLength:bytes.length};
+ phase('zip',{fileName:out.fileName,byteLength:bytes.length});
+ return out;
 }
 // 브라우저 다운로드. 크롬 기준 Blob + <a download>.
 function download(result,doc){

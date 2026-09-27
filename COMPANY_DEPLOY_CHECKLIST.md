@@ -27,7 +27,7 @@ node tools/briefing/check.js --agent
 | 업무화면 WAS | `frontend/briefing-fabrix/mnPensionAgentDemo.html`, `pensionAgentDemo.js`, `pensionAgentDemo.css` — 세 파일 |
 | 사내 Agent 배포 repo | `agent/Dockerfile`, `requirements.txt`, `main.py`, `briefing.py`, `briefing_data.json`, `llm_client.py` — 여섯 파일 |
 
-부점 AI(Python)는 별도 묶음이며 [BRANCH_AGENT_DEPLOY_TOMORROW.md](BRANCH_AGENT_DEPLOY_TOMORROW.md)를 따릅니다. 프론트 JS에 실린 부점 manifest `data_version`과 `branch-agent/deploy/branch_data.json`은 같은 빌드여야 하며(현재 `b059980b…`), 다르면 부점 대화창이 VERSION으로 거부됩니다.
+부점 AI(Python)는 별도 묶음이며 [BRANCH_AGENT_DEPLOY_TOMORROW.md](BRANCH_AGENT_DEPLOY_TOMORROW.md)를 따릅니다. 프론트 JS에 실린 부점 manifest `data_version`과 `branch-agent/deploy/branch_data.json`은 같은 빌드여야 하며(현재 `81f4311c…`), 다르면 부점 대화창이 VERSION으로 거부됩니다.
 
 Node·개별 고객 JSON·프론트 원본 모듈은 WAS에 올리지 않습니다. Agent에도 저장소 전체나 frontend/tools 폴더가 필요하지 않습니다. `llm_client.py`는 기존 Docker COPY를 유지하기 위해 포함하지만 현재 실행 경로는 import/호출하지 않습니다.
 

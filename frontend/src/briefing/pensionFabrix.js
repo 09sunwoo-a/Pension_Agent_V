@@ -68,14 +68,17 @@
     if (!cfg) return { ok: false, code: configCode };
     cancel();
     var requestCfg = cfg, req = wire.request(customer, requestId(), requestCfg.xClientUser);
-    var pending = { caseId: caseId, ticket: bridge.begin(caseId), controller: new AbortController() };
+    var pending = { caseId: caseId, ticket: bridge.begin(caseId), controller: new AbortController(), requestedAt: new Date().toISOString() };
     active = pending; diagnostics.set(caseId, { code: 'LOADING' }); refresh();
     try {
       var event = await transport.call(requestCfg, req, { signal: pending.controller.signal });
       if (active !== pending) return { ok: false, stale: true };
       var checked = wire.validate(event, req);
       if (!checked.ok) throw { code: checked.code };
-      var result = bridge.receive(pending.ticket, checked.content);
+      // Briefing and evidence are stored atomically; the front's own request/response clock is kept apart from the Agent's.
+      // 근거가 계약에 어긋나면 브리핑만 표시한다. 운영자가 알 수 있도록 코드만 남긴다(고객 자료·본문은 기록하지 않음).
+      if (checked.traceCode && typeof console !== 'undefined') console.warn('[PensionBriefing] analysis_trace dropped: ' + checked.traceCode);
+      var result = bridge.receive(pending.ticket, checked.content, checked.trace ? Object.assign({}, checked.trace, { front: { requested_at: pending.requestedAt, responded_at: new Date().toISOString() } }) : null);
       if (result.stale) return result;
       if (!result.ok) throw { code: 'SCHEMA' };
       loaded.add(caseId); diagnostics.set(caseId, { code: 'SUCCESS' });

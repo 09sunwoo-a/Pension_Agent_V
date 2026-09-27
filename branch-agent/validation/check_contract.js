@@ -126,6 +126,27 @@ eventCase('reset-result-must-be-all', d => {d.result.row_ids=[];d.result.count=0
 eventCase('brief-needs-target', d => d.next_state.selected_row_id=null, false, 'brief');
 eventCase('unsupported-status-mismatch', d => d.status='ok', false, 'unsupported');
 {
+  // execution_trace (optional, agent_observed): valid summary passes; actor/stage/length/extra-field violations fail on both sides.
+  const detail=Object.fromEntries(['message','attempt','model','deployment','purpose','state_summary','plan','selection','labels','row_ids','unknown_row_ids','count','sort','list_action','intent','status','revision','code','checks','source','action_type','notes'].map(k=>[k,null]));
+  const step=(id,seq,actor,stage,extra)=>({id,sequence:seq,actor,stage,title:'단계',status:'completed',started_at:'2026-09-27T04:00:00.000+00:00',ended_at:'2026-09-27T04:00:00.120+00:00',duration_ms:120,summary:'요약',input:null,output:{...detail,...extra},evidence_refs:[]});
+  const trace={trace_version:'branch-execution-trace.v1',origin:'agent_observed',request_id:examples.search.request.request_id,clock:'monotonic',started_at:'2026-09-27T04:00:00.000+00:00',ended_at:'2026-09-27T04:00:05.700+00:00',duration_ms:5700,status:'completed',
+    steps:[step('s01',1,'LLM','interpret',{message:'현금성 장기대기 고객 보여줘',attempt:1}),step('s02',2,'AGENT','plan',{labels:['현금성 장기대기'],checks:['plan_schema'],source:'llm'}),step('s03',3,'DATA','apply',{row_ids:['lsm','jmr'],count:2,labels:['현금성 장기대기'],sort:{field:'source_order',direction:'asc'},selection:{base:'all',operations:[{id:'op-1',type:'filter',predicate:{op:'segment',value:'현금성 장기대기'}}]}}),step('s04',4,'AGENT','answer',{intent:'search',status:'ok',list_action:'replace',revision:1})],
+    llm_calls:[{call_id:'llm-01',purpose:'interpret',attempt:1,model:'gemma-4-31b-it',deployment:'gemma-4-31b-nvidia-fp4-h100',started_at:'2026-09-27T04:00:00.010+00:00',ended_at:'2026-09-27T04:00:05.600+00:00',duration_ms:5590,status:'accepted',input:{...detail,message:'현금성 장기대기 고객 보여줘',state_summary:{active:false,base:'all',filter_count:0,has_recommendation:false,clarification:null},purpose:'해석'},output:{...detail,plan:{intent:'search',scope:'all',edit:'replace',operations:[{id:'p1',type:'filter',predicate:{op:'segment',value:'현금성 장기대기'}}],metric_keys:[],target_name:null,remove_field:null,clarification_kind:null,detail:'brief'}},code:null}]};
+  eventCase('trace-valid',d=>d.execution_trace=clone(trace),true);
+  eventCase('trace-null',d=>d.execution_trace=null,true);
+  eventCase('trace-bad-actor',d=>{d.execution_trace=clone(trace);d.execution_trace.steps[0].actor='FRONT';});
+  eventCase('trace-bad-stage',d=>{d.execution_trace=clone(trace);d.execution_trace.steps[0].stage='guess';});
+  eventCase('trace-bad-origin',d=>{d.execution_trace=clone(trace);d.execution_trace.origin='frontend_fixture';});
+  eventCase('trace-extra-field',d=>{d.execution_trace=clone(trace);d.execution_trace.steps[0].raw_prompt='...';});
+  eventCase('trace-detail-extra-field',d=>{d.execution_trace=clone(trace);d.execution_trace.steps[0].output.token='x';});
+  eventCase('trace-bad-time',d=>{d.execution_trace=clone(trace);d.execution_trace.steps[0].started_at='2026-09-27 04:00:00';});
+  eventCase('trace-too-many-steps',d=>{d.execution_trace=clone(trace);d.execution_trace.steps=Array.from({length:17},(_,i)=>step('s'+String(i+1).padStart(2,'0'),i+1,'AGENT','plan',{}));});
+  eventCase('trace-old-stage-name',d=>{d.execution_trace=clone(trace);d.execution_trace.steps[0].stage='llm_request';});
+  eventCase('trace-bad-status',d=>{d.execution_trace=clone(trace);d.execution_trace.status='running';});
+  eventCase('trace-on-error',d=>{},true,'error');
+  { const e=last('error');e.data.execution_trace={...clone(trace),request_id:e.data.request_id,status:'failed'};e.data.execution_trace.steps[1].status='failed';add('trace-error-partial','event',e,true,{request:clone(examples.error.request)}); }
+}
+{
   const p=clone(examples.search.events[0]);p.data.list_pending=true;
   add('interpretation-must-not-hide-list','event',p,false,{request:examples.search.request});
   p.data.phase='executing';add('confirmed-list-progress','event',clone(p),true,{request:examples.search.request});

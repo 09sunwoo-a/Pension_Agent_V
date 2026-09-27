@@ -98,7 +98,7 @@ Stage: ARG ENV_FILE_PATH → ENV_PATH
 `branch_data.json`을 열어 수기로 고치지 않는다. 프론트 내장 manifest와 같은 빌드 결과를 반입한다. 현재 data_version은 다음과 같다.
 
 ```text
-b059980b851fdb92776fd0f2aba5f3d98c11e97c7cc8d0eb81d62d58e7152ec8
+81f4311c07c3550cf87571a436351adef5f9a393df7b87f6a29a548c0719905c
 ```
 
 ## 4. Python 패키지와 LLM 실행 설정

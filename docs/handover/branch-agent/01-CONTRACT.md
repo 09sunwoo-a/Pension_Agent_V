@@ -125,6 +125,22 @@ Sort는 `{field,direction:'asc'|'desc'}`. ui.sort는 표시 의미이며 프론�
 
 현황 H-01은 intent=overview, ui=keep, result.count=48, metrics에 IRP 5949240000(48/0), 현금346630000(31/17). 추천 R-01은 replace `[B04-23,B06-13,B01-03]`와 UR 근거. B-01은 keep과2~3문장. 명확화는 keep·status=clarification_required·next_state.clarification과 선택 버튼. 실행 가능한9개 요청·응답은 [contract.examples.json](../../../branch-agent/validation/contract.examples.json)에 있다. 샘플 manifest/hash는 **계약 검증 전용**이며03의 실제 데이터 manifest로 쓰지 않는다.
 
+## 실행 이력 `execution_trace` (2026-09-28 추가, 선택 필드)
+
+`answer.data`와 식별 가능한 `error.data`에 `execution_trace`(nullable, 생략 가능)를 둔다. Agent가 요청마다 독립된 `branch_trace.Collector`로 관측한 기록(origin `agent_observed`)이며, 프론트 처리 이력 패널이 자신의 전송·수신·검증·목록 반영 기록(`frontend_observed`)과 sequence 순으로 합쳐 보여준다. 업무 상태의 근거는 계속 `result/ui/next_state`이고 이력은 그것을 바꾸지 않는다.
+
+| 필드 | 내용 |
+|---|---|
+| trace_version / origin / clock | `branch-execution-trace.v1` / `agent_observed` / `monotonic` (소요시간은 `time.monotonic`, 절대시각은 timezone 포함 ISO — 화면이 KST로 변환) |
+| request_id, started_at, ended_at, duration_ms, status | 요청 식별자, 시작·종료·소요, `completed|failed` |
+| steps[] (≤16) | `{id, sequence, actor:AGENT|LLM|DATA, stage, title, status:completed|failed, started_at, ended_at, duration_ms, summary(≤300), input, output, evidence_refs}`. stage = `interpret`(LLM 해석, 재시도 포함 1단계) → `plan`(조건 검증·확정, 버튼 action이면 첫 단계) → `apply`(조건 적용·고객 확정, 정렬 포함) → `compose`(간단 브리핑 문장, LLM) → `answer`(답변 구성). 요청 수신·범위 확인·응답 검증은 단계가 아니며, 그 단계에서 실패하면 `plan`이 `요청 검증 실패`로 기록된다 |
+| llm_calls[] (≤6) | `{call_id, purpose:interpret|compose, attempt, model, deployment, started_at, ended_at, duration_ms, status:accepted|rejected|failed, input, output, code}`. 실제 시도마다 1건이며 같은 목적의 시도는 하나의 `interpret`/`compose` 단계에 묶인다. 거절된 출력은 `rejected`로 남고 성공한 해석처럼 표시하지 않는다. 버튼 action 경로에는 호출이 없다 |
+| input / output | `TraceDetail`: 허용된 요약 필드만(모든 키 존재, 미사용 null). `message`, `state_summary`, `plan`(검증된 Plan), `selection`, `labels`, `row_ids`, `count`, `sort`, `list_action`, `intent`, `status`, `revision`, `code`, `checks`, `source`, `notes` 등. 시스템 프롬프트·원시 모델 응답·헤더·토큰·직원 ID·고객 원본은 넣지 않는다 |
+
+오류 응답은 확보한 단계까지의 부분 이력을 `status: failed`로 보낸다(실패 단계는 `failed`, 완료하지 않은 단계를 성공 처리하지 않음). 식별 불가능한 요청(`invalid-request`)에는 이력이 없다. 이력이 없는 유효 응답은 프론트가 관측 기록만 표시한다.
+
+**호환:** 새 프론트는 `execution_trace`가 없어도 동작한다(선택 필드). 기존 프론트 검증기는 알 수 없는 키를 거절하므로 **새 Agent를 배포하면 프론트 반입 3파일도 함께 교체**해야 한다. `branch_trace.py`는 Dockerfile 개별 COPY에 포함했다.
+
 ## 진행·오류·전송
 
 - progress: `{event:'progress',data:{request_id,conversation_id,base_revision,phase:'interpreting'|'executing'|'composing',list_pending:boolean}}`. 계산 의도를 확정하기 전 false. 답변 뒤 progress 금지. 이 이벤트는 State나 목록을 변경하지 않는다.
@@ -138,7 +154,7 @@ Sort는 `{field,direction:'asc'|'desc'}`. ui.sort는 표시 의미이며 프론�
 
 ## 구현 산출물·완료
 
-`branch-agent/deploy/branch_models.py`가 **새 계약의 스키마 원본**이다(Pydantic v2, strict, extra=forbid). `branch-agent/validation/export_schema.py`가 `integration/contracts/branch-agent.schema.json`을 생성하고, build가 `PensionBranchAgentSchema`로 번들에 넣는다. 기존 S1~S5의 JS 원본 방식은 유지한다. 승인 없는 commit은 하지 않는다.
+`branch-agent/deploy/branch_models.py`가 **새 계약의 스키마 원본**이다(2026-09-28: `ExecutionTrace`·`TraceStep`·`LlmCall`·`TraceDetail` 추가, JS 검증기는 선택 필드의 `default` 키워드를 허용)(Pydantic v2, strict, extra=forbid). `branch-agent/validation/export_schema.py`가 `integration/contracts/branch-agent.schema.json`을 생성하고, build가 `PensionBranchAgentSchema`로 번들에 넣는다. 기존 S1~S5의 JS 원본 방식은 유지한다. 승인 없는 commit은 하지 않는다.
 
 외부 validator/CDN 없이 제한된 JSON Schema 검증기+의미 검사를 구현했다. 새 schema keyword를 지원하지 않으면 조용히 무시하지 않고 실패한다. Unicode code point 길이, JSON 정수1/1.0 동일 의미를 양쪽에서 맞춘다. export 재실행 결과가 저장된 schema와 다르면 검사 실패. 기존 `checkShape`를 범용 검증기로 간주하지 않는다.
 

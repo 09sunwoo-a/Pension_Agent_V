@@ -1,0 +1,1363 @@
+{
+  "schema_version": "c01-07-briefing-evidence.v1",
+  "case_id": "C01-07",
+  "authored_at": "2026-09-28",
+  "as_of_date": "2026-09-29",
+  "purpose": "구현용 정제 근거 맵. 런타임 응답이나 실제 LLM 실행 이력이 아님.",
+  "baseline": {
+    "customer_path": "agent-workbench/case-design/active/display-data/C01-07.json",
+    "briefing_path": "agent-workbench/case-design/active/briefing-json/C01-07.json",
+    "customer_sha256": "d0eb0031c03f04cd67a44c1185ec9a9fc74a77a74e92d214e305dddd7978256f",
+    "briefing_sha256": "640b4b65f5663d27043960d3af4555a1399e3b2342eea102b9af5c85170ec81f",
+    "hash_format": "UTF-8 JSON; sort_keys=true; ensure_ascii=false; separators=(comma,colon)"
+  },
+  "presentation": {
+    "button": "분석 근거",
+    "panel_title": "오세훈 · 브리핑 분석 근거",
+    "default_collapsed": true,
+    "max_open_steps": 1,
+    "source_display": "title_only",
+    "show_source_paths": false,
+    "show_technical_metadata": false,
+    "steps": [
+      {
+        "id": "customer_summary",
+        "title": "고객 상황 요약",
+        "summary": "7,040만원 만기 · 연금 미개시 · 운용 지속 의향",
+        "fact_ids": [
+          "F-TOTAL",
+          "F-DEPOSIT",
+          "F-MATURITY",
+          "F-PENSION",
+          "F-INTENT"
+        ],
+        "judgment_ids": [],
+        "group_ids": [],
+        "target_prefixes": [
+          "/s1"
+        ],
+        "expand": "실제 사용 필드의 키·값과 현재 S1 세 문장 연결"
+      },
+      {
+        "id": "management_focus",
+        "title": "관리포인트",
+        "summary": "재운용 전 현재 연금수령 계획 확인",
+        "fact_ids": [
+          "F-DEPOSIT",
+          "F-MATURITY",
+          "F-PENSION",
+          "F-INTENT"
+        ],
+        "judgment_ids": [
+          "J-PLAN",
+          "J-SPLIT"
+        ],
+        "group_ids": [],
+        "target_prefixes": [
+          "/s2"
+        ],
+        "expand": "고객 사실 세 가지와 짧은 판단 요약; S2 기존 문장"
+      },
+      {
+        "id": "knowledge_selection",
+        "title": "참고한 업무·상품 지식",
+        "summary": "만기 관리 · 상품 · 상담화법 · 단말 업무",
+        "fact_ids": [],
+        "judgment_ids": [],
+        "group_ids": [
+          "management",
+          "products",
+          "conversation",
+          "workflow"
+        ],
+        "target_prefixes": [],
+        "expand": "네 묶음에서 필요한 카드 선택 → 제목·참고 내용·RAW·반영 문장"
+      },
+      {
+        "id": "briefing_binding",
+        "title": "브리핑 반영",
+        "summary": "확인한 사실과 근거를 S1~S5에 연결",
+        "fact_ids": [],
+        "judgment_ids": [],
+        "group_ids": [],
+        "target_prefixes": [
+          "/s1",
+          "/s2",
+          "/s3",
+          "/s4",
+          "/s5"
+        ],
+        "expand": "섹션별 핵심 문장과 현재 브리핑 이동/강조; 전문 중복 출력 금지"
+      }
+    ],
+    "groups": [
+      {
+        "id": "management",
+        "title": "만기·연금수령 관리",
+        "card_ids": [
+          "K-MATURITY",
+          "K-PENSION"
+        ]
+      },
+      {
+        "id": "products",
+        "title": "연금사업부 9월 추천상품",
+        "card_ids": [
+          "P-SAV009",
+          "P-FND004",
+          "P-GIC003"
+        ]
+      },
+      {
+        "id": "conversation",
+        "title": "상담화법",
+        "card_ids": [
+          "T-MATURITY",
+          "T-DEFER",
+          "T-EXPERT"
+        ],
+        "reuse_card_ids": [
+          "K-PENSION"
+        ]
+      },
+      {
+        "id": "workflow",
+        "title": "단말 업무 · Hot Tip",
+        "card_ids": [
+          "W-TERMINAL",
+          "W-PRODUCT",
+          "H-PENSION"
+        ]
+      }
+    ]
+  },
+  "runtime_policy": {
+    "analysis_mode": "fixed_briefing_evidence",
+    "llm_calls": 0,
+    "trace_origin": "agent_observed",
+    "judgment_origin": "case_authored",
+    "timestamp_policy": "actual_runtime_only",
+    "trace_field": "data.analysis_trace",
+    "optional_for_other_cases": true,
+    "runtime_display_values": "Read selected customer fields from validated request; resolve target text from the same returned briefing. expected_* are authoring baselines only."
+  },
+  "facts": [
+    {
+      "id": "F-TOTAL",
+      "label": "IRP 평가금액",
+      "data_refs": [
+        "/irpAccount/valuationAmountKrw"
+      ],
+      "expected_values": [
+        165000000
+      ],
+      "role": "S1 계좌 규모"
+    },
+    {
+      "id": "F-DEPOSIT",
+      "label": "만기예금",
+      "data_refs": [
+        "/holdings/1/holdingId",
+        "/holdings/1/productId",
+        "/holdings/1/productName",
+        "/holdings/1/valuationAmountKrw"
+      ],
+      "expected_values": [
+        "H002",
+        "SAV-009",
+        "SBI저축은행 퇴직연금 정기예금 1년",
+        70400000
+      ],
+      "role": "H002·SAV-009 보유행과 만기 이벤트의 ID를 대조"
+    },
+    {
+      "id": "F-MATURITY",
+      "label": "만기 일정",
+      "data_refs": [
+        "/briefingMeta/asOfDate",
+        "/에이전트맥락데이터/최근사건/0/관련보유상품식별자",
+        "/에이전트맥락데이터/최근사건/0/발생일시",
+        "/에이전트맥락데이터/최근사건/0/금액원"
+      ],
+      "expected_values": [
+        "2026-09-29",
+        "H002",
+        "2026-10-09T00:00:00+09:00",
+        70400000
+      ],
+      "role": "데이터 기준일 대비 D-10; 시스템 오늘 날짜를 사용하지 않음"
+    },
+    {
+      "id": "F-PENSION",
+      "label": "연금 상태",
+      "data_refs": [
+        "/에이전트맥락데이터/퇴직및인출/연금수령요건충족여부",
+        "/에이전트맥락데이터/퇴직및인출/연금개시여부"
+      ],
+      "expected_values": [
+        true,
+        false
+      ],
+      "role": "요건충족 true와 개시 false는 입력 상태; 신규 법률 판정이나 개시 의사 확정이 아님"
+    },
+    {
+      "id": "F-INTENT",
+      "label": "지난 상담 의향",
+      "data_refs": [
+        "/에이전트맥락데이터/상담이력/0/상담일시",
+        "/에이전트맥락데이터/상담이력/0/상담메모"
+      ],
+      "expected_values": [
+        "2026-06-12T00:00:00+09:00",
+        "연금개시 가능 시점과 수령방법을 문의했으나 당장 개시하기보다는 일정 기간 운용을 지속하고 싶다는 의사."
+      ],
+      "role": "과거 의향을 현재 의사로 승격하지 않음"
+    },
+    {
+      "id": "F-PORTFOLIO",
+      "label": "기존 TDF·ETF와 투자성향",
+      "data_refs": [
+        "/holdings/3/productName",
+        "/holdings/4/productName",
+        "/customer/investmentProfile"
+      ],
+      "expected_values": [
+        "신한 마음편한 TDF 시리즈",
+        "RISE 200 ETF",
+        "안정추구형"
+      ],
+      "role": "S3 장기자금의 기존 운용 유지 점검; GIC 비교 후보와 구분"
+    }
+  ],
+  "judgments": [
+    {
+      "id": "J-PLAN",
+      "origin": "case_authored",
+      "summary": "만기자금을 재운용하기 전에, 지난 상담 이후 연금수령 계획이 달라졌는지 확인할 필요가 있습니다.",
+      "fact_ids": [
+        "F-DEPOSIT",
+        "F-MATURITY",
+        "F-PENSION",
+        "F-INTENT"
+      ],
+      "evidence_ids": [
+        "K-MATURITY",
+        "K-PENSION"
+      ],
+      "guard": "현재도 운용을 지속할지 확인할 과제이며 연금개시 의사 확정이 아니다."
+    },
+    {
+      "id": "J-SPLIT",
+      "origin": "case_authored",
+      "summary": "연금수령을 검토한다면 필요한 시점과 금액을 확인하고, 받을 자금과 계속 운용할 자금을 구분합니다.",
+      "fact_ids": [
+        "F-DEPOSIT",
+        "F-PENSION",
+        "F-INTENT"
+      ],
+      "evidence_ids": [
+        "K-PENSION"
+      ],
+      "guard": "분할 금액·개시일을 계산하거나 확정하지 않는다. 이 문장은 고객 적용 판단이며 인용 원문이 아니다.",
+      "internal_support": [
+        {
+          "source_path": "knowledge/corpus/05_상품_기반지식/PRODUCT_MATCHING_KB.md",
+          "section": "PM-13",
+          "line_start": 859,
+          "line_end": 875,
+          "source_kind": "derived_mapping"
+        }
+      ]
+    },
+    {
+      "id": "J-RETAIN",
+      "origin": "case_authored",
+      "summary": "기존 TDF·ETF는 운용기간과 투자성향에 맞는지 점검하고, 장기 잔액의 GIC 비교는 별도 검토로 연결합니다.",
+      "fact_ids": [
+        "F-PORTFOLIO"
+      ],
+      "evidence_ids": [],
+      "guard": "P-GIC003을 기존 TDF·ETF 유지 문장의 직접 근거로 붙이지 않는다. 일괄 매도 또는 GIC 교체 지시가 아니다."
+    },
+    {
+      "id": "J-FOLLOWUP",
+      "origin": "case_authored",
+      "summary": "고객의 선택을 기록하고, 만기 후 재운용 또는 연금지급 여부를 확인합니다.",
+      "fact_ids": [
+        "F-MATURITY",
+        "F-INTENT"
+      ],
+      "evidence_ids": [],
+      "guard": "현재 브리핑의 후속관리 문구. 원천 문서의 거래 실행 의무나 수행 완료로 표시하지 않는다."
+    }
+  ],
+  "knowledge_cards": [
+    {
+      "id": "K-MATURITY",
+      "group": "management",
+      "title": "만기 도래 고객의 사전 관리",
+      "source_title": "개인형IRP_마케팅_보물지도_Vol1",
+      "summary": "보유명세·만기현황을 파악하고 만기 전에 고객에게 안내한다.",
+      "application": "7,040만원 만기를 계기로 연락하고, 만기 후 운용계획을 확인한다.",
+      "raw_excerpts": [
+        {
+          "source_path": "knowledge/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/02_마케팅_캠페인/개인형IRP_마케팅_보물지도_Vol1.md",
+          "line_start": 786,
+          "line_end": 790,
+          "text": "**하나. 우리 지점의 퇴직연금 계좌 보유명세, 만기현황, 수익률 현황 등을 파악해 주세요.**\n\n- **[경영정보시스템]**\n\n**둘. 만기 1개월 전, 반드시 만기 안내를 해주세요.**",
+          "sha256": "4adbd50eb8ffac6b7f6f6430ea0b58009087014edc6bb4ea6949c42c8951abc6",
+          "normalization": "LF; no trailing newline"
+        }
+      ],
+      "provenance": {
+        "registry_id": "SRC-003",
+        "source_kind": "internal_guide",
+        "source_path": "knowledge/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/02_마케팅_캠페인/개인형IRP_마케팅_보물지도_Vol1.md",
+        "source_as_of": "2026-03",
+        "raw_status": "verified_corpus_excerpt",
+        "original_pdf_verified": false
+      },
+      "internal_notes": [],
+      "used_by": [
+        "/s2/lead",
+        "/s2/why",
+        "/s4/opening"
+      ],
+      "source_id": "guide-irp"
+    },
+    {
+      "id": "K-PENSION",
+      "group": "management",
+      "title": "연금수령 방식과 수령계획 확인",
+      "source_title": "개인형IRP_마케팅_보물지도_Vol1",
+      "summary": "기간지정·금액지정·자유인출 방식에 따라 수령기간과 금액을 정하는 구조가 다르다.",
+      "application": "연금수령을 시작할 의향이 있다면 언제부터 얼마를 받을지 확인한다. 자금 구분은 고객 사실을 종합한 적용 판단이다.",
+      "raw_excerpts": [
+        {
+          "source_path": "knowledge/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/02_마케팅_캠페인/개인형IRP_마케팅_보물지도_Vol1.md",
+          "line_start": 244,
+          "line_end": 246,
+          "text": "## 4. 수령으로 누리기\n\n열심히 모으고, 잘 키웠다면 이제 현명하게 수령해야 할 차례입니다. 언제, 어떻게, 얼마를 수령할 수 있는지 궁금하겠죠?",
+          "sha256": "c71180b07b2a753cd989f0b925598b47e017e69c7d16a7ef7a879636b408fd77",
+          "normalization": "LF; no trailing newline"
+        },
+        {
+          "source_path": "knowledge/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/02_마케팅_캠페인/개인형IRP_마케팅_보물지도_Vol1.md",
+          "line_start": 258,
+          "line_end": 264,
+          "text": "### 연금수령방식 3가지\n\n| 구 분 | 수령기간 | 수령금액 | 비 고 |\n| --- | --- | --- | --- |\n| 기간지정 | 고정 | 변동 | 방식 간 변경 가능 |\n| 금액지정 | 변동 | 고정 | |\n| 자유인출 | 최소 연금수령기간 이상 | 고객 지정 | |",
+          "sha256": "7f442e88d453ee418db0e049f4a1e5e45290d0cea180096460c3abdacc4c6888",
+          "normalization": "LF; no trailing newline"
+        }
+      ],
+      "provenance": {
+        "registry_id": "SRC-003",
+        "source_kind": "internal_guide",
+        "source_path": "knowledge/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/02_마케팅_캠페인/개인형IRP_마케팅_보물지도_Vol1.md",
+        "source_as_of": "2026-03",
+        "raw_status": "verified_corpus_excerpt",
+        "original_pdf_verified": false
+      },
+      "internal_notes": [],
+      "used_by": [
+        "/s2/lead",
+        "/s2/checks/1",
+        "/s2/checks/2",
+        "/s3/lead",
+        "/s3/options/1/title",
+        "/s3/options/1/summary",
+        "/s4/reactions/1/paragraphs/0",
+        "/s4/reactions/1/paragraphs/1"
+      ],
+      "source_id": "guide-irp"
+    },
+    {
+      "id": "P-SAV009",
+      "group": "products",
+      "title": "SBI저축은행 퇴직연금 정기예금",
+      "source_title": "저축은행_퇴직연금_정기예금_적용금리_2026-09",
+      "product_id": "SAV-009",
+      "summary": "원리금보장형 정기예금으로, 재운용 기간과 기관별 보유 합산·중도해지 조건을 확인한다. 10월 적용금리는 거래 시점에 확인한다.",
+      "application": "현재 SBI 예금의 같은 역할 재운용 조건 비교.",
+      "raw_excerpts": [],
+      "provenance": {
+        "registry_id": "SRC-099",
+        "source_kind": "product_compilation",
+        "source_path": "knowledge/corpus/05_상품_기반지식/PRODUCT_MASTER.md",
+        "line_start": 1953,
+        "line_end": 2040,
+        "source_as_of": "2026-09-10",
+        "original_title_from_registry": "저축은행_퇴직연금_정기예금_적용금리_2026-09(1).md",
+        "original_refs": [
+          "S02:L98-L102",
+          "S02:L6-L14",
+          "S03:L67-L70"
+        ],
+        "raw_status": "original_not_available",
+        "original_pdf_verified": false,
+        "runtime_verified": false
+      },
+      "internal_notes": [
+        "자료의 금리 적용기간은 2026-09-01~09-30. 연금지급 가능 여부는 마스터에서 미기재다.",
+        "화면 source_title은 마스터의 출처 목록에 기록된 원천 제목. 원천 본문은 미확보이므로 RAW 버튼을 표시하지 않는다."
+      ],
+      "used_by": [
+        "/s3/options/0/title",
+        "/s3/options/0/summary",
+        "/s3/options/0/products/0/name",
+        "/s4/notices/0",
+        "/s3/options/0/products/0/category"
+      ],
+      "source_id": "product-SAV-009"
+    },
+    {
+      "id": "P-FND004",
+      "group": "products",
+      "title": "한화내일받는단기국공채 C-RPE",
+      "source_title": "KB국민은행_퇴직연금_판매중_ETF_펀드",
+      "product_id": "FND-004",
+      "summary": "단기 국공채 펀드의 퇴직연금 클래스다. 원금손실 가능성이 있으며, 실제 환매 정산일과 필요한 지급일을 함께 확인한다.",
+      "application": "손실 가능성을 이해한 단기 운용 부분의 비교 후보.",
+      "raw_excerpts": [],
+      "provenance": {
+        "registry_id": "SRC-099",
+        "source_kind": "product_compilation",
+        "source_path": "knowledge/corpus/05_상품_기반지식/PRODUCT_MASTER.md",
+        "line_start": 6761,
+        "line_end": 6842,
+        "source_as_of": "2026-09-10",
+        "original_title_from_registry": "KB국민은행_퇴직연금_판매중_ETF_펀드(1).md",
+        "original_refs": [
+          "S05:L223",
+          "S05:L1-L10"
+        ],
+        "raw_status": "original_not_available",
+        "original_pdf_verified": false,
+        "runtime_verified": false
+      },
+      "internal_notes": [
+        "정산일은 자료에 없다. 상품명에서 익일 정산을 추론하지 않는다. monthly_recommended=false이며 월간 약칭과 클래스 수치를 합치지 않는다.",
+        "화면 source_title은 마스터의 출처 목록에 기록된 원천 제목. 원천 본문은 미확보이므로 RAW 버튼을 표시하지 않는다."
+      ],
+      "used_by": [
+        "/s3/options/1/products/0/name",
+        "/s4/notices/0",
+        "/s3/options/1/products/0/category",
+        "/s3/options/1/products/0/riskLevel"
+      ],
+      "source_id": "product-FND-004"
+    },
+    {
+      "id": "P-GIC003",
+      "group": "products",
+      "title": "한화생명 GIC",
+      "source_title": "9월_퇴직연금_원리금보장_특별제공상품_안내",
+      "product_id": "GIC-003",
+      "summary": "9월 특별제공안으로, 계약기간과 연금지급·중도해지 조건을 확인한다. 실제 거래 시점의 제공조건을 확인한다.",
+      "application": "가까운 지급에 쓰지 않을 장기 잔액의 구조 비교.",
+      "raw_excerpts": [],
+      "provenance": {
+        "registry_id": "SRC-099",
+        "source_kind": "product_compilation",
+        "source_path": "knowledge/corpus/05_상품_기반지식/PRODUCT_MASTER.md",
+        "line_start": 3647,
+        "line_end": 3713,
+        "source_as_of": "2026-09-10",
+        "original_title_from_registry": "9월_퇴직연금_원리금보장_특별제공상품_안내(1).md",
+        "original_refs": [
+          "S03:L19-L29",
+          "S03:L41-L42",
+          "S03:L58-L70"
+        ],
+        "raw_status": "original_not_available",
+        "original_pdf_verified": false,
+        "runtime_verified": false
+      },
+      "internal_notes": [
+        "정식 상품명이 아니라 제공기관·유형을 조합한 자료 명칭이다. 기존 보유 KB라이프 GIC와 구분한다. 9월 특별조건을 10월에 약속하지 않는다.",
+        "화면 source_title은 마스터의 출처 목록에 기록된 원천 제목. 원천 본문은 미확보이므로 RAW 버튼을 표시하지 않는다."
+      ],
+      "used_by": [
+        "/s3/options/2/products/0/name",
+        "/s4/notices/0",
+        "/s3/options/2/products/0/category"
+      ],
+      "source_id": "product-GIC-003"
+    },
+    {
+      "id": "T-MATURITY",
+      "group": "conversation",
+      "title": "만기 안내와 변경예약 확인",
+      "source_title": "연금고객_수익률KPI_고객관리_시나리오",
+      "summary": "만기예금을 안내하고 재운용 상품을 비교하며, 만기 전 변경예약 가능 여부를 확인한다.",
+      "application": "이름·금액·과거 의향은 고객 JSON에서 연결한다. 계속 운용할 경우 상품 기간·조건과 변경예약 가능 여부를 안내한다.",
+      "raw_excerpts": [
+        {
+          "source_path": "knowledge/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/01_고객관리_수익률관리/연금고객_수익률KPI_고객관리_시나리오.md",
+          "line_start": 104,
+          "line_end": 104,
+          "text": "**[행원]** 보유하신 퇴직연금 DC/기업형IRP/개인형IRP 계좌에 이번달(다음달) 만기되는 정기예금이 있으시네요~ (필요시)ㅇㅇ은행(일반) 정기예금으로 금액은 총 ㅇㅇ원입니다.",
+          "sha256": "802ea85cfd70e809d73bb992123d43d0a3f8477a73002e1b0431476ff3c68d7d",
+          "normalization": "LF; no trailing newline"
+        },
+        {
+          "source_path": "knowledge/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/01_고객관리_수익률관리/연금고객_수익률KPI_고객관리_시나리오.md",
+          "line_start": 114,
+          "line_end": 116,
+          "text": "**[고객] ① 만기 전 인데 신청이 가능한가요?**\n\n**[행원]** 네, 가능하세요. 통화종료 후에 고객님께 문자메시지로 만기상품 예약변경 거래를 하실 수 있는 스타뱅킹 URL 링크를 보내드리겠습니다. 만기 한달 전부터 예약거래가 가능하시니 URL로 접속하시면 지금 바로 예약거래를 하실 수 있습니다.",
+          "sha256": "d973701c6c315e3b39208e5a73efd0fef0ac5d10642b96606ca102b6bbb79415",
+          "normalization": "LF; no trailing newline"
+        }
+      ],
+      "provenance": {
+        "registry_id": "SRC-002",
+        "source_kind": "internal_guide",
+        "source_path": "knowledge/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/01_고객관리_수익률관리/연금고객_수익률KPI_고객관리_시나리오.md",
+        "source_as_of": null,
+        "raw_status": "verified_corpus_excerpt",
+        "original_pdf_verified": false
+      },
+      "internal_notes": [
+        "같은 문서의 오래된 금리차·예금자보호 숫자는 발췌하지 않는다. 예약 가능 여부·기간은 실제 상품 기준으로 확인하며 원문 예시의 확답을 일반화하지 않는다."
+      ],
+      "used_by": [
+        "/s4/opening",
+        "/s4/reactions/0/paragraphs/0",
+        "/s4/reactions/0/paragraphs/1"
+      ],
+      "source_id": "scenario-maturity"
+    },
+    {
+      "id": "T-DEFER",
+      "group": "conversation",
+      "title": "결정을 유보한 고객에게 요약 안내",
+      "source_title": "《실전상담백서》 끝난 줄 알았던 상담, 이렇게 말하니 다시 시작됐어요!",
+      "summary": "결정을 미룬 고객에게 짧은 요약자료를 안내하고 추후 상담의 여지를 남긴다.",
+      "application": "현재 S4의 “조금 더 알아보고 결정할게요.” 반응에 연결한다. 문자 발송 동의나 실제 발송을 추가하지 않는다.",
+      "raw_excerpts": [
+        {
+          "source_path": "knowledge/corpus/03_스타런_영업점_Hottip/posts/2025-11-13_203923_《실전상담백서》 끝난 줄 알았던 상담, 이렇게 말하니 다시 시작됐어요!.md",
+          "line_start": 92,
+          "line_end": 98,
+          "text": "** Scane 6 : \"아직은 생각 없어요 / 나중에 할게요 / 다음에 올께요~\"**\n\n(= 상담 차단형 반응 → 여운 남기기)\n\n👄 이렇게 말해보자!\n\n\"넵~ 괜한 타이밍 아니었을까 걱정했어요 ㅎㅎ <u>짧은 요약자료만 문자로 보내드릴게요</u>, 시간 괜찮으실 때 살짝만 봐주세요 :)\"",
+          "sha256": "1c22e7b5fc7d56be208d45319508d84bd33e178050ba9667afc2eaaf61797f64",
+          "normalization": "LF; no trailing newline"
+        }
+      ],
+      "provenance": {
+        "registry_id": "SRC-068",
+        "source_kind": "field_experience",
+        "source_path": "knowledge/corpus/03_스타런_영업점_Hottip/posts/2025-11-13_203923_《실전상담백서》 끝난 줄 알았던 상담, 이렇게 말하니 다시 시작됐어요!.md",
+        "source_as_of": "2025-11-13",
+        "raw_status": "verified_corpus_excerpt",
+        "original_pdf_verified": false
+      },
+      "internal_notes": [],
+      "used_by": [
+        "/s4/reactions/2/paragraphs/0"
+      ],
+      "source_id": "talk-defer"
+    },
+    {
+      "id": "T-EXPERT",
+      "group": "conversation",
+      "title": "연금수령·세금 전문 상담 연결",
+      "source_title": "연금왕찐천재_마스터북_계약이전화법_은행",
+      "summary": "KB골든라이프센터를 통해 연금수령·절세 등에 관한 전문 상담을 받을 수 있다고 안내한다.",
+      "application": "자세한 연금수령·세금 상담을 원하면 전문 상담도 연결할 수 있다는 현재 문장에 사용한다.",
+      "raw_excerpts": [
+        {
+          "source_path": "knowledge/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/03_영업화법_스크립트_연금왕찐천재/연금왕찐천재_마스터북_계약이전화법_은행.md",
+          "line_start": 141,
+          "line_end": 143,
+          "text": "### Q4. 상담 한번 받는 것도 쉽지 않잖아요!\n\n**[키키 행원]** 전화나 화상으로도 운용 상담이 가능하고, 지점 방문이 필요하실 때는 모바일 번호표나 상담예약 서비스를 이용하시면 대기시간을 줄이실 수 있습니다. 또한 은퇴가 가까워지시면 KB골든라이프센터를 통해 연금수령, 절세, 건강보험료, 국민연금과 관련된 다양한 전문 상담도 받으실 수 있습니다.",
+          "sha256": "f76adcfdfdb8dbb9b409bfe1185d5fda745368a7879226b002151f250ecef185",
+          "normalization": "LF; no trailing newline"
+        }
+      ],
+      "provenance": {
+        "registry_id": "SRC-010",
+        "source_kind": "training_material",
+        "source_path": "knowledge/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/03_영업화법_스크립트_연금왕찐천재/연금왕찐천재_마스터북_계약이전화법_은행.md",
+        "source_as_of": null,
+        "raw_status": "verified_corpus_excerpt",
+        "original_pdf_verified": false
+      },
+      "internal_notes": [],
+      "used_by": [
+        "/s4/reactions/2/paragraphs/1"
+      ],
+      "source_id": "talk-expert"
+    },
+    {
+      "id": "W-TERMINAL",
+      "group": "workflow",
+      "title": "보유상품 조회·변경·연금지급",
+      "source_title": "퇴직연금_주요거래_화면번호_안내",
+      "summary": "04-12-642는 보유상품 조회, 06-12-611은 즉시·예약·만기예약 변경, 02-12-221은 연금수령예상조회 및 지급 등록·변경·취소·조회 화면이다.",
+      "application": "공통 조회 후 계속 운용 시 변경예약, 연금수령 선택 시 지급 화면으로 안내한다.",
+      "raw_excerpts": [
+        {
+          "source_path": "knowledge/corpus/06_퇴직연금_주요거래_화면번호_안내/퇴직연금_주요거래_화면번호_안내.md",
+          "line_start": 65,
+          "line_end": 65,
+          "text": "| 상품운용 | 적립금및수익률조회 | 04-12-642 | 전일자 보유상품 및 평가금액/수익률 조회 |",
+          "sha256": "c5f475712d607011337b15f9a152411c4d94b7426ffe84ce0a0dcac1334694cb",
+          "normalization": "LF; no trailing newline"
+        },
+        {
+          "source_path": "knowledge/corpus/06_퇴직연금_주요거래_화면번호_안내/퇴직연금_주요거래_화면번호_안내.md",
+          "line_start": 67,
+          "line_end": 67,
+          "text": "| 상품운용 | 보유상품변경 | 06-12-611 | 보유상품 즉시/예약/만기예약 변경 |",
+          "sha256": "dc1e1aba8570334c35072965fad804b453994a80e1028c25fb1872700c29aeda",
+          "normalization": "LF; no trailing newline"
+        },
+        {
+          "source_path": "knowledge/corpus/06_퇴직연금_주요거래_화면번호_안내/퇴직연금_주요거래_화면번호_안내.md",
+          "line_start": 50,
+          "line_end": 50,
+          "text": "| 지급/해지 | 개인형IRP 연금지급 | 02-12-221 | 연금수령예상조회, 연금 지급 등록/변경/취소/조회 |",
+          "sha256": "f167294cbcf1d19ebe4933879abd67f6c9d330d680438345dc2e156f1386b8c6",
+          "normalization": "LF; no trailing newline"
+        }
+      ],
+      "provenance": {
+        "registry_id": "SRC-027",
+        "source_kind": "terminal_reference",
+        "source_path": "knowledge/corpus/06_퇴직연금_주요거래_화면번호_안내/퇴직연금_주요거래_화면번호_안내.md",
+        "source_as_of": null,
+        "raw_status": "verified_corpus_excerpt",
+        "original_pdf_verified": false,
+        "local_pdf_path": "knowledge/corpus/02_스타런_퇴직연금_교육자료/_원본_PDF/퇴직연금_주요거래_화면번호_안내.pdf"
+      },
+      "internal_notes": [
+        "PDF 파일 존재만 확인했다. 이번 RAW는 corpus MD와 대조했다. 화면번호 자료의 구버전 04-12-179를 04-12-17A의 근거로 사용하지 않는다."
+      ],
+      "used_by": [
+        "/s5/actions/0/screenCode",
+        "/s5/actions/0/title",
+        "/s5/actions/0/description",
+        "/s5/actions/2/screenCode",
+        "/s5/actions/2/title",
+        "/s5/actions/2/description",
+        "/s5/actions/3/screenCode",
+        "/s5/actions/3/title",
+        "/s5/actions/3/description"
+      ],
+      "source_id": "workflow"
+    },
+    {
+      "id": "W-PRODUCT",
+      "group": "workflow",
+      "title": "만기 후 재운용 상품 비교",
+      "source_title": "개인형IRP_마케팅_보물지도_Vol1",
+      "summary": "원리금보장상품 금리는 매월 변경되므로 상품 잔여한도를 확인한다. 조회 경로는 04-12-17A NEW 퇴직연금상품조회다.",
+      "application": "계속 운용하는 경우 상품을 비교할 화면으로 연결하고, 실제 처리 시점의 조건을 확인하도록 안내한다.",
+      "raw_excerpts": [
+        {
+          "source_path": "knowledge/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/02_마케팅_캠페인/개인형IRP_마케팅_보물지도_Vol1.md",
+          "line_start": 801,
+          "line_end": 803,
+          "text": "> **Tip**\n> 원리금보장상품 금리는 매월 변경되니, 상담 전 상품 잔여한도를 꼭 확인하시기 바랍니다.\n> ■ 경로 : **MyStar+ 단말** > [04-12-17A] New퇴직연금상품조회",
+          "sha256": "54a2cad01a827e3b820e932f20a469bdb87bb335196328f5fb6a891cb3b7fd78",
+          "normalization": "LF; no trailing newline"
+        }
+      ],
+      "provenance": {
+        "registry_id": "SRC-003",
+        "source_kind": "internal_guide",
+        "source_path": "knowledge/corpus/01_행내가이드문서_연금사업부_연금컨설팅부/02_마케팅_캠페인/개인형IRP_마케팅_보물지도_Vol1.md",
+        "source_as_of": "2026-03",
+        "raw_status": "verified_corpus_excerpt",
+        "original_pdf_verified": false
+      },
+      "internal_notes": [],
+      "used_by": [
+        "/s4/notices/0",
+        "/s5/actions/1/screenCode",
+        "/s5/actions/1/title",
+        "/s5/actions/1/description"
+      ],
+      "source_id": "guide-irp"
+    },
+    {
+      "id": "H-PENSION",
+      "group": "workflow",
+      "title": "IRP 연금 지급 절차",
+      "source_id": "hot-tip-199404",
+      "source_title": "irp 연금 지급 절차",
+      "summary": "연금개시 준비서류와 세액 미공제 한도 등록, 연금지급 화면으로 이어지는 처리 흐름을 정리한 현장 사례입니다.",
+      "application": "연금수령 여부를 검토하는 고객의 상담에서 준비서류와 처리 순서를 참고한다. 연금개시 의사나 거래 실행을 확정하지 않는다.",
+      "raw_excerpts": [
+        {
+          "source_path": "knowledge/corpus/03_스타런_영업점_Hottip/posts/2025-02-27_199404_irp 연금 지급 절차.md",
+          "line_start": 34,
+          "line_end": 40,
+          "text": "**연금개시절차**\n\n*준비서류- 연금보험료등 소득 세액 공제 확인서(서류 없을 경우 국민지갑에서 발급가능)\n\n**1. 세액 미공제 한도 등록** (화면번호 0612622)\n\n**2. 연금지급** (화면번호 0212221)",
+          "sha256": "7827ea95126a12c5af305be2fcc518e218707865eb0bef2a92074a8abfb18d48",
+          "normalization": "LF; no trailing newline"
+        }
+      ],
+      "provenance": {
+        "registry_id": "SRC-049",
+        "source_kind": "field_experience",
+        "source_path": "knowledge/corpus/03_스타런_영업점_Hottip/posts/2025-02-27_199404_irp 연금 지급 절차.md",
+        "source_as_of": "2025-02-27",
+        "raw_status": "verified_corpus_excerpt",
+        "original_pdf_verified": false,
+        "article_id": "199404",
+        "original_url": "https://lxp.kbstar.com/app/board/hottip-my/view/199404.D59E713BFC50ADBEAC5F8FB48C7B16253F22F4AF0D957938667E721AE592A4FD",
+        "live_access_verified": false
+      },
+      "internal_notes": [
+        "현장 경험 게시글이다. 현재의 보편적 업무 의무나 자동 거래 승인 규칙으로 해석하지 않는다.",
+        "이전 가능 여부·세금·거래 제한 관련 다른 문단은 이번 발췌에서 제외한다.",
+        "원문에 있는 0612622를 새 S5 실행 버튼으로 추가하지 않는다. 실제 사내 접속·단말 실행은 미검증."
+      ],
+      "used_by": [
+        "/s5/tips/0/title",
+        "/s5/tips/0/body"
+      ]
+    }
+  ],
+  "bindings": [
+    {
+      "id": "B01",
+      "target": "/s1/items/0/text",
+      "expected_text": "IRP **1억6,500만원 중 SBI저축은행 정기예금 7,040만원이 10월 9일 만기 예정**입니다.",
+      "fact_ids": [
+        "F-TOTAL",
+        "F-DEPOSIT",
+        "F-MATURITY"
+      ],
+      "evidence_ids": [],
+      "judgment_ids": [],
+      "role": "customer_fact"
+    },
+    {
+      "id": "B02",
+      "target": "/s1/items/1/text",
+      "expected_text": "현재 **연금수령이 가능한 상태**이며, 아직 연금은 개시하지 않았습니다.",
+      "fact_ids": [
+        "F-PENSION"
+      ],
+      "evidence_ids": [],
+      "judgment_ids": [],
+      "role": "customer_fact"
+    },
+    {
+      "id": "B03",
+      "target": "/s1/items/2/text",
+      "expected_text": "지난 상담에서는 연금을 바로 받기보다 **당분간 자금을 계속 운용하고 싶다**고 했습니다.",
+      "fact_ids": [
+        "F-INTENT"
+      ],
+      "evidence_ids": [],
+      "judgment_ids": [],
+      "role": "customer_fact"
+    },
+    {
+      "id": "B04",
+      "target": "/s2/lead",
+      "expected_text": "만기자금을 다시 운용하기 전에 **연금수령 계획이 달라졌는지 확인하고, 받을 자금과 계속 운용할 자금을 구분**합니다.",
+      "fact_ids": [
+        "F-DEPOSIT",
+        "F-MATURITY",
+        "F-PENSION",
+        "F-INTENT"
+      ],
+      "evidence_ids": [
+        "K-MATURITY",
+        "K-PENSION"
+      ],
+      "judgment_ids": [
+        "J-PLAN",
+        "J-SPLIT"
+      ],
+      "role": "case_application"
+    },
+    {
+      "id": "B05",
+      "target": "/s2/why",
+      "expected_text": "정기예금 **7,040만원의 만기가 임박**해 다음 운용방향을 정해야 하는 시점입니다. 연금수령을 시작할 계획이 있다면 가까운 지급에 필요한 자금까지 장기간 다시 묶지 않도록 함께 설계할 필요가 있습니다.",
+      "fact_ids": [
+        "F-DEPOSIT",
+        "F-MATURITY"
+      ],
+      "evidence_ids": [
+        "K-MATURITY"
+      ],
+      "judgment_ids": [
+        "J-SPLIT"
+      ],
+      "role": "case_application"
+    },
+    {
+      "id": "B06",
+      "target": "/s2/checks/0",
+      "expected_text": "현재도 **당분간 계속 운용할 계획인지**",
+      "fact_ids": [
+        "F-INTENT"
+      ],
+      "evidence_ids": [],
+      "judgment_ids": [
+        "J-PLAN"
+      ],
+      "role": "case_application"
+    },
+    {
+      "id": "B07",
+      "target": "/s2/checks/1",
+      "expected_text": "연금을 시작한다면 **언제부터 얼마 정도 받을지**",
+      "fact_ids": [
+        "F-PENSION"
+      ],
+      "evidence_ids": [
+        "K-PENSION"
+      ],
+      "judgment_ids": [
+        "J-SPLIT"
+      ],
+      "role": "case_application"
+    },
+    {
+      "id": "B08",
+      "target": "/s2/checks/2",
+      "expected_text": "만기자금 중 **수령에 사용할 금액과 계속 운용할 금액을 어떻게 나눌지**",
+      "fact_ids": [
+        "F-DEPOSIT"
+      ],
+      "evidence_ids": [
+        "K-PENSION"
+      ],
+      "judgment_ids": [
+        "J-SPLIT"
+      ],
+      "role": "case_application"
+    },
+    {
+      "id": "B09",
+      "target": "/s3/lead",
+      "expected_text": "만기자금을 연금수령 계획에 맞춰 나누어 운용합니다.",
+      "fact_ids": [
+        "F-DEPOSIT",
+        "F-PENSION"
+      ],
+      "evidence_ids": [
+        "K-PENSION"
+      ],
+      "judgment_ids": [
+        "J-SPLIT"
+      ],
+      "role": "case_application"
+    },
+    {
+      "id": "B10",
+      "target": "/s3/options/0/title",
+      "expected_text": "당분간 계속 운용한다면 — 원리금보장형 재운용",
+      "fact_ids": [
+        "F-DEPOSIT"
+      ],
+      "evidence_ids": [
+        "P-SAV009"
+      ],
+      "judgment_ids": [
+        "J-PLAN"
+      ],
+      "role": "case_application"
+    },
+    {
+      "id": "B11",
+      "target": "/s3/options/0/summary",
+      "expected_text": "만기자금을 다시 운용할 기간에 맞춰 **정기예금·GIC 등 원리금보장상품의 조건을 비교**합니다.",
+      "fact_ids": [
+        "F-DEPOSIT"
+      ],
+      "evidence_ids": [
+        "P-SAV009"
+      ],
+      "judgment_ids": [
+        "J-PLAN"
+      ],
+      "role": "case_application"
+    },
+    {
+      "id": "B12",
+      "target": "/s3/options/0/products/0/name",
+      "expected_text": "SBI저축은행 퇴직연금 정기예금",
+      "fact_ids": [
+        "F-DEPOSIT"
+      ],
+      "evidence_ids": [
+        "P-SAV009"
+      ],
+      "judgment_ids": [],
+      "role": "product_reference"
+    },
+    {
+      "id": "B16",
+      "target": "/s3/options/1/title",
+      "expected_text": "연금수령을 시작한다면 — 지급재원 우선 확보",
+      "fact_ids": [
+        "F-PENSION"
+      ],
+      "evidence_ids": [
+        "K-PENSION"
+      ],
+      "judgment_ids": [
+        "J-SPLIT"
+      ],
+      "role": "case_application"
+    },
+    {
+      "id": "B17",
+      "target": "/s3/options/1/summary",
+      "expected_text": "가까운 시기에 받을 금액은 **수령 일정에 맞춰 확보**하고, 나머지 자금은 계속 운용합니다.",
+      "fact_ids": [
+        "F-PENSION"
+      ],
+      "evidence_ids": [
+        "K-PENSION"
+      ],
+      "judgment_ids": [
+        "J-SPLIT"
+      ],
+      "role": "case_application"
+    },
+    {
+      "id": "B18",
+      "target": "/s3/options/1/products/0/name",
+      "expected_text": "한화내일받는단기국공채증권자투자신탁(채권)C-RPE(퇴직연금)",
+      "fact_ids": [],
+      "evidence_ids": [
+        "P-FND004"
+      ],
+      "judgment_ids": [],
+      "role": "product_reference"
+    },
+    {
+      "id": "B22",
+      "target": "/s3/options/2/title",
+      "expected_text": "장기간 남겨둘 자금 — 기존 운용 유지 여부 점검",
+      "fact_ids": [
+        "F-PORTFOLIO"
+      ],
+      "evidence_ids": [],
+      "judgment_ids": [
+        "J-RETAIN"
+      ],
+      "role": "case_application"
+    },
+    {
+      "id": "B23",
+      "target": "/s3/options/2/summary",
+      "expected_text": "현재 보유 중인 TDF·ETF 등은 연금개시만을 이유로 일괄 정리하지 않고, **향후 운용기간과 투자성향에 맞는지 별도로 점검**합니다.",
+      "fact_ids": [
+        "F-PORTFOLIO"
+      ],
+      "evidence_ids": [],
+      "judgment_ids": [
+        "J-RETAIN"
+      ],
+      "role": "case_application"
+    },
+    {
+      "id": "B24",
+      "target": "/s3/options/2/products/0/name",
+      "expected_text": "한화생명 GIC (2026년 9월 특별제공안)",
+      "fact_ids": [],
+      "evidence_ids": [
+        "P-GIC003"
+      ],
+      "judgment_ids": [],
+      "role": "product_reference"
+    },
+    {
+      "id": "B28",
+      "target": "/s4/opening",
+      "expected_text": "오세훈 고객님, IRP에서 운용 중이신 정기예금 7,040만원이 곧 만기 예정이라 연락드렸어요. 지난번에는 연금을 바로 받기보다 조금 더 운용하고 싶다고 하셨는데, 지금도 같은 계획이실까요?",
+      "fact_ids": [
+        "F-DEPOSIT",
+        "F-MATURITY",
+        "F-INTENT"
+      ],
+      "evidence_ids": [
+        "K-MATURITY",
+        "T-MATURITY"
+      ],
+      "judgment_ids": [
+        "J-PLAN"
+      ],
+      "role": "adapted_dialogue"
+    },
+    {
+      "id": "B29",
+      "target": "/s4/reactions/0/label",
+      "expected_text": "계속 운용하려고요.",
+      "fact_ids": [],
+      "evidence_ids": [],
+      "judgment_ids": [
+        "J-PLAN"
+      ],
+      "role": "hypothetical_customer_response"
+    },
+    {
+      "id": "B30",
+      "target": "/s4/reactions/0/paragraphs/0",
+      "expected_text": "그러시면 만기 후 얼마나 더 운용하실 수 있는지에 맞춰 원리금보장상품의 기간과 조건을 비교해드릴게요.",
+      "fact_ids": [],
+      "evidence_ids": [
+        "T-MATURITY"
+      ],
+      "judgment_ids": [
+        "J-PLAN"
+      ],
+      "role": "adapted_dialogue"
+    },
+    {
+      "id": "B31",
+      "target": "/s4/reactions/0/paragraphs/1",
+      "expected_text": "만기 전에 변경예약이 가능한 상품인지도 함께 확인해보겠습니다.",
+      "fact_ids": [],
+      "evidence_ids": [
+        "T-MATURITY"
+      ],
+      "judgment_ids": [
+        "J-PLAN"
+      ],
+      "role": "adapted_dialogue"
+    },
+    {
+      "id": "B32",
+      "target": "/s4/reactions/1/label",
+      "expected_text": "이제 연금을 받아볼까 고민 중이에요.",
+      "fact_ids": [],
+      "evidence_ids": [],
+      "judgment_ids": [
+        "J-SPLIT"
+      ],
+      "role": "hypothetical_customer_response"
+    },
+    {
+      "id": "B33",
+      "target": "/s4/reactions/1/paragraphs/0",
+      "expected_text": "그러시면 먼저 언제부터 얼마 정도 필요하신지 확인해보겠습니다.",
+      "fact_ids": [],
+      "evidence_ids": [
+        "K-PENSION"
+      ],
+      "judgment_ids": [
+        "J-SPLIT"
+      ],
+      "role": "adapted_dialogue"
+    },
+    {
+      "id": "B34",
+      "target": "/s4/reactions/1/paragraphs/1",
+      "expected_text": "가까운 시기에 받으실 금액은 따로 준비하고, 당장 쓰지 않을 자금은 계속 운용하는 방향으로 나눠보시면 좋겠습니다.",
+      "fact_ids": [],
+      "evidence_ids": [
+        "K-PENSION"
+      ],
+      "judgment_ids": [
+        "J-SPLIT"
+      ],
+      "role": "adapted_dialogue"
+    },
+    {
+      "id": "B35",
+      "target": "/s4/reactions/2/label",
+      "expected_text": "조금 더 알아보고 결정할게요.",
+      "fact_ids": [],
+      "evidence_ids": [],
+      "judgment_ids": [
+        "J-PLAN"
+      ],
+      "role": "hypothetical_customer_response"
+    },
+    {
+      "id": "B36",
+      "target": "/s4/reactions/2/paragraphs/0",
+      "expected_text": "네, 바로 결정하지 않으셔도 됩니다. 재운용 가능한 상품과 연금수령 방법을 간단히 정리해드릴게요.",
+      "fact_ids": [],
+      "evidence_ids": [
+        "T-DEFER"
+      ],
+      "judgment_ids": [],
+      "role": "adapted_dialogue"
+    },
+    {
+      "id": "B37",
+      "target": "/s4/reactions/2/paragraphs/1",
+      "expected_text": "연금수령이나 세금까지 자세히 상담받고 싶으시면 전문 상담도 함께 연결해드릴 수 있습니다.",
+      "fact_ids": [],
+      "evidence_ids": [
+        "T-EXPERT"
+      ],
+      "judgment_ids": [],
+      "role": "adapted_dialogue"
+    },
+    {
+      "id": "B38",
+      "target": "/s4/notices/0",
+      "expected_text": "만기 후 재운용 조건과 연금수령에 필요한 절차는 실제 처리 시점에 다시 확인해야 합니다. 가까운 시기에 받을 자금은 장기간 묶이는 상품에 넣지 않도록 먼저 구분하겠습니다.",
+      "fact_ids": [],
+      "evidence_ids": [
+        "W-PRODUCT",
+        "P-SAV009",
+        "P-FND004",
+        "P-GIC003"
+      ],
+      "judgment_ids": [
+        "J-SPLIT"
+      ],
+      "role": "case_application"
+    },
+    {
+      "id": "B39",
+      "target": "/s5/tips/1/title",
+      "expected_text": "상담 후 확인",
+      "fact_ids": [],
+      "evidence_ids": [],
+      "judgment_ids": [
+        "J-FOLLOWUP"
+      ],
+      "role": "case_followup"
+    },
+    {
+      "id": "B40",
+      "target": "/s5/tips/1/body",
+      "expected_text": "계속 운용 / 연금수령 검토 중 고객의 선택을 기록하고, 만기 후 실제 재운용 또는 연금지급 여부를 확인합니다.",
+      "fact_ids": [],
+      "evidence_ids": [],
+      "judgment_ids": [
+        "J-FOLLOWUP"
+      ],
+      "role": "case_followup"
+    },
+    {
+      "id": "B41",
+      "target": "/s5/actions/0/screenCode",
+      "expected_text": "04-12-642",
+      "fact_ids": [],
+      "evidence_ids": [
+        "W-TERMINAL"
+      ],
+      "judgment_ids": [],
+      "role": "workflow_reference"
+    },
+    {
+      "id": "B42",
+      "target": "/s5/actions/0/title",
+      "expected_text": "적립금및수익률조회",
+      "fact_ids": [],
+      "evidence_ids": [
+        "W-TERMINAL"
+      ],
+      "judgment_ids": [],
+      "role": "workflow_reference"
+    },
+    {
+      "id": "B43",
+      "target": "/s5/actions/0/description",
+      "expected_text": "만기예금과 현재 보유상품 확인",
+      "fact_ids": [],
+      "evidence_ids": [
+        "W-TERMINAL"
+      ],
+      "judgment_ids": [],
+      "role": "workflow_reference"
+    },
+    {
+      "id": "B44",
+      "target": "/s5/actions/1/screenCode",
+      "expected_text": "04-12-17A",
+      "fact_ids": [],
+      "evidence_ids": [
+        "W-PRODUCT"
+      ],
+      "judgment_ids": [],
+      "role": "workflow_reference"
+    },
+    {
+      "id": "B45",
+      "target": "/s5/actions/1/title",
+      "expected_text": "NEW 퇴직연금상품조회",
+      "fact_ids": [],
+      "evidence_ids": [
+        "W-PRODUCT"
+      ],
+      "judgment_ids": [],
+      "role": "workflow_reference"
+    },
+    {
+      "id": "B46",
+      "target": "/s5/actions/1/description",
+      "expected_text": "계속 운용하는 경우 · 만기 후 운용 가능한 상품 비교",
+      "fact_ids": [],
+      "evidence_ids": [
+        "W-PRODUCT"
+      ],
+      "judgment_ids": [],
+      "role": "workflow_reference"
+    },
+    {
+      "id": "B47",
+      "target": "/s5/actions/2/screenCode",
+      "expected_text": "06-12-611",
+      "fact_ids": [],
+      "evidence_ids": [
+        "W-TERMINAL"
+      ],
+      "judgment_ids": [],
+      "role": "workflow_reference"
+    },
+    {
+      "id": "B48",
+      "target": "/s5/actions/2/title",
+      "expected_text": "보유상품변경",
+      "fact_ids": [],
+      "evidence_ids": [
+        "W-TERMINAL"
+      ],
+      "judgment_ids": [],
+      "role": "workflow_reference"
+    },
+    {
+      "id": "B49",
+      "target": "/s5/actions/2/description",
+      "expected_text": "계속 운용하는 경우 · 필요 시 만기상품 변경예약",
+      "fact_ids": [],
+      "evidence_ids": [
+        "W-TERMINAL"
+      ],
+      "judgment_ids": [],
+      "role": "workflow_reference"
+    },
+    {
+      "id": "B50",
+      "target": "/s5/actions/3/screenCode",
+      "expected_text": "02-12-221",
+      "fact_ids": [],
+      "evidence_ids": [
+        "W-TERMINAL"
+      ],
+      "judgment_ids": [],
+      "role": "workflow_reference"
+    },
+    {
+      "id": "B51",
+      "target": "/s5/actions/3/title",
+      "expected_text": "개인형IRP 연금지급",
+      "fact_ids": [],
+      "evidence_ids": [
+        "W-TERMINAL"
+      ],
+      "judgment_ids": [],
+      "role": "workflow_reference"
+    },
+    {
+      "id": "B52",
+      "target": "/s5/actions/3/description",
+      "expected_text": "연금수령을 시작하는 경우 · 희망 수령액과 지급방법 확인 후 연결",
+      "fact_ids": [],
+      "evidence_ids": [
+        "W-TERMINAL"
+      ],
+      "judgment_ids": [],
+      "role": "workflow_reference"
+    },
+    {
+      "id": "B53",
+      "target": "/s3/options/0/products/0/category",
+      "expected_text": "저축은행 정기예금 · 원리금보장",
+      "fact_ids": [],
+      "evidence_ids": [
+        "P-SAV009"
+      ],
+      "judgment_ids": [],
+      "role": "product_metadata"
+    },
+    {
+      "id": "B54",
+      "target": "/s3/options/1/products/0/category",
+      "expected_text": "국내채권 · 단기국공채 · 실적배당형",
+      "fact_ids": [],
+      "evidence_ids": [
+        "P-FND004"
+      ],
+      "judgment_ids": [],
+      "role": "product_metadata"
+    },
+    {
+      "id": "B55",
+      "target": "/s3/options/1/products/0/riskLevel",
+      "expected_text": "6등급 · 매우낮은위험",
+      "fact_ids": [],
+      "evidence_ids": [
+        "P-FND004"
+      ],
+      "judgment_ids": [],
+      "role": "product_metadata"
+    },
+    {
+      "id": "B56",
+      "target": "/s3/options/2/products/0/category",
+      "expected_text": "이율보증형보험(GIC) · 원리금보장",
+      "fact_ids": [],
+      "evidence_ids": [
+        "P-GIC003"
+      ],
+      "judgment_ids": [],
+      "role": "product_metadata"
+    },
+    {
+      "id": "B57",
+      "target": "/s5/tips/0/title",
+      "expected_text": "IRP 연금 지급 절차",
+      "fact_ids": [],
+      "evidence_ids": [
+        "H-PENSION"
+      ],
+      "judgment_ids": [],
+      "role": "workflow_reference"
+    },
+    {
+      "id": "B58",
+      "target": "/s5/tips/0/body",
+      "expected_text": "연금개시 준비서류와 세액 미공제 한도 등록, 연금지급 화면으로 이어지는 처리 흐름을 정리한 현장 사례입니다.",
+      "fact_ids": [],
+      "evidence_ids": [
+        "H-PENSION"
+      ],
+      "judgment_ids": [],
+      "role": "workflow_reference"
+    }
+  ],
+  "workflow": {
+    "common": [
+      "/s5/actions/0"
+    ],
+    "continue_investing": [
+      "/s5/actions/1",
+      "/s5/actions/2"
+    ],
+    "start_pension": [
+      "/s5/actions/3"
+    ],
+    "followup": [
+      "/s5/tips/1"
+    ],
+    "meaning": "업무화면 안내; 실제 거래 수행이나 고객 선택 확정이 아님"
+  },
+  "acceptance": {
+    "step_count": 4,
+    "customer_field_count": 16,
+    "knowledge_card_count": 11,
+    "raw_card_count": 8,
+    "raw_excerpt_count": 12,
+    "binding_count": 49,
+    "preserve_briefing": true
+  }
+}

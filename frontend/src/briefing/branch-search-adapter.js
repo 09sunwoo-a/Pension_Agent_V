@@ -4,6 +4,7 @@
  */
 (function(root){'use strict';
 const C=root.PensionBranchSearchCore;let current=null;
+const TRACE=()=>root.PensionExecutionTraceLog||null;
 const EXPORT_DELAY_MS=3000; // 엑셀 내려받기 전 '정리 중' 표시 시간
 function fullView(component,render){
  const saved=component.state;
@@ -28,17 +29,20 @@ function mount(component,params){
    const error=new Error('MANIFEST');error.code='MANIFEST';throw error;
   }
  }
+ // 처리 이력: 검색·엑셀 실행 기록(화면 세션 메모리). 기록 실패가 업무 결과를 막지 않도록 모든 호출은 세션/어댑터 안에서 감싼다.
+ const traceLog=TRACE()?TRACE().createLog():null;
  const session=root.PensionBranchSearchSession.create(source,local?{mode:'local',engine,latency}:{
   config:root.PensionBranchAgentTransport.settings(params,root.__PENSION_FABRIX_CONFIG),
   manifest:root.PensionBranchDataManifest,checkManifest,
   isCurrent:()=>current&&current.component===component&&!component.state.sel,
-  prepareAnswer:(_answer,manifest)=>checkManifest(manifest)
+  prepareAnswer:(_answer,manifest)=>checkManifest(manifest),
+  observer:traceLog?{start:input=>TRACE().searchRecorder(traceLog,input)}:null
  });
  // 엑셀 추출 시트에 남기는 추출 직원(사번). 로컬 모드는 연결 설정이 없다.
  let staff='';try{staff=local?'':String(root.PensionBranchAgentTransport.settings(params,root.__PENSION_FABRIX_CONFIG).xClientUser||'');}catch(_){staff='';}
  params=null;
  const motion=root.PensionBranchMotion.create();
- const ctx={component,app,source,session,engine,motion,applied:false,pending:false,busy:false,before:new Map(),oldRender:render,lastSelected:null};current=ctx;
+ const ctx={component,app,source,session,engine,motion,applied:false,pending:false,busy:false,before:new Map(),oldRender:render,lastSelected:null,traceLog,pendingTrace:null,lastAppliedTrace:null,pendingExport:null};current=ctx;
  // Capture before the legacy row handlers; CSS also removes hidden controls from keyboard navigation.
  ctx.blockBusyRow=e=>{if(ctx.busy&&e.target.closest('[data-branch-list]')){e.preventDefault();e.stopImmediatePropagation();}};
  app.addEventListener('click',ctx.blockBusyRow,true);app.addEventListener('keydown',ctx.blockBusyRow,true);
@@ -51,21 +55,43 @@ function mount(component,params){
   let vals;try{vals=component.renderVals();}catch(_){return false;}
   const byId=new Map(source.records.map(r=>[r.briefingMeta.caseId,r])),models=new Map((component.DATA||[]).map(d=>[d.id,d]));
   const items=(vals.queue||[]).filter(r=>r.id&&byId.has(r.id)).map(r=>{let profile={};try{profile=component.profileOf(models.get(r.id)||{})||{};}catch(_){}return {record:byId.get(r.id),profile};});
-  if(!items.length){session.note(text,'내려받을 고객이 없어요. 먼저 대화로 고객을 좁히거나 전체 목록으로 돌아간 뒤 다시 요청해 주세요.');return true;}
   const snap=session.get(),v=snap.view,s=snap.state||{};
   const condition=ctx.applied?((v?v.contextLabel:s.contextLabel)||'AI 검색 결과'):(vals.subChipOn?String(vals.subChipLabel):'전체 고객');
   const scope=(ctx.applied?'부점 AI 검색 결과':'메인 고객 목록')+' · '+source.metadata.scopeLabel;
-  // Agent 응답처럼 보이도록 3초간 '정리 중' 상태를 보여준 뒤 파일을 만들고 내려받는다.
-  session.note(text,()=>{
+  // 처리 이력: 요청 시점의 표시 목록·순서·조건·기준일·연결 검색을 고정한다. 이후 화면이 바뀌어도 추출 대상은 이 스냅샷이다.
+  let rec=null;
+  if(traceLog&&TRACE()){try{rec=TRACE().exportRecorder(traceLog,{rowIds:items.map(it=>it.record.briefingMeta.caseId),condition,scope,asOf:source.metadata.asOfDate,revision:snap.revision,
+   listSource:ctx.applied?'ai_search':'main_list',sourceSearchTraceId:ctx.applied&&ctx.lastAppliedTrace?ctx.lastAppliedTrace.record.id:null});rec.captured();}catch(_){rec=null;}}
+  const T_=name=>(...args)=>{if(rec&&typeof rec[name]==='function'){try{rec[name](...args);}catch(_){}}};
+  if(!items.length){T_('empty')();session.note(text,'내려받을 고객이 없어요. 먼저 대화로 고객을 좁히거나 전체 목록으로 돌아간 뒤 다시 요청해 주세요.');return true;}
+  T_('waitStart')(EXPORT_DELAY_MS);
+  // Agent 응답처럼 보이도록 3초간 '정리 중' 상태를 보여준 뒤 파일을 만들고 내려받는다. 대기와 파일 생성 시간은 이력에서 구분한다.
+  // pendingExport는 note() 뒤에 둔다: note()가 진행 중이던 이전 요청을 동기적으로 취소(cancel 이벤트)하므로 새 기록이 그 취소에 걸리면 안 된다.
+  const done=session.note(text,()=>{
+   if(ctx.pendingExport===rec)ctx.pendingExport=null;
+   T_('waitEnd')();
+   let out;
    try{
-    const out=X.build({items,asOf:source.metadata.asOfDate,staff,condition,scope});
+    T_('buildStart')();
+    out=X.build({items,asOf:source.metadata.asOfDate,staff,condition,scope,onPhase:(phase,info)=>T_('phase')(phase,info)});
+    T_('built')(out);
+   }catch(e){
+    T_('failed')('build',String(e&&e.message||'BUILD_FAILED').slice(0,40));
+    if(typeof console!=='undefined')console.warn('[Branch AI] export failed: '+(e&&e.message));
+    return '엑셀 파일을 만들지 못했어요. 브라우저 다운로드가 허용되어 있는지 확인한 뒤 다시 시도해 주세요.';
+   }
+   try{
     X.download(out);
+    T_('downloaded')(out.fileName);
     return '현재 목록 '+out.count+'명을 '+out.fileName+' 파일로 내려받았어요. (조건: '+condition+') 파일의 「추출 조건」 시트에 기준일·조건을 함께 남겼습니다.';
    }catch(e){
+    T_('failed')('download',String(e&&e.message||'DOWNLOAD_FAILED').slice(0,40));
     if(typeof console!=='undefined')console.warn('[Branch AI] export failed: '+(e&&e.message));
     return '엑셀 파일을 만들지 못했어요. 브라우저 다운로드가 허용되어 있는지 확인한 뒤 다시 시도해 주세요.';
    }
   },{pendingText:'고객 '+items.length+'명의 명세를 정리하고 있어요.',delayMs:EXPORT_DELAY_MS});
+  if(done&&typeof done.then==='function')ctx.pendingExport=rec; // 대기 중 취소(새 요청·기존 목록·화면 종료)는 세션 cancel 이벤트에서 즉시 기록한다. note()가 이전 요청을 취소한 뒤에 등록한다.
+  if(done&&typeof done.then==='function')done.then(v=>{if(v===null)T_('cancelled')('대기 중 취소 · 새 요청 또는 화면 종료');},()=>{});
   return true;
  }
  ctx.restore=restore;ctx.widget=root.PensionBranchSearchWidget.mount(document.body,session,{onRestore:restore,intercept:exportRequest});
@@ -73,10 +99,11 @@ function mount(component,params){
   // Waiting only patches the header/list styles, preserving the current DOM and focus.
   // wait: any request in flight (header donut + progress bar only, rows untouched). busy: the list itself will change (skeleton).
   // Interpretation is the long phase on a remote Agent, so the header shows activity from send until the answer.
+  if(e.type==='cancel'&&ctx.pendingExport){const rec=ctx.pendingExport;ctx.pendingExport=null;try{rec.cancelled('대기 중 취소 · 새 요청 또는 목록 변경');}catch(_){}}
   if(e.type==='pending'){ctx.wait=e.mode==='remote';ctx.busy=ctx.wait&&!!e.listGuess;if(ctx.busy)motion.cancel();paintBusy(ctx);return;}
   if(e.type==='resolved'){ctx.busy=e.listChange;if(ctx.busy)motion.cancel();paintBusy(ctx);return;}
   if(e.type==='progress'){if(e.listChange){ctx.busy=true;motion.cancel();paintBusy(ctx);}return;}
-  if(e.type==='apply'){ctx.applied=e.view?e.view.active:!!e.state.active;ctx.pending=true;ctx.busy=false;ctx.wait=false;const update={branchSearchRevision:e.revision};if(!ctx.keepFilter)update.filter='all';component.setState(update);return;}
+  if(e.type==='apply'){ctx.applied=e.view?e.view.active:!!e.state.active;ctx.pending=true;ctx.busy=false;ctx.wait=false;ctx.pendingTrace=e.trace||null;const update={branchSearchRevision:e.revision};if(!ctx.keepFilter)update.filter='all';component.setState(update);return;}
   if((ctx.busy||ctx.wait)&&(e.type==='answer'||e.type==='error'||e.type==='cancel')){ctx.busy=false;ctx.wait=false;paintBusy(ctx);}
  });
  component.renderVals=function(){
@@ -133,12 +160,20 @@ function afterRender(component){
   if(order)order.textContent=v?remoteSortLabel(v.sort):C.sortLabel(s.main.sort);
  }
  paintBusy(c);
- if(c.pending&&list)c.motion.play(c.app,c.before,true);c.pending=false;
+ if(c.pending&&list)c.motion.play(c.app,c.before,true);
+ if(c.pending&&c.pendingTrace){
+  // 목록 DOM이 실제로 다시 그려진 뒤에만 '고객 목록 갱신 완료'를 기록한다(Promise resolve 시점이 아님).
+  const snapshot=c.session.get(),v=snapshot.view;const rowIds=[...c.app.querySelectorAll('[data-branch-customer-id]')].map(n=>n.dataset.branchCustomerId);
+  try{c.pendingTrace.rendered({action:c.applied?'replace':'reset',rowIds:c.applied?rowIds:rowIds,revision:snapshot.revision});}catch(_){}
+  if(c.applied)c.lastAppliedTrace=c.pendingTrace;else c.lastAppliedTrace=null;
+  c.pendingTrace=null;
+ }
+ c.pending=false;
 }
 function remoteSortLabel(sort){
  const names={recommendation_order:'추천순',source_order:'기존 순서',age:'나이',irp_amount:'IRP 잔액',cash_amount:'현금성자산',cash_pct:'현금 비중',return_pct:'수익률'};
  return (names[sort.field]||'조회 순서')+(['recommendation_order','source_order'].includes(sort.field)?'':sort.direction==='asc'?' 낮은 순':' 높은 순');
 }
-function destroy(){const c=current;if(!c)return;current=null;c.off();c.widget.destroy();c.session.destroy();c.motion.cancel();c.busy=false;paintBusy(c);c.app.removeEventListener('click',c.blockBusyRow,true);c.app.removeEventListener('keydown',c.blockBusyRow,true);c.component.renderVals=c.oldRender;}
+function destroy(){const c=current;if(!c)return;current=null;c.off();c.widget.destroy();c.session.destroy();c.motion.cancel();c.busy=false;paintBusy(c);c.app.removeEventListener('click',c.blockBusyRow,true);c.app.removeEventListener('keydown',c.blockBusyRow,true);c.component.renderVals=c.oldRender;if(c.pendingExport){try{c.pendingExport.cancelled('화면 종료');}catch(_){}c.pendingExport=null;}if(c.traceLog)c.traceLog.destroy();c.pendingTrace=null;c.lastAppliedTrace=null;}
 root.PensionBranchSearchAdapter={mount,beforeRender,afterRender,destroy,get:()=>current,disable:()=>current&&current.restore(),fullView};
 })(window);

@@ -33,6 +33,8 @@ async function call(input,request,manifest,options){
   if(opts.signal&&opts.signal.aborted)stop();
   const response=await Promise.race([stopped,Promise.resolve().then(()=>{
    if(controller.signal.aborted)throw fault('ABORTED');
+   // Execution-trace hook: the actual moment the FabriX POST leaves the browser (no headers/tokens are passed).
+   if(typeof opts.onSend==='function')opts.onSend({path:'/openapi/agent-chat/v1/agent-messages',method:'POST'});
    return (opts.fetch||fetch)(cfg.endpointUrl+'/openapi/agent-chat/v1/agent-messages',{
     method:'POST',mode:'cors',credentials:'omit',cache:'no-store',redirect:'error',signal:controller.signal,
     headers:{'Content-Type':'application/json; charset=UTF-8','Accept':'text/event-stream',
@@ -43,6 +45,7 @@ async function call(input,request,manifest,options){
   if(!response.ok)throw fault([401,403].includes(response.status)?'AUTH':'HTTP');
   if(!/^text\/event-stream(?:\s*;|$)/i.test(response.headers.get('content-type')||''))throw fault('CONTENT_TYPE');
   if(!response.body||!response.body.getReader)throw fault('STREAM');
+  if(typeof opts.onResponse==='function')opts.onResponse({status:response.status});
   reader=response.body.getReader();
   const decoder=new TextDecoder('utf-8',{fatal:true});
   const stream=T.parser(envelope=>turn.accept(envelope).forEach(event=>{if(opts.onProgress)opts.onProgress(event.data);}));

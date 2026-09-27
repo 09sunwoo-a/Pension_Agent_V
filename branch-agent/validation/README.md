@@ -81,3 +81,18 @@ node branch-agent/validation/check_live_ui.js
 | `contract.examples.json` / `export_schema.py` | 계약 전용 샘플, 기존 Pydantic 모델의 schema export |
 
 실제 live 결과는 `.local-results/`에 ID·안전한 코드·소요·토큰 수·문장 대체 여부만 저장한다. 질문/응답 원문·고객 자료·Secret은 로그에 저장하지 않는다. Google quota로 중단된 이력과 해석 실패를 기록하며 최종 결과와 구분한다. 로컬 PASS는 사내 이미지·Nexus·Connector/Starroot E2E PASS가 아니다.
+
+## 로컬 통합 서버(프론트 + 브리핑 Agent + 부점 Agent)
+
+`local_dev_server.py`는 `local_server.py`와 같은 하네스에 **메인 화면 브리핑 Agent(`agent/`, 고정 S1–S5)** 브리지를 추가한 로컬 전용 서버다. FabriX 형식 POST 하나를 `agentId`로 나눈다(`1` → 고정 브리핑, `branch-local` → 부점 Agent). 실시간 상담(대화 Agent)은 별도 저장소라 포함하지 않으며 패널은 미설정 안내만 표시한다. 사내 이미지에 반입하지 않는다.
+
+```sh
+node tools/briefing/build.js
+GEMINI_API_KEY=<서버 환경변수> branch-agent/validation/.venv/bin/python -B branch-agent/validation/local_dev_server.py --port 8766
+```
+
+브라우저에서 http://127.0.0.1:8766/ 을 연다. `/health`는 부점 Agent, `/health/briefing`은 브리핑 Agent(`case_count: 42`)를 확인한다. 종료는 Ctrl+C다.
+
+## 실행 이력(execution_trace) 검사
+
+`check_service.py`의 `trace_checks`는 시연 문장 「만 55세 이상 고객 중 당행 연금저축 보유고객 보여줘」가 `age >= 55 AND segment '연금저축 보유'`로 실행될 때 4단계 이력(해석 → 확정 → 적용 → 답변, LLM 1회, 기존 목록 순서 유지)·재시도(한 해석 단계 안에 rejected→accepted)·버튼 action 경로의 LLM 단계 없음·LLM_OUTPUT/timeout/DATA_VERSION 부분 이력·동시 요청 분리·프롬프트/헤더 미포함을 확인한다. `check_contract.js`에는 execution_trace 정상/위반 사례 12건이 Python/JS 공통으로 있다. 모두 stub 기준이며, 실제 Gemma 해석은 `local_dev_server.py`로 브라우저에서 확인한다. `scenarios.json`의 `data_version`은 현재 manifest(81f4311c…)로 맞췄고 36개 기대값은 바꾸지 않았다.

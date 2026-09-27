@@ -87,6 +87,7 @@
 <div class="pad-status-pill">
 <span class="pad-status-pill__dot"></span>오전 7:30 · IRP 고객 1,392명 분석 완료
     </div>
+<button type="button" class="pad-trace-open" sc-camel-on-click="{{ openTrace }}" aria-controls="pad-trace-panel" aria-haspopup="dialog" aria-expanded="{{ traceExpanded }}" title="오늘의 부점 브리핑 처리 이력">처리 이력</button>
 </div>
 </div>
 </sc-if>
@@ -213,6 +214,7 @@
     <span class="pad-t-13b">브리핑 수신</span>
     <sc-if value="{{ fabrixDiagnostic }}"><span class="pad-fabrix__diagnostic" role="status" aria-live="polite">{{ fabrixDiagnosticCode }} · {{ fabrixDiagnostic }}</span></sc-if>
     <sc-if value="{{ fabrixCanRequest }}"><button class="pad-btn-sm" data-fabrix-action="request" sc-camel-on-click="{{ fabrixRequest }}">다시 요청</button></sc-if>
+    <sc-if value="{{ hasAnalysisTrace }}"><button type="button" class="pad-btn-sm pad-evidence-open" sc-camel-on-click="{{ openEvidence }}" aria-controls="pad-evidence-panel" aria-haspopup="dialog" aria-expanded="{{ evidenceExpanded }}" title="이 브리핑의 구성 근거">분석 근거</button></sc-if>
     <sc-if value="{{ fabrixBusy }}"><button class="pad-btn-sm" data-fabrix-action="cancel" sc-camel-on-click="{{ fabrixCancel }}">요청 취소</button></sc-if>
   </div>
 </div>
@@ -336,7 +338,7 @@
 <span class="pad-flex1"></span>
 <span class="pad-t-11-muted">{{ briefingAnalysisLabel }}</span>
 </div>
-<div class="pad-row pad-g8 pad-mt12"><div class="pad-sec-bar"></div><div class="pad-sec-h">{{ bfName }} {{ briefingLabels.s1 }}</div></div>
+<div class="pad-row pad-g8 pad-mt12" data-brief-section="s1"><div class="pad-sec-bar"></div><div class="pad-sec-h">{{ bfName }} {{ briefingLabels.s1 }}</div></div>
 <div class="pad-col pad-g9 pad-mt14">
 <sc-for as="ln" list="{{ bfS1Lines }}">
 <div class="pad-rows pad-g10">
@@ -346,7 +348,7 @@
 </sc-for>
 </div>
 <div class="pad-hr pad-hr--lg"></div>
-<div class="pad-row pad-g8"><div class="pad-sec-bar"></div><div class="pad-sec-h">{{ briefingLabels.s2 }}</div></div>
+<div class="pad-row pad-g8" data-brief-section="s2"><div class="pad-sec-bar"></div><div class="pad-sec-h">{{ briefingLabels.s2 }}</div></div>
 <div class="pad-ai-lead"><span class="pad-hl">{{ bfS2Lead }}</span></div>
 <sc-if value="{{ hasWhy }}">
 <div class="pad-why">
@@ -369,7 +371,7 @@
 </div>
 </sc-if>
 <div class="pad-hr pad-hr--lg"></div>
-<div class="pad-row pad-g8"><div class="pad-sec-bar"></div><div class="pad-sec-h">{{ briefingLabels.s3 }}</div></div>
+<div class="pad-row pad-g8" data-brief-section="s3"><div class="pad-sec-bar"></div><div class="pad-sec-h">{{ briefingLabels.s3 }}</div></div>
 <div class="pad-ai-lead pad-b"><span class="pad-hl">{{ bfS3Lead }}</span></div>
 <sc-if value="{{ hasOptions }}">
 <div class="pad-tiles {{ briefingTilesClass }}">
@@ -415,7 +417,14 @@
 <sc-if value="{{ pd.hasStat }}"><span class="pad-prod__stat">{{ pd.stat }}</span></sc-if>
 </div>
 <sc-if value="{{ pd.hasCategory }}"><div class="pad-prod__desc">{{ pd.category }}</div></sc-if>
-<sc-for as="metric" list="{{ pd.metrics }}"><div class="pad-prod__desc pad-b">{{ metric.text }}</div></sc-for>
+<sc-if value="{{ pd.hasMeta }}">
+<div class="pad-prod__meta">
+<div class="pad-prod__meta-row"><span class="pad-prod__meta-h">기간</span><sc-for as="h" list="{{ pd.metaHead }}"><span class="pad-prod__meta-h">{{ h.t }}</span></sc-for></div>
+<div class="pad-prod__meta-row"><span class="pad-prod__meta-h">{{ pd.metaLabel }}</span><sc-for as="v" list="{{ pd.metaRow }}"><span class="pad-prod__meta-v">{{ v.t }}</span></sc-for></div>
+</div>
+<div class="pad-prod__basis">{{ pd.basis }}</div>
+</sc-if>
+<sc-if value="{{ pd.showMetricLines }}"><sc-for as="metric" list="{{ pd.metrics }}"><div class="pad-prod__desc pad-b">{{ metric.text }}</div></sc-for></sc-if>
 <sc-if value="{{ pd.hasDesc }}"><div class="pad-prod__desc">{{ pd.desc }}</div></sc-if>
 <sc-for as="note" list="{{ pd.notes }}"><div class="pad-note-muted">{{ note.t }}</div></sc-for>
 <sc-for as="evidence" list="{{ pd.evidence }}"><div class="pad-note-muted">{{ evidence.t }}</div></sc-for>
@@ -433,7 +442,7 @@
 </sc-if>
 <sc-if value="{{ hasS4 }}">
 <div class="pad-hr pad-hr--lg"></div>
-<div class="pad-row pad-g8"><div class="pad-sec-bar"></div><div class="pad-sec-h">{{ briefingLabels.s4 }}</div></div>
+<div class="pad-row pad-g8" data-brief-section="s4"><div class="pad-sec-bar"></div><div class="pad-sec-h">{{ briefingLabels.s4 }}</div></div>
 <sc-if value="{{ hasOpening }}">
 <div class="pad-t-12b-sub pad-mt12">{{ briefingLabels.opening }}</div>
 <div class="pad-quote-box">
@@ -470,7 +479,7 @@
 </sc-if>
 <sc-if value="{{ hasS5 }}">
 <div class="pad-hr pad-hr--lg"></div>
-<div class="pad-row pad-g8"><div class="pad-sec-bar"></div><div class="pad-sec-h">{{ briefingLabels.s5 }}</div></div>
+<div class="pad-row pad-g8" data-brief-section="s5"><div class="pad-sec-bar"></div><div class="pad-sec-h">{{ briefingLabels.s5 }}</div></div>
 <sc-if value="{{ showLegacyTip }}">
 <div class="pad-tip">
 <div class="pad-t-12b-sub">📌 현장 TIP</div>
@@ -483,6 +492,7 @@
 </div>
 </div>
 </sc-if>
+<sc-for as="tip" list="{{ bfHotTips }}"><div class="pad-tip pad-tip--hot"><div class="pad-t-12b-sub">📌 Hot Tip<sc-if value="{{ tip.hasDate }}"> · {{ tip.date }}</sc-if></div><div class="pad-tip__title">{{ tip.title }}</div><sc-if value="{{ tip.hasBody }}"><div class="pad-tip__body">{{ tip.body }}</div></sc-if><sc-if value="{{ tip.hasUrl }}"><div class="pad-row pad-mt8"><span class="pad-flex1"></span><a href="{{ tip.url }}" target="_blank" rel="noopener noreferrer" class="pad-btn-sm">원문 보기 ↗</a></div></sc-if></div></sc-for>
 <sc-for as="tip" list="{{ bfStructuredTips }}"><div class="pad-tip"><div class="pad-t-12b-sub">📌 관련 TIP·업무지식</div><div class="pad-tip__title">{{ tip.title }}</div><sc-if value="{{ tip.hasBody }}"><div class="pad-tip__body">{{ tip.body }}</div></sc-if></div></sc-for>
 <sc-if value="{{ hasExecItems }}">
 <div class="pad-t-12b-sub pad-mt17">↗ 실행 화면</div>
@@ -502,13 +512,19 @@
 </sc-for>
 </div>
 </sc-if>
+<sc-for as="tip" list="{{ bfFollowUps }}"><div class="pad-followup"><span class="pad-t-12b-sub pad-followup__title">{{ tip.title }}</span><sc-if value="{{ tip.hasBody }}"><span class="pad-followup__body">{{ tip.body }}</span></sc-if></div></sc-for>
 </sc-if>
 <sc-if value="{{ hasBriefingSources }}">
 <div class="pad-hr pad-hr--lg"></div>
-<button class="pad-btn-sm" sc-camel-on-click="{{ toggleBriefingSources }}">{{ briefingLabels.sources }}</button>
+<button class="pad-btn-sm" sc-camel-on-click="{{ toggleBriefingSources }}" aria-expanded="{{ briefingSourcesOpen }}">{{ briefingSourcesLabel }}</button>
 <sc-if value="{{ briefingSourcesOpen }}">
-<sc-for as="note" list="{{ briefingReviewNotes }}"><div class="pad-note-muted">{{ note.t }}</div></sc-for>
-<sc-for as="source" list="{{ briefingSources }}"><div class="pad-source-card"><div class="pad-t-13b">{{ source.title }}</div><sc-if value="{{ source.hasDescription }}"><div class="pad-detail-paragraph">{{ source.description }}</div></sc-if><sc-if value="{{ source.hasUrl }}"><a href="{{ source.url }}" target="_blank" rel="noopener noreferrer" class="pad-btn-sm">자료 보기 ↗</a></sc-if></div></sc-for>
+<sc-if value="{{ showReviewNotes }}"><sc-for as="note" list="{{ briefingReviewNotes }}"><div class="pad-note-muted">{{ note.t }}</div></sc-for></sc-if>
+<sc-if value="{{ briefingSourceRowsOn }}">
+<div class="pad-source-rows">
+<sc-for as="row" list="{{ briefingSourceRows }}"><div class="pad-source-row"><sc-if value="{{ row.canOpen }}"><button type="button" sc-camel-on-click="{{ row.onOpen }}" class="pad-source-row__btn"><span class="pad-source-row__title">{{ row.title }}</span><span class="pad-source-row__go">분석 근거 →</span></button></sc-if><sc-if value="{{ row.plain }}"><span class="pad-source-row__title">{{ row.title }}</span></sc-if></div></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ briefingSourceRowsOff }}"><sc-for as="source" list="{{ briefingSources }}"><div class="pad-source-card"><div class="pad-t-13b">{{ source.title }}</div><sc-if value="{{ source.hasDescription }}"><div class="pad-detail-paragraph">{{ source.description }}</div></sc-if><sc-if value="{{ source.hasUrl }}"><a href="{{ source.url }}" target="_blank" rel="noopener noreferrer" class="pad-btn-sm">자료 보기 ↗</a></sc-if></div></sc-for></sc-if>
 </sc-if>
 </sc-if>
 </div>

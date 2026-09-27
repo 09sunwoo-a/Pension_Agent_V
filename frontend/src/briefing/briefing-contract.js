@@ -15,8 +15,9 @@
   function array(items) { return { type: 'array', items: items }; }
   function optional(rule) { return Object.assign({}, rule, { type: [rule.type, 'null'] }); }
   var source = object({ id: text, title: text, description: optional(str), url: optional(str) }, ['id', 'title']);
+  // asOf stays required; a return metric may carry an explicit null ("기준일 미표기"), a rate needs a basis string (checked in validate()).
   var metric = object({
-    kind: { type: 'string', enum: ['return', 'rate'] }, valuePct: { type: 'number' }, period: text, asOf: text,
+    kind: { type: 'string', enum: ['return', 'rate'] }, valuePct: { type: 'number' }, period: text, asOf: { type: ['string', 'null'] },
     validFrom: optional({ type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' }), validUntil: optional({ type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' })
   }, ['kind', 'valuePct', 'period', 'asOf']);
   var product = object({
@@ -35,7 +36,9 @@
     s2: object({ lead: text, why: optional(str), checks: optional(strings), sourceIds: optional(strings) }, ['lead']),
     s3: object({ lead: text, options: optional(array(option)), notes: optional(strings) }, ['lead']),
     s4: optional(object({ opening: optional(str), reactions: optional(array(object({ label: text, paragraphs: { type: 'array', items: text, minItems: 1 } }))), notices: optional(strings), sourceIds: optional(strings) }, [])),
-    s5: optional(object({ tips: optional(array(object({ title: text, body: optional(str), sourceIds: optional(strings) }, ['title']))), actions: optional(array(object({ screenCode: optional(str), title: text, description: optional(str) }, ['title']))), sourceIds: optional(strings) }, [])),
+    s5: optional(object({ tips: optional(array(object({ title: text, body: optional(str), sourceIds: optional(strings),
+      // kind: hot_tip (강조 카드 1개) / follow_up (실행 목록 아래 일반 안내); 없으면 기존 표시. publishedAt: 게시일(실행 시각이 아님).
+      kind: { type: ['string', 'null'], enum: ['hot_tip', 'follow_up', null] }, publishedAt: optional({ type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' }) }, ['title']))), actions: optional(array(object({ screenCode: optional(str), title: text, description: optional(str) }, ['title']))), sourceIds: optional(strings) }, [])),
     sources: optional(array(source)), reviewNotes: optional(strings)
   }, ['schemaVersion', 'caseId', 'customerId', 'asOfDate', 'status', 'title', 's1', 's2', 's3']);
   // Frontend content boundary. Routing metadata belongs to the caller, never
@@ -109,13 +112,14 @@
       o.products = (o.products || []).map(function (p) {
         p.productId = trim(p.productId); p.category = trim(p.category); p.riskLevel = trim(p.riskLevel);
         p.reason = trim(p.reason); p.notes = list(p.notes); p.sourceIds = list(p.sourceIds); p.metrics = p.metrics || [];
+        p.metrics.forEach(function (m) { m.asOf = m.asOf == null ? null : trim(m.asOf); m.validFrom = trim(m.validFrom) || null; m.validUntil = trim(m.validUntil) || null; });
         return p;
       });
       return o;
     });
     b.s4 = b.s4 || {}; b.s4.opening = trim(b.s4.opening); b.s4.notices = list(b.s4.notices);
     b.s4.reactions = b.s4.reactions || []; b.s4.sourceIds = list(b.s4.sourceIds);
-    b.s5 = b.s5 || {}; b.s5.tips = (b.s5.tips || []).map(function (t) { return Object.assign(t, { body: trim(t.body), sourceIds: list(t.sourceIds) }); });
+    b.s5 = b.s5 || {}; b.s5.tips = (b.s5.tips || []).map(function (t) { return Object.assign(t, { body: trim(t.body), sourceIds: list(t.sourceIds), kind: t.kind || null, publishedAt: trim(t.publishedAt) || null }); });
     b.s5.actions = (b.s5.actions || []).map(function (a) { return Object.assign(a, { screenCode: trim(a.screenCode) || null, description: trim(a.description) }); });
     b.s5.sourceIds = list(b.s5.sourceIds);
     return b;
@@ -138,6 +142,8 @@
       o.products.forEach(function (p) {
         if (!p.sourceIds.length) errors.push('s3: product has no evidence');
         p.metrics.forEach(function (m) {
+          if (m.kind === 'rate' && !(typeof m.asOf === 'string' && m.asOf.trim())) errors.push('s3: rate metric needs a basis (asOf)');
+          if (m.kind === 'return' && m.asOf !== null && !(typeof m.asOf === 'string' && m.asOf.trim())) errors.push('s3: return metric asOf must be a date text or null');
           if (!!m.validFrom !== !!m.validUntil) errors.push('s3: metric validity requires both dates');
           if (m.validFrom && m.validUntil && m.validFrom > m.validUntil) errors.push('s3: metric validity dates reversed');
         });
@@ -154,7 +160,8 @@
     }
     walk(output);
     output.s1.items.forEach(function (item) { if (!item.text.trim() || (!item.dataRefs.length && !item.sourceIds.length)) errors.push('s1: fact has no evidence'); });
-    output.s5.actions.forEach(function (a) { if (a.screenCode !== null && !/^\d{2}-\d{2}-\d{3}$/.test(a.screenCode)) errors.push('invalid screen code'); });
+    output.s5.actions.forEach(function (a) { if (a.screenCode !== null && !/^\d{2}-\d{2}-[0-9A-Z]{3}$/.test(a.screenCode)) errors.push('invalid screen code'); });
+    if (output.s5.tips.filter(function (t) { return t.kind === 'hot_tip'; }).length > 1) errors.push('s5: at most one hot_tip');
     if (output.status === 'ready' && output.reviewNotes.length) errors.push('ready briefing has unresolved review notes');
     return errors;
   }

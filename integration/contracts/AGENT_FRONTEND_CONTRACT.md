@@ -164,8 +164,8 @@ Agent에서 `FabrixRequest.input_value`를 JSON 파싱하면 `agentRequest` 객�
 | S4 | `s4?` | 선택 객체. `opening?`, `reactions[]?`, `notices[]?`, `sourceIds[]?` |
 | S4 반응 | `reactions[].label`, `paragraphs[]` | 반응 항목 생성 시 모두 필수, 문단 1개 이상. 문단 수만큼 모두 표시 |
 | S5 | `s5?` | 선택 객체. `tips[]?`, `actions[]?`, `sourceIds[]?` |
-| S5 TIP | `tips[].title`, `body?`, `sourceIds[]?` | 제목 필수, 본문 없으면 제목만 표시 |
-| S5 업무 | `actions[].title`, `screenCode?`, `description?` | 제목 필수, 화면번호는 `00-00-000`. 없으면 실행 버튼·코드칩 숨김 |
+| S5 TIP | `tips[].title`, `body?`, `sourceIds[]?`, `kind?`, `publishedAt?` | 제목 필수, 본문 없으면 제목만 표시. `kind`는 `hot_tip`(강조 카드, 응답당 최대 1개. `publishedAt`은 게시일 `YYYY-MM-DD`, 실행 시각이 아님. 원문 링크는 같은 tip의 `sourceIds` → `sources[].url`) 또는 `follow_up`(실행 목록 아래 일반 안내). `kind` 없으면 기존 TIP 표시(2026-09-28 추가) |
+| S5 업무 | `actions[].title`, `screenCode?`, `description?` | 제목 필수, 화면번호는 `00-00-000`(끝 3자리는 숫자 또는 대문자 영문, 예 `04-12-17A`). 없으면 실행 버튼·코드칩 숨김 |
 | 근거 | `sources[]?` | 각 항목 `id`, `title` 필수. `description?`, `url?` 선택. URL은 HTTPS만 허용 |
 | 검토 | `reviewNotes[]?` | 자료 누락·충돌 등 내부 검토사항. 상담 후 기록 기능이 아님 |
 
@@ -185,7 +185,7 @@ S4·S5는 표시할 내용이 전혀 없으면 구분선과 섹션 제목도 숨
 | `notes[]` | 선택 | 상품별 조건·주의 문구 |
 | `metrics[]` | 선택 | 아래 지표 객체 배열 |
 
-지표 객체는 `kind`(`rate`: 표시금리 / `return`: 수익률), 숫자 `valuePct`, 문자열 `period`, 문자열 `asOf`가 모두 필수입니다. `3.85`는 3.85%이며 `0`도 유효합니다. 기간·기준 없이 숫자만 보내지 않습니다. 적용기간을 표시하려면 `validFrom`/`validUntil`을 `YYYY-MM-DD` 한 쌍으로 보내며 시작일이 종료일보다 늦을 수 없습니다.
+지표 객체는 `kind`(`rate`: 표시금리 / `return`: 수익률), 숫자 `valuePct`, 문자열 `period`, `asOf`가 모두 필수입니다. `asOf`는 자료 기준 문자열이며, `kind: "return"`에 한해 원문에 기준일이 없을 때 명시적 `null`을 허용합니다(화면은 `기준일 미표기`로 표시하고 날짜를 만들어 넣지 않음). `kind: "rate"`는 비어 있지 않은 문자열이 필요합니다(2026-09-28 추가). `3.85`는 3.85%이며 `0`도 유효합니다. 기간·기준 없이 숫자만 보내지 않습니다. 적용기간을 표시하려면 `validFrom`/`validUntil`을 `YYYY-MM-DD` 한 쌍으로 보내며 시작일이 종료일보다 늦을 수 없습니다.
 
 상품만 있고 `details`가 없어도 추천상품 펼치기가 표시됩니다. 상품과 상세가 모두 없으면 펼치기 버튼이 없습니다. ETF 조회 이력만 있고 상품이 특정되지 않았다면 상품명을 만들어 채우지 않습니다. 확인되지 않은 수익률은 `metrics`를 생략합니다.
 
@@ -194,6 +194,23 @@ S4·S5는 표시할 내용이 전혀 없으면 구분선과 섹션 제목도 숨
 `dataRefs`는 **요청의 `customer_data` 내부**를 기준으로 한 JSON Pointer입니다. 예: `/irpAccount/valuationAmountKrw`, `/customer/investmentProfile`. `/customer_data/...`로 시작하지 않습니다. `sourceIds`는 응답 `sources[].id`와 연결합니다.
 
 프론트는 필드·출처의 존재, 중복 ID, 값의 형식을 검사하지만 문장 의미·제도 현행성·상품 적합성까지 판단하지는 않습니다. 정상 수신해도 자동 승인하지 않고 내용 검토 전 초안으로 표시합니다. 상단 정보는 브리핑 문장에서 역산하거나 덮어쓰지 않습니다.
+
+### 4.4 선택 필드 `data.analysis_trace` (2026-09-28 추가)
+
+고정 브리핑에 구성 근거를 덧붙이는 선택 필드다. 현재 C01-07(오세훈)에만 제공되며, 없으면 기존 응답 그대로 유효하다. 새 Gemma 호출은 없다(`llm_calls: 0`). 원본 자료는 `agent-workbench/case-design/review/C01-knowledge/C01-07/briefing_evidence.json`이며 빌드가 원본 고객·브리핑·corpus와 대조한 뒤 `agent/briefing_data.json`의 C01-07 레코드에 `analysis_evidence`로 싣는다. Agent(`agent/briefing.py`)는 검증된 요청의 `customer_data`에서 사실 값을 읽고, 같은 응답의 `briefing`에서 연결 문장을 읽어 네 단계의 실제 처리 시각과 함께 반환한다.
+
+| 필드 | 내용 |
+|---|---|
+| `mode` / `origin` / `judgment_origin` / `llm_calls` | `fixed_briefing_evidence` / `agent_observed` / `case_authored` / `0` |
+| `case_id`, `as_of_date`, `started_at`, `ended_at`, `duration_ms`, `panel_title`, `button` | 응답과 같은 식별값, Agent의 근거 구성 시각(ISO, timezone 포함) |
+| `steps[4]` | `customer_summary → management_focus → knowledge_selection → briefing_binding`, 각 `{id, sequence, title, summary, started_at, ended_at, duration_ms, fact_ids, judgment_ids, group_ids, target_prefixes}` |
+| `facts[]` | `{id, label, role, values:[{ref, value}]}` — `ref`는 요청 `customer_data` 기준 JSON Pointer, `value`는 그 값 |
+| `judgments[]` | `{id, origin:'case_authored', summary, guard, fact_ids, evidence_ids}` — 사전 작성한 고객 적용 판단(LLM 출력·원문 인용 아님) |
+| `knowledge_cards[]`, `groups[]` | `{id, group, title, source_title, product_id, source_id?, summary, application, raw_status, raw_excerpts:[{text}], used_by:[pointer]}` — 출처는 제목만, 경로·행·해시 없음. `source_id`(선택)는 같은 응답 `briefing.sources[].id`여야 하며 화면의 '근거 자료' 제목 행 → 분석 근거 패널 이동에 쓰인다 |
+| `bindings[]` | `{id, target, text, role, fact_ids, evidence_ids, judgment_ids}` — `target`은 `data.briefing` 기준 포인터, `text`는 그 위치의 현재 문장 |
+| `workflow` | S5 액션 분기(`common`, `continue_investing`, `start_pension`, `followup`) |
+
+프론트(`fabrix-briefing-contract.js`)는 모양 검사 뒤 의미 검사(네 단계 순서, ID 유일성, 참조 존재, 사실 값·문장이 같은 요청/응답과 일치)를 하고, 실패하면 브리핑은 그대로 표시하고 근거만 버린다(`traceCode: 'TRACE'`). 브리핑과 근거는 같은 ticket으로 함께 저장·교체된다. 화면은 오세훈 브리핑 카드의 **[분석 근거]** 버튼 → 고객 전용 패널(네 단계, 한 번에 한 단계)이다.
 
 ## 5. 오류 응답
 

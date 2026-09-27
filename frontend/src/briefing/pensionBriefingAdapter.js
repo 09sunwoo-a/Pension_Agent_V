@@ -46,6 +46,7 @@
       };
     }
     base.hasAiBrief = !!entry.content; base.noAiBrief = !entry.content;
+    base.hasAnalysisTrace = !!(entry.content && entry.trace);
     base.briefingAvailable = !noBriefing[id];
     base.hasBriefingError = false;
     base.hasBriefingState = entry.phase === 'loading' || entry.phase === 'error';
@@ -55,8 +56,22 @@
       : '브리핑을 불러오지 못했습니다.' + (entry.content ? ' 이전 브리핑을 유지합니다.' : ' 다시 요청해 주세요.');
     base.briefingAnalysisLabel = record.briefingMeta.asOfDate.replace(/-/g, '.') + ' 기준 · 브리핑 초안';
     base.bfName = record.customer.name;
-    if (entry.content) Object.assign(base, BriefingView.build(entry.content, component));
+    if (entry.content) Object.assign(base, BriefingView.build(entry.content, component, policyFor(id, entry)));
     return base;
+  }
+  // 고객별 표시 정책. C01-07(오세훈): 상품 메타정보만, Hot Tip 강조 카드, 근거 자료 제목 행(분석 근거 패널 연결), reviewNotes 숨김.
+  // 다른 고객은 정책 없이 기존 표시를 유지한다.
+  var POLICIES = {
+    'C01-07': { productLayout: 'metadata_only', hideReviewNotes: true, footerTitle: '근거 자료', sourceRows: true }
+  };
+  function policyFor(id, entry) {
+    var policy = POLICIES[id];
+    if (!policy) return null;
+    var trace = entry && entry.trace, cards = trace && Array.isArray(trace.knowledge_cards) ? trace.knowledge_cards : [];
+    return Object.assign({}, policy, {
+      canOpenSource: function (sourceId) { return cards.some(function (c) { return c.source_id === sourceId; }); },
+      openSource: function (sourceId) { var panel = window.PensionBriefingEvidencePanel; if (panel && panel.openSource) panel.openSource(sourceId); }
+    });
   }
   function install(Component) {
     var originalProfile = Component.prototype.profileOf, originalRender = Component.prototype.renderVals;
@@ -91,6 +106,8 @@
     hasBriefing: function (id) { return !noBriefing[id]; },
     // Retain the exact local ticket until response arrival. No customer payload.
     begin: store.begin, receive: store.receive, fail: store.fail, cancel: store.cancel,
-    clear: store.clear, getContext: store.context, getCustomerForRequest: store.customer
+    clear: store.clear, getContext: store.context, getCustomerForRequest: store.customer,
+    // Optional analysis evidence saved with the same response as the briefing (C01-07 today).
+    analysisTrace: store.trace
   };
 })(window);

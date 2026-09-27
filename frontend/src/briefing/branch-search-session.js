@@ -121,31 +121,40 @@ function createRemote(input,options){
   // Optimistic guess (like the local engine's immediate intent): is this request likely to change the main list?
   // Interpretation is the long phase on a remote Agent, so the list skeleton starts now and the answer decides.
   emit('pending',{listGuess:guessListChange(text,action)});controller=new AbortController();const activeController=controller;
+  // 처리 이력 관측(선택): 실제 전송·수신·검증 지점에서만 기록하고 업무 상태에는 관여하지 않는다.
+  let trace=null;
   try{
    const valid=ready();
    const request=W.request({request_id:uuid(),conversation_id:conversationId,base_revision:revision,
     x_client_user:valid.xClientUser,message:text,action:action||null,state:C.copy(state)},manifest);
+   if(options.observer&&typeof options.observer.start==='function'){try{trace=options.observer.start({requestId:request.request_id,conversationId,baseRevision:revision,message:text,action:action||null});}catch(_){trace=null;}}
+   const observe=(name,arg)=>{if(trace&&typeof trace[name]==='function'){try{trace[name](arg);}catch(_){}}};
    const final=await T.call(valid,request,manifest,{signal:activeController.signal,fetch:options.fetch,timeoutMs:options.timeoutMs,
+    onSend:info=>observe('sent',info),onResponse:info=>observe('responded',info),
     onProgress:progress=>{
      if(disposed||token!==ticket)return;
+     observe('progress',progress);
      reply.text={interpreting:'조건을 해석하고 있어요.',executing:'고객 데이터를 확인하고 있어요.',composing:'답변을 정리하고 있어요.'}[progress.phase];
      emit('progress',{progress,listChange:progress.phase==='executing'&&progress.list_pending});
     }});
-   if(disposed||token!==ticket)return null;
-   if(options.isCurrent&&!options.isCurrent()){cancel();return null;}
+   if(disposed||token!==ticket){observe('cancelled','늦은 응답 · 이전 요청은 적용하지 않음');return null;}
+   observe('final',final);
+   if(options.isCurrent&&!options.isCurrent()){cancel();observe('cancelled','상세화면 이동으로 취소');return null;}
    if(final.event==='error')throw fault(final.data.code);
    const answer=final.data;
    // Check every ID against the actual original rows before committing any part of the turn.
    if(options.prepareAnswer)options.prepareAnswer(answer,manifest);
+   observe('validated',answer);
    state=C.copy(answer.next_state);revision=answer.revision;
    if(answer.ui.list_action==='replace')view={active:true,rowIds:answer.ui.row_ids.slice(),sort:C.copy(answer.ui.sort),contextLabel:answer.context_label};
    else if(answer.ui.list_action==='reset')view={active:false,rowIds:[],sort:null,contextLabel:answer.context_label};
    else view.contextLabel=answer.context_label;
    busy=false;controller=null;reply.pending=false;reply.text=answer.text;delete reply.retryText;delete reply.retryAction;
    reply.result={answer:answer.text,scopeNote:answer.scope_note,contextLabel:answer.context_label,actions:C.copy(answer.actions),ui:answer.ui};
-   emit(answer.ui.list_action==='keep'?'answer':'apply',{result:C.copy(reply.result)});return C.copy(answer);
+   emit(answer.ui.list_action==='keep'?'answer':'apply',{result:C.copy(reply.result),trace});return C.copy(answer);
   }catch(e){
-   if(disposed||token!==ticket)return null;
+   if(disposed||token!==ticket){if(trace&&typeof trace.cancelled==='function'){try{trace.cancelled();}catch(_){}}return null;}
+   if(trace&&typeof trace.failed==='function'){try{trace.failed(e.code||'NETWORK',e.field?'field '+e.field:null);}catch(_){}}
    busy=false;controller=null;reply.pending=false;reply.error=true;reply.code=e.code||'NETWORK';reply.text=notice(reply.code,e.field);
    if(typeof console!=='undefined'&&reply.code!=='ABORTED')console.warn('[Branch AI] request failed: '+reply.code+(e.field?' ('+e.field+')':'')+' · Network 탭에서 agent-messages 응답의 status/content-type/본문을 확인하세요. 응답 내용은 기록하지 않습니다.');
    emit('error');return null;

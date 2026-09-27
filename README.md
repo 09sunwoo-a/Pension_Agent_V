@@ -18,9 +18,11 @@
 | 실시간 상담(대화 Agent) 호출·패널 | `frontend/src/briefing/fabrix-chat-transport.js`, `pensionChat.js`, [규격](integration/contracts/CHAT_AGENT_CONTRACT.md) |
 | 기존 Vanilla 화면 동작 | `frontend/src/briefing/pensionAgentDemo.js` |
 | 부점 AI 고객 검색(플로팅 채팅·목록 전환) | `frontend/src/briefing/branch-search-conversation.js`(의도·추천·브리핑·대화 상태), `branch-search-core.js`(평가·집계), `branch-search-current-data.js`(현재 목록 투영), `branch-search-widget.js`·`branch-search.css`(채팅창), `branch-search-adapter.js`(기존 렌더러 연결) |
+| 오세훈(C01-07) 브리핑 '분석 근거' 패널 | 자료 [briefing_trace_plan.md](agent-workbench/case-design/review/C01-knowledge/C01-07/briefing_trace_plan.md)·`briefing_evidence.json`(빌드가 검증해 Agent 묶음에 포함), Agent `agent/briefing.py`의 `analysis_trace()`, 계약 `fabrix-briefing-contract.js`·[§4.4](integration/contracts/AGENT_FRONTEND_CONTRACT.md), 패널 `frontend/src/briefing/pensionBriefingEvidencePanel.js` |
+| 처리 이력 패널(부점 브리핑 목업·부점 AI 검색·엑셀 추출 기록) | `frontend/src/briefing/pensionExecutionTracePanel.js`(패널), `pensionExecutionTraceLog.js`(공통 기록·검색/엑셀 어댑터), `pensionExecutionTraceData.js`(브리핑 목업), `pensionBranchDisplay.js`(표시 범위 1,392명), Agent `branch-agent/deploy/branch_trace.py`·계약 [01-CONTRACT](docs/handover/branch-agent/01-CONTRACT.md#실행-이력-execution_trace-2026-09-28-추가-선택-필드) |
 | 부점 AI 현재 지원 질문·수정 위치 | [현재 구현 요약](docs/handover/BRANCH_AI_FRONTEND_AS_IS.md) — 코드 작업 시 필요한 절만 |
 | 부점 AI 프론트·Agent 구현 기획 | [기능·골든셋](docs/handover/BRANCH_AI_SEARCH_DESIGN.md) — 이 문서부터 읽기. 검색·현황·추천·짧은 브리핑, 최종 목표 사내 시연 |
-| 내일 사내 반입·Agent 배포·연동 확인 | 부점 AI: [BRANCH_AGENT_DEPLOY_TOMORROW.md](BRANCH_AGENT_DEPLOY_TOMORROW.md). 기존 S1–S5: [COMPANY_DEPLOY_CHECKLIST.md](COMPANY_DEPLOY_CHECKLIST.md), 필요한 [플랫폼 문서](docs/platform/README.md) |
+| 내일 사내 반입·Agent 배포·연동 확인 | **2026-09-29 배포 목록·검증 결과: [DEPLOY_LIST_2026-09-29.md](DEPLOY_LIST_2026-09-29.md)**. 부점 AI: [BRANCH_AGENT_DEPLOY_TOMORROW.md](BRANCH_AGENT_DEPLOY_TOMORROW.md). 기존 S1–S5: [COMPANY_DEPLOY_CHECKLIST.md](COMPANY_DEPLOY_CHECKLIST.md), 필요한 [플랫폼 문서](docs/platform/README.md) |
 | 지식 검색 | [색인](knowledge/source_registry.md)으로 관련 자료만 선택 |
 | 변경·미완료 기록 | [WORK_LOG.md](docs/handover/WORK_LOG.md) |
 

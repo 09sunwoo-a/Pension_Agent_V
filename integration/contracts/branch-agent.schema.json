@@ -66,6 +66,17 @@
           "title": "Dataset Id",
           "type": "string"
         },
+        "execution_trace": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExecutionTrace"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "intent": {
           "enum": [
             "search",
@@ -606,6 +617,17 @@
           ],
           "title": "Conversation Id"
         },
+        "execution_trace": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExecutionTrace"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "message": {
           "maxLength": 300,
           "minLength": 1,
@@ -665,6 +687,85 @@
         "data"
       ],
       "title": "ErrorEvent",
+      "type": "object"
+    },
+    "ExecutionTrace": {
+      "additionalProperties": false,
+      "properties": {
+        "clock": {
+          "const": "monotonic",
+          "title": "Clock",
+          "type": "string"
+        },
+        "duration_ms": {
+          "maximum": 600000,
+          "minimum": 0,
+          "title": "Duration Ms",
+          "type": "integer"
+        },
+        "ended_at": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?(?:Z|[+-]\\d{2}:\\d{2})$",
+          "title": "Ended At",
+          "type": "string"
+        },
+        "llm_calls": {
+          "items": {
+            "$ref": "#/$defs/LlmCall"
+          },
+          "maxItems": 6,
+          "title": "Llm Calls",
+          "type": "array"
+        },
+        "origin": {
+          "const": "agent_observed",
+          "title": "Origin",
+          "type": "string"
+        },
+        "request_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "title": "Request Id",
+          "type": "string"
+        },
+        "started_at": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?(?:Z|[+-]\\d{2}:\\d{2})$",
+          "title": "Started At",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "completed",
+            "failed"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/TraceStep"
+          },
+          "maxItems": 16,
+          "title": "Steps",
+          "type": "array"
+        },
+        "trace_version": {
+          "const": "branch-execution-trace.v1",
+          "title": "Trace Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "trace_version",
+        "origin",
+        "request_id",
+        "clock",
+        "started_at",
+        "ended_at",
+        "duration_ms",
+        "status",
+        "steps",
+        "llm_calls"
+      ],
+      "title": "ExecutionTrace",
       "type": "object"
     },
     "Filter": {
@@ -734,6 +835,128 @@
         "end"
       ],
       "title": "IsaBetween",
+      "type": "object"
+    },
+    "LlmCall": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt": {
+          "maximum": 3,
+          "minimum": 1,
+          "title": "Attempt",
+          "type": "integer"
+        },
+        "call_id": {
+          "maxLength": 80,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Call Id",
+          "type": "string"
+        },
+        "code": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Code"
+        },
+        "deployment": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Deployment"
+        },
+        "duration_ms": {
+          "maximum": 600000,
+          "minimum": 0,
+          "title": "Duration Ms",
+          "type": "integer"
+        },
+        "ended_at": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?(?:Z|[+-]\\d{2}:\\d{2})$",
+          "title": "Ended At",
+          "type": "string"
+        },
+        "input": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TraceDetail"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "model": {
+          "maxLength": 80,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Model",
+          "type": "string"
+        },
+        "output": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TraceDetail"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "purpose": {
+          "enum": [
+            "interpret",
+            "compose"
+          ],
+          "title": "Purpose",
+          "type": "string"
+        },
+        "started_at": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?(?:Z|[+-]\\d{2}:\\d{2})$",
+          "title": "Started At",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "accepted",
+            "rejected",
+            "failed"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "call_id",
+        "purpose",
+        "attempt",
+        "model",
+        "deployment",
+        "started_at",
+        "ended_at",
+        "duration_ms",
+        "status",
+        "input",
+        "output",
+        "code"
+      ],
+      "title": "LlmCall",
       "type": "object"
     },
     "Metric": {
@@ -827,6 +1050,149 @@
         "arg"
       ],
       "title": "NotPredicate",
+      "type": "object"
+    },
+    "PlanSummary": {
+      "additionalProperties": false,
+      "description": "The validated interpretation (branch_language.Plan) as it entered execution; never raw model text.",
+      "properties": {
+        "clarification_kind": {
+          "anyOf": [
+            {
+              "enum": [
+                "cash_field",
+                "cash_value",
+                "amount_basis",
+                "scope",
+                "customer",
+                "date_basis",
+                "condition"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Clarification Kind"
+        },
+        "detail": {
+          "enum": [
+            "brief",
+            "isa_facts",
+            "isa_amount",
+            "recommendation",
+            "reset"
+          ],
+          "title": "Detail",
+          "type": "string"
+        },
+        "edit": {
+          "enum": [
+            "replace",
+            "append",
+            "remove",
+            "none"
+          ],
+          "title": "Edit",
+          "type": "string"
+        },
+        "intent": {
+          "enum": [
+            "search",
+            "overview",
+            "aggregate",
+            "recommend",
+            "brief",
+            "restore",
+            "unsupported",
+            "clarify"
+          ],
+          "title": "Intent",
+          "type": "string"
+        },
+        "metric_keys": {
+          "items": {
+            "enum": [
+              "customer_count",
+              "irp_sum",
+              "cash_sum"
+            ],
+            "type": "string"
+          },
+          "maxItems": 3,
+          "title": "Metric Keys",
+          "type": "array"
+        },
+        "operations": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Filter"
+              },
+              {
+                "$ref": "#/$defs/SortOperation"
+              },
+              {
+                "$ref": "#/$defs/Take"
+              }
+            ]
+          },
+          "maxItems": 100,
+          "title": "Operations",
+          "type": "array"
+        },
+        "remove_field": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Remove Field"
+        },
+        "scope": {
+          "enum": [
+            "all",
+            "current",
+            "aggregate",
+            "recommendation"
+          ],
+          "title": "Scope",
+          "type": "string"
+        },
+        "target_name": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Target Name"
+        }
+      },
+      "required": [
+        "intent",
+        "scope",
+        "edit",
+        "operations",
+        "metric_keys",
+        "target_name",
+        "remove_field",
+        "clarification_kind",
+        "detail"
+      ],
+      "title": "PlanSummary",
       "type": "object"
     },
     "Progress": {
@@ -1276,6 +1642,62 @@
       "title": "State",
       "type": "object"
     },
+    "StateSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "active": {
+          "title": "Active",
+          "type": "boolean"
+        },
+        "base": {
+          "enum": [
+            "all",
+            "recommendation"
+          ],
+          "title": "Base",
+          "type": "string"
+        },
+        "clarification": {
+          "anyOf": [
+            {
+              "enum": [
+                "cash_field",
+                "cash_value",
+                "amount_basis",
+                "scope",
+                "customer",
+                "date_basis",
+                "condition"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Clarification"
+        },
+        "filter_count": {
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Filter Count",
+          "type": "integer"
+        },
+        "has_recommendation": {
+          "title": "Has Recommendation",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "active",
+        "base",
+        "filter_count",
+        "has_recommendation",
+        "clarification"
+      ],
+      "title": "StateSummary",
+      "type": "object"
+    },
     "Take": {
       "additionalProperties": false,
       "properties": {
@@ -1302,6 +1724,476 @@
         "count"
       ],
       "title": "Take",
+      "type": "object"
+    },
+    "TraceDetail": {
+      "additionalProperties": false,
+      "description": "Allowed summary fields only. Every key is present; unused ones are null.",
+      "properties": {
+        "action_type": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Action Type"
+        },
+        "attempt": {
+          "anyOf": [
+            {
+              "maximum": 3,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Attempt"
+        },
+        "checks": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 80,
+                "minLength": 1,
+                "pattern": "\\S",
+                "type": "string"
+              },
+              "maxItems": 16,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Checks"
+        },
+        "code": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Code"
+        },
+        "count": {
+          "anyOf": [
+            {
+              "maximum": 64,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Count"
+        },
+        "deployment": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Deployment"
+        },
+        "intent": {
+          "anyOf": [
+            {
+              "enum": [
+                "search",
+                "overview",
+                "aggregate",
+                "recommend",
+                "brief",
+                "clarify",
+                "restore",
+                "unsupported"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Intent"
+        },
+        "labels": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 80,
+                "minLength": 1,
+                "pattern": "\\S",
+                "type": "string"
+              },
+              "maxItems": 100,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Labels"
+        },
+        "list_action": {
+          "anyOf": [
+            {
+              "enum": [
+                "keep",
+                "replace",
+                "reset"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "List Action"
+        },
+        "message": {
+          "anyOf": [
+            {
+              "maxLength": 1200,
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Message"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Model"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "minLength": 1,
+                "pattern": "\\S",
+                "type": "string"
+              },
+              "maxItems": 8,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Notes"
+        },
+        "plan": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PlanSummary"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "purpose": {
+          "anyOf": [
+            {
+              "maxLength": 300,
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Purpose"
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Revision"
+        },
+        "row_ids": {
+          "anyOf": [
+            {
+              "items": {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+                "type": "string"
+              },
+              "maxItems": 64,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Row Ids"
+        },
+        "selection": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Selection"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sort": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sort"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source": {
+          "anyOf": [
+            {
+              "enum": [
+                "action",
+                "llm",
+                "clarification"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source"
+        },
+        "state_summary": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StateSummary"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "anyOf": [
+            {
+              "enum": [
+                "ok",
+                "empty",
+                "clarification_required",
+                "unsupported"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Status"
+        },
+        "unknown_row_ids": {
+          "anyOf": [
+            {
+              "items": {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+                "type": "string"
+              },
+              "maxItems": 64,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Unknown Row Ids"
+        }
+      },
+      "required": [
+        "message",
+        "attempt",
+        "model",
+        "deployment",
+        "purpose",
+        "state_summary",
+        "plan",
+        "selection",
+        "labels",
+        "row_ids",
+        "unknown_row_ids",
+        "count",
+        "sort",
+        "list_action",
+        "intent",
+        "status",
+        "revision",
+        "code",
+        "checks",
+        "source",
+        "action_type",
+        "notes"
+      ],
+      "title": "TraceDetail",
+      "type": "object"
+    },
+    "TraceStep": {
+      "additionalProperties": false,
+      "properties": {
+        "actor": {
+          "enum": [
+            "AGENT",
+            "LLM",
+            "DATA"
+          ],
+          "title": "Actor",
+          "type": "string"
+        },
+        "duration_ms": {
+          "maximum": 600000,
+          "minimum": 0,
+          "title": "Duration Ms",
+          "type": "integer"
+        },
+        "ended_at": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?(?:Z|[+-]\\d{2}:\\d{2})$",
+          "title": "Ended At",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 16,
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "input": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TraceDetail"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "output": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TraceDetail"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sequence": {
+          "maximum": 16,
+          "minimum": 1,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "stage": {
+          "enum": [
+            "interpret",
+            "plan",
+            "apply",
+            "compose",
+            "answer"
+          ],
+          "title": "Stage",
+          "type": "string"
+        },
+        "started_at": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?(?:Z|[+-]\\d{2}:\\d{2})$",
+          "title": "Started At",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "completed",
+            "failed"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "summary": {
+          "maxLength": 300,
+          "title": "Summary",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 80,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "sequence",
+        "actor",
+        "stage",
+        "title",
+        "status",
+        "started_at",
+        "ended_at",
+        "duration_ms",
+        "summary",
+        "input",
+        "output",
+        "evidence_refs"
+      ],
+      "title": "TraceStep",
       "type": "object"
     },
     "UI": {

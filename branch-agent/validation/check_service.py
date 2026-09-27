@@ -225,7 +225,104 @@ def regressions():
     assert service.handle({'input_value':json.dumps(wrong_version)})['data']['code']=='VERSION'
     req["data_version"] = "0" * 64
     assert service.handle({"input_value": json.dumps(req)})["data"]["code"] == "DATA_VERSION"
+    trace_checks(d)
     print("PASS: numeric/null/date/account boundaries, dynamic recommendation/dedup, interpretation repair/timeout, isolated concurrent turns and version rejection")
+
+
+def trace_checks(d):
+    """execution_trace: interpret → plan → apply → answer only; real attempts inside one interpret step; no LLM step on action paths; partial trace on errors."""
+    from concurrent.futures import ThreadPoolExecutor
+    plan = {"intent": "search", "scope": "all", "edit": "replace", "operations": [{"id": "p1", "type": "filter", "predicate": {"op": "and", "args": [
+        {"op": "compare", "field": "age", "cmp": "gte", "value": 55}, {"op": "segment", "value": "연금저축 보유"}]}}]}
+    s = Stub(); s.plan = plan
+    service = Service(d, s)
+    req = request(d, "만 55세 이상 고객 중 당행 연금저축 보유고객 보여줘")
+    event = service.handle({"input_value": json.dumps(req, ensure_ascii=False)})
+    assert event["event"] == "answer", "TRACE_ANSWER"
+    validate_event(event, req, d.manifest, d.by_id)
+    t = event["data"]["execution_trace"]
+    assert t["origin"] == "agent_observed" and t["request_id"] == req["request_id"] and t["status"] == "completed", "TRACE_HEAD"
+    assert [x["stage"] for x in t["steps"]] == ["interpret", "plan", "apply", "answer"], "TRACE_STAGES"
+    assert [x["actor"] for x in t["steps"]] == ["LLM", "AGENT", "DATA", "AGENT"] and all(x["status"] == "completed" for x in t["steps"]), "TRACE_ACTORS"
+    interpret, plan_step, apply_step, answer_step = t["steps"]
+    assert interpret["input"]["message"] == req["message"] and interpret["output"]["plan"]["operations"] == plan["operations"], "TRACE_INTERPRET"
+    assert plan_step["output"]["labels"] == ["나이 55세 이상 및 연금저축 보유"] and "numeric_literals" in plan_step["output"]["checks"], "TRACE_PLAN"
+    assert apply_step["output"]["row_ids"] == event["data"]["result"]["row_ids"] and apply_step["output"]["count"] == event["data"]["result"]["count"], "TRACE_RESULT_IDS"
+    assert apply_step["output"]["sort"] == {"field": "source_order", "direction": "asc"} and "기존 목록 순서 유지" in apply_step["summary"], "TRACE_ORDER"
+    assert apply_step["output"]["selection"]["operations"][0]["predicate"] == plan["operations"][0]["predicate"], "TRACE_PREDICATE_KEPT"
+    assert answer_step["output"]["list_action"] == "replace" and answer_step["output"]["revision"] == 1, "TRACE_ANSWER_STEP"
+    call = t["llm_calls"][0]
+    assert len(t["llm_calls"]) == 1 and call["status"] == "accepted" and call["attempt"] == 1 and call["model"] == "gemma-4-31b-it", "TRACE_CALL"
+    text = json.dumps(t, ensure_ascii=False)
+    assert "INTERPRET" not in text and "kb-key" not in text and "x-client-user" not in text and "LOCAL_VALIDATION" not in text, "TRACE_LEAK"
+    for step in t["steps"]:
+        assert step["duration_ms"] >= 0 and step["started_at"].endswith("+00:00") and step["ended_at"] >= step["started_at"], "TRACE_CLOCK"
+    # Action path: no model call, no interpret step.
+    act = service.handle({"input_value": json.dumps(request(d, "추천", action={"type": "recommend"}))})
+    ta = act["data"]["execution_trace"]
+    assert ta["llm_calls"] == [] and [x["stage"] for x in ta["steps"]] == ["plan", "apply", "answer"] and ta["steps"][0]["output"]["source"] == "action", "TRACE_ACTION"
+    # Retry: one interpret step, both real attempts in llm_calls (rejected → accepted).
+    calls = [0]
+    def flaky(messages, **kw):
+        calls[0] += 1
+        return "not-json" if calls[0] == 1 else json.dumps(plan, ensure_ascii=False)
+    retry = Service(d, flaky).handle({"input_value": json.dumps(req, ensure_ascii=False)})
+    tr = retry["data"]["execution_trace"]
+    assert retry["event"] == "answer" and [c["status"] for c in tr["llm_calls"]] == ["rejected", "accepted"] and [c["attempt"] for c in tr["llm_calls"]] == [1, 2], "TRACE_RETRY"
+    assert [x["stage"] for x in tr["steps"]] == ["interpret", "plan", "apply", "answer"] and "재시도 1회" in tr["steps"][0]["summary"] and tr["status"] == "completed", "TRACE_RETRY_STEPS"
+    # Error paths keep the partial trace with the failing stage; unidentified requests carry none.
+    def malformed(*a, **kw):
+        return "not-json"
+    err = Service(d, malformed).handle({"input_value": json.dumps(req, ensure_ascii=False)})
+    te = err["data"]["execution_trace"]
+    assert err["data"]["code"] == "LLM_OUTPUT" and te["status"] == "failed" and [c["status"] for c in te["llm_calls"]] == ["rejected", "rejected"], "TRACE_ERROR"
+    assert [(x["stage"], x["status"]) for x in te["steps"]] == [("interpret", "failed")], "TRACE_ERROR_NO_SUCCESS"
+    def timeout(*a, **kw):
+        raise TimeoutError()
+    tt = Service(d, timeout).handle({"input_value": json.dumps(req, ensure_ascii=False)})["data"]["execution_trace"]
+    assert tt["status"] == "failed" and tt["steps"][0]["stage"] == "interpret" and tt["steps"][0]["status"] == "failed" and tt["llm_calls"][0]["code"] == "LLM_TIMEOUT", "TRACE_TIMEOUT"
+    assert "execution_trace" not in service.handle({"input_value": 123})["data"], "TRACE_UNIDENTIFIED"
+    stale = dict(req, data_version="0" * 64)
+    tv = service.handle({"input_value": json.dumps(stale)})["data"]["execution_trace"]
+    assert [(x["stage"], x["status"], x["title"]) for x in tv["steps"]] == [("plan", "failed", "요청 검증 실패")], "TRACE_DATA_VERSION"
+    # Concurrent requests never share a collector.
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        outs = list(pool.map(lambda i: service.handle({"input_value": json.dumps(request(d, "만 55세 이상 고객 중 당행 연금저축 보유고객 보여줘", revision=i), ensure_ascii=False)}), range(2)))
+    ids = [o["data"]["execution_trace"]["request_id"] for o in outs]
+    assert ids[0] != ids[1] and all(o["data"]["execution_trace"]["request_id"] == o["data"]["request_id"] for o in outs), "TRACE_ISOLATION"
+    # 2026-09-28 fail-safe: a trace that does not fit its own schema must never demote a valid answer or break the frame.
+    from branch_models import ExecutionTrace
+    import branch_trace
+    wide = {"intent": "search", "scope": "all", "edit": "replace", "target_name": "", "remove_field": "  ", "operations": [{"id": "p1", "type": "filter", "predicate": {"op": "and", "args": [
+        {"op": "compare", "field": "age", "cmp": "gte", "value": 55}, {"op": "compare", "field": "irp_amount", "cmp": "gte", "value": 70000000},
+        {"op": "compare", "field": "cash_pct", "cmp": "gte", "value": 30}, {"op": "compare", "field": "return_pct", "cmp": "lte", "value": 5},
+        {"op": "compare", "field": "cash_amount", "cmp": "gte", "value": 30000000}, {"op": "segment", "value": "연금저축 보유"}]}}]}
+    sw = Stub(); sw.plan = wide
+    req_w = request(d, "나이 55세 이상 IRP 7천만원 이상 현금성 비중 30% 이상 수익률 5% 이하 현금성자산 3천만원 이상 연금저축 보유 고객")
+    ew = Service(d, sw).handle({"input_value": json.dumps(req_w, ensure_ascii=False)})
+    assert ew["event"] == "answer", "TRACE_WIDE_LABEL_DEMOTED"
+    tw = ew["data"]["execution_trace"]; ExecutionTrace.model_validate(tw)
+    assert all(len(l) <= 80 for x in tw["steps"] for l in (x["output"] or {}).get("labels") or []) and tw["steps"][0]["output"]["plan"]["target_name"] is None, "TRACE_LABEL_CUT"
+    assert [x["stage"] for x in tw["steps"]] == ["interpret", "plan", "apply", "answer"] and tw["status"] == "completed", "TRACE_WIDE_STAGES"
+    def bad_compose(messages, **kw):
+        payload = json.loads(messages[0]["content"])
+        return '상품을 매수했고 999999원을 이체했습니다.' if payload["stage"] == "compose" else '{"intent":"brief","target_name":"정미경"}'
+    eb = Service(d, bad_compose).handle({"input_value": json.dumps(request(d, "정미경 브리핑"), ensure_ascii=False)})
+    tb = eb["data"]["execution_trace"]; ExecutionTrace.model_validate(tb)
+    compose = next(x for x in tb["steps"] if x["stage"] == "compose")
+    assert eb["event"] == "answer" and tb["status"] == "completed" and compose["status"] == "completed" and "템플릿" in compose["summary"] and tb["llm_calls"][-1]["status"] == "rejected", "TRACE_COMPOSE_FALLBACK"
+    original = branch_trace.Collector.finish
+    branch_trace.Collector.finish = lambda self, status=None: {"broken": True}
+    try:
+        eb2 = Service(d, s).handle({"input_value": json.dumps(req, ensure_ascii=False)})
+        assert eb2["event"] == "answer" and "execution_trace" not in eb2["data"], "TRACE_DROP_INVALID"
+        validate_event(eb2, req, d.manifest, d.by_id)
+        ee = Service(d, timeout).handle({"input_value": json.dumps(req, ensure_ascii=False)})
+        assert ee["event"] == "error" and ee["data"]["code"] == "LLM_TIMEOUT" and "execution_trace" not in ee["data"], "TRACE_DROP_INVALID_ERROR"
+    finally:
+        branch_trace.Collector.finish = original
+    print("PASS: execution_trace fail-safe — 6-condition label cut to 80, blank target_name → null, compose fallback closes the step as completed, invalid trace dropped from answer and error events.")
+    print("PASS: execution_trace — interpret→plan→apply→answer for the demo sentence (age>=55 AND 연금저축 보유, source_order kept), retry inside one interpret step, no LLM step on button actions, partial trace on LLM_OUTPUT/timeout/DATA_VERSION, per-request isolation, no prompt/header leakage")
 
 
 if __name__ == "__main__":

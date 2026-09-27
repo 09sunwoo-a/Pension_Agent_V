@@ -175,6 +175,14 @@ def call(messages: list[dict[str, str]], *, system: str = "", model: str = "",
     return response.content
 
 
+def describe():
+    """Model and deployment alias for execution traces. No key, endpoint or header values."""
+    return {"model": _model(), "deployment": os.getenv("LLM_DEPLOYMENT_NAME", "").strip() or DEFAULT_DEPLOYMENT_NAME}
+
+
+call.describe = describe
+
+
 def usage_text():
     u = last_usage or {}
     return "usage=in%s/out%s/reasoning%s elapsed=%ss" % (u.get("input"), u.get("output"), u.get("reasoning"), u.get("elapsed_s"))

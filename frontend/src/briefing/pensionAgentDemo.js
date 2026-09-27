@@ -256,6 +256,9 @@
     mount.replaceChildren(frag);
     restoreRenderUiState(mount, uiSnap);
     if (window.PensionBranchSearchAdapter) window.PensionBranchSearchAdapter.afterRender(instance);
+    // 처리 이력 패널: host는 mount 밖에 있어 재렌더링에 영향받지 않으며, 여기서는 버튼 상태만 맞춘다.
+    if (window.PensionExecutionTracePanel) window.PensionExecutionTracePanel.afterRender(instance);
+    if (window.PensionBriefingEvidencePanel) window.PensionBriefingEvidencePanel.afterRender(instance);
 
     lastRenderedState = Object.assign({}, instance.state);
     if (prevState && typeof instance.componentDidUpdate === 'function') {
@@ -1393,7 +1396,7 @@ class Component {
   }
 
   openScn(chip, name) {
-    if (/^\d{2}-\d{2}-\d{3}$/.test(chip)) {
+    if (/^\d{2}-\d{2}-[0-9A-Z]{3}$/.test(chip)) {
       window.location.href = 'mystar-link://scnNo=' + chip.replace(/-/g, '') + '&mode=D';
       this.toast('[' + chip + '] ' + name + ' 화면 연결');
     } else this.toast('[' + chip + '] ' + name + ' 화면으로 이동 (모형)');
@@ -1660,6 +1663,8 @@ class Component {
   if (window.PensionBriefingAdapter) window.PensionBriefingAdapter.install(Component);
   if (window.PensionFabrix) window.PensionFabrix.install(Component);
   if (window.PensionChat) window.PensionChat.install(Component);
+  if (window.PensionExecutionTracePanel) window.PensionExecutionTracePanel.install(Component);
+  if (window.PensionBriefingEvidencePanel) window.PensionBriefingEvidencePanel.install(Component);
 
   // Explicit, opt-in build hook. No DOM/lifecycle/network work or source rewriting.
   // The build reads the same default queue and profiles used by the main screen.

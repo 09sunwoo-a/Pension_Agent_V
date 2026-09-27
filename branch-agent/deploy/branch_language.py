@@ -5,6 +5,7 @@ from typing import Literal, Union
 
 from pydantic import Field, ValidationError
 from branch_models import Fixed, Filter, SortOperation, Take, MetricKey, predicate_check, ContractError
+from branch_trace import detail, state_summary, plan_summary
 
 MODEL = "gemma-4-31b-it"
 
@@ -56,7 +57,9 @@ Predicate: {op:"compare",field,cmp:eq|gte|gt|lte|lt,value:숫자 또는 이름/�
 금액은 원 정수. 7천만원=70000000, 2억원=200000000, 500만원=5000000. 50대는 age>=50 AND age<60.
 IRP 잔액/평가금액은 irp_amount. 현금성자산 금액은 cash_amount. 비중은 cash_pct.
 그중/조건도 추가/이 3명/현재 목록은 scope=current, edit=append. 독립 검색은 all/replace.
-"현금성 장기대기 고객 보여줘"는 search+segment. "몇 명"/"합계"만 물으면 aggregate로 목록 유지.
+"현금성 장기대기 고객 보여줘"는 search+segment.
+"만 55세 이상"/"55세 이상"은 {op:"compare",field:"age",cmp:"gte",value:55}. "당행 연금저축 보유"/"연금저축 보유 고객"은 {op:"segment",value:"연금저축 보유"}.
+"만 55세 이상 고객 중 당행 연금저축 보유고객 보여줘"는 search, scope=all, 두 조건을 and로 결합한 filter 하나. 보유기관·보유기간·연금 미개시 등 질문에 없는 조건을 추가하지 않는다. "몇 명"/"합계"만 물으면 aggregate로 목록 유지.
 "찾아주고 합계도"는 search에 metric_keys 추가. 고객 수는 customer_count, IRP 합계 irp_sum, 현금 합계 cash_sum.
 부점 현황은 overview, scope=all, metric_keys=[customer_count,irp_sum,cash_sum].
 오늘 우선/중점 관리할 고객 누구/추천은 recommend. 명단/추천 인원을 만들지 않는다.
@@ -108,29 +111,57 @@ class Language:
     def __init__(self, call):
         self.call = call
 
-    def interpret(self, message, state, manifest, employee):
+    def identity(self):
+        """Model/deployment alias of the injected call, for traces. Unknown callers report the model only."""
+        try:
+            info = getattr(self.call, "describe", None)
+            info = info() if callable(info) else {}
+        except Exception:
+            info = {}
+        model = str(info.get("model") or MODEL)[:80]
+        deployment = info.get("deployment")
+        return model, (str(deployment)[:80] if deployment else None)
+
+    def interpret(self, message, state, manifest, employee, trace=None):
         context = {"stage": "interpret", "message": message, "as_of_date": manifest["as_of_date"],
                    "segment_labels": manifest["segment_labels"], "active": state["active"],
                    "selection": state["selection"], "has_recommendation": state["recommendation"] is not None,
                    "has_last_aggregate": state["last_aggregate"] is not None}
         messages = [{"role": "user", "content": json.dumps(context, ensure_ascii=False)}]
+        model, deployment = self.identity()
+        summary = state_summary(state)
         for attempt in range(2):
-            raw = self.call(messages, system=INTERPRET, max_tokens=1600, x_client_user=employee)
+            # Each real attempt is its own trace call; a rejected output is never shown as an accepted interpretation.
+            call = trace.llm_begin("interpret", attempt + 1, model, deployment, detail(message=message, state_summary=summary,
+                purpose="자연어 질문을 제한된 업무 Plan(JSON)으로 해석. 숫자·고객 ID는 Python이 확정")) if trace else None
             try:
-                return decode_plan(raw, manifest)
+                raw = self.call(messages, system=INTERPRET, max_tokens=1600, x_client_user=employee)
+            except BaseException as error:
+                if trace:
+                    trace.llm_end(call, "failed", code=str(getattr(error, "code", None) or ("LLM_TIMEOUT" if isinstance(error, TimeoutError) else "LLM_PROVIDER"))[:80])
+                raise
+            try:
+                plan = decode_plan(raw, manifest)
+                if trace:
+                    trace.llm_end(call, "accepted", output=detail(plan=plan_summary(plan)), summary="Plan 스키마 검증 통과 · intent " + plan["intent"])
+                return plan
             except (ValueError, TypeError, RecursionError, ValidationError, ContractError):
+                if trace:
+                    trace.llm_end(call, "rejected", code="PLAN", output=detail(code="PLAN", notes=[("출력 형태: " + _describe(raw))[:300]]))
                 if attempt:
                     raise LanguageError(detail="interpret attempt=2 " + _describe(raw)) from None
                 # Do not echo arbitrary model output back into the repair prompt.
                 messages.append({"role": "user", "content": "이전 출력은 Plan 검증에 실패했다. 허용 필드와 타입만 사용한 JSON 객체 하나로 다시 해석하라."})
         raise LanguageError()
 
-    def compose(self, template, employee):
+    def compose(self, template, employee, trace=None):
         sentences = template.split(". ")
         index = next((i for i, s in enumerate(sentences) if "상담" in s and "필요" in s), None)
         if index is None:
             return template, "not_needed"
         direction = sentences[index].rstrip(".") + "."
+        model, deployment = self.identity()
+        call = trace.llm_begin("compose", 1, model, deployment, detail(purpose="Python이 확정한 상담 방향 한 문장을 자연스럽게 다듬음. 사실·숫자 추가 금지")) if trace else None
         try:
             candidate = self.call([{"role": "user", "content": json.dumps({"stage": "compose", "direction": direction}, ensure_ascii=False)}],
                 system="확인된 상담 방향을 자연스러운 한국어 한 문장으로 다듬어라. 뜻을 유지하고 '확인'과 '상담'을 포함한다. 새로운 사실/이름/숫자/상품/실행완료 주장을 추가하지 않는다. JSON/목록/설명 없이 한 문장만 출력한다.",
@@ -140,8 +171,15 @@ class Language:
                     or not all(w in candidate for w in ("확인", "상담"))
                     or re.search(r"[0-9<>\n{}]|http|가입|매수|송금|이체|발송|저장|완료|확정|보장|수익률|[가-힣]+ 고객", candidate)
                     or candidate.count(".") > 1):
+                if trace:
+                    trace.llm_end(call, "rejected", code="TEMPLATE", output=detail(code="TEMPLATE", notes=["문장 검증 실패 · 확정된 템플릿 문장으로 대체"]),
+                                  summary="문장 검증 실패 · 확정된 템플릿 문장 사용", close=True)
                 return template, "template"
             sentences[index] = candidate.rstrip(".")
+            if trace:
+                trace.llm_end(call, "accepted", output=detail(notes=["검증 통과 · 상담 방향 문장 사용"]), summary="상담 방향 문장 검증 통과")
             return ". ".join(s.rstrip(".") for s in sentences) + ".", "generated"
-        except Exception:
+        except Exception as error:
+            if trace:
+                trace.llm_end(call, "failed", code=str(getattr(error, "code", None) or ("LLM_TIMEOUT" if isinstance(error, TimeoutError) else "LLM_PROVIDER"))[:80])
             return template, "template"

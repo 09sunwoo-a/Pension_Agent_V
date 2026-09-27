@@ -21,7 +21,9 @@
   // Fail closed if a future model emits a keyword we have not implemented.
   const keywords = new Set(['$schema', '$defs', '$ref', 'title', 'description', 'type', 'properties', 'required',
     'additionalProperties', 'anyOf', 'enum', 'const', 'items', 'minItems', 'maxItems', 'minLength', 'maxLength',
-    'pattern', 'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum']);
+    'pattern', 'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum',
+    // Emitted for optional (default null) fields such as execution_trace; carries no validation meaning here.
+    'default']);
   function checkSchema(rule) {
     requireThat(object(rule), 'SCHEMA_DEFINITION');
     Object.keys(rule).forEach(k => requireThat(keywords.has(k), 'SCHEMA_DEFINITION'));

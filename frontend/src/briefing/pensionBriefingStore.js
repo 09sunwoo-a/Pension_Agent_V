@@ -11,7 +11,7 @@
       var id = record.briefingMeta.caseId;
       if (customers.has(id)) throw new Error('Duplicate caseId: ' + id);
       customers.set(id, copy(record));
-      entries.set(id, { phase: 'empty', content: null, errors: [], request: null });
+      entries.set(id, { phase: 'empty', content: null, trace: null, errors: [], request: null });
     });
     function changed(id, contentChanged) { if (onChange) onChange(id, !!contentChanged); }
     function context(id) {
@@ -42,12 +42,14 @@
       changed(ticket.caseId, false);
       return { ok: false, errors: e.errors.slice() };
     }
-    function receive(ticket, content) {
+    // The briefing and its optional analysis trace are replaced together, from the same validated response.
+    function receive(ticket, content, trace) {
       if (!current(ticket)) return stale();
       var errors = contract.validateContent(content, customers.get(ticket.caseId));
       if (errors.length) return fail(ticket, errors);
       var e = current(ticket);
       e.content = contract.normalizeContent(content);
+      e.trace = trace ? copy(trace) : null;
       e.phase = 'loaded'; e.errors = []; e.request = null;
       changed(ticket.caseId, true);
       return { ok: true, errors: [] };
@@ -61,7 +63,7 @@
     function clear(id) {
       var e = entries.get(id);
       if (!e) return false;
-      e.request = null; e.content = null; e.phase = 'empty'; e.errors = [];
+      e.request = null; e.content = null; e.trace = null; e.phase = 'empty'; e.errors = [];
       changed(id, true); return true;
     }
     return {
@@ -69,7 +71,8 @@
       // Return copies; renderers and callers cannot overwrite customer facts.
       customer: function (id) { return customers.has(id) ? copy(customers.get(id)) : null; },
       customers: function () { return Array.from(customers.values()).map(copy); },
-      read: function (id) { var e = entries.get(id); return e ? copy({ phase: e.phase, content: e.content, errors: e.errors }) : null; }
+      read: function (id) { var e = entries.get(id); return e ? copy({ phase: e.phase, content: e.content, trace: e.trace, errors: e.errors }) : null; },
+      trace: function (id) { var e = entries.get(id); return e && e.trace ? copy(e.trace) : null; }
     };
   }
   return { create: create };

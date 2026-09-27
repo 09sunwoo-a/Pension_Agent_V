@@ -6,8 +6,9 @@ import uuid
 
 from branch_data import Dataset
 from branch_language import Language, LanguageError, Plan
-from branch_models import (ContractError, VERSION, MAX_SAFE, UUID_PATTERN, initial_state,
+from branch_models import (ContractError, ExecutionTrace, VERSION, MAX_SAFE, UUID_PATTERN, initial_state,
                            parse_request, validate_event, validate_request)
+from branch_trace import Collector, detail, plan_summary
 import branch_query as Q
 
 FIELDS = {"age": "나이", "irp_amount": "IRP 평가금액", "cash_amount": "현금성자산", "cash_pct": "현금성 비중", "return_pct": "수익률", "name": "이름", "grade": "등급"}
@@ -41,7 +42,7 @@ def button(text, kind, **kwargs):
     return {"label": text[:80], "action": {"type": kind, **kwargs}}
 
 
-def fault_event(outer, code, detail=None):
+def fault_event(outer, code, detail=None, trace=None):
     request = {}
     try:
         request = json.loads(outer.get("input_value", ""))
@@ -56,7 +57,7 @@ def fault_event(outer, code, detail=None):
     code = codes.get(code, code)
     if code not in ("INVALID_REQUEST", "VERSION", "DATA_VERSION", "STATE", "ACTION", "LLM_TIMEOUT", "LLM_OUTPUT", "INTERNAL"):
         code = "INTERNAL"
-    return {"event": "error", "data": {"schema_version": VERSION,
+    event = {"event": "error", "data": {"schema_version": VERSION,
             "request_id": request["request_id"] if identified else "invalid-request",
             "conversation_id": request["conversation_id"] if identified else None,
             "base_revision": request["base_revision"] if identified else None,
@@ -64,6 +65,25 @@ def fault_event(outer, code, detail=None):
             "message": ("응답 시간이 초과되었습니다. 다시 시도해 주세요." if code == "LLM_TIMEOUT" else "요청을 처리하지 못했습니다. 입력과 연결 상태를 확인해 주세요.")
                        # Diagnostic suffix for operators reading the raw FabriX response: class/status/variable names only.
                        + (" [" + re.sub(r"[^A-Za-z0-9_=|:.,/ -]", "", str(detail))[:200] + "]" if detail else "")}}
+    # Partial execution trace for an identified request: completed steps stay, the failing stage is marked failed.
+    if trace is not None and identified:
+        trace.set_request(request["request_id"])
+        if not any(s["status"] == "failed" for s in trace.steps):
+            trace.fail("plan", code, title="요청 검증 실패" if code in ("INVALID_REQUEST", "VERSION", "DATA_VERSION", "STATE", "ACTION") else None)
+        finished = safe_trace(trace, "failed")
+        if finished is not None:
+            event["data"]["execution_trace"] = finished
+    return event
+
+
+def safe_trace(trace, status=None):
+    """The trace is diagnostic: if it does not fit its own schema it is dropped, never allowed to fail the response."""
+    try:
+        finished = trace.finish(status)
+        ExecutionTrace.model_validate(finished)
+        return finished
+    except Exception:
+        return None
 
 
 def check_literals(plan, message):
@@ -100,32 +120,40 @@ class Service:
         self.language = Language(llm_call)
 
     def handle(self, outer, emit=lambda event: None, observe=lambda stage, code: None):
+        # One collector per request; it never touches shared state and is dropped with the response.
+        trace = Collector()
         try:
             if isinstance(outer, dict) and isinstance(outer.get("input_value"), str):
                 try:
                     raw = json.loads(outer["input_value"])
                     if isinstance(raw, dict) and (raw.get("schema_version") != VERSION or raw.get("task") != "branch_assistant"):
-                        return fault_event(outer, "VERSION")
+                        return fault_event(outer, "VERSION", trace=trace)
                 except (ValueError, RecursionError):
                     pass
             req = parse_request(outer, self.data.manifest)
+            trace.set_request(req["request_id"])
             def progress(phase, pending=False):
                 ev = {"event": "progress", "data": {k: req[k] for k in ("request_id", "conversation_id", "base_revision")}}
                 ev["data"].update(phase=phase, list_pending=pending)
                 emit(validate_event(ev, req, self.data.manifest))
             progress("interpreting")
-            event = self.execute(req, progress, observe)
+            event = self.execute(req, progress, observe, trace)
+            validate_event(event, req, self.data.manifest, self.data.by_id)
+            finished = safe_trace(trace)
+            if finished is not None:
+                event["data"]["execution_trace"] = finished
             return validate_event(event, req, self.data.manifest, self.data.by_id)
         except (ContractError, LanguageError) as error:
-            return fault_event(outer, error.code, getattr(error, "detail", None))
+            return fault_event(outer, error.code, getattr(error, "detail", None), trace)
         except TimeoutError as error:
-            return fault_event(outer, "LLM_TIMEOUT", getattr(error, "detail", None))
+            return fault_event(outer, "LLM_TIMEOUT", getattr(error, "detail", None), trace)
         except Exception as error:
             # The exception text itself is never forwarded; only the masked detail set by llm_client.
-            return fault_event(outer, "INTERNAL", getattr(error, "detail", None) or type(error).__name__)
+            return fault_event(outer, "INTERNAL", getattr(error, "detail", None) or type(error).__name__, trace)
 
-    def execute(self, req, progress=lambda *args: None, observe=lambda *args: None):
+    def execute(self, req, progress=lambda *args: None, observe=lambda *args: None, trace=None):
         d, m = self.data, self.data.manifest
+        trace = trace or Collector()
         state = copy.deepcopy(req["state"] or initial_state())
         old = copy.deepcopy(state)
         message, action = req["message"], req["action"]
@@ -162,6 +190,9 @@ class Service:
                 ui={"list_action": effect, "row_ids": ids if effect == "replace" else None, "sort": sort if effect == "replace" else None},
                 context_label=context[:2000], scope_note="현재 시연 자료 기준 · " + m["as_of_date"] + " · 자료 기준일 혼재, 미확인 제외",
                 actions=(actions or [])[:8], next_state=state)
+            trace.step("answer", None, "intent %s · status %s · 목록 %s · revision %d · 대상 %d명" % (intent, data["status"], {"replace": "교체", "keep": "유지", "reset": "복원"}[effect], data["revision"], len(ids)),
+                       output=detail(intent=intent, status=data["status"], list_action=effect, revision=data["revision"], count=len(ids),
+                                     row_ids=ids if effect == "replace" else None, sort=sort if effect == "replace" else None, labels=chips or None))
             return {"event": "answer", "data": data}
 
         def clarify(kind, text, options=(), field=None, candidates=(), pending_message=None):
@@ -203,13 +234,20 @@ class Service:
             if kind not in mapping:
                 raise ContractError("ACTION")
             plan = Plan(**mapping[kind]).model_dump()
+            # Button actions skip the model entirely; no LLM steps are recorded for this path.
+            trace.step("plan", "검색 조건 확정 (버튼 · LLM 호출 없음)", "action %s → intent %s" % (kind, plan["intent"]),
+                       output=detail(source="action", action_type=kind, plan=plan_summary(plan)))
         else:
-            plan = self.language.interpret(message, state, m, req["x_client_user"])
+            plan = self.language.interpret(message, state, m, req["x_client_user"], trace)
             observe("interpret", "ok")
             if plan["edit"] == "remove":
                 # Removal uses a field/operation selector, never values echoed from earlier State.
                 plan["operations"] = []
-            check_literals(plan, message)
+            try:
+                check_literals(plan, message)
+            except LanguageError:
+                trace.step("plan", None, "질문에 없는 숫자·이름·등급이 Plan에 있어 거절", status="failed", output=detail(code="LLM_OUTPUT", plan=plan_summary(plan)))
+                raise
             if plan["intent"] in ("overview", "aggregate"):
                 plan["intent"] = "overview" if re.search("현황|현상황", message) else "aggregate"
         intent = plan["intent"]
@@ -228,6 +266,11 @@ class Service:
                 if aggregate:
                     options.append(("aggregate", "방금 집계한 고객 기준"))
                 return clarify("scope", "이어갈 고객 범위를 선택해 주세요.", options)
+        if not action:
+            plan_labels = [label(o["predicate"]) for o in plan["operations"] if o["type"] == "filter"]
+            trace.step("plan", None, ("조건 " + " 및 ".join(plan_labels) if plan_labels else "intent " + intent) + " · scope %s · edit %s · 스키마·허용 필드·등록 라벨·숫자 근거 검증 통과" % (plan["scope"], plan["edit"]),
+                       output=detail(plan=plan_summary(plan), source="clarification" if pending else "llm", labels=plan_labels or None,
+                                     checks=["plan_schema", "predicate_fields", "segment_labels", "numeric_literals"]))
         progress("executing", intent in ("search", "recommend", "restore"))
         if intent == "clarify":
             kind = plan["clarification_kind"] or "condition"
@@ -267,8 +310,10 @@ class Service:
                 raise ContractError("ACTION")
             state["selected_row_id"] = r["row_id"]
             template = Q.briefing(r, m["as_of_date"], plan["detail"])
+            trace.step("apply", "브리핑 대상·사실 확정", "대상 1명 · 근거 %d건 · 문장 템플릿 확정" % len(Q.evidence(r, m["as_of_date"])),
+                       output=detail(row_ids=[r["row_id"]], count=1))
             progress("composing", False)
-            text, composition = self.language.compose(template, req["x_client_user"])
+            text, composition = self.language.compose(template, req["x_client_user"], trace)
             observe("compose", composition)
             return answer("brief", text, [r], reasons=Q.evidence(r, m["as_of_date"]))
         else:
@@ -303,7 +348,10 @@ class Service:
             if intent in ("overview", "aggregate"):
                 keys = plan["metric_keys"] or (["customer_count", "irp_sum", "cash_sum"] if intent == "overview" else ["customer_count"])
                 state["last_aggregate"] = {"selection": copy.deepcopy(selection), "metric_keys": keys}
+                apply = trace.begin("apply", "집계 대상 확정")
                 targets, un, _ = Q.replay(d, selection)
+                trace.end(apply, "집계 대상 %d명 · 미확인 %d명 · 목록 유지" % (len(targets), len(un)),
+                          output=detail(selection=selection, row_ids=[r["row_id"] for r in targets], unknown_row_ids=[r["row_id"] for r in un], count=len(targets), list_action="keep"))
                 parts = [f"대상 고객은 {len(targets)}명입니다."]
                 for metric in Q.metrics(targets, keys):
                     if metric["key"] != "customer_count":
@@ -312,8 +360,13 @@ class Service:
                               actions=[button(f"대상 고객 {len(targets)}명 보기", "show_aggregate"), button("관리할 고객 추천", "recommend")])
             state["selection"] = selection
         state["active"] = True
+        apply = trace.begin("apply")
         rows, unknown, sort = Q.replay(d, state["selection"])
         ids = [r["row_id"] for r in rows]
+        chips_now = [label(o["predicate"]) for o in state["selection"]["operations"] if o["type"] == "filter"]
+        order = "기존 목록 순서 유지" if sort["field"] == "source_order" else ("추천 순서" if sort["field"] == "recommendation_order" else "%s %s 정렬" % (FIELDS.get(sort["field"], sort["field"]), "오름차순" if sort["direction"] == "asc" else "내림차순"))
+        trace.end(apply, "조건에 맞는 고객 %d명 · 미확인 %d명 · %s" % (len(rows), len(unknown), order),
+                  output=detail(selection=state["selection"], labels=chips_now or None, row_ids=ids, unknown_row_ids=[r["row_id"] for r in unknown], count=len(rows), sort=sort))
         if state["selected_row_id"] not in ids:
             state["selected_row_id"] = None
         state["last_aggregate"] = None

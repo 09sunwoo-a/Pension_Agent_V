@@ -1,7 +1,7 @@
 {
   "manifest": {
     "dataset_id": "branch-demo.v1",
-    "data_version": "7abc22b0dbf4302101ddda4a750d89b5a5b6f03c3fcf28fbda64e6f3cb5c609f",
+    "data_version": "81f4311c07c3550cf87571a436351adef5f9a393df7b87f6a29a548c0719905c",
     "rule_version": "branch-rules.v1",
     "projection_version": "current-data.v1",
     "as_of_date": "2026-09-29",
@@ -85,7 +85,6 @@
       "ISA 전환기한 D-36",
       "ISA 전환기한 D-51",
       "계약이전 신청",
-      "계약이전 페이지 방문",
       "납입 중단",
       "납입금 미운용",
       "만기자금 미운용",
@@ -165,11 +164,6 @@
           "label": "정기예금 만기 D-1",
           "date": "2026-09-30",
           "source": "시연용 고객 원본 이벤트·상담"
-        },
-        {
-          "label": "계약이전 페이지 방문",
-          "date": "2026-09-10",
-          "source": "가상 행동로그"
         },
         {
           "label": "이탈징후",
@@ -3967,11 +3961,6 @@
           "label": "계약이전 신청",
           "date": "2026-09-08",
           "source": "시연용 고객 원본 이벤트·상담"
-        },
-        {
-          "label": "계약이전 페이지 방문",
-          "date": "2026-09-07",
-          "source": "가상 행동로그"
         },
         {
           "label": "원리금보장 편중",

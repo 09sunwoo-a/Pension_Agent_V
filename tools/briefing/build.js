@@ -11,6 +11,72 @@ const wire = require('../../frontend/src/briefing/fabrix-briefing-contract');
 const branchData = require('./branch-data');
 const read = file => fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
 const json = file => JSON.parse(read(file));
+// 오세훈(C01-07) 브리핑 분석 근거: 정제 완료한 지식 맵을 검증해 Agent 배포 묶음에만 싣는다. 원본 MD/JSON은 읽기 전용.
+const EVIDENCE = path.join(ROOT, 'agent-workbench/case-design/review/C01-knowledge/C01-07/briefing_evidence.json');
+const canonical = value => JSON.stringify(sortKeys(value));
+function sortKeys(value) {
+  if (Array.isArray(value)) return value.map(sortKeys);
+  if (value && typeof value === 'object') return Object.fromEntries(Object.keys(value).sort().map(k => [k, sortKeys(value[k])]));
+  return value;
+}
+function pointer(root, ref) {
+  return ref.replace(/^\//, '').split('/').reduce((cur, token) => {
+    const key = token.replace(/~1/g, '/').replace(/~0/g, '~');
+    if (Array.isArray(cur)) { if (!/^(0|[1-9]\d*)$/.test(key) || Number(key) >= cur.length) throw new Error('Evidence pointer missing: ' + ref); return cur[Number(key)]; }
+    if (cur && typeof cur === 'object' && Object.prototype.hasOwnProperty.call(cur, key)) return cur[key];
+    throw new Error('Evidence pointer missing: ' + ref);
+  }, root);
+}
+// Validates the authored map against the current customer/briefing/corpus and returns the transport pack
+// (no expected_* baselines, source paths, line numbers, hashes or internal notes).
+function evidencePack(data) {
+  if (!fs.existsSync(EVIDENCE)) return null;
+  const e = json(EVIDENCE), sha = text => require('crypto').createHash('sha256').update(text, 'utf8').digest('hex');
+  const index = data.customers.findIndex(c => c.briefingMeta.caseId === e.case_id);
+  if (index < 0 || !data.briefings[index]) throw new Error('Evidence case without customer/briefing: ' + e.case_id);
+  const customer = data.customers[index], briefing = json(path.join(ACTIVE, 'briefing-json', e.case_id + '.json'));
+  if (sha(canonical(customer)) !== e.baseline.customer_sha256) throw new Error('Evidence baseline: customer JSON changed since the map was authored (' + e.case_id + ')');
+  if (sha(canonical(briefing)) !== e.baseline.briefing_sha256) throw new Error('Evidence baseline: briefing JSON changed since the map was authored (' + e.case_id + ')');
+  const ids = list => { const seen = new Set(); list.forEach(x => { if (seen.has(x.id)) throw new Error('Duplicate evidence id: ' + x.id); seen.add(x.id); }); return seen; };
+  const factIds = ids(e.facts), judgmentIds = ids(e.judgments), cardIds = ids(e.knowledge_cards);
+  e.facts.forEach(f => f.data_refs.forEach((ref, i) => { if (canonical(pointer(customer, ref)) !== canonical(f.expected_values[i])) throw new Error('Evidence fact value differs: ' + f.id + ' ' + ref); }));
+  e.bindings.forEach(b => {
+    if (pointer(briefing, b.target) !== b.expected_text) throw new Error('Evidence binding text differs: ' + b.id + ' ' + b.target);
+    b.fact_ids.forEach(id => { if (!factIds.has(id)) throw new Error('Unknown fact in binding ' + b.id); });
+    b.evidence_ids.forEach(id => { if (!cardIds.has(id)) throw new Error('Unknown card in binding ' + b.id); });
+    b.judgment_ids.forEach(id => { if (!judgmentIds.has(id)) throw new Error('Unknown judgment in binding ' + b.id); });
+  });
+  ids(e.bindings);
+  const groupIds = new Set(e.presentation.groups.map(g => g.id)), sourceIds = new Set((briefing.sources || []).map(s => s.id));
+  e.knowledge_cards.forEach(card => {
+    if (!groupIds.has(card.group)) throw new Error('Card group unknown: ' + card.id);
+    if (card.source_id != null && !sourceIds.has(card.source_id)) throw new Error('Card source_id not in briefing.sources: ' + card.id);
+    card.used_by.forEach(ref => { if (typeof pointer(briefing, ref) !== 'string') throw new Error('Card used_by not a briefing string: ' + card.id + ' ' + ref); });
+    card.raw_excerpts.forEach(raw => {
+      const lines = read(path.join(ROOT, raw.source_path)).split('\n').slice(raw.line_start - 1, raw.line_end).join('\n');
+      if (lines !== raw.text || sha(lines) !== raw.sha256) throw new Error('Evidence RAW excerpt differs from corpus: ' + card.id);
+    });
+  });
+  e.judgments.forEach(j => { j.fact_ids.forEach(id => { if (!factIds.has(id)) throw new Error('Unknown fact in judgment ' + j.id); }); (j.evidence_ids || []).forEach(id => { if (!cardIds.has(id)) throw new Error('Unknown card in judgment ' + j.id); }); });
+  e.presentation.steps.forEach(s => { s.fact_ids.forEach(id => { if (!factIds.has(id)) throw new Error('Unknown fact in step ' + s.id); }); s.judgment_ids.forEach(id => { if (!judgmentIds.has(id)) throw new Error('Unknown judgment in step ' + s.id); }); s.group_ids.forEach(id => { if (!groupIds.has(id)) throw new Error('Unknown group in step ' + s.id); }); });
+  const a = e.acceptance, rawCount = e.knowledge_cards.reduce((n, c) => n + c.raw_excerpts.length, 0);
+  if (e.presentation.steps.length !== a.step_count || e.facts.reduce((n, f) => n + f.data_refs.length, 0) !== a.customer_field_count || e.knowledge_cards.length !== a.knowledge_card_count || rawCount !== a.raw_excerpt_count || e.bindings.length !== a.binding_count || e.knowledge_cards.filter(c => c.raw_excerpts.length).length !== a.raw_card_count) throw new Error('Evidence acceptance counts differ');
+  // used_by must be exactly what the bindings say (rebuilt from bindings[].evidence_ids).
+  e.knowledge_cards.forEach(card => { const expected = e.bindings.filter(b => b.evidence_ids.includes(card.id)).map(b => b.target); if (JSON.stringify(card.used_by) !== JSON.stringify(expected)) throw new Error('Card used_by out of sync with bindings: ' + card.id); });
+  return {
+    schema_version: e.schema_version, case_id: e.case_id, as_of_date: e.as_of_date,
+    runtime_policy: { analysis_mode: e.runtime_policy.analysis_mode, llm_calls: e.runtime_policy.llm_calls, trace_origin: e.runtime_policy.trace_origin, judgment_origin: e.runtime_policy.judgment_origin },
+    presentation: { button: e.presentation.button, panel_title: e.presentation.panel_title, max_open_steps: e.presentation.max_open_steps,
+      steps: e.presentation.steps.map(s => ({ id: s.id, title: s.title, summary: s.summary, fact_ids: s.fact_ids, judgment_ids: s.judgment_ids, group_ids: s.group_ids, target_prefixes: s.target_prefixes })),
+      groups: e.presentation.groups.map(g => ({ id: g.id, title: g.title, card_ids: g.card_ids, reuse_card_ids: g.reuse_card_ids || [] })) },
+    facts: e.facts.map(f => ({ id: f.id, label: f.label, role: f.role, data_refs: f.data_refs })),
+    judgments: e.judgments.map(j => ({ id: j.id, origin: j.origin, summary: j.summary, guard: j.guard || null, fact_ids: j.fact_ids, evidence_ids: j.evidence_ids || [] })),
+    knowledge_cards: e.knowledge_cards.map(c => ({ id: c.id, group: c.group, title: c.title, source_title: c.source_title, product_id: c.product_id || null, source_id: c.source_id || null, summary: c.summary, application: c.application,
+      raw_status: c.provenance.raw_status, raw_excerpts: c.raw_excerpts.map(r => ({ text: r.text })), used_by: c.used_by })),
+    bindings: e.bindings.map(b => ({ id: b.id, target: b.target, role: b.role, fact_ids: b.fact_ids, evidence_ids: b.evidence_ids, judgment_ids: b.judgment_ids })),
+    workflow: { common: e.workflow.common, continue_investing: e.workflow.continue_investing, start_pension: e.workflow.start_pension, followup: e.workflow.followup, meaning: e.workflow.meaning }
+  };
+}
 
 function inputs() {
   const dataDir = path.join(ACTIVE, 'display-data'), briefingDir = path.join(ACTIVE, 'briefing-json');
@@ -53,7 +119,10 @@ function artifacts(fileCode = DEFAULT_FILE_CODE, data = inputs(), branch = branc
     // 부점 AI: current main-list search. Core/data/provider/session precede the DOM modules and the adapter.
     'branch-agent-contract.js', 'branch-agent-transport.js', 'branch-search-core.js', 'branch-search-current-data.js', 'branch-search-current-provider.js', 'branch-search-conversation.js', 'branch-search-session.js',
     // pensionExport.js: 대화창의 "엑셀로 내려받기" 요청을 프론트에서 처리(xlsx 생성). 어댑터가 실행 시점에 참조.
-    'branch-search-motion.js', 'branch-search-widget.js', 'pensionExport.js', 'branch-search-adapter.js', 'pensionAgentDemo.js'];
+    // 처리 이력: 표시 범위 설정·공통 기록 저장소(검색/엑셀 어댑터)는 adapter 보다 앞에, 목업 데이터·패널 렌더러는 그 뒤에 둔다.
+    'pensionBranchDisplay.js', 'pensionExecutionTraceLog.js',
+    'branch-search-motion.js', 'branch-search-widget.js', 'pensionExport.js', 'branch-search-adapter.js',
+    'pensionExecutionTraceData.js', 'pensionExecutionTracePanel.js', 'pensionBriefingEvidencePanel.js', 'pensionAgentDemo.js'];
   // The widget compares this stamp (a custom property on .pad-branch-widget) with the deployed CSS to detect a stale file.
   const branchSource = read(path.join(SRC, 'branch-search.css'));
   const branchCss = branchSource.replace('PAD_BRANCH_CSS_VERSION', require('crypto').createHash('sha256').update(branchSource).digest('hex').slice(0, 12));
@@ -96,10 +165,13 @@ function build(fileCode) {
 }
 
 function agentData(data = inputs()) {
+  const evidence = evidencePack(data);
   return { schema_version: wire.version, answer_schema: wire.answerSchema,
-    // Only customers with a stored briefing are served by the fixed Agent.
+    // Only customers with a stored briefing are served by the fixed Agent. The C01-07 record also carries its
+    // validated analysis evidence map; the Agent turns it into the optional answer.data.analysis_trace.
     cases: Object.fromEntries(data.customers.map((customer, i) => [customer.briefingMeta.caseId, data.briefings[i]]).filter(([, b]) => b).map(([id, b], i) => [id,
-      { customer_data: data.customers.find(c => c.briefingMeta.caseId === id), briefing: contract.contentOf(b) }])) };
+      Object.assign({ customer_data: data.customers.find(c => c.briefingMeta.caseId === id), briefing: contract.contentOf(b) },
+        evidence && evidence.case_id === id ? { analysis_evidence: evidence } : {})])) };
 }
 
 function preview() {
@@ -130,4 +202,4 @@ if (require.main === module) {
   if (process.argv[2] === '--preview') preview();
   else build(process.argv[2] || DEFAULT_FILE_CODE);
 }
-module.exports = { ROOT, SRC, OUT, ACTIVE, DEFAULT_FILE_CODE, inputs, artifacts, agentData, build };
+module.exports = { ROOT, SRC, OUT, ACTIVE, DEFAULT_FILE_CODE, EVIDENCE, inputs, artifacts, agentData, evidencePack, build };

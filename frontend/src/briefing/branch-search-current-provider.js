@@ -6,7 +6,7 @@ const fields={'irp잔액':'irp_amount','irp평가금액':'irp_amount','잔액':'
 const err=text=>({error:'clarification_required',answer:text});
 function segmentRegistry(records){
  const labels=new Map();
- const approved=['퇴직금 운용 미지시','퇴직금 일부만 운용','현금성 장기대기','현금성 과다','만기자금 미운용','납입금 미운용','입금매수상품 미지정','원리금보장 편중','수익률 부진','환매추천 펀드 보유','판매중단 펀드 보유','저금리 예금 보유','DO 미등록','투자성향-DO불일치','타행 IRP 보유','타사 연금저축 보유','복수 IRP 보유','연금자산 분산보유','이탈징후','계약이전 신청','계약이전 페이지 방문','연금개시 가능','연금개시 예정','연금수령 중','올해 미납입','납입 중단','퇴직연금 관리화면 방문','ETF 상품조회','펀드 상품조회','보유상품 수익률 조회','장기 미운용'];
+ const approved=['퇴직금 운용 미지시','퇴직금 일부만 운용','현금성 장기대기','현금성 과다','만기자금 미운용','납입금 미운용','입금매수상품 미지정','원리금보장 편중','수익률 부진','환매추천 펀드 보유','판매중단 펀드 보유','저금리 예금 보유','DO 미등록','투자성향-DO불일치','타행 IRP 보유','타사 연금저축 보유','복수 IRP 보유','연금자산 분산보유','이탈징후','계약이전 신청','연금개시 가능','연금개시 예정','연금수령 중','올해 미납입','납입 중단','퇴직연금 관리화면 방문','ETF 상품조회','펀드 상품조회','보유상품 수익률 조회','장기 미운용'];
  for(const label of approved)labels.set(norm(label),{op:'segment_registered',label});
  for(const label of ['정기예금 만기','GIC 만기','ISA 만기','ISA 전환기한','DO 실행','퇴직금 재입금기한','연금개시','추가납입'])labels.set(norm(label),{op:'segment_family',label});
  for(const r of records)for(const s of r.signals||[]){

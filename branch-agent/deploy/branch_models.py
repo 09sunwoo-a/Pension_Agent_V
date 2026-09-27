@@ -231,6 +231,109 @@ class UI(Fixed):
     sort: Union[Sort, None]
 
 
+# ---- Execution trace (origin agent_observed) ----
+# Per-request observation the frontend shows in 처리 이력. Optional (nullable, default None) so an Agent without
+# the collector still validates; an old frontend rejects the extra key, so both must be replaced together.
+MAX_TRACE_STEPS = 16
+MAX_TRACE_CALLS = 6
+Iso = Annotated[str, Field(pattern=r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$")]
+Millis = Annotated[Int, Field(le=600000)]
+TraceActor = Literal["AGENT", "LLM", "DATA"]
+TraceStage = Literal["interpret", "plan", "apply", "compose", "answer"]
+Note = Annotated[str, Field(min_length=1, max_length=300, pattern=r"\S")]
+
+
+class StateSummary(Fixed):
+    active: bool
+    base: Literal["all", "recommendation"]
+    filter_count: Annotated[Int, Field(le=100)]
+    has_recommendation: bool
+    clarification: Union[Literal["cash_field", "cash_value", "amount_basis", "scope", "customer", "date_basis", "condition"], None]
+
+
+class PlanSummary(Fixed):
+    """The validated interpretation (branch_language.Plan) as it entered execution; never raw model text."""
+    intent: Literal["search", "overview", "aggregate", "recommend", "brief", "restore", "unsupported", "clarify"]
+    scope: Literal["all", "current", "aggregate", "recommendation"]
+    edit: Literal["replace", "append", "remove", "none"]
+    operations: Annotated[list[Union[Filter, SortOperation, Take]], Field(max_length=100)]
+    metric_keys: Annotated[list[MetricKey], Field(max_length=3)]
+    target_name: Union[Label, None]
+    remove_field: Union[Label, None]
+    clarification_kind: Union[Literal["cash_field", "cash_value", "amount_basis", "scope", "customer", "date_basis", "condition"], None]
+    detail: Literal["brief", "isa_facts", "isa_amount", "recommendation", "reset"]
+
+
+class TraceDetail(Fixed):
+    """Allowed summary fields only. Every key is present; unused ones are null."""
+    message: Union[Question, None]
+    attempt: Union[Annotated[int, Field(ge=1, le=3)], None]
+    model: Union[Label, None]
+    deployment: Union[Label, None]
+    purpose: Union[Note, None]
+    state_summary: Union[StateSummary, None]
+    plan: Union[PlanSummary, None]
+    selection: Union[Selection, None]
+    labels: Union[Annotated[list[Label], Field(max_length=100)], None]
+    row_ids: Union[Ids, None]
+    unknown_row_ids: Union[Ids, None]
+    count: Union[Count, None]
+    sort: Union[Sort, None]
+    list_action: Union[Literal["keep", "replace", "reset"], None]
+    intent: Union[Literal["search", "overview", "aggregate", "recommend", "brief", "clarify", "restore", "unsupported"], None]
+    status: Union[Literal["ok", "empty", "clarification_required", "unsupported"], None]
+    revision: Union[Int, None]
+    code: Union[Label, None]
+    checks: Union[Annotated[list[Label], Field(max_length=16)], None]
+    source: Union[Literal["action", "llm", "clarification"], None]
+    action_type: Union[Label, None]
+    notes: Union[Annotated[list[Note], Field(max_length=8)], None]
+
+
+class TraceStep(Fixed):
+    id: RowId
+    sequence: Annotated[int, Field(ge=1, le=MAX_TRACE_STEPS)]
+    actor: TraceActor
+    stage: TraceStage
+    title: Label
+    status: Literal["completed", "failed"]
+    started_at: Iso
+    ended_at: Iso
+    duration_ms: Millis
+    summary: Annotated[str, Field(max_length=300)]
+    input: Union[TraceDetail, None]
+    output: Union[TraceDetail, None]
+    evidence_refs: Annotated[list[Annotated[str, Field(min_length=1, max_length=256)]], Field(max_length=16)]
+
+
+class LlmCall(Fixed):
+    call_id: Label
+    purpose: Literal["interpret", "compose"]
+    attempt: Annotated[int, Field(ge=1, le=3)]
+    model: Label
+    deployment: Union[Label, None]
+    started_at: Iso
+    ended_at: Iso
+    duration_ms: Millis
+    status: Literal["accepted", "rejected", "failed"]
+    input: Union[TraceDetail, None]
+    output: Union[TraceDetail, None]
+    code: Union[Label, None]
+
+
+class ExecutionTrace(Fixed):
+    trace_version: Literal["branch-execution-trace.v1"]
+    origin: Literal["agent_observed"]
+    request_id: Uuid
+    clock: Literal["monotonic"]
+    started_at: Iso
+    ended_at: Iso
+    duration_ms: Millis
+    status: Literal["completed", "failed"]
+    steps: Annotated[list[TraceStep], Field(max_length=MAX_TRACE_STEPS)]
+    llm_calls: Annotated[list[LlmCall], Field(max_length=MAX_TRACE_CALLS)]
+
+
 class Answer(Identity):
     revision: Int
     intent: Literal["search", "overview", "aggregate", "recommend", "brief", "clarify", "restore", "unsupported"]
@@ -242,6 +345,7 @@ class Answer(Identity):
     scope_note: Annotated[str, Field(max_length=2000)]
     actions: Annotated[list[Button], Field(max_length=8)]
     next_state: State
+    execution_trace: Union[ExecutionTrace, None] = None
 
 
 class AnswerEvent(Fixed):
@@ -270,6 +374,7 @@ class ErrorData(Fixed):
     code: Literal["INVALID_REQUEST", "VERSION", "DATA_VERSION", "STATE", "ACTION", "LLM_TIMEOUT", "LLM_OUTPUT", "INTERNAL"]
     retryable: bool
     message: Annotated[str, Field(min_length=1, max_length=300, pattern=r"\S")]
+    execution_trace: Union[ExecutionTrace, None] = None
 
 
 class ErrorEvent(Fixed):
@@ -307,7 +412,8 @@ def shape(kind, raw):
     try:
         json_value_check(raw)
         require(kind in classes)
-        return classes[kind].model_validate(raw).model_dump()
+        # exclude_unset: an optional field the sender omitted (execution_trace) stays absent instead of becoming null.
+        return classes[kind].model_validate(raw).model_dump(exclude_unset=True)
     except (ValidationError, RecursionError, TypeError, OverflowError):
         raise ContractError("SCHEMA") from None
 

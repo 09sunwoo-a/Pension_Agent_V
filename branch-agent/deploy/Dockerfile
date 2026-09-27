@@ -15,6 +15,7 @@ COPY ./branch_data.json /custom/branch_data.json
 COPY ./branch_data.py /custom/branch_data.py
 COPY ./branch_query.py /custom/branch_query.py
 COPY ./branch_language.py /custom/branch_language.py
+COPY ./branch_trace.py /custom/branch_trace.py
 COPY ./branch_service.py /custom/branch_service.py
 COPY ./llm_client.py /custom/llm_client.py
 COPY ./main.py /custom/main.py

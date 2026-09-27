@@ -7,27 +7,21 @@
           "/holdings/1",
           "/에이전트맥락데이터/최근사건/0"
         ],
-        "sourceIds": [
-          "refined"
-        ]
+        "sourceIds": []
       },
       {
         "text": "현재 **연금수령이 가능한 상태**이며, 아직 연금은 개시하지 않았습니다.",
         "dataRefs": [
           "/에이전트맥락데이터/퇴직및인출"
         ],
-        "sourceIds": [
-          "refined"
-        ]
+        "sourceIds": []
       },
       {
         "text": "지난 상담에서는 연금을 바로 받기보다 **당분간 자금을 계속 운용하고 싶다**고 했습니다.",
         "dataRefs": [
           "/에이전트맥락데이터/상담이력"
         ],
-        "sourceIds": [
-          "refined"
-        ]
+        "sourceIds": []
       }
     ]
   },
@@ -40,7 +34,7 @@
       "만기자금 중 **수령에 사용할 금액과 계속 운용할 금액을 어떻게 나눌지**"
     ],
     "sourceIds": [
-      "refined"
+      "guide-irp"
     ]
   },
   "s3": {
@@ -51,21 +45,46 @@
         "title": "당분간 계속 운용한다면 — 원리금보장형 재운용",
         "summary": "만기자금을 다시 운용할 기간에 맞춰 **정기예금·GIC 등 원리금보장상품의 조건을 비교**합니다.",
         "sourceIds": [
-          "refined",
-          "draft"
+          "product-SAV-009"
         ],
         "products": [
           {
             "productId": "SAV-009",
             "name": "SBI저축은행 퇴직연금 정기예금",
+            "category": "저축은행 정기예금 · 원리금보장",
+            "metrics": [
+              {
+                "kind": "rate",
+                "valuePct": 3.85,
+                "period": "1년",
+                "asOf": "2026-09",
+                "validFrom": "2026-09-01",
+                "validUntil": "2026-09-30"
+              },
+              {
+                "kind": "rate",
+                "valuePct": 3.95,
+                "period": "2년",
+                "asOf": "2026-09",
+                "validFrom": "2026-09-01",
+                "validUntil": "2026-09-30"
+              },
+              {
+                "kind": "rate",
+                "valuePct": 3.95,
+                "period": "3년",
+                "asOf": "2026-09",
+                "validFrom": "2026-09-01",
+                "validUntil": "2026-09-30"
+              }
+            ],
             "reason": "현재 SBI 예금의 같은 역할 재운용 조건 비교.",
             "notes": [
               "SBI저축은행의 퇴직연금 정기예금 자료. 기관별 보유 합산·보호범위·기간·이자계산 기준·중도해지 조건을 함께 확인한다.",
               "선택 전 확인: 10월 금리·기관별 합산·연금지급 시 해지 조건 확인."
             ],
             "sourceIds": [
-              "product-SAV-009",
-              "draft"
+              "product-SAV-009"
             ]
           }
         ]
@@ -75,21 +94,41 @@
         "title": "연금수령을 시작한다면 — 지급재원 우선 확보",
         "summary": "가까운 시기에 받을 금액은 **수령 일정에 맞춰 확보**하고, 나머지 자금은 계속 운용합니다.",
         "sourceIds": [
-          "refined",
-          "draft"
+          "guide-irp"
         ],
         "products": [
           {
             "productId": "FND-004",
             "name": "한화내일받는단기국공채증권자투자신탁(채권)C-RPE(퇴직연금)",
+            "category": "국내채권 · 단기국공채 · 실적배당형",
+            "riskLevel": "6등급 · 매우낮은위험",
+            "metrics": [
+              {
+                "kind": "return",
+                "valuePct": 1.35,
+                "period": "6개월 누적",
+                "asOf": null
+              },
+              {
+                "kind": "return",
+                "valuePct": 2.53,
+                "period": "1년 누적",
+                "asOf": null
+              },
+              {
+                "kind": "return",
+                "valuePct": 10.18,
+                "period": "3년 누적",
+                "asOf": null
+              }
+            ],
             "reason": "손실 가능성을 이해한 단기 운용 부분의 비교 후보.",
             "notes": [
               "단기 국공채 펀드의 C-RPE(퇴직연금) 클래스 자료. 낮은 위험 표기와 원금보장은 다르며 실제 환매 정산일을 확인한다.",
               "선택 전 확인: 매도/정산일·낮은 위험과 원금보장의 차이·지급일 정합성 확인."
             ],
             "sourceIds": [
-              "product-FND-004",
-              "draft"
+              "product-FND-004"
             ]
           }
         ]
@@ -98,22 +137,45 @@
         "id": "option-3",
         "title": "장기간 남겨둘 자금 — 기존 운용 유지 여부 점검",
         "summary": "현재 보유 중인 TDF·ETF 등은 연금개시만을 이유로 일괄 정리하지 않고, **향후 운용기간과 투자성향에 맞는지 별도로 점검**합니다.",
-        "sourceIds": [
-          "refined",
-          "draft"
-        ],
+        "sourceIds": [],
         "products": [
           {
             "productId": "GIC-003",
             "name": "한화생명 GIC (2026년 9월 특별제공안)",
+            "category": "이율보증형보험(GIC) · 원리금보장",
+            "metrics": [
+              {
+                "kind": "rate",
+                "valuePct": 4.0,
+                "period": "1년",
+                "asOf": "2026-09"
+              },
+              {
+                "kind": "rate",
+                "valuePct": 3.48,
+                "period": "2년",
+                "asOf": "2026-09"
+              },
+              {
+                "kind": "rate",
+                "valuePct": 4.48,
+                "period": "3년",
+                "asOf": "2026-09"
+              },
+              {
+                "kind": "rate",
+                "valuePct": 3.54,
+                "period": "5년",
+                "asOf": "2026-09"
+              }
+            ],
             "reason": "가까운 지급에 쓰지 않을 장기 잔액의 구조 비교.",
             "notes": [
               "2026년 9월 특별제공안. 이율보증형보험 제공안 명칭으로, 정식 상품명·기간·금리와 연금지급/중도해지 조건을 확인한다.",
               "선택 전 확인: 9월 특별조건은 참고. 장기 계약기간과 지급/중도해지 조건 확인."
             ],
             "sourceIds": [
-              "product-GIC-003",
-              "draft"
+              "product-GIC-003"
             ]
           }
         ]
@@ -150,11 +212,33 @@
       "만기 후 재운용 조건과 연금수령에 필요한 절차는 실제 처리 시점에 다시 확인해야 합니다. 가까운 시기에 받을 자금은 장기간 묶이는 상품에 넣지 않도록 먼저 구분하겠습니다."
     ],
     "sourceIds": [
-      "refined"
+      "scenario-maturity",
+      "guide-irp",
+      "talk-defer",
+      "talk-expert",
+      "product-SAV-009",
+      "product-FND-004",
+      "product-GIC-003"
     ]
   },
   "s5": {
-    "tips": [],
+    "tips": [
+      {
+        "kind": "hot_tip",
+        "title": "IRP 연금 지급 절차",
+        "body": "연금개시 준비서류와 세액 미공제 한도 등록, 연금지급 화면으로 이어지는 처리 흐름을 정리한 현장 사례입니다.",
+        "publishedAt": "2025-02-27",
+        "sourceIds": [
+          "hot-tip-199404"
+        ]
+      },
+      {
+        "title": "상담 후 확인",
+        "body": "계속 운용 / 연금수령 검토 중 고객의 선택을 기록하고, 만기 후 실제 재운용 또는 연금지급 여부를 확인합니다.",
+        "sourceIds": [],
+        "kind": "follow_up"
+      }
+    ],
     "actions": [
       {
         "screenCode": "04-12-642",
@@ -162,66 +246,86 @@
         "description": "만기예금과 현재 보유상품 확인"
       },
       {
-        "screenCode": null,
-        "title": "계속 운용하는 경우",
-        "description": "04-12-17A에서 만기 후 운용 가능한 상품 비교, 필요 시 06-12-611에서 만기상품 변경예약"
+        "screenCode": "04-12-17A",
+        "title": "NEW 퇴직연금상품조회",
+        "description": "계속 운용하는 경우 · 만기 후 운용 가능한 상품 비교"
+      },
+      {
+        "screenCode": "06-12-611",
+        "title": "보유상품변경",
+        "description": "계속 운용하는 경우 · 필요 시 만기상품 변경예약"
       },
       {
         "screenCode": "02-12-221",
-        "title": "연금수령을 시작하는 경우",
-        "description": "희망 수령액과 지급방법 확인 후 02-12-221 개인형IRP 연금지급으로 연결"
-      },
-      {
-        "screenCode": null,
-        "title": "상담 후 확인",
-        "description": "계속 운용 / 연금수령 검토 중 고객의 선택을 기록하고, 만기 후 실제 재운용 또는 연금지급 여부를 확인합니다."
+        "title": "개인형IRP 연금지급",
+        "description": "연금수령을 시작하는 경우 · 희망 수령액과 지급방법 확인 후 연결"
       }
     ],
     "sourceIds": [
-      "refined",
-      "workflow"
+      "workflow",
+      "guide-irp",
+      "hot-tip-199404"
     ]
   },
   "sources": [
     {
-      "id": "refined",
-      "title": "C01 고객별 S1~S5 브리핑 정제본 · 2026-09-22",
-      "description": "S1 핵심 Fact 3개 · S2 상담 목적/왜 지금/고객과 확인 · S3 관리 방향 · S4 knowledge_pack 근거 화법 · S5 실제 업무 흐름. 화면용 문장은 정제본 문장을 변형 없이 옮겼다.",
+      "id": "guide-irp",
+      "title": "개인형IRP_마케팅_보물지도_Vol1",
+      "description": "만기 사전관리, 연금수령 방식과 상품조회 화면 안내.",
       "url": null
-    },
-    {
-      "id": "draft",
-      "title": "C01-07 오세훈 · S1~S5 브리핑 초안 v0.1 · 2026-09-21",
-      "description": "S3 상품 후보와 상품별 연결 이유·자료상 성격·선택 전 확인은 초안 「2. 상품 펼쳐보기」에서 옮겼다. 자료 기준의 상담용 비교 후보이며 금액·배분과 실제 매수가능 여부는 고객 의사 및 거래시점 확인 후 정한다.",
-      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/main/agent-workbench/case-design/review/C01-knowledge/C01-07/briefing_draft.md"
     },
     {
       "id": "product-SAV-009",
-      "title": "SAV-009 · SBI저축은행 퇴직연금 정기예금 · PRODUCT_MASTER v1.0 L1953–2040",
-      "description": "[자료상 성격] SBI저축은행의 퇴직연금 정기예금 자료. 기관별 보유 합산·보호범위·기간·이자계산 기준·중도해지 조건을 함께 확인한다. runtime_verified: false 상태를 유지하며, 9월 금리를 10월 이후 거래에 약속하지 않는다.",
-      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/41ae9a44357ccabde98dec76d99965e6b038b2a6/knowledge/corpus/05_%EC%83%81%ED%92%88_%EA%B8%B0%EB%B0%98%EC%A7%80%EC%8B%9D/PRODUCT_MASTER.md#L1953-L2040"
+      "title": "저축은행_퇴직연금_정기예금_적용금리_2026-09",
+      "description": "SBI저축은행 퇴직연금 정기예금의 2026년 9월 기간별 금리.",
+      "url": null
     },
     {
       "id": "product-FND-004",
-      "title": "FND-004 · 한화내일받는단기국공채증권자투자신탁(채권)C-RPE(퇴직연금) · PRODUCT_MASTER v1.0 L6761–6842",
-      "description": "[자료상 성격] 단기 국공채 펀드의 C-RPE(퇴직연금) 클래스 자료. 낮은 위험 표기와 원금보장은 다르며 실제 환매 정산일을 확인한다. runtime_verified: false 상태를 유지하며, 9월 금리를 10월 이후 거래에 약속하지 않는다.",
-      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/41ae9a44357ccabde98dec76d99965e6b038b2a6/knowledge/corpus/05_%EC%83%81%ED%92%88_%EA%B8%B0%EB%B0%98%EC%A7%80%EC%8B%9D/PRODUCT_MASTER.md#L6761-L6842"
+      "title": "KB국민은행_퇴직연금_판매중_ETF_펀드",
+      "description": "한화 단기국공채 C-RPE 클래스의 위험등급과 기간별 누적수익률. 수익률 기준일 미표기.",
+      "url": null
     },
     {
       "id": "product-GIC-003",
-      "title": "GIC-003 · 한화생명 GIC (2026년 9월 특별제공안) · PRODUCT_MASTER v1.0 L3647–3713",
-      "description": "[자료상 성격] 2026년 9월 특별제공안. 이율보증형보험 제공안 명칭으로, 정식 상품명·기간·금리와 연금지급/중도해지 조건을 확인한다. runtime_verified: false 상태를 유지하며, 9월 금리를 10월 이후 거래에 약속하지 않는다.",
-      "url": "https://github.com/09sunwoo-a/Pension_Agent_V/blob/41ae9a44357ccabde98dec76d99965e6b038b2a6/knowledge/corpus/05_%EC%83%81%ED%92%88_%EA%B8%B0%EB%B0%98%EC%A7%80%EC%8B%9D/PRODUCT_MASTER.md#L3647-L3713"
+      "title": "9월_퇴직연금_원리금보장_특별제공상품_안내",
+      "description": "한화생명 GIC의 2026년 9월 기간별 특별제공 금리.",
+      "url": null
+    },
+    {
+      "id": "scenario-maturity",
+      "title": "연금고객_수익률KPI_고객관리_시나리오",
+      "description": "만기 안내, 재운용 상품 비교와 변경예약 상담 예시.",
+      "url": null
+    },
+    {
+      "id": "talk-defer",
+      "title": "《실전상담백서》 끝난 줄 알았던 상담, 이렇게 말하니 다시 시작됐어요!",
+      "description": "결정을 미룬 고객에게 짧은 요약자료로 상담을 이어가는 사례.",
+      "url": null
+    },
+    {
+      "id": "talk-expert",
+      "title": "연금왕찐천재_마스터북_계약이전화법_은행",
+      "description": "연금수령·세금 관련 전문 상담 연결 안내.",
+      "url": null
     },
     {
       "id": "workflow",
-      "title": "퇴직연금 주요거래 화면번호 안내 · 업무 참조자료 · 기준일 미표기",
-      "description": "화면번호는 상담 후 직원이 직접 조회·처리할 업무의 안내이며 거래 실행을 뜻하지 않음.",
+      "title": "퇴직연금_주요거래_화면번호_안내",
+      "description": "보유상품 조회·변경과 개인형IRP 연금지급 화면 안내.",
       "url": null
+    },
+    {
+      "id": "hot-tip-199404",
+      "title": "irp 연금 지급 절차",
+      "description": "연금개시 준비서류와 세액 미공제 한도 등록, 연금지급 화면으로 이어지는 처리 흐름을 정리한 현장 사례입니다.",
+      "url": "https://lxp.kbstar.com/app/board/hottip-my/view/199404.D59E713BFC50ADBEAC5F8FB48C7B16253F22F4AF0D957938667E721AE592A4FD"
     }
   ],
   "reviewNotes": [
     "2026-09-22 C01 정제본의 S1~S5 문장을 변형 없이 옮겼다. 상품 후보는 briefing_draft.md v0.1 「상품 펼쳐보기」에서 정제본 S3의 해당 옵션에 연결했다.",
-    "상품의 현재 판매가능·법규 적합성·거래 가능성은 미검증(runtime_verified: false). 사내 단말 실행·Hot Tip 로그인 접속 미검증."
+    "상품의 현재 판매가능·법규 적합성·거래 가능성은 미검증(runtime_verified: false). 사내 단말 실행·Hot Tip 로그인 접속 미검증.",
+    "2026-09-27 S5 정리: actions는 화면을 여는 행만 두고 한 행에 화면 하나(계속 운용 분기를 04-12-17A·06-12-611 두 행으로 분리). 화면이 아닌 \"상담 후 확인\"은 tips로 이동. 문장은 정제본 그대로. 04-12-17A는 영문 포함 화면번호로 계약 정규식을 확장해 허용했으며 사내 단말 연결은 미검증."
   ]
 }

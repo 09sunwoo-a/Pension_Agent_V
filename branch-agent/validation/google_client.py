@@ -83,3 +83,6 @@ def call(messages: list[dict[str, str]], *, system: str = "", model: str = "",
         raise GoogleError("GOOGLE_EMPTY")
     usage = data.get("usageMetadata", {})
     return GeneratedText(text, {k: usage.get(k, 0) for k in ("promptTokenCount", "candidatesTokenCount", "totalTokenCount")})
+
+
+call.describe = lambda: {"model": MODEL, "deployment": "google-ai-studio"}

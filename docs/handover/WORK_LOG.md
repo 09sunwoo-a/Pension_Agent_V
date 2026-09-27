@@ -2,6 +2,41 @@
 
 현재 상태는 README, 부점 AI 목표는 [구현 기획](BRANCH_AI_SEARCH_DESIGN.md), 코드 현황은 [AS-IS](BRANCH_AI_FRONTEND_AS_IS.md). 이전 UI 수치·폐기안·전체 실행 로그는 기본 컨텍스트에서 제외한다.
 
+## 2026-09-28 — `계약이전 페이지 방문` 세그먼트 폐지
+
+- 사용자 요청으로 세그먼트를 전부 제거: B03-07 박서진·B04-23 정미경 `signals`에서 삭제(두 고객의 `디지털행동` 원본 로그와 이탈징후 판정 메모는 유지), 뱃지 색 규칙(`pensionCustomerView.js`), 검사 카탈로그(`check.js`), 부점 검색 등록 세그먼트(`branch-search-current-provider.js`), 프론트 골든 입력, 목업 이탈 사유 문구, `BADGE_CATALOG.md`(28번 폐지). 빌드로 반입본·`agent/briefing_data.json`·`branch_data.json`·manifest 갱신 → 부점 data_version `81f4311c…`(문서·`scenarios.json` 재고정). check 9 / --agent 11 / run.js 15 PASS.
+
+## 2026-09-28 — 사내 배포 전 검증·결함 수정, 배포 목록 [DEPLOY_LIST_2026-09-29.md](../../DEPLOY_LIST_2026-09-29.md)
+
+- 자동 게이트 전부 통과: build 결정적(2회 해시 동일), check.js 9 PASS, check --agent(ASGI HTTP 포함) PASS, 부점 run.js 5 게이트 PASS, 배포 .py 11개 Python 3.10 AST·bare import OK, Dockerfile COPY = 배포 파일, requirements 변경 없음, 산출물에 키·로컬 주소 없음, `agent/briefing_data.json` 변경은 C01-07·answer_schema뿐, 부점 data_version 81f4311c… 일치(JS·manifest·branch_data.json). 로컬 8766 실제 경로: 화면 unload→onParam 재진입 2회 중복 없음, 오세훈 브리핑+분석 근거, 부점 AI 검색 실제 Gemma 호출 10명 반영·execution_trace 병합, 처리 이력 3건.
+- 정밀 리뷰(프론트·Python diff)로 찾은 결함 수정: **(HIGH) 부점 execution_trace가 자기 스키마에 안 맞으면 정상 답변이 오류로 바뀌고 SSE 프레임까지 실패** → `branch_trace.detail()`이 labels/checks를 80자로 자르고 `plan_summary`가 빈 target_name/remove_field를 null로, `branch_service.safe_trace()`가 검증 실패 trace를 버림(답변·오류 이벤트 모두). (MED) compose 문장 검증 실패 시 단계가 열린 채 남아 trace가 failed로 표시 → 템플릿 대체를 completed로 종료. (MED) 엑셀 추출 기록이 `session.note()`의 동기 cancel에 걸려 새 기록이 '취소'로 찍힘 → pendingExport 등록을 note() 뒤로. (MED) 목업 기록 UI 문구 '목업 계산 기준'·'*.mock.v1' 제거. (LOW) 분석 근거 패널 첫 재렌더 시 열린 단계 접힘, 죽은 설정값, 미사용 변수, 근거 폐기 시 console.warn 코드 1줄, `agent/main.py` exclude_none→exclude_unset. 회귀 검사는 `check_service.py`에 추가(6조건 라벨·빈 target_name·compose 대체·invalid trace 폐기).
+- 배포 문서의 부점 data_version 표기(b059980b…, 9/21)를 현재 값으로 갱신.
+
+## 2026-09-28 — 오세훈(C01-07) 브리핑 표시 개편: S3 상품 메타정보·S5 Hot Tip·하단 근거 자료
+
+- 기획 `agent-workbench/case-design/review/C01-knowledge/C01-07/briefing_ui_revision.md`·`.json`대로 구현. 계획 JSON은 런타임/빌드 입력으로 등록하지 않았고, 원본 `active/briefing-json/C01-07.json`·`briefing_evidence.json`을 고친 뒤 빌드로 반입본을 갱신했다.
+- 자료: 상품 3종에 `category`·`riskLevel`(펀드만)·`metrics`(기간별 표시금리/누적수익률, 펀드는 `asOf: null`) 추가, `sourceIds`를 카탈로그 원천 id로 교체. S5 `tips` = Hot Tip(`kind: hot_tip`, `publishedAt: 2025-02-27`, 실제 LXP URL) + 후속 안내(`kind: follow_up`). `sources` 9건. 근거 맵은 카드 11장(`source_id` 부여, H-PENSION 추가, 상품 3장은 RAW 없음)·연결 49건·RAW 12줄, baseline 해시 갱신.
+- 계약: `briefing-contract.js` 지표 `asOf`는 `return`만 `null` 허용(`rate`는 문자열 필수), `tips[].kind`(hot_tip/follow_up, hot_tip 최대 1)·`publishedAt`(YYYY-MM-DD) 선택. `fabrix-briefing-contract.js` 카드 `source_id` 선택, 같은 응답 `briefing.sources` 존재 검사. `build.js`가 팩에 `source_id`를 싣고 검증, `agent/briefing.py`가 그대로 투영. 문서 §4.1·4.2·4.4.
+- 화면(C01-07만, `pensionBriefingAdapter.js` 표시 정책): 추천상품 펼침은 상품명·유형·위험등급·기간별 수치 표(소수 둘째 자리, '+' 없음)·기준 문구 1회(`2026.09 자료 기준`, 적용기간은 자료에 있을 때만, 펀드는 `기준일 미표기`)만 보이고 이유·확인사항·근거 배지는 숨김. S5는 Hot Tip 카드 1장(게시일, 본문, `원문 보기 ↗`) + 기존 실행 4건 + 그 아래 '상담 후 확인' 일반 안내. 하단은 '근거 자료'(기본 접힘, 제목 9행). 제목 선택 → 기존 분석 근거 패널의 '참고한 업무·상품 지식'에서 같은 출처 카드만 펼침(`openSource`). reviewNotes 숨김. 다른 고객은 정책 없이 기존 표시.
+- 검사: build/check(신규 'C01-07 UI revision' 항목 포함 9 PASS)/check --agent(ASGI HTTP PASS). 브라우저(로컬 8766)에서 상품 펼침·Hot Tip·근거 자료 → 패널 이동·고객 전환 확인. commit/push/사내 배포 없음.
+
+## 2026-09-28 — 오세훈(C01-07) 브리핑 '분석 근거' 패널 + 메인 이력 업무 단위 묶음
+
+- 자료: `agent-workbench/case-design/review/C01-knowledge/C01-07/briefing_evidence.json`(고객 필드 16, 판단 4, 지식 카드 10, RAW 11, 브리핑 연결 52)을 `tools/briefing/build.js`가 원본 고객/브리핑 해시·포인터 값·corpus 발췌와 대조한 뒤 `agent/briefing_data.json`의 C01-07 레코드에만 `analysis_evidence`로 싣는다(expected_*·경로·해시·내부 메모 제외).
+- Agent: `agent/briefing.py`가 고정 브리핑에 선택 필드 `data.analysis_trace`를 덧붙인다(네 단계 실제 처리 시각, 요청에서 읽은 사실 값, 사전 작성 판단, 카드, 같은 응답 브리핑의 연결 문장; LLM 호출 0). `main.py` Pydantic에 선택 필드 허용(`exclude_none`).
+- 프론트: `fabrix-briefing-contract.js`에 선택 스키마+의미 검사(잘못된 근거는 버리고 브리핑만 표시), 저장소가 브리핑·근거를 같은 ticket으로 원자 교체, 브리핑 카드의 [분석 근거] 버튼과 고객 전용 패널 `pensionBriefingEvidencePanel.js`(고객 상황 요약 → 관리포인트 → 참고한 업무·상품 지식 → 브리핑 반영, 한 번에 한 단계, 원문 8행+더 보기, 브리핑에서 보기 강조). 고객 변경·목록 복귀 시 닫힘.
+- 메인 처리 이력 기본 보기를 업무 단위로 묶음: 부점 브리핑(고객 변화 확인 → 관리대상 선정 → 브리핑 구성), 검색(검색조건 해석 → 고객 조회 → 결과 반영), 엑셀(추출대상 확인 → 파일 생성·다운로드 요청). 내부 단계는 묶음 안에서 펼침. 기록 데이터·출처 구분 유지.
+- 검사: build/check(근거 팩·계약·저장소·자동 요청 흐름), check --agent(C01-07 trace 검증, 다른 고객 없음). 현재 브리핑 JSON은 그대로.
+
+## 2026-09-28 — 처리 이력 패널: 오늘의 부점 브리핑(목업) + 부점 AI 검색·엑셀 추출(실제 기록)
+
+- 메인 상단 '분석 완료' 옆 '처리 이력' 버튼 → 앱 내부 우측 패널(760px, `#pensionAgentDemo` 기준 absolute + sticky). 목록 → 상세 → 단계 펼치기, 닫기·Escape·재진입 시 상태 유지·중복 없음. 화면 문구에 DEMO/MOCK 접두사 없음, 내부 origin(`frontend_fixture`/`frontend_observed`/`agent_observed`)으로 구분.
+- 부점 브리핑: `pensionExecutionTraceData.js`가 1,392명 전일·금일 가상 스냅샷(고정 seed)에서 12개 세그먼트 변화·12→9→6명·대표 사례 6건·Gemma 4 호출 2회·FabriX 요청/응답을 하나의 기준 시각 offset으로 구성. 2026-09-28부터 기준 시각은 화면이 처음 렌더링된 실제 시각(`setBase`)이며 요청 +120ms → 생성 +150ms~+20.15초(요청 안에서 수행) → 응답 +20.352초로 보인다. 최종 문장은 메인 화면과 동일. 실제 호출 없음.
+- 부점 AI 검색: Agent `branch_trace.Collector`가 요청별 4단계(해석 → 확정 → 적용 → 답변, 브리핑은 문장 생성 추가)와 LLM 시도별 기록을 `answer.execution_trace`(선택 필드)로 반환. 프론트는 transport의 실제 전송·수신 지점(`onSend/onResponse`), 세션 검증, adapter의 목록 DOM 갱신 지점에서만 기록. 표시 범위 '여의도종합금융센터 관리 고객 1,392명'은 `pensionBranchDisplay.js`(display_config)이며 result.count·row_ids·manifest는 실제 값 유지.
+- 엑셀 추출: 요청 시점 목록·조건·기준일·연결 검색 trace 고정, 3초 표시 대기와 XLSX 생성(행 구성/시트/ZIP) 시간 구분, 파일명·크기·행·열·시트 기록, 0명·생성 실패·다운로드 실패·취소 구분. Agent 호출 없음.
+- 2026-09-28 단계 축소: 기록 자체를 줄였다. 브리핑 목업 생성 6단계(스냅샷 비교 → 세그먼트 변화 → 관리 포인트 → 관리방향 해석 → 문장 생성 → 근거 대조·확정) + 조회 1단계, 검색 Agent 4단계, 엑셀 3단계(대상·조건 확정 → XLSX 생성 → 다운로드, 3초 대기는 소요 메모). 프론트 전송·수신 관측 기록은 '전체 단계 보기'에서만 보인다. 배지 색을 빼고 로그처럼 표시한다.
+- 검사: build/check(신규 traceCheck·traceLogCheck), check --agent, validation run.js(계약 137건·서비스 36/36+trace_checks·HTTP), 실제 Gemma(Google AI Studio)로 시연 문장 → `and(age>=55, segment 연금저축 보유)` 10명 확인. 사내 Connector/Starroot E2E 미검증. 새 Agent와 프론트 3파일은 함께 교체 필요(구 프론트는 새 키 거절).
+
 ## 2026-09-20 — 부점 AI 기능 검토·문구·문서 정리
 
 - 사용자 방향: 검색 결과 이름 나열 제거, ‘중점 관리 고객’은 추천, ‘부점 현황’은 통계. 개별 고객은 상황+관리 방향의 짧은 브리핑. 최종 목표 사내 시연 완료.
