@@ -1131,7 +1131,10 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
 /* "실시간 상담" panel for structured customers, backed by the conversational
  * agent through PensionChatTransport. Config comes from the runtime config's
  * `chat` block; config and transcripts live in memory until the page is
- * destroyed. Never log or persist messages, answers or credentials. */
+ * destroyed. Never log or persist messages, answers or credentials.
+ * Each request asks for the agent's turn record (`log_events: true` → one `trace` event before `done`,
+ * colleague repo client/README.md «trace»); it is kept with that answer in memory only and drawn by
+ * PensionBriefingEvidencePanel (TRACE). `log` lines go to the developer console and are not stored. */
 (function (window) {
   'use strict';
   if (window.PensionChat && window.PensionChat.destroy) window.PensionChat.destroy();
@@ -1168,7 +1171,9 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
   };
   var EMPTY = { lead: '', hasLeadSub: false, leadSub: '', streaming: false, blocks: [], footOn: false, srcBadges: [], hasGuard: false, guardSummary: '',
     evidN: 0, evidOpen: false, evid: [], guardN: 0, guardOpen: false, guard: [], hasFollow: false, followChips: false, follow: [], ctaOn: false, ctaAsk: '', ctaYes: '',
-    clarifyOn: false, clarifyQuestion: '', hasClarifyQuestion: false, clarify: [], typeLabel: '', typeBg: 'transparent', typeFg: 'transparent' };
+    clarifyOn: false, clarifyQuestion: '', hasClarifyQuestion: false, clarify: [], typeLabel: '', typeBg: 'transparent', typeFg: 'transparent', traceOn: false };
+  var nowIso = function () { return new Date().toISOString(); };
+  var perf = function () { return window.performance && typeof window.performance.now === 'function' ? window.performance.now() : Date.now(); };
   function noop() {}
   function refresh() {
     var app = window.PensionAgentDemoInstance;
@@ -1249,12 +1254,16 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
     cancel();
     var status = { k: 'status', text: '질문 내용을 파악하고 있어요' };
     s.items.push(status);
-    var pending = { caseId: caseId, controller: new AbortController(), events: [] };
+    var pending = { caseId: caseId, controller: new AbortController(), events: [], message: text, sessionId: s.id, requestedAt: nowIso(), respondedAt: null, _t0: perf() };
     active = pending; refresh();
-    var inner = { message: text, x_client_user: cfg.xClientUser, customer_id: s.customerId, session_id: s.id };
+    // log_events: the agent adds `log` lines and one `trace` record (turn procedure) to this turn's stream.
+    var inner = { message: text, x_client_user: cfg.xClientUser, customer_id: s.customerId, session_id: s.id, log_events: true };
     transport.call(cfg, inner, { signal: pending.controller.signal, onEvent: function (event) {
       if (active !== pending) return;
+      if (!pending.respondedAt) pending.respondedAt = nowIso();
       if (event.type === 'progress') { status.text = String(event.text || '').trim() || status.text; refresh(); }
+      // Server log lines are for the developer console only (same text as the agent's stdout, PII already masked).
+      else if (event.type === 'log') { if (window.console && typeof window.console.log === 'function') window.console.log('[Chat Agent] ' + String(event.text == null ? '' : event.text)); }
       else pending.events.push(event);
     } }).then(function () { finish(pending, null); }, function (error) { finish(pending, error); });
     return true;
@@ -1266,7 +1275,7 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
     s.items = s.items.filter(notStatus);
     var answer = compose(pending.events);
     if (answer) {
-      s.items.push({ k: 'ans', answer: answer });
+      s.items.push({ k: 'ans', answer: answer, trace: turnTrace(s, pending) });
       // "네" to a screen proposal: the agent answers with the proposal label and the deep link; open it right away.
       var lastUser = s.items.filter(function (it) { return it.k === 'user'; }).pop();
       if (answer.links.length && (answer.intent === 'confirm_action' || saidYes(lastUser && lastUser.text))) {
@@ -1398,6 +1407,20 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
       window.location.href = url; return true;
     } catch (_) { return false; }
   }
+  // The agent's `trace` event (turn procedure record) plus what the page itself observed for this turn.
+  // Missing trace (older agent, log events off, error turn) → null: the answer renders without a TRACE button.
+  function turnTrace(s, pending) {
+    var agent = pending.events.filter(function (e) { return e.type === 'trace' && Array.isArray(e.timeline); })[0];
+    if (!agent) return null;
+    s.turns = (s.turns || 0) + 1;
+    return { turn: s.turns, question: pending.message, sessionId: pending.sessionId, agent: agent,
+      front: { requestedAt: pending.requestedAt, respondedAt: pending.respondedAt, finishedAt: nowIso(), durationMs: Math.max(0, Math.round(perf() - pending._t0)) } };
+  }
+  // Turns of this customer's consultation that carry a trace, in order (read by the TRACE panel; never mutated there).
+  function turns(caseId) {
+    var s = sessions.get(caseId); if (!s) return [];
+    return s.items.filter(function (m) { return m.k === 'ans' && m.trace; }).map(function (m) { return Object.assign({ answer: { lead: m.answer.lead, intent: m.answer.intent } }, m.trace); });
+  }
   function saidYes(text) {
     var t = String(text == null ? '' : text).trim().toLowerCase();
     return YES_WORDS.some(function (w) { return t.indexOf(w) >= 0; });
@@ -1406,7 +1429,7 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
     var out = Object.assign({ isSys: m.k === 'sys', isUser: m.k === 'user', isStatus: m.k === 'status', isAns: m.k === 'ans', isOpen: m.k === 'open',
       openText: m.k === 'open' ? (m.auto ? '단말 화면 열기를 요청했어요. 열리지 않으면 아래 버튼을 눌러 주세요.' : '단말 화면을 열 수 있어요.') : '',
       openLabel: m.k === 'open' ? m.label + ' (' + m.screen + ')' : '', openUrl: m.k === 'open' ? m.url : '', onOpen: m.k === 'open' ? function (e) { if (e && e.preventDefault) e.preventDefault(); openScreen(m.url, true); } : noop,
-      text: m.text || '', statusLabel: m.k === 'status' ? m.text : '', onEvid: noop, onGuard: noop, onCtaYes: noop, onCtaNo: noop,
+      text: m.text || '', statusLabel: m.k === 'status' ? m.text : '', onEvid: noop, onGuard: noop, onCtaYes: noop, onCtaNo: noop, onTrace: noop,
       leadSegs: [{ t: m.text || '', isText: true, isLink: false, url: '', label: '' }], hasLinkRows: false, linkRows: [] }, EMPTY);
     if (m.k !== 'ans') return out;
     var a = m.answer, S = component.state, key = 'chat' + i;
@@ -1426,6 +1449,8 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
         copyLabel: S.copied === bkey ? '복사됨 ✓' : '복사', onCopy: function () { component.copy(bkey, b.x || ''); } };
     });
     out.footOn = true;
+    out.traceOn = !!m.trace;
+    out.onTrace = m.trace ? function () { var panel = window.PensionBriefingEvidencePanel; if (panel && panel.openTurn) panel.openTurn(id, m.trace.turn); } : noop;
     out.srcBadges = a.badges.map(function (t) { var c = SOURCE_COLORS[t] || ['#F2F3F5', '#696E76']; return { t: t, bg: c[0], fg: c[1], warn: false }; });
     out.evidN = a.evidence.length; out.evidOpen = !!S.agEvidOpen[i]; out.onEvid = toggle('agEvidOpen');
     out.evid = a.evidence.map(function (e) { return { doc: e.doc, meta: e.meta, points: e.points.map(function (p) { return { t: p }; }), hasUrl: !!e.url, url: e.url }; });
@@ -1509,7 +1534,7 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
     Component.prototype.componentWillUnmount = function () { destroy(); return originalUnmount.apply(this, arguments); };
   }
   window.PensionChat = { configure: configure, send: send, cancel: cancel, resetCustomer: resetCustomer, destroy: destroy, install: install,
-    parseAnswer: parseAnswer, compose: compose, segments: segments };
+    parseAnswer: parseAnswer, compose: compose, segments: segments, turns: turns };
 })(window);
 
 ;
@@ -4737,10 +4762,14 @@ root.PensionBranchSearchAdapter={mount,beforeRender,afterRender,destroy,get:()=>
 ;
 
 /* pensionBriefingEvidencePanel.js */
-/* 고객 브리핑 '분석 근거' 패널 (오세훈 C01-07처럼 응답에 analysis_trace가 있는 고객 전용).
- * 브리핑 카드의 [분석 근거] 버튼이 바로 연다. 메인 처리 이력 목록을 거치지 않는다.
- * 네 단계(고객 상황 요약 → 관리포인트 → 참고한 업무·상품 지식 → 브리핑 반영)만 보이며 한 번에 한 단계만 펼친다.
- * 표시하는 값은 검증된 같은 응답의 trace와 브리핑에서 읽는다. 원문은 textContent로만 그리며 최대 8행 뒤 '더 보기'.
+/* 고객 브리핑 TRACE 패널 — 두 가지 기록을 한 패널에 그린다.
+ *  1) 분석 근거: 응답에 analysis_trace가 있는 고객(오세훈 C01-07) 전용. 네 단계(고객 상황 요약 → 관리포인트 →
+ *     참고한 업무·상품 지식 → 브리핑 반영)만 보이며 한 번에 한 단계만 펼친다.
+ *  2) 실시간 상담: 대화 Agent가 턴마다 보낸 `trace` 이벤트(동료 repo client/README.md «trace — 답변 근거 패널»)를
+ *     턴 목록으로 보인다. 턴을 펼치면 처리 단계 → 무엇을 찾아봤나 → 확인한 사실 → 답변 검증 → 문장별 근거.
+ *     값은 Agent가 실제로 판정한 것만 그리고(폐기된 초안·LLM이 단 출처는 Agent가 싣지 않는다), 대응이 없는 문장은 '대응 미확인'으로 둔다.
+ * 브리핑 카드의 [TRACE] 버튼과 상담 답변의 [TRACE] 버튼이 바로 연다. 메인 처리 이력 목록을 거치지 않는다.
+ * 표시하는 값은 검증된 같은 응답에서 읽는다. 원문은 textContent로만 그리며 최대 8행 뒤 '더 보기'.
  * host는 #pensionAgentDemo 안, pensionAgentMount 밖에 두고 공통 처리 이력 패널의 외형(pad-trace-*)을 재사용한다.
  */
 (function (root) {
@@ -4749,6 +4778,10 @@ root.PensionBranchSearchAdapter={mount,beforeRender,afterRender,destroy,get:()=>
   var current = null;
   var hasDom = function () { return typeof root.document === 'object' && root.document && typeof root.document.createElement === 'function' && typeof root.document.getElementById === 'function'; };
   var SECTION = { s1: 'S1', s2: 'S2', s3: 'S3', s4: 'S4', s5: 'S5' };
+  // 대화 Agent trace 표기 (client/README.md «timeline[].stage 이름과 뜻» · intent · rounds[].outcome)
+  var STAGE = { turn: '턴', understand: '질문 이해', plan: '조회 계획', tool: '근거 수집', compose: '답변 작성', verify: '근거 검증', clarify: '되묻기 판정', offer: '연계 제안', confirm: '확인', action: '실행', llm: 'LLM 호출', agent_help: '능력 안내' };
+  var INTENT = { situation: '고객 현황', procedure: '절차', guide: '안내', agent_help: '능력 안내', correction: '정정', lms_link: 'LMS 연결', confirm_action: '연계 실행', llm_down: 'LLM 장애', clarify: '되묻기' };
+  var OUTCOME = { found: '찾음', miss: '없음', failed: '고장' };
   var ROLE = { customer_fact: '고객 사실', case_application: '고객 적용 판단', case_followup: '후속 관리(고객 적용)', adapted_dialogue: '화법 적용', hypothetical_customer_response: '예상 반응(가정)', product_reference: '상품 참고', workflow_reference: '단말 업무 참고' };
 
   function el(tag, cls, text) { var n = root.document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
@@ -4902,16 +4935,154 @@ root.PensionBranchSearchAdapter={mount,beforeRender,afterRender,destroy,get:()=>
     c.flashTimer = setTimeout(function () { target.classList.remove('pad-evidence-flash'); }, 1800);
   }
 
+  /* ---------- 실시간 상담 턴 (대화 Agent trace) ---------- */
+  function chatTurns(caseId) { var chat = root.PensionChat; return caseId && chat && typeof chat.turns === 'function' ? chat.turns(caseId) : []; }
+  function customerName(caseId) { var b = root.PensionBriefingAdapter, r = b && b.getCustomerForRequest ? b.getCustomerForRequest(caseId) : null; return r && r.customer ? r.customer.name : ''; }
+  var isoMs = function (iso) { var t = Date.parse(iso); return isNaN(t) ? null : t; };
+  // 턴 하나의 핵심 요약 — 시연에서 한 줄로 읽히는 값만. 검증은 마지막 verify 항목의 facts 기준이다.
+  function summarizeTurn(agent) {
+    var tl = Array.isArray(agent.timeline) ? agent.timeline : [], rounds = Array.isArray(agent.rounds) ? agent.rounds : [];
+    var verify = tl.filter(function (e) { return e.stage === 'verify'; }), last = verify[verify.length - 1], facts = last && last.facts && typeof last.facts === 'object' ? last.facts : {};
+    var llm = tl.filter(function (e) { return e.stage === 'llm'; }).length, warned = tl.some(function (e) { return e.level === 'WARNING'; });
+    var outcomes = { found: 0, miss: 0, failed: 0 }; rounds.forEach(function (r) { if (outcomes[r.outcome] != null) outcomes[r.outcome] += 1; });
+    var verdict = !verify.length ? null : facts.passed === false ? (facts.fallback ? '검증 미통과 · 근거 원문으로 대체' : '검증 미통과') : verify.some(function (v) { return v.level === 'WARNING'; }) ? '재작성 후 검증 통과' : '검증 통과';
+    var start = isoMs(agent.started_at), end = isoMs(agent.finished_at), durationMs = start != null && end != null ? Math.max(0, end - start) : null;
+    var intentLabel = INTENT[agent.intent] || agent.intent || '의도 미상';
+    var line = [intentLabel, rounds.length ? '도구 ' + rounds.length + '회 (찾음 ' + outcomes.found + (outcomes.miss ? ' · 없음 ' + outcomes.miss : '') + (outcomes.failed ? ' · 고장 ' + outcomes.failed : '') + ')' : '도구 호출 없음', verdict, llm ? 'LLM ' + llm + '회' : null, durationMs != null ? ms(durationMs) : null].filter(Boolean).join(' · ');
+    return { intentLabel: intentLabel, rounds: rounds.length, outcomes: outcomes, llmCalls: llm, verdict: verdict, warning: warned ? (facts.passed === false ? '검증 미통과' : '경고') : null, durationMs: durationMs, line: line,
+      stages: tl.map(function (e) { return e.stage; }).filter(function (st, i, arr) { return st !== 'turn' && st !== 'llm' && arr.indexOf(st) === i; }) };
+  }
+  // 한 목록 안에서 한 번에 하나만 펼친다. 본문은 처음 펼칠 때 만든다.
+  function toggleOne(list, li, head, build) {
+    var open = head.getAttribute('aria-expanded') !== 'true';
+    Array.prototype.forEach.call(list.children, function (other) { if (other === li) return; var h = other.querySelector(':scope > .pad-trace-step__head'), b = other.querySelector(':scope > .pad-trace-step__body'); if (h) h.setAttribute('aria-expanded', 'false'); if (b) b.hidden = true; });
+    head.setAttribute('aria-expanded', String(open));
+    if (open && !li.querySelector(':scope > .pad-trace-step__body')) li.appendChild(build());
+    var body = li.querySelector(':scope > .pad-trace-step__body'); if (body) body.hidden = !open;
+  }
+  function stepRow(list, title, summary, build, extra) {
+    var li = el('li', 'pad-trace-step' + (extra && extra.cls ? ' ' + extra.cls : ''));
+    var head = button('pad-trace-step__head', null, function () { toggleOne(list, li, head, build); }, { 'aria-expanded': 'false' });
+    if (extra && extra.time) head.appendChild(el('span', 'pad-trace-time', extra.time));
+    var text = el('span', 'pad-trace-step__text'); text.appendChild(el('span', 'pad-trace-step__title', title)); text.appendChild(el('span', 'pad-trace-step__summary', summary || '')); head.appendChild(text);
+    if (extra && extra.badge) head.appendChild(el('span', 'pad-trace-status pad-trace-status--failed', extra.badge));
+    head.appendChild(el('span', 'pad-trace-caret', '▾')); li.appendChild(head); list.appendChild(li);
+    return li;
+  }
+  function table(rows, cls) {
+    var t = el('table', 'pad-trace-table'), tbody = el('tbody');
+    rows.forEach(function (cells) { var tr = el('tr', cells.cls || null); cells.forEach(function (cell) { var td = el('td', cell && cell.cls ? cell.cls : null); if (cell && typeof cell === 'object' && 'text' in cell) td.textContent = cell.text; else td.textContent = cell == null ? '' : String(cell); tr.appendChild(td); }); tbody.appendChild(tr); });
+    t.appendChild(tbody); var wrap = el('div', 'pad-trace-table-wrap' + (cls ? ' ' + cls : '')); wrap.appendChild(t); return wrap;
+  }
+  function timelineBody(agent) {
+    var body = el('div', 'pad-trace-step__body'), tl = agent.timeline, shown = tl.filter(function (e) { return e.level !== 'DEBUG'; });
+    body.appendChild(table(shown.map(function (e) {
+      var row = [{ text: clock(e.at), cls: 'pad-trace-muted' }, { text: e.elapsed_ms != null ? '+' + ms(e.elapsed_ms) : '', cls: 'pad-trace-muted' }, { text: (STAGE[e.stage] || e.stage) + (e.ident ? ' · ' + e.ident : ''), cls: 'pad-evidence-fact' }, { text: plain(e.text) }];
+      row.cls = e.level === 'WARNING' ? 'pad-chat-trace__warn' : null; return row;
+    })));
+    if (shown.length < tl.length) body.appendChild(el('div', 'pad-trace-muted', 'DEBUG ' + (tl.length - shown.length) + '건(LLM 호출 등)은 생략'));
+    return body;
+  }
+  function roundsBody(agent) {
+    var body = el('div', 'pad-trace-step__body'), rounds = agent.rounds || [];
+    if (!rounds.length) { body.appendChild(el('div', 'pad-trace-note', '이 턴은 도구를 부르지 않았다(되묻기·승낙·능력 안내·LLM 장애 턴).')); return body; }
+    body.appendChild(table(rounds.map(function (r) { var row = [{ text: r.n, cls: 'pad-trace-muted' }, { text: r.tool, cls: 'pad-evidence-fact' }, { text: r.query || '' }, { text: OUTCOME[r.outcome] || r.outcome || '' }, { text: r.reason || '', cls: 'pad-trace-muted' }]; row.cls = r.outcome === 'failed' ? 'pad-chat-trace__warn' : null; return row; })));
+    return body;
+  }
+  function evidenceBody(agent) {
+    var body = el('div', 'pad-trace-step__body'), blocks = agent.evidence || [];
+    if (!blocks.length) { body.appendChild(el('div', 'pad-trace-note', '모은 근거가 없다. 문장별 근거도 기록되지 않는다.')); return body; }
+    blocks.forEach(function (b, i) {
+      body.appendChild(el('div', 'pad-trace-json-label', '근거 ' + (i + 1) + ' · ' + b.tool + (b.query ? " · '" + b.query + "'" : '')));
+      var cards = Array.isArray(b.cards) ? b.cards : [];
+      if (cards.length) { var ul = el('ul', 'pad-evidence-sentences'); cards.forEach(function (card) { var li = el('li', 'pad-evidence-sentence' + (card.used ? '' : ' is-unused')); li.appendChild(el('div', 'pad-evidence-sentence__text', (card.title || card.id || '') + (card.used ? '' : ' — 답변에 사용 안 함'))); li.appendChild(el('div', 'pad-trace-muted', [card.id, card.doc, card.score != null ? '관련도 ' + card.score : null].filter(Boolean).join(' · '))); ul.appendChild(li); }); body.appendChild(ul); }
+      if (b.text) { body.appendChild(rawBlock(b.text)); if (b.truncated) body.appendChild(el('div', 'pad-trace-muted', '원문이 길어 Agent가 4,000자에서 잘라 보냈다')); }
+      if (Array.isArray(b.atomic) && b.atomic.length) body.appendChild(el('div', 'pad-trace-muted', '원문 그대로 인용해야 하는 값 ' + b.atomic.length + '건: ' + b.atomic.join(' / ')));
+      if (Array.isArray(b.notices) && b.notices.length) body.appendChild(el('div', 'pad-trace-muted', '빠지면 안 되는 주의 ' + b.notices.length + '건: ' + b.notices.join(' / ')));
+    });
+    return body;
+  }
+  function verifyBody(agent) {
+    var body = el('div', 'pad-trace-step__body'), entries = (agent.timeline || []).filter(function (e) { return e.stage === 'verify'; });
+    if (!entries.length) { body.appendChild(el('div', 'pad-trace-note', '이 턴에는 검증 단계가 없다(되묻기·승낙·LLM 장애 턴).')); return body; }
+    entries.forEach(function (e) {
+      var f = e.facts && typeof e.facts === 'object' ? e.facts : {}, box = el('div', 'pad-evidence-judgment' + (e.level === 'WARNING' ? ' pad-chat-trace__warn' : ''));
+      box.appendChild(el('div', 'pad-evidence-judgment__text', (f.attempt ? '시도 ' + f.attempt + ' · ' : '') + (f.passed === true ? '통과' : f.passed === false ? '미통과' : plain(e.text))));
+      var faults = Array.isArray(f.faults) ? f.faults : (f.reason ? [f.reason] : []);
+      if (faults.length) { var ul = el('ul', 'pad-evidence-sentences'); faults.forEach(function (x) { var li = el('li', 'pad-evidence-sentence'); li.appendChild(el('div', 'pad-evidence-sentence__text', String(x))); ul.appendChild(li); }); box.appendChild(ul); }
+      if (f.fallback) box.appendChild(el('div', 'pad-trace-muted', '끝내 통과하지 못해 ' + (f.fallback === 'raw_evidence' ? '근거 원문으로 답변을 대신했다' : String(f.fallback))));
+      body.appendChild(box);
+    });
+    body.appendChild(el('div', 'pad-trace-muted', '폐기된 초안 문장은 Agent가 싣지 않는다 — 사유만 기록된다.'));
+    return body;
+  }
+  function matchLabel(m) {
+    if (m.by === '수치') return '수치 ' + (Array.isArray(m.values) ? m.values.join(', ') : '') + (m.card ? ' (' + m.card + ')' : m.tool ? ' (' + m.tool + ')' : '');
+    return m.by + (m.card ? ' ' + m.card : m.tool ? ' ' + m.tool : '') + (m.span ? " '" + short(m.span, 60) + "'" : '');
+  }
+  function sentencesBody(agent) {
+    var body = el('div', 'pad-trace-step__body'), list = agent.sentences || [];
+    if (!list.length) { body.appendChild(el('div', 'pad-trace-note', '근거가 없는 턴이라 문장별 대응이 기록되지 않았다.')); return body; }
+    var ul = el('ul', 'pad-evidence-sentences');
+    list.forEach(function (sent) {
+      var li = el('li', 'pad-evidence-sentence' + (sent.matches && sent.matches.length ? '' : ' is-unused')); li.appendChild(el('div', 'pad-evidence-sentence__text', plain(sent.text)));
+      li.appendChild(el('div', 'pad-trace-muted', sent.matches && sent.matches.length ? sent.matches.map(matchLabel).join(' · ') : '대응 미확인 — 코드가 증명하지 못한 문장(의역·화법 등)'));
+      ul.appendChild(li);
+    });
+    body.appendChild(ul);
+    body.appendChild(el('div', 'pad-trace-muted', '대응은 Agent 코드가 대조해 증명한 것만 싣는다(원문스팬 · 카드문구 · 수치). LLM이 단 출처는 없다.'));
+    return body;
+  }
+  function turnBody(t) {
+    var body = el('div', 'pad-trace-step__body'), a = t.agent, sum = summarizeTurn(a), f = t.front || {};
+    body.appendChild(meta([['질문', t.question], ['질문 이해', sum.intentLabel + (a.intent ? ' (' + a.intent + ')' : '')],
+      ['요청 → 응답', f.requestedAt ? clock(f.requestedAt) + ' → ' + clock(f.finishedAt) + (f.durationMs != null ? ' · ' + ms(f.durationMs) : '') + ' (프론트)' : null],
+      ['Agent 처리', clock(a.started_at) + ' → ' + clock(a.finished_at) + (sum.durationMs != null ? ' · ' + ms(sum.durationMs) : '') + ' (Agent 시계)'], ['세션', t.sessionId]]));
+    var steps = el('ol', 'pad-trace-steps'), tl = a.timeline || [], ev = a.evidence || [], cards = ev.reduce(function (n, b) { return n + (Array.isArray(b.cards) ? b.cards.length : 0); }, 0), used = ev.reduce(function (n, b) { return n + (Array.isArray(b.cards) ? b.cards.filter(function (c) { return c.used; }).length : 0); }, 0);
+    var sents = a.sentences || [], matched = sents.filter(function (x) { return x.matches && x.matches.length; }).length;
+    stepRow(steps, '처리 단계', sum.stages.map(function (st) { return STAGE[st] || st; }).join(' → ') + ' · ' + tl.length + '건' + (sum.warning ? ' · 경고 있음' : ''), function () { return timelineBody(a); });
+    stepRow(steps, '무엇을 찾아봤나', sum.rounds ? '도구 호출 ' + sum.rounds + '회 · 찾음 ' + sum.outcomes.found + ' · 없음 ' + sum.outcomes.miss + ' · 고장 ' + sum.outcomes.failed : '도구 호출 없음', function () { return roundsBody(a); });
+    stepRow(steps, '확인한 사실', ev.length ? '근거 블록 ' + ev.length + ' · 카드 ' + cards + '장 (답변에 사용 ' + used + ')' : '근거 없음', function () { return evidenceBody(a); });
+    stepRow(steps, '답변 검증', sum.verdict || '검증 단계 없음', function () { return verifyBody(a); }, { badge: sum.verdict && /미통과/.test(sum.verdict) ? '미통과' : null });
+    stepRow(steps, '문장별 근거', sents.length ? '문장 ' + sents.length + ' · 대응 확인 ' + matched + (matched < sents.length ? ' · 미확인 ' + (sents.length - matched) : '') : '기록 없음', function () { return sentencesBody(a); });
+    body.appendChild(steps);
+    return body;
+  }
+  function chatSection(turns, below) {
+    var wrap = el('div', 'pad-chat-trace' + (below ? ' pad-chat-trace--below' : ''));
+    var head = el('div', 'pad-evidence-section'); head.appendChild(el('span', 'pad-trace-json-label', '실시간 상담 · ' + turns.length + '턴 (대화 Agent 턴 절차 기록)')); wrap.appendChild(head);
+    var list = el('ol', 'pad-trace-steps pad-chat-turns');
+    turns.forEach(function (t) {
+      var sum = summarizeTurn(t.agent);
+      var li = stepRow(list, '턴 ' + t.turn + ' · ' + short(t.question, 48), sum.line, function () { return turnBody(t); }, { time: clock(t.agent.started_at), badge: sum.warning, cls: sum.verdict && /미통과/.test(sum.verdict) ? 'pad-trace-step--failed' : null });
+      li.setAttribute('data-turn', String(t.turn));
+    });
+    wrap.appendChild(list);
+    return wrap;
+  }
+
   /* ---------- 패널 ---------- */
-  function render(trace) {
-    var c = current, ctx = { trace: trace, facts: index(trace.facts), judgments: index(trace.judgments), cards: index(trace.knowledge_cards), groups: index(trace.groups), byTarget: {} };
+  function renderKey(trace, turns) { return (trace ? trace.ended_at + '|' + (trace.front ? trace.front.responded_at : '') : '-') + '|' + turns.length + '|' + (turns.length ? turns[turns.length - 1].front.finishedAt : ''); }
+  function render(trace, turns) {
+    var c = current;
     // afterRender()가 같은 근거를 다시 그리지 않도록 렌더 키를 여기서 기록한다(열린 단계가 첫 재렌더에서 접히는 문제 방지).
-    c.renderedAt = trace.ended_at + '|' + (trace.front ? trace.front.responded_at : '');
-    trace.bindings.forEach(function (b) { ctx.byTarget[b.target] = b; });
-    c.title.textContent = trace.panel_title;
-    var front = trace.front || {};
-    c.subtitle.textContent = (front.requested_at ? '요청 ' + clock(front.requested_at) + ' · 응답 ' + clock(front.responded_at) : '') + (front.requested_at ? ' · ' : '') + '근거 구성 ' + clock(trace.started_at) + ' → ' + clock(trace.ended_at) + ' · ' + ms(trace.duration_ms) + ' (Agent)';
+    c.renderedAt = renderKey(trace, turns);
     c.body.replaceChildren();
+    if (trace) {
+      c.title.textContent = trace.panel_title;
+      var front = trace.front || {};
+      c.subtitle.textContent = (front.requested_at ? '요청 ' + clock(front.requested_at) + ' · 응답 ' + clock(front.responded_at) : '') + (front.requested_at ? ' · ' : '') + '근거 구성 ' + clock(trace.started_at) + ' → ' + clock(trace.ended_at) + ' · ' + ms(trace.duration_ms) + ' (Agent)' + (turns.length ? ' · 상담 ' + turns.length + '턴' : '');
+      c.body.appendChild(analysisSteps(trace));
+    } else {
+      c.title.textContent = (customerName(c.caseId) ? customerName(c.caseId) + ' · ' : '') + '실시간 상담 TRACE';
+      c.subtitle.textContent = '상담 ' + turns.length + '턴 · 대화 Agent가 턴마다 보낸 절차 기록';
+    }
+    if (turns.length) c.body.appendChild(chatSection(turns, !!trace));
+  }
+  function analysisSteps(trace) {
+    var ctx = { trace: trace, facts: index(trace.facts), judgments: index(trace.judgments), cards: index(trace.knowledge_cards), groups: index(trace.groups), byTarget: {} };
+    trace.bindings.forEach(function (b) { ctx.byTarget[b.target] = b; });
+    var c = current;
     var list = el('ol', 'pad-trace-steps'), builders = { customer_summary: customerSummaryBody, management_focus: managementFocusBody, knowledge_selection: knowledgeBody, briefing_binding: bindingBody };
     trace.steps.forEach(function (step) {
       var li = el('li', 'pad-trace-step');
@@ -4928,7 +5099,17 @@ root.PensionBranchSearchAdapter={mount,beforeRender,afterRender,destroy,get:()=>
       var text = el('span', 'pad-trace-step__text'); text.appendChild(el('span', 'pad-trace-step__title', step.title)); text.appendChild(el('span', 'pad-trace-step__summary', step.summary)); head.appendChild(text);
       head.appendChild(el('span', 'pad-trace-caret', '▾')); li.appendChild(head); list.appendChild(li);
     });
-    c.body.appendChild(list);
+    return list;
+  }
+  // 상담 답변의 [TRACE] → 이 패널을 열고 해당 턴만 펼친다.
+  function openTurn(caseId, turn) {
+    var c = current; if (!c || c.component.state.sel !== caseId) return;
+    open(); if (!c.open) return;
+    var li = c.body.querySelector('.pad-chat-turns > [data-turn="' + String(turn) + '"]'); if (!li) return;
+    var head = li.querySelector(':scope > .pad-trace-step__head');
+    if (head && head.getAttribute('aria-expanded') !== 'true') head.click();
+    try { li.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (_) { li.scrollIntoView(); }
+    if (head) head.focus({ preventScroll: true });
   }
   // 하단 '근거 자료' 제목 선택 → 이 패널의 '참고한 업무·상품 지식' 단계에서 같은 출처(source_id)의 카드만 펼쳐 보인다.
   function openSource(sourceId) {
@@ -4952,10 +5133,10 @@ root.PensionBranchSearchAdapter={mount,beforeRender,afterRender,destroy,get:()=>
   function launcher(visible) { var a = root.PensionBranchSearchAdapter, ctx = a && a.get && a.get(); if (ctx && ctx.widget && typeof ctx.widget.setVisible === 'function') ctx.widget.setVisible(visible); }
   function open() {
     var c = current; if (!c) return;
-    var id = c.component.state.sel, bridge = root.PensionBriefingAdapter, trace = id && bridge && bridge.analysisTrace ? bridge.analysisTrace(id) : null;
-    if (!trace) return;
+    var id = c.component.state.sel, bridge = root.PensionBriefingAdapter, trace = id && bridge && bridge.analysisTrace ? bridge.analysisTrace(id) : null, turns = chatTurns(id);
+    if (!trace && !turns.length) return;
     if (root.PensionExecutionTracePanel && root.PensionExecutionTracePanel.close) root.PensionExecutionTracePanel.close(false);
-    if (c.caseId !== id || !c.rendered) { c.caseId = id; c.rendered = true; render(trace); }
+    if (c.caseId !== id || !c.rendered || c.renderedAt !== renderKey(trace, turns)) { c.caseId = id; c.rendered = true; render(trace, turns); }
     c.open = true; c.host.hidden = false; launcher(false); syncTrigger();
     c.close.focus({ preventScroll: true });
   }
@@ -4972,9 +5153,9 @@ root.PensionBranchSearchAdapter={mount,beforeRender,afterRender,destroy,get:()=>
     var host = el('div', 'pad-trace-host'); host.id = HOST_ID; host.hidden = true;
     var panel = el('aside', 'pad-trace-panel'); panel.id = PANEL_ID; panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-modal', 'false'); panel.setAttribute('aria-labelledby', PANEL_ID + '-title'); panel.setAttribute('tabindex', '-1');
     var head = el('div', 'pad-trace-head'), titles = el('div', 'pad-trace-head__titles');
-    var title = el('h2', 'pad-trace-title', '분석 근거'); title.id = PANEL_ID + '-title';
+    var title = el('h2', 'pad-trace-title', 'TRACE'); title.id = PANEL_ID + '-title';
     var subtitle = el('div', 'pad-trace-subtitle', ''); titles.appendChild(title); titles.appendChild(subtitle);
-    var closeBtn = button('pad-trace-close', '닫기', function () { close(true); }, { 'aria-label': '분석 근거 닫기' });
+    var closeBtn = button('pad-trace-close', '닫기', function () { close(true); }, { 'aria-label': 'TRACE 닫기' });
     head.appendChild(titles); head.appendChild(closeBtn);
     var body = el('div', 'pad-trace-body');
     panel.appendChild(head); panel.appendChild(body); host.appendChild(panel); app.appendChild(host);
@@ -4993,9 +5174,10 @@ root.PensionBranchSearchAdapter={mount,beforeRender,afterRender,destroy,get:()=>
     // 고객 변경·목록 복귀 시 닫고, 재요청으로 브리핑이 바뀌면 다음 열기에서 새 근거를 그린다.
     if (c.open && component.state.sel !== c.caseId) close(false);
     if (c.rendered && component.state.sel === c.caseId) {
-      var bridge = root.PensionBriefingAdapter, t = bridge && bridge.analysisTrace ? bridge.analysisTrace(c.caseId) : null;
-      if (!t) { c.rendered = false; if (c.open) close(false); }
-      else if (c.renderedAt !== t.ended_at + '|' + (t.front ? t.front.responded_at : '')) { c.renderedAt = t.ended_at + '|' + (t.front ? t.front.responded_at : ''); if (c.open) render(t); else c.rendered = false; }
+      var bridge = root.PensionBriefingAdapter, t = bridge && bridge.analysisTrace ? bridge.analysisTrace(c.caseId) : null, turns = chatTurns(c.caseId);
+      if (!t && !turns.length) { c.rendered = false; if (c.open) close(false); }
+      // 재요청으로 브리핑 근거가 바뀌거나 상담 턴이 추가되면 열려 있을 때는 다시 그리고, 닫혀 있으면 다음 열기에서 그린다.
+      else if (c.renderedAt !== renderKey(t, turns)) { if (c.open) render(t, turns); else c.rendered = false; }
     }
     if (c.open) launcher(false);
     syncTrigger();
@@ -5009,11 +5191,13 @@ root.PensionBranchSearchAdapter={mount,beforeRender,afterRender,destroy,get:()=>
     Component.prototype.renderVals = function () {
       var base = renderVals.apply(this, arguments);
       base.openEvidence = function () { open(); };
+      // 카드의 [TRACE]는 분석 근거가 있거나 이 고객의 상담 턴에 trace가 하나라도 있을 때 보인다.
+      base.hasTraceButton = !!(base.hasAnalysisTrace || (this.state.sel && chatTurns(this.state.sel).length));
       base.evidenceExpanded = current && current.open && current.caseId === this.state.sel ? 'true' : 'false';
       return base;
     };
   }
-  root.PensionBriefingEvidencePanel = { install: install, afterRender: afterRender, open: open, openSource: openSource, close: close, destroy: destroy, get: function () { return current; }, targetLabel: targetLabel, formatValue: formatValue };
+  root.PensionBriefingEvidencePanel = { install: install, afterRender: afterRender, open: open, openSource: openSource, openTurn: openTurn, close: close, destroy: destroy, get: function () { return current; }, targetLabel: targetLabel, formatValue: formatValue, summarizeTurn: summarizeTurn };
 })(typeof window === 'undefined' ? globalThis : window);
 
 ;

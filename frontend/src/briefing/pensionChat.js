@@ -1,7 +1,10 @@
 /* "실시간 상담" panel for structured customers, backed by the conversational
  * agent through PensionChatTransport. Config comes from the runtime config's
  * `chat` block; config and transcripts live in memory until the page is
- * destroyed. Never log or persist messages, answers or credentials. */
+ * destroyed. Never log or persist messages, answers or credentials.
+ * Each request asks for the agent's turn record (`log_events: true` → one `trace` event before `done`,
+ * colleague repo client/README.md «trace»); it is kept with that answer in memory only and drawn by
+ * PensionBriefingEvidencePanel (TRACE). `log` lines go to the developer console and are not stored. */
 (function (window) {
   'use strict';
   if (window.PensionChat && window.PensionChat.destroy) window.PensionChat.destroy();
@@ -38,7 +41,9 @@
   };
   var EMPTY = { lead: '', hasLeadSub: false, leadSub: '', streaming: false, blocks: [], footOn: false, srcBadges: [], hasGuard: false, guardSummary: '',
     evidN: 0, evidOpen: false, evid: [], guardN: 0, guardOpen: false, guard: [], hasFollow: false, followChips: false, follow: [], ctaOn: false, ctaAsk: '', ctaYes: '',
-    clarifyOn: false, clarifyQuestion: '', hasClarifyQuestion: false, clarify: [], typeLabel: '', typeBg: 'transparent', typeFg: 'transparent' };
+    clarifyOn: false, clarifyQuestion: '', hasClarifyQuestion: false, clarify: [], typeLabel: '', typeBg: 'transparent', typeFg: 'transparent', traceOn: false };
+  var nowIso = function () { return new Date().toISOString(); };
+  var perf = function () { return window.performance && typeof window.performance.now === 'function' ? window.performance.now() : Date.now(); };
   function noop() {}
   function refresh() {
     var app = window.PensionAgentDemoInstance;
@@ -119,12 +124,16 @@
     cancel();
     var status = { k: 'status', text: '질문 내용을 파악하고 있어요' };
     s.items.push(status);
-    var pending = { caseId: caseId, controller: new AbortController(), events: [] };
+    var pending = { caseId: caseId, controller: new AbortController(), events: [], message: text, sessionId: s.id, requestedAt: nowIso(), respondedAt: null, _t0: perf() };
     active = pending; refresh();
-    var inner = { message: text, x_client_user: cfg.xClientUser, customer_id: s.customerId, session_id: s.id };
+    // log_events: the agent adds `log` lines and one `trace` record (turn procedure) to this turn's stream.
+    var inner = { message: text, x_client_user: cfg.xClientUser, customer_id: s.customerId, session_id: s.id, log_events: true };
     transport.call(cfg, inner, { signal: pending.controller.signal, onEvent: function (event) {
       if (active !== pending) return;
+      if (!pending.respondedAt) pending.respondedAt = nowIso();
       if (event.type === 'progress') { status.text = String(event.text || '').trim() || status.text; refresh(); }
+      // Server log lines are for the developer console only (same text as the agent's stdout, PII already masked).
+      else if (event.type === 'log') { if (window.console && typeof window.console.log === 'function') window.console.log('[Chat Agent] ' + String(event.text == null ? '' : event.text)); }
       else pending.events.push(event);
     } }).then(function () { finish(pending, null); }, function (error) { finish(pending, error); });
     return true;
@@ -136,7 +145,7 @@
     s.items = s.items.filter(notStatus);
     var answer = compose(pending.events);
     if (answer) {
-      s.items.push({ k: 'ans', answer: answer });
+      s.items.push({ k: 'ans', answer: answer, trace: turnTrace(s, pending) });
       // "네" to a screen proposal: the agent answers with the proposal label and the deep link; open it right away.
       var lastUser = s.items.filter(function (it) { return it.k === 'user'; }).pop();
       if (answer.links.length && (answer.intent === 'confirm_action' || saidYes(lastUser && lastUser.text))) {
@@ -268,6 +277,20 @@
       window.location.href = url; return true;
     } catch (_) { return false; }
   }
+  // The agent's `trace` event (turn procedure record) plus what the page itself observed for this turn.
+  // Missing trace (older agent, log events off, error turn) → null: the answer renders without a TRACE button.
+  function turnTrace(s, pending) {
+    var agent = pending.events.filter(function (e) { return e.type === 'trace' && Array.isArray(e.timeline); })[0];
+    if (!agent) return null;
+    s.turns = (s.turns || 0) + 1;
+    return { turn: s.turns, question: pending.message, sessionId: pending.sessionId, agent: agent,
+      front: { requestedAt: pending.requestedAt, respondedAt: pending.respondedAt, finishedAt: nowIso(), durationMs: Math.max(0, Math.round(perf() - pending._t0)) } };
+  }
+  // Turns of this customer's consultation that carry a trace, in order (read by the TRACE panel; never mutated there).
+  function turns(caseId) {
+    var s = sessions.get(caseId); if (!s) return [];
+    return s.items.filter(function (m) { return m.k === 'ans' && m.trace; }).map(function (m) { return Object.assign({ answer: { lead: m.answer.lead, intent: m.answer.intent } }, m.trace); });
+  }
   function saidYes(text) {
     var t = String(text == null ? '' : text).trim().toLowerCase();
     return YES_WORDS.some(function (w) { return t.indexOf(w) >= 0; });
@@ -276,7 +299,7 @@
     var out = Object.assign({ isSys: m.k === 'sys', isUser: m.k === 'user', isStatus: m.k === 'status', isAns: m.k === 'ans', isOpen: m.k === 'open',
       openText: m.k === 'open' ? (m.auto ? '단말 화면 열기를 요청했어요. 열리지 않으면 아래 버튼을 눌러 주세요.' : '단말 화면을 열 수 있어요.') : '',
       openLabel: m.k === 'open' ? m.label + ' (' + m.screen + ')' : '', openUrl: m.k === 'open' ? m.url : '', onOpen: m.k === 'open' ? function (e) { if (e && e.preventDefault) e.preventDefault(); openScreen(m.url, true); } : noop,
-      text: m.text || '', statusLabel: m.k === 'status' ? m.text : '', onEvid: noop, onGuard: noop, onCtaYes: noop, onCtaNo: noop,
+      text: m.text || '', statusLabel: m.k === 'status' ? m.text : '', onEvid: noop, onGuard: noop, onCtaYes: noop, onCtaNo: noop, onTrace: noop,
       leadSegs: [{ t: m.text || '', isText: true, isLink: false, url: '', label: '' }], hasLinkRows: false, linkRows: [] }, EMPTY);
     if (m.k !== 'ans') return out;
     var a = m.answer, S = component.state, key = 'chat' + i;
@@ -296,6 +319,8 @@
         copyLabel: S.copied === bkey ? '복사됨 ✓' : '복사', onCopy: function () { component.copy(bkey, b.x || ''); } };
     });
     out.footOn = true;
+    out.traceOn = !!m.trace;
+    out.onTrace = m.trace ? function () { var panel = window.PensionBriefingEvidencePanel; if (panel && panel.openTurn) panel.openTurn(id, m.trace.turn); } : noop;
     out.srcBadges = a.badges.map(function (t) { var c = SOURCE_COLORS[t] || ['#F2F3F5', '#696E76']; return { t: t, bg: c[0], fg: c[1], warn: false }; });
     out.evidN = a.evidence.length; out.evidOpen = !!S.agEvidOpen[i]; out.onEvid = toggle('agEvidOpen');
     out.evid = a.evidence.map(function (e) { return { doc: e.doc, meta: e.meta, points: e.points.map(function (p) { return { t: p }; }), hasUrl: !!e.url, url: e.url }; });
@@ -379,5 +404,5 @@
     Component.prototype.componentWillUnmount = function () { destroy(); return originalUnmount.apply(this, arguments); };
   }
   window.PensionChat = { configure: configure, send: send, cancel: cancel, resetCustomer: resetCustomer, destroy: destroy, install: install,
-    parseAnswer: parseAnswer, compose: compose, segments: segments };
+    parseAnswer: parseAnswer, compose: compose, segments: segments, turns: turns };
 })(window);

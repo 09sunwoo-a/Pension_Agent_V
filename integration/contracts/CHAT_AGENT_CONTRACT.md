@@ -32,8 +32,10 @@ x-generative-ai-client: <chat.generativeAiClient>
 ```js
 { agentId: cfg.chat.agentId, contents: [JSON.stringify(inner)], llmConfig: {}, isStream: true }
 // inner
-{ message: '질문', x_client_user: '3902172', customer_id: '198734-1205842', session_id: '<uuid>' }
+{ message: '질문', x_client_user: '3902172', customer_id: '198734-1205842', session_id: '<uuid>', log_events: true }
 ```
+
+- `log_events: true`: 항상 보냅니다. Agent가 이 턴의 서버 로그 줄을 `log` 이벤트로, 턴 절차 기록을 `trace` 이벤트로 함께 실어 줍니다(동료 repo `client/README.md` §1 `log_events`). 구버전 Agent는 키를 무시하므로 답변에는 영향이 없습니다.
 
 - `session_id`: 고객(케이스)마다 첫 질문 때 UUID를 만들고 같은 고객의 모든 턴에 같은 값을 보냅니다. 다른 고객은 다른 세션이며, 대화 기록은 화면이 살아 있는 동안 고객별로 유지되고 화면 종료 시 사라집니다.
 - `customer_id`: **화면에서 선택한 고객의 `customer.customerId`**입니다(원본 그대로. 패널 헤더·브리핑 헤더·검색 결과의 표시만 5자리-5자리로 자릅니다. 예: `198734-1205842` → `19873-12058`). 패널이 열리면 "OOO 고객님 상담을 시작해요. 상담 중 궁금한 내용을 바로 물어보세요."만 표시하고 바로 질문을 받습니다(2026-09-22부터, 이전에는 식별자 입력을 먼저 받았음). 헤더의 **고객 변경**을 누르면 다른 식별자를 입력받아(형식 `[A-Za-z0-9._-]{3,40}`, 예: `198734-1205842`) 새 `session_id`로 다시 시작합니다. 대화 Agent가 모르는 식별자면 답변이 오지 않으므로 현재는 C01 12명만 실제 상담이 됩니다. 시작 화면에 추천 질문 칩은 두지 않으며, 답변 아래 `followups` 칩만 씁니다.
@@ -57,11 +59,14 @@ SSE `data:` 줄마다 게이트웨이 객체 하나, 그 `content` 문자열 안
 | `clarify` | 본문(질문 + 「· 옵션」 줄)에서 옵션 줄을 떼고 `options[]` 버튼만 본문 바로 아래에 표시(질문이 본문 lead와 같으면 한 번만). 누른 값을 다음 턴으로 전송 |
 | `error.text` | 회색 시스템 말풍선 "답변에 실패했습니다. …"(300자). 이전 답변은 유지 |
 | `done` | 턴 종료. 입력 재개 |
+| `log` (`level`, `logger`, `text`) | 화면에 그리지 않고 개발자 콘솔에 `[Chat Agent] …`로만 찍습니다. 저장하지 않습니다 |
+| `trace` (`started_at`, `finished_at`, `intent`, `timeline[]`, `rounds[]`, `evidence[]`, `sources[]`, `sentences[]`) | `done` 바로 앞에 한 번(오류 턴에는 없음). 답변과 함께 메모리에 보관하고 그 답변 아래 **TRACE** 버튼을 둡니다. 버튼은 브리핑 카드의 TRACE 패널(`pensionBriefingEvidencePanel.js`)을 열어 「실시간 상담」 섹션의 해당 턴을 펼칩니다: 처리 단계(`timeline`, DEBUG 생략) → 무엇을 찾아봤나(`rounds`) → 확인한 사실(`evidence`, `used:false` 카드는 흐리게) → 답변 검증(`verify` 항목의 `passed/attempt/faults/fallback`) → 문장별 근거(`sentences.matches`, 빈 문장은 '대응 미확인'). 필드 뜻은 동료 repo `client/README.md` 「`trace` — 답변 근거 패널」을 따르며, 프론트는 대응을 지어 붙이지 않습니다. trace가 없는 답변에는 버튼이 없습니다 |
 
 요청 취소·다른 고객 선택·목록 복귀·화면 종료 시 진행 중인 턴을 중단하고 해당 대화에 "요청을 취소했습니다."를 남깁니다. 한 고객당 한 번에 하나의 턴만 진행합니다.
 
 ## 4. 확인
 
-- `node tools/briefing/check.js`: 이벤트 추출(연속 JSON·CHUNK 포장·오류 문구), 설정 검증, 샘플 3턴 파싱(배지·목록·화법·근거 묶음), 반입본 수준 패널 동작(가짜 fetch가 샘플을 SSE로 재생 → 질문·응답·세션·오류·미설정).
+- `node tools/briefing/check.js`: 이벤트 추출(연속 JSON·CHUNK 포장·오류 문구), 설정 검증, 샘플 3턴 파싱(배지·목록·화법·근거 묶음), 반입본 수준 패널 동작(가짜 fetch가 샘플을 SSE로 재생 → 질문·응답·세션·오류·미설정), 첫 턴의 `log`/`trace` 이벤트(요청 `log_events`, 턴 기록 보관, 한 줄 요약, trace 없는 턴은 버튼 없음).
+- `trace` 샘플(`chat.example.json` 첫 턴)은 동료 README의 예시를 그 턴의 실제 답변·출처에 맞춰 만든 것입니다. 실제 Agent 응답을 받으면 그 턴으로 교체합니다.
 - 사내 확인은 [체크리스트](../../COMPANY_DEPLOY_CHECKLIST.md) 5-2입니다.
 - 실제 응답으로 확인하지 못한 것: `action`·`clarify`·`error`·`주의` role(문서 기준 구현), `intent` 값 목록. 실제 샘플이 오면 [chat.example.json](chat.example.json)에 턴을 추가하고 매핑을 맞춥니다.

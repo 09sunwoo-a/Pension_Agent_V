@@ -214,7 +214,7 @@
     <span class="pad-t-13b">브리핑 수신</span>
     <sc-if value="{{ fabrixDiagnostic }}"><span class="pad-fabrix__diagnostic" role="status" aria-live="polite">{{ fabrixDiagnosticCode }} · {{ fabrixDiagnostic }}</span></sc-if>
     <sc-if value="{{ fabrixCanRequest }}"><button class="pad-btn-sm" data-fabrix-action="request" sc-camel-on-click="{{ fabrixRequest }}">다시 요청</button></sc-if>
-    <sc-if value="{{ hasAnalysisTrace }}"><button type="button" class="pad-btn-sm pad-evidence-open" sc-camel-on-click="{{ openEvidence }}" aria-controls="pad-evidence-panel" aria-haspopup="dialog" aria-expanded="{{ evidenceExpanded }}" title="이 브리핑의 구성 근거">TRACE</button></sc-if>
+    <sc-if value="{{ hasTraceButton }}"><button type="button" class="pad-btn-sm pad-evidence-open" sc-camel-on-click="{{ openEvidence }}" aria-controls="pad-evidence-panel" aria-haspopup="dialog" aria-expanded="{{ evidenceExpanded }}" title="브리핑 분석 근거 · 실시간 상담 턴 기록">TRACE</button></sc-if>
     <sc-if value="{{ fabrixBusy }}"><button class="pad-btn-sm" data-fabrix-action="cancel" sc-camel-on-click="{{ fabrixCancel }}">요청 취소</button></sc-if>
   </div>
 </div>
@@ -704,6 +704,7 @@
 <div class="pad-flex pad-g14 pad-mt8">
 <button sc-camel-on-click="{{ m.onEvid }}" class="pad-textbtn pad-p0">▸ 근거 {{ m.evidN }}건</button>
 <sc-if value="{{ m.hasGuard }}"><button sc-camel-on-click="{{ m.onGuard }}" class="pad-textbtn pad-p0">▸ 적용 중인 상담 원칙 {{ m.guardN }}건</button></sc-if>
+<sc-if value="{{ m.traceOn }}"><button sc-camel-on-click="{{ m.onTrace }}" class="pad-textbtn pad-p0 pad-ans__trace" aria-controls="pad-evidence-panel" aria-haspopup="dialog" title="이 답변의 처리 단계·근거·검증 기록">TRACE</button></sc-if>
 </div>
 <sc-if value="{{ m.evidOpen }}">
 <div class="pad-ev-list pad-in">

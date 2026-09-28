@@ -653,6 +653,14 @@
 #pensionAgentDemo .pad-evidence-section .pad-trace-json-label {margin:0}
 #pensionAgentDemo [data-brief-section].pad-evidence-flash {animation:padEvidenceFlash 1.8s ease-out}
 @keyframes padEvidenceFlash {0%{background:var(--pad-c-brand-light);box-shadow:0 0 0 6px var(--pad-c-brand-light)} 100%{background:transparent;box-shadow:none}}
+/* 12-3b. TRACE 패널 — 실시간 상담 턴(대화 Agent trace). 분석 근거 아래 구분선, 미사용 카드·대응 미확인 문장은 흐리게, 경고 행은 danger */
+#pensionAgentDemo .pad-chat-trace--below {margin-top:16px;padding-top:12px;border-top:1px solid var(--pad-c-line)}
+#pensionAgentDemo .pad-chat-trace > .pad-evidence-section {margin:0 0 8px}
+#pensionAgentDemo .pad-chat-turns .pad-trace-step__body > .pad-trace-steps {margin-top:8px}
+#pensionAgentDemo .pad-evidence-sentence.is-unused {opacity:.6}
+#pensionAgentDemo .pad-chat-trace__warn td {color:var(--pad-c-danger)}
+#pensionAgentDemo .pad-evidence-judgment.pad-chat-trace__warn {border-color:var(--pad-c-danger);background:var(--pad-c-danger-bg)}
+#pensionAgentDemo .pad-ans__trace {font-weight:var(--pad-fw-bold);letter-spacing:.02em}
 /* 12-4. 고객 브리핑 표시 정책(C01) — 상품 메타정보 표, Hot Tip 강조 카드, 후속 안내, 근거 자료 제목 행 */
 #pensionAgentDemo .pad-prod__meta {display:flex;flex-direction:column;gap:2px;margin-top:8px;border:1px solid var(--pad-c-line);border-radius:var(--pad-r-xs);overflow:hidden}
 #pensionAgentDemo .pad-prod__meta-row {display:flex}

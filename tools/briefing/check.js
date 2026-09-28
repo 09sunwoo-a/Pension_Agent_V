@@ -377,6 +377,17 @@ async function chatPanelCheck() {
   let ans = v.agMsgs[v.agMsgs.length - 1];
   assert.deepEqual([v.agBusy, ans.isAns, ans.lead, blockKinds(ans.blocks), [...ans.srcBadges].map(b => b.t), ans.evidN, ans.evid[0].points.length, ans.hasFollow, ans.followChips, ans.follow.length, ans.ctaOn, ans.clarifyOn],
     [false, true, answerText(turnFact).split('\n\n')[0], ['p'], ['본부 공식 자료'], 1, 3, true, true, 1, false, false], 'Answer rendered from the real sample');
+  // Turn trace (colleague client/README.md «trace»): asked for on every request, kept with its answer, summarized for the TRACE panel; `log` lines are not stored.
+  assert.equal(calls[0].inner.log_events, true, 'Every chat request asks for log/trace events');
+  assert.deepEqual([ans.traceOn, kinds(v.agMsgs)], [true, ['sys', 'user', 'ans']], 'Answer carrying a trace event gets a TRACE button; the log event adds nothing to the transcript');
+  assert.doesNotThrow(() => ans.onTrace(), 'TRACE without a DOM host is a no-op');
+  const turns = plain(ctx.window.PensionChat.turns(FIRST));
+  assert.deepEqual([turns.length, turns[0].turn, turns[0].question, turns[0].agent.intent, turns[0].agent.timeline.length, turns[0].agent.rounds.length, turns[0].agent.sentences.length, typeof turns[0].front.requestedAt, turns[0].sessionId, turns[0].answer.lead],
+    [1, 1, turnFact.message, 'situation', 12, 2, 4, 'string', calls[0].inner.session_id, ans.lead], 'Turn record = agent trace + what the page observed');
+  const sum = plain(ctx.window.PensionBriefingEvidencePanel.summarizeTurn(turns[0].agent));
+  assert.deepEqual([sum.intentLabel, sum.rounds, sum.outcomes, sum.llmCalls, sum.verdict, sum.warning, sum.stages, sum.durationMs], ['고객 현황', 2, { found: 2, miss: 0, failed: 0 }, 1, '재작성 후 검증 통과', '경고', ['understand', 'plan', 'tool', 'compose', 'verify'], 822], 'One-line turn summary for the demo panel');
+  assert.deepEqual(plain(ctx.window.PensionBriefingEvidencePanel.summarizeTurn({ intent: 'clarify', timeline: [{ stage: 'turn', level: 'INFO' }, { stage: 'clarify', level: 'INFO' }], rounds: [], evidence: [], sentences: [] })).line, '되묻기 · 도구 호출 없음', 'Clarify turn: no tools, no verify, nothing invented');
+  assert.equal(v.hasTraceButton, true, 'Card TRACE button appears once a turn carries a trace');
   ans.follow[0].onTap();
   await settle();
   assert.equal(calls.length, 2); assert.equal(calls[1].inner.message, '고객이 앱에서 직접 할 수 있어?'); assert.equal(calls[1].inner.session_id, calls[0].inner.session_id, 'Same session across turns');
@@ -385,11 +396,13 @@ async function chatPanelCheck() {
   type(live, turnCustomer.message); await settle();
   ans = live.renderVals().agMsgs.pop();
   assert.deepEqual([blockKinds(ans.blocks), ans.blocks[1].items.length, ans.evidN, ans.follow.length], [['p', 'list'], 9, 5, 3]);
+  assert.deepEqual([ans.traceOn, ctx.window.PensionChat.turns(FIRST).length], [false, 1], 'A turn without a trace event has no TRACE button and adds no turn record');
   const demoTranscript = live.renderVals().agMsgs.length;
   live.select('B01-22', true);
   v = live.renderVals();
   const b0122 = customers.find(c => c.briefingMeta.caseId === 'B01-22').customer.customerId;
   assert.deepEqual([kinds(v.agMsgs), v.agChipsOn, v.agName], [['sys'], false, '한지훈 · ' + b0122], 'Another customer starts on its own id');
+  assert.deepEqual([v.hasTraceButton, ctx.window.PensionChat.turns('B01-22').length], [false, 0], 'Turn records are per customer');
   live.select('C01-10', true);
   assert.equal(live.renderVals().agName, '김서연 · 17120-48150', 'C01 header shows the cut 5자리-5자리 id');
   assert.equal(ctx.window.PensionCustomerView.displayId('171203-4815062'), '17120-48150');
@@ -773,7 +786,7 @@ async function traceLogCheck() {
 autoRequestCheck().then(
   () => console.log('PASS: injected FabriX config (onParam params / window global), auto request on case select, one request per loaded case, SSE answer rendered, invalid or missing config never calls.'))
   .then(chatPanelCheck).then(
-  () => console.log('PASS: chat panel with injected chat config: question -> replayed real SSE turns -> answer/list/quote/sources/followups rendered, session per customer, error note, empty config never calls.'))
+  () => console.log('PASS: chat panel with injected chat config: question -> replayed real SSE turns -> answer/list/quote/sources/followups rendered, log_events asked, trace kept per turn + summarized (TRACE button only on traced answers), session per customer, error note, empty config never calls.'))
   .then(branchSearchCheck).then(traceCheck).then(traceLogCheck).catch(
   error => { console.error(error); process.exitCode = 1; });
 

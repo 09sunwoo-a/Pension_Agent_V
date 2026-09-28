@@ -2,6 +2,13 @@
 
 현재 상태는 README, 부점 AI 목표는 [구현 기획](BRANCH_AI_SEARCH_DESIGN.md), 코드 현황은 [AS-IS](BRANCH_AI_FRONTEND_AS_IS.md). 이전 UI 수치·폐기안·전체 실행 로그는 기본 컨텍스트에서 제외한다.
 
+## 2026-09-28 — 실시간 상담 턴을 고객 TRACE 패널에 표시(대화 Agent `trace` 이벤트)
+
+- 동료 repo(`Pension_agent`) `e411672`: 요청 `log_events:true`면 턴 끝 `done` 앞에 `trace`(timeline·rounds·evidence·sources·sentences) 1건. 프론트는 `pensionChat.js`가 매 요청에 `log_events`를 보내고, `trace`를 그 답변과 함께 메모리에만 보관(`turns(caseId)`), `log`는 콘솔에만.
+- 패널: `pensionBriefingEvidencePanel.js`가 분석 근거(오세훈) 아래 「실시간 상담 · N턴」 섹션을 그린다. 턴 머리줄 = 시각 · 질문 · `의도 · 도구 N회(찾음/없음/고장) · 검증 결과 · LLM N회 · 소요`, 펼치면 처리 단계 → 무엇을 찾아봤나 → 확인한 사실(`used:false` 흐리게) → 답변 검증(시도·폐기 사유·fallback) → 문장별 근거(빈 matches는 '대응 미확인'). 답변 아래 TRACE 버튼 → `openTurn`으로 해당 턴만 펼침. 카드 TRACE 버튼은 분석 근거 또는 상담 trace가 있을 때 표시(`hasTraceButton`).
+- 버튼 문구: 상단 처리 이력·카드 분석 근거·근거 자료 행 → `TRACE`. 실시간 상담 헤더의 고객 변경 버튼 제거(`resetCustomer`는 API로만).
+- 검사: `chat.example.json` 첫 턴에 README 예시 기반 `log`·`trace` 샘플(실제 응답 아님) 추가, check.js에 log_events·턴 기록·한 줄 요약·trace 없는 턴 검사. 미확인: 실제 배포 Agent가 `e411672` 이후 tag인지, `log_events`를 켰을 때 응답 크기·180초 제한.
+
 ## 2026-09-28 — `계약이전 페이지 방문` 세그먼트 폐지
 
 - 사용자 요청으로 세그먼트를 전부 제거: B03-07 박서진·B04-23 정미경 `signals`에서 삭제(두 고객의 `디지털행동` 원본 로그와 이탈징후 판정 메모는 유지), 뱃지 색 규칙(`pensionCustomerView.js`), 검사 카탈로그(`check.js`), 부점 검색 등록 세그먼트(`branch-search-current-provider.js`), 프론트 골든 입력, 목업 이탈 사유 문구, `BADGE_CATALOG.md`(28번 폐지). 빌드로 반입본·`agent/briefing_data.json`·`branch_data.json`·manifest 갱신 → 부점 data_version `81f4311c…`(문서·`scenarios.json` 재고정). check 9 / --agent 11 / run.js 15 PASS.
