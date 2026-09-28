@@ -39,11 +39,27 @@
 
 | 파일 | 크기 | 비고 |
 |---|---|---|
-| `mnPensionAgentDemo.html` | 43,714 B | 처리 이력 버튼, [분석 근거] 버튼(다시 요청 옆), S3 메타정보 표, S5 Hot Tip·후속 안내, 근거 자료 행 |
-| `pensionAgentDemo.js` | 861,306 B | **683 KB → 861 KB**(+178 KB). 신규 모듈 5개(처리 이력 패널·기록·목업 데이터, 분석 근거 패널, 부점 표시 설정) |
-| `pensionAgentDemo.css` | 82,571 B | 패널·표·Hot Tip·근거 행 스타일. 상단 도넛 132→148px(금액 문구 넘침 수정)도 포함 |
+| `mnPensionAgentDemo.html` | 43,846 B | TRACE 버튼(상단·카드·근거 자료 행·상담 답변), S3 메타정보 표, S5 Hot Tip·후속 안내, 근거 자료 행. 실시간 상담 헤더의 고객 변경 버튼 없음 |
+| `pensionAgentDemo.js` | 880,491 B | **683 KB → 880 KB**(+197 KB). 신규 모듈 5개(처리 이력 패널·기록·목업 데이터, TRACE 패널, 부점 표시 설정) + 실시간 상담 턴 trace(§2-1) |
+| `pensionAgentDemo.css` | 83,388 B | 패널·표·Hot Tip·근거 행 스타일. 상단 도넛 132→148px(금액 문구 넘침 수정)도 포함 |
 
-배치 경로·파일코드·캐시 확인은 [체크리스트 §2](COMPANY_DEPLOY_CHECKLIST.md). 반입 후 Network에서 JS 응답 크기가 **861,306**인지 보면 옛 파일 캐시를 바로 구분할 수 있다.
+배치 경로·파일코드·캐시 확인은 [체크리스트 §2](COMPANY_DEPLOY_CHECKLIST.md). 반입 후 Network에서 JS 응답 크기가 **880,491**인지 보면 옛 파일 캐시를 바로 구분할 수 있다.
+
+### 2-1. 2026-09-28 추가 — 프론트 3파일만 다시 생성(Agent 묶음 B·C 변경 없음)
+
+`main 8ea5ebf` 이후 커밋 2개(`262d1d2` TRACE 문구 · `9d21636` 실시간 상담 trace)는 **프론트만** 바꿨다. `agent/`·`branch-agent/deploy/`는 main과 같으므로 묶음 B·C를 이미 배포했다면 다시 올릴 것이 없고, 아직이면 §3·§4 그대로 함께 올린다.
+
+| 바뀐 것 | 내용 |
+|---|---|
+| 버튼 문구 | 상단 `처리 이력`·카드 `분석 근거`·근거 자료 행 `분석 근거 →` → **`TRACE`**. 패널 제목·tooltip은 그대로 |
+| 실시간 상담 헤더 | `고객 변경` 버튼 제거(`PensionChat.resetCustomer`는 API로만 남음) |
+| 실시간 상담 trace | 매 요청 `contents[0]`에 `log_events: true`. 대화 Agent가 턴 끝에 보내는 `trace` 이벤트를 그 답변과 함께 메모리에만 보관하고 답변 아래 **TRACE** 버튼 → 카드 TRACE 패널의 「실시간 상담 · N턴」에서 해당 턴 펼침(처리 단계 → 무엇을 찾아봤나 → 확인한 사실 → 답변 검증 → 문장별 근거). `log` 이벤트는 콘솔에만. 계약 [CHAT_AGENT_CONTRACT §2·§3](integration/contracts/CHAT_AGENT_CONTRACT.md) |
+
+로컬 검증(2026-09-28): 빌드 2회 해시 동일 · `check.js` 9 PASS · 반입본에 새 주소/키 없음(`localhost` 2건은 main과 동일한 기존 transport의 loopback 판정 코드·주석) · 파일코드 `1288272`·에셋 경로·설정 블록 빈 값·부점 `data_version 81f4311c…` 모두 이전과 동일 · Chromium에서 반입본을 띄워 가짜 Connector로 샘플 trace 재생 → TRACE 버튼·패널·5단계·ESC·trace 없는 턴 버튼 없음 확인.
+
+버전 조합: **새 프론트 + 옛 대화 Agent**(`trace` 미지원)는 답변만 오고 TRACE 버튼이 안 뜬다. `log_events` 키는 대화 Agent가 `input_value`를 dict로 읽고 요청 모델이 `extra="allow"`라 무시된다. 대화 Agent가 동료 repo `e411672` 이후 tag로 배포돼야 trace가 온다. 사내에서만 확인할 것: `log_events`를 켠 실제 턴의 응답 크기(근거 원문 ≤4,000자×블록)가 180초·`LIMIT` 안인지.
+
+롤백: 이 변경만 되돌리려면 `main 8ea5ebf`의 3파일(JS 861,306 · HTML 43,714 · CSS 82,571 B)로 원복. Agent는 손대지 않아도 된다.
 
 ## 3. 배포 묶음 B — 고정 브리핑 Agent (사내 GenAI 배포 repo 루트, 6파일)
 
@@ -82,7 +98,7 @@
 1. 이 폴더에서 다시 한 번 `node tools/briefing/build.js` → `node tools/briefing/check.js` → `check.js --agent`(사내 Python) 실행. 산출물 해시가 §2·§3 크기와 같은지 확인.
 2. **묶음 B**(고정 Agent 6파일) → 사내 repo commit·tag push → Portal 배포 → `/health` 200.
 3. **묶음 C**(부점 Agent 11파일) → 동일 절차 → `/health` 200, `data_version 81f4311c…`, `model gemma-4-31b-it`.
-4. **묶음 A**(프론트 3파일) → WAS 교체, 캐시 비우기, JS 861,306 B 로드 확인, `PG_1288272.onParam` 호출 확인.
+4. **묶음 A**(프론트 3파일) → WAS 교체, 캐시 비우기, JS 880,491 B 로드 확인, `PG_1288272.onParam` 호출 확인.
 5. 연동 확인(§7). 문제 시 롤백은 §8.
 
 ## 7. 사내에서만 확인 가능한 항목 (로컬 미검증)
