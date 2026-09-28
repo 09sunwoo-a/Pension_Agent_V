@@ -7,6 +7,7 @@ knowledge cards and the bindings to the same returned briefing, with the real co
 import copy
 import json
 import math
+import os
 import re
 import time
 from datetime import datetime, timezone
@@ -195,13 +196,23 @@ def customer_snapshot(customer: dict) -> list:
     return [g for g in groups if g]
 
 
+# Demo pacing for the fixed briefing (2026-09-28 request): the stored-answer steps finish in microseconds, so the
+# panel showed four identical clock stamps. Each step now pauses before its work so the recorded started_at/ended_at
+# progress in order like a real construction pass (~2.7 s total). ANALYSIS_TRACE_PACE scales it; 0 disables.
+ANALYSIS_TRACE_PACE = float(os.getenv("ANALYSIS_TRACE_PACE", "1") or 0)
+STEP_PACE_S = {"customer_summary": 0.4, "management_focus": 0.7, "knowledge_selection": 1.1, "briefing_binding": 0.5}
+
+
 def analysis_trace(evidence: dict, customer: dict, briefing: dict, parsed: dict) -> dict:
-    """Four business steps with the actual construction times. No LLM call, no expected_* baselines."""
+    """Four business steps with the actual construction times (including the demo pacing). No LLM call, no expected_* baselines."""
     t0, started = time.monotonic(), _now()
     steps, marks = [], []
 
     def mark(step, work):
         began, t = _now(), time.monotonic()
+        pause = STEP_PACE_S.get(step["id"], 0) * ANALYSIS_TRACE_PACE
+        if pause > 0:
+            time.sleep(pause)
         result = work()
         steps.append({"id": step["id"], "sequence": len(steps) + 1, "title": step["title"], "summary": step["summary"],
                       "started_at": began, "ended_at": _now(), "duration_ms": int(round((time.monotonic() - t) * 1000)),

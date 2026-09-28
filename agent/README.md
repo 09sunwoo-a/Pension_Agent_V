@@ -65,7 +65,7 @@ curl localhost:8000/health
 
 `/health` 기대값은 `mode: fixed_briefing`, `llm_enabled: false`, `case_count: 42`이다. `.env`는 현재 기동·Docker build에 필요하지 않다. LLM 호출 단독 테스트도 이 단계에서는 실행하지 않는다.
 
-`/chat` 응답의 `data`에는 C01-07(오세훈)에 한해 선택 필드 `analysis_trace`(브리핑 구성 근거, LLM 호출 없음)가 추가된다. 자료는 빌드가 `briefing_data.json`의 해당 레코드에 `analysis_evidence`로 싣고, `briefing.analysis_trace()`가 요청 값과 같은 응답의 브리핑으로 해석한다. 규격은 [계약 §4.4](../integration/contracts/AGENT_FRONTEND_CONTRACT.md).
+`/chat` 응답의 `data`에는 C01-07(오세훈)에 한해 선택 필드 `analysis_trace`(브리핑 구성 근거, LLM 호출 없음)가 추가된다. 자료는 빌드가 `briefing_data.json`의 해당 레코드에 `analysis_evidence`로 싣고, `briefing.analysis_trace()`가 요청 값과 같은 응답의 브리핑으로 해석한다. 규격은 [계약 §4.4](../integration/contracts/AGENT_FRONTEND_CONTRACT.md). 시연용 pacing: 저장 답변이라 네 단계가 마이크로초에 끝나 시각이 같게 찍히므로, 단계마다 0.4/0.7/1.1/0.5초를 쉬고 진행해 기록 시각이 순서대로 늘어난다(총 약 2.7초, 오세훈만). 환경변수 `ANALYSIS_TRACE_PACE`로 배율 조정, `0`이면 끈다.
 
 `/chat`은 기존 FabriX outer body `{input_value: JSON문자열, message_hists?: ...}`를 받는다. 내부 JSON은 프론트가 만드는 `customer-briefing-api.v1` 요청 그대로 사용한다. case_id만 받는 별도 간이 규격은 추가하지 않는다. `case_id/customer_id/as_of_date/customer_data`가 배포 묶음과 일치할 때 저장된 S1–S5를 반환하고 `request_id`는 요청마다 그대로 돌려준다.
 

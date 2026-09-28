@@ -47,7 +47,7 @@
 
 ### 2-1. 2026-09-28 추가 — 프론트 3파일만 다시 생성(Agent 묶음 B·C 변경 없음)
 
-`main 8ea5ebf` 이후 커밋 2개(`262d1d2` TRACE 문구 · `9d21636` 실시간 상담 trace)는 **프론트만** 바꿨다. `agent/`·`branch-agent/deploy/`는 main과 같으므로 묶음 B·C를 이미 배포했다면 다시 올릴 것이 없고, 아직이면 §3·§4 그대로 함께 올린다.
+`main 8ea5ebf` 이후 커밋(`262d1d2` TRACE 문구 · `9d21636` 실시간 상담 trace)는 **프론트만** 바꿨다. `agent/`·`branch-agent/deploy/`는 main과 같으므로 묶음 B·C를 이미 배포했다면 다시 올릴 것이 없고, 아직이면 §3·§4 그대로 함께 올린다.
 
 | 바뀐 것 | 내용 |
 |---|---|
@@ -60,6 +60,10 @@
 버전 조합: **새 프론트 + 옛 대화 Agent**(`trace` 미지원)는 답변만 오고 TRACE 버튼이 안 뜬다. `log_events` 키는 대화 Agent가 `input_value`를 dict로 읽고 요청 모델이 `extra="allow"`라 무시된다. 대화 Agent가 동료 repo `e411672` 이후 tag로 배포돼야 trace가 온다. 사내에서만 확인할 것: `log_events`를 켠 실제 턴의 응답 크기(근거 원문 ≤4,000자×블록)가 180초·`LIMIT` 안인지.
 
 롤백: 이 변경만 되돌리려면 `main 8ea5ebf`의 3파일(JS 861,306 · HTML 43,714 · CSS 82,571 B)로 원복. Agent는 손대지 않아도 된다.
+
+### 3-1. 2026-09-28 추가 — 고정 브리핑 Agent `briefing.py` 시연용 pacing (묶음 B 재배포)
+
+오세훈 `analysis_trace`의 네 단계가 마이크로초에 끝나 TRACE 패널 시각이 전부 같게 보였다. `agent/briefing.py`가 단계마다 0.4/0.7/1.1/0.5초를 쉬고 진행해 기록 시각이 순서대로 늘어난다(총 약 2.7초, 오세훈 요청만 · 다른 41건은 즉시). `ANALYSIS_TRACE_PACE=0`이면 끈다(배율). 프론트 브리핑 timeout 90초 안. **묶음 B 6파일을 다시 반입해야 하며 `briefing.py`만 바뀌었다**(Dockerfile·requirements·데이터 동일). `check.js --agent` Python 검사 통과, ASGI HTTP 검사는 여전히 로컬 SKIP.
 
 ## 3. 배포 묶음 B — 고정 브리핑 Agent (사내 GenAI 배포 repo 루트, 6파일)
 
