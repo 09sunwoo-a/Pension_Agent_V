@@ -366,10 +366,10 @@ async function chatPanelCheck() {
   const live = mount({ starrootParams: { fabrix: { ...ctx.window.__PENSION_FABRIX_CONFIG, endpointUrl: '' } } });
   live.state.sel = FIRST;
   let v = live.renderVals();
-  assert.deepEqual([v.agentOn, v.panelOpen, v.agChipsOn, v.agChips.length, kinds(v.agMsgs), v.agMsgs[0].text, v.agResetOn, v.agName, calls.length], [true, true, false, 0, ['sys'], kim.customer.name + ' 고객님 상담을 시작해요. 상담 중 궁금한 내용을 바로 물어보세요.', true, kim.customer.name + ' · ' + kim.customer.customerId, 0], 'Panel opens on the selected customer with the intro only: no id prompt, no chips, no call');
+  assert.deepEqual([v.agentOn, v.panelOpen, v.agChipsOn, v.agChips.length, kinds(v.agMsgs), v.agMsgs[0].text, v.agName, calls.length], [true, true, false, 0, ['sys'], kim.customer.name + ' 고객님 상담을 시작해요. 상담 중 궁금한 내용을 바로 물어보세요.', kim.customer.name + ' · ' + kim.customer.customerId, 0], 'Panel opens on the selected customer with the intro only: no id prompt, no chips, no call');
   type(live, turnFact.message);
   v = live.renderVals();
-  assert.deepEqual([v.agBusy, v.agResetOn, kinds(v.agMsgs).slice(-2), live.state.agInput], [true, false, ['user', 'status'], ''], 'Question sent: busy, status bubble, input cleared');
+  assert.deepEqual([v.agBusy, kinds(v.agMsgs).slice(-2), live.state.agInput], [true, ['user', 'status'], ''], 'Question sent: busy, status bubble, input cleared');
   await settle();
   v = live.renderVals();
   assert.equal(calls.length, 1);
@@ -389,7 +389,7 @@ async function chatPanelCheck() {
   live.select('B01-22', true);
   v = live.renderVals();
   const b0122 = customers.find(c => c.briefingMeta.caseId === 'B01-22').customer.customerId;
-  assert.deepEqual([kinds(v.agMsgs), v.agChipsOn, v.agResetOn, v.agName], [['sys'], false, true, '한지훈 · ' + b0122], 'Another customer starts on its own id');
+  assert.deepEqual([kinds(v.agMsgs), v.agChipsOn, v.agName], [['sys'], false, '한지훈 · ' + b0122], 'Another customer starts on its own id');
   live.select('C01-10', true);
   assert.equal(live.renderVals().agName, '김서연 · 17120-48150', 'C01 header shows the cut 5자리-5자리 id');
   assert.equal(ctx.window.PensionCustomerView.displayId('171203-4815062'), '17120-48150');
@@ -402,9 +402,9 @@ async function chatPanelCheck() {
   live.select(FIRST, true);
   v = live.renderVals();
   assert.equal(v.agMsgs.length, demoTranscript, 'Transcript kept per customer within the page');
-  v.agReset();
+  ctx.window.PensionChat.resetCustomer(FIRST);
   v = live.renderVals();
-  assert.deepEqual([v.agResetOn, v.agChipsOn, kinds(v.agMsgs).pop(), v.agName], [false, false, 'sys', kim.customer.name], '고객 변경 asks for a new id');
+  assert.deepEqual([v.agChipsOn, kinds(v.agMsgs).pop(), v.agName], [false, 'sys', kim.customer.name], 'resetCustomer asks for a new id; the header has no 고객 변경 button');
   type(live, 'bad id!');
   assert.ok(/형식/.test(live.renderVals().agMsgs.pop().text) && calls.length === 4, 'Malformed id after 고객 변경 is rejected without calling the agent');
   type(live, demoId); type(live, turnFact.message); await settle();

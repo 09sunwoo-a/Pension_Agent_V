@@ -87,7 +87,7 @@
 <div class="pad-status-pill">
 <span class="pad-status-pill__dot"></span>오전 7:30 · IRP 고객 1,392명 분석 완료
     </div>
-<button type="button" class="pad-trace-open" sc-camel-on-click="{{ openTrace }}" aria-controls="pad-trace-panel" aria-haspopup="dialog" aria-expanded="{{ traceExpanded }}" title="오늘의 부점 브리핑 처리 이력">처리 이력</button>
+<button type="button" class="pad-trace-open" sc-camel-on-click="{{ openTrace }}" aria-controls="pad-trace-panel" aria-haspopup="dialog" aria-expanded="{{ traceExpanded }}" title="오늘의 부점 브리핑 처리 이력">TRACE</button>
 </div>
 </div>
 </sc-if>
@@ -214,7 +214,7 @@
     <span class="pad-t-13b">브리핑 수신</span>
     <sc-if value="{{ fabrixDiagnostic }}"><span class="pad-fabrix__diagnostic" role="status" aria-live="polite">{{ fabrixDiagnosticCode }} · {{ fabrixDiagnostic }}</span></sc-if>
     <sc-if value="{{ fabrixCanRequest }}"><button class="pad-btn-sm" data-fabrix-action="request" sc-camel-on-click="{{ fabrixRequest }}">다시 요청</button></sc-if>
-    <sc-if value="{{ hasAnalysisTrace }}"><button type="button" class="pad-btn-sm pad-evidence-open" sc-camel-on-click="{{ openEvidence }}" aria-controls="pad-evidence-panel" aria-haspopup="dialog" aria-expanded="{{ evidenceExpanded }}" title="이 브리핑의 구성 근거">분석 근거</button></sc-if>
+    <sc-if value="{{ hasAnalysisTrace }}"><button type="button" class="pad-btn-sm pad-evidence-open" sc-camel-on-click="{{ openEvidence }}" aria-controls="pad-evidence-panel" aria-haspopup="dialog" aria-expanded="{{ evidenceExpanded }}" title="이 브리핑의 구성 근거">TRACE</button></sc-if>
     <sc-if value="{{ fabrixBusy }}"><button class="pad-btn-sm" data-fabrix-action="cancel" sc-camel-on-click="{{ fabrixCancel }}">요청 취소</button></sc-if>
   </div>
 </div>
@@ -521,7 +521,7 @@
 <sc-if value="{{ showReviewNotes }}"><sc-for as="note" list="{{ briefingReviewNotes }}"><div class="pad-note-muted">{{ note.t }}</div></sc-for></sc-if>
 <sc-if value="{{ briefingSourceRowsOn }}">
 <div class="pad-source-rows">
-<sc-for as="row" list="{{ briefingSourceRows }}"><div class="pad-source-row"><sc-if value="{{ row.canOpen }}"><button type="button" sc-camel-on-click="{{ row.onOpen }}" class="pad-source-row__btn"><span class="pad-source-row__title">{{ row.title }}</span><span class="pad-source-row__go">분석 근거 →</span></button></sc-if><sc-if value="{{ row.plain }}"><span class="pad-source-row__title">{{ row.title }}</span></sc-if></div></sc-for>
+<sc-for as="row" list="{{ briefingSourceRows }}"><div class="pad-source-row"><sc-if value="{{ row.canOpen }}"><button type="button" sc-camel-on-click="{{ row.onOpen }}" class="pad-source-row__btn"><span class="pad-source-row__title">{{ row.title }}</span><span class="pad-source-row__go">TRACE →</span></button></sc-if><sc-if value="{{ row.plain }}"><span class="pad-source-row__title">{{ row.title }}</span></sc-if></div></sc-for>
 </div>
 </sc-if>
 <sc-if value="{{ briefingSourceRowsOff }}"><sc-for as="source" list="{{ briefingSources }}"><div class="pad-source-card"><div class="pad-t-13b">{{ source.title }}</div><sc-if value="{{ source.hasDescription }}"><div class="pad-detail-paragraph">{{ source.description }}</div></sc-if><sc-if value="{{ source.hasUrl }}"><a href="{{ source.url }}" target="_blank" rel="noopener noreferrer" class="pad-btn-sm">자료 보기 ↗</a></sc-if></div></sc-for></sc-if>
@@ -553,7 +553,6 @@
 
 </div>
 <div class="pad-row pad-g6">
-<sc-if value="{{ agResetOn }}"><button sc-camel-on-click="{{ agReset }}" class="pad-btn-sm">고객 변경</button></sc-if>
 <button sc-camel-on-click="{{ togglePanel }}" title="패널 접기" class="pad-icon-btn"><svg height="15" sc-camel-view-box="0 0 16 16" width="15"><polyline fill="none" points="5,3 10,8 5,13" stroke="#9298A2" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7"></polyline><line stroke="#9298A2" stroke-linecap="round" stroke-width="1.7" x1="13" x2="13" y1="3.5" y2="12.5"></line></svg></button>
 </div>
 </div>

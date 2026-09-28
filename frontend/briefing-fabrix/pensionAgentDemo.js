@@ -1201,7 +1201,7 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
     return text.replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/g, function (_, before) { return (before || '') + '�'; });
   }
   // A consultation starts on the selected customer's own id with a fresh session id;
-  // 고객 변경 lets the employee switch to another identifier by typing it.
+  // resetCustomer clears the session so another identifier can be typed (programmatic only; no header button).
   function intro(customer) { return customer.customer.name + ' 고객님 상담을 시작해요. 상담 중 궁금한 내용을 바로 물어보세요.'; }
   function session(caseId) {
     var s = sessions.get(caseId);
@@ -1455,7 +1455,6 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
     base.agentOn = true; base.agentOff = false;
     // Header shows the 5자리-5자리 screen form; customer_id in the request stays the original value.
     base.agName = customerId ? customer.customer.name + ' · ' + customerView.displayId(customerId) : customer.customer.name;
-    base.agResetOn = !!customerId && !busy; base.agReset = function () { resetCustomer(id); };
     base.panelOpen = !!S.panelOpen; base.panelClosed = !S.panelOpen;
     base.agMsgs = items.map(function (m, i) { return message(component, id, m, i, i === lastAnswer && lastAnswer === items.length - 1, busy); });
     base.agChipsOn = false; base.agChips = []; base.agChipsTitle = '';
