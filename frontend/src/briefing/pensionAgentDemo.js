@@ -1575,7 +1575,7 @@ class Component {
       legacyBrief: true, showLegacyTip: true, hasExecItems: !!(BF && BF.s5.exec.length),
       hasWhy: !!(BF && BF.s2.why), hasChecks: !!(BF && BF.s2.checks.length), hasOptions: !!(BF && BF.s3.tiles.length),
       hasS4: !!BF, hasOpening: !!(BF && BF.s4.opening), hasReactions: !!(BF && BF.s4.reacts.length), hasS5: !!BF,
-      profileAnalysisLabel: '오전 7:30 분석', briefingAnalysisLabel: '2026.09.04 기준 분석', holdingReturnLabel: '1년 수익률',
+      profileAnalysisLabel: '오전 7:30 분석', briefingAnalysisLabel: asOf.replace(/-/g, '.') + ' 기준 분석', holdingReturnLabel: '1년 수익률',
       hasAiBrief: !!BF, noAiBrief: !!c && !BF, bfName: c ? c.name : '',
       bfBadges: BF ? BF.badges : [],
       bfS1Lines: BF ? [BF.s1.main].concat(BF.s1.sub.split(/(?<=\.) /)).map((t, i) => ({ no: i + 1, t: this.bold(t), fw: i === 0 ? 800 : 400, fg: i === 0 ? '#26282C' : '#4E545C' })) : [],
@@ -1670,13 +1670,18 @@ class Component {
   // The build reads the same default queue and profiles used by the main screen.
   if (typeof window.__PensionBuildExtract === 'function') {
     window.__PensionBuildExtract(function extractCurrentRows() {
-      const page = new Component({});
-      const modelRows = page.DATA;
-      return {
-        mainRows: page.renderVals().queue,
-        modelRows,
-        profiles: Object.fromEntries(modelRows.map(row => [row.id, page.profileOf(row)]))
-      };
+      // 반입 데이터 추출은 화면의 날짜 이동(pensionDisplayDate.js)과 무관해야 한다: 추출하는 동안 표시 기준일을 자료 기준일에 고정한다.
+      const DD = window.PensionDisplayDate, pinned = Object.prototype.hasOwnProperty.call(window, '__PENSION_DISPLAY_DATE'), saved = window.__PENSION_DISPLAY_DATE;
+      if (DD) window.__PENSION_DISPLAY_DATE = DD.base();
+      try {
+        const page = new Component({});
+        const modelRows = page.DATA;
+        return {
+          mainRows: page.renderVals().queue,
+          modelRows,
+          profiles: Object.fromEntries(modelRows.map(row => [row.id, page.profileOf(row)]))
+        };
+      } finally { if (DD) { if (pinned) window.__PENSION_DISPLAY_DATE = saved; else delete window.__PENSION_DISPLAY_DATE; } }
     });
   }
 

@@ -113,7 +113,8 @@ const DEFAULT_FILE_CODE = '1288272';
 
 function artifacts(fileCode = DEFAULT_FILE_CODE, data = inputs(), branch = branchData.generate(data)) {
   if (!/^(REPLACE_WITH_FILE_CODE|\d+)$/.test(fileCode)) throw new Error('File code must be numeric');
-  const modules = ['briefing-contract.js', 'pensionCustomerView.js', 'pensionBriefingView.js',
+  // pensionDisplayDate.js: 화면 표시 날짜를 오늘로 옮기는 공통 모듈. 렌더러·어댑터·패널보다 앞에 둔다.
+  const modules = ['briefing-contract.js', 'pensionDisplayDate.js', 'pensionCustomerView.js', 'pensionBriefingView.js',
     'pensionBriefingStore.js', 'pensionBriefingAdapter.js', 'fabrix-briefing-contract.js',
     'fabrix-transport.js', 'pensionFabrix.js', 'fabrix-chat-transport.js', 'pensionChat.js',
     // 부점 AI: current main-list search. Core/data/provider/session precede the DOM modules and the adapter.

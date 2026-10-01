@@ -192,6 +192,104 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
 
 ;
 
+/* pensionDisplayDate.js */
+/* 화면 표시 기준일 = 오늘. 시연 자료(display-data)는 기준일 2026-09-29로 작성되어 있고 Agent 요청·부점 manifest·
+ * 데이터 해시는 그 값을 그대로 쓴다. 이 모듈은 "화면에 그릴 때만" 모든 날짜를 (오늘 − 자료 기준일)만큼 평행이동한다.
+ * 그래서 D-n 뱃지·경과일수·만기 창 같은 상대값은 그대로 맞고, 기준일 문구·만기일·거래일·자료 날짜는 전부 오늘 기준으로 보인다.
+ * 실제 시계 기록(요청·응답·단계 시각: *_at / *At, 상담 timeline.at)은 이미 오늘이므로 옮기지 않는다.
+ * 시연·검사에서 날짜를 고정하려면 window.__PENSION_DISPLAY_DATE = 'YYYY-MM-DD' (Node: globalThis)를 모듈보다 먼저 두면 된다.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(globalThis);
+  else root.PensionDisplayDate = factory(root);
+})(typeof window === 'undefined' ? globalThis : window, function (root) {
+  'use strict';
+  var DEFAULT_BASE = '2026-09-29';
+  var DAY_MS = 86400000, DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+  // 실제 처리 시각 키: 값이 ISO 시각이어도 자료 날짜가 아니므로 건너뛴다. (openedAt·verifiedAt·publishedAt 같은 자료 날짜는 옮긴다.)
+  var SKIP_KEYS = { at: 1, started_at: 1, ended_at: 1, finished_at: 1, requested_at: 1, responded_at: 1, startedAt: 1, endedAt: 1, finishedAt: 1, requestedAt: 1, respondedAt: 1, sentAt: 1, front: 1 };
+  var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+  var toDays = function (y, m, d) { return Date.UTC(y, m - 1, d) / DAY_MS; };
+  var fromDays = function (n) { var t = new Date(n * DAY_MS); return { y: t.getUTCFullYear(), m: t.getUTCMonth() + 1, d: t.getUTCDate() }; };
+  var valid = function (y, m, d) { return m >= 1 && m <= 12 && d >= 1 && d <= 31 && new Date(Date.UTC(y, m - 1, d)).getUTCDate() === d; };
+  var iso = function (p) { return p.y + '-' + pad(p.m) + '-' + pad(p.d); };
+  var parts = function (s) { return { y: +s.slice(0, 4), m: +s.slice(5, 7), d: +s.slice(8, 10) }; };
+  function dayDiff(from, to) { var a = parts(from), b = parts(to); return toDays(b.y, b.m, b.d) - toDays(a.y, a.m, a.d); }
+  function addDays(day, n) { var p = parts(day); return iso(fromDays(toDays(p.y, p.m, p.d) + n)); }
+
+  // 자료 기준일: 반입 고객 스냅샷(briefingMeta.asOfDate)의 다수값. 스냅샷이 없으면(단독 검사) 기본값.
+  var baseCache = null;
+  function base() {
+    if (baseCache) return baseCache;
+    var fixtures = root.PensionBriefingFixtures, count = {}, best = null;
+    if (fixtures && Array.isArray(fixtures.customers)) fixtures.customers.forEach(function (r) {
+      var d = r && r.briefingMeta && r.briefingMeta.asOfDate;
+      if (typeof d !== 'string' || !DAY_RE.test(d)) return;
+      count[d] = (count[d] || 0) + 1; if (best == null || count[d] > count[best]) best = d;
+    });
+    baseCache = best || DEFAULT_BASE;
+    return baseCache;
+  }
+  // 오늘(Asia/Seoul). 고정 날짜가 주입되어 있으면 그 값.
+  function today() {
+    var fixed = root.__PENSION_DISPLAY_DATE;
+    if (typeof fixed === 'string' && DAY_RE.test(fixed)) return fixed;
+    var now = new Date();
+    try {
+      var p = {};
+      new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(now).forEach(function (x) { p[x.type] = x.value; });
+      if (p.year && p.month && p.day) return p.year + '-' + p.month + '-' + p.day;
+    } catch (_) { /* Intl 미지원: 아래 UTC+9 계산 */ }
+    var k = new Date(now.getTime() + 9 * 3600000);
+    return iso({ y: k.getUTCFullYear(), m: k.getUTCMonth() + 1, d: k.getUTCDate() });
+  }
+  function offsetDays() { return dayDiff(base(), today()); }
+
+  // 'YYYY-MM-DD' 하나를 옮긴다. 형식이 아니면 그대로.
+  function shiftDay(day, offset) {
+    if (typeof day !== 'string' || !DAY_RE.test(day)) return day;
+    var n = offset == null ? offsetDays() : offset;
+    return n ? addDays(day, n) : day;
+  }
+  // 문장 안의 날짜 표기를 전부 옮긴다: 2026년 9월 29일 · 2026-09-29(T… 시각은 유지) · 2026.09.29 · 2026/09/29 · 9월 29일.
+  // D-n·경과일수·'2026.09' 같은 월 단위 표기는 상대값/월 표기라 손대지 않는다.
+  var TEXT_RE = /(\d{4})년\s?(\d{1,2})월\s?(\d{1,2})일|(?<!\d)(\d{4})([-./])(\d{2})\5(\d{2})(?!\d)|(?<!\d)(\d{1,2})월\s?(\d{1,2})일/g;
+  function shiftText(text, offset) {
+    if (typeof text !== 'string') return text;
+    var n = offset == null ? offsetDays() : offset;
+    if (!n || !/\d/.test(text)) return text;
+    var b = parts(base());
+    return text.replace(TEXT_RE, function (m, y1, m1, d1, y2, sep, m2, d2, m3, d3) {
+      var y, mo, d, kind;
+      if (y1 != null) { y = +y1; mo = +m1; d = +d1; kind = 'ko'; }
+      else if (y2 != null) { y = +y2; mo = +m2; d = +d2; kind = 'num'; }
+      else { mo = +m3; d = +d3; kind = 'md'; y = mo >= b.m - 6 ? b.y : b.y + 1; }
+      if (!valid(y, mo, d)) return m;
+      var p = fromDays(toDays(y, mo, d) + n);
+      if (kind === 'ko') return p.y + '년 ' + p.m + '월 ' + p.d + '일';
+      if (kind === 'num') return p.y + sep + pad(p.m) + sep + pad(p.d);
+      return p.m + '월 ' + p.d + '일';
+    });
+  }
+  // 객체·배열을 깊은 복사하며 모든 문자열의 날짜를 옮긴다. 실제 시계 키(SKIP_KEYS)는 값째 그대로 복사한다.
+  function shiftValue(value, offset) {
+    var n = offset == null ? offsetDays() : offset;
+    if (value === undefined) return undefined;
+    if (typeof value === 'string') return shiftText(value, n);
+    var out = JSON.parse(JSON.stringify(value));
+    if (!n) return out;
+    (function walk(v) {
+      if (Array.isArray(v)) { for (var i = 0; i < v.length; i++) { if (typeof v[i] === 'string') v[i] = shiftText(v[i], n); else walk(v[i]); } }
+      else if (v && typeof v === 'object') Object.keys(v).forEach(function (k) { if (SKIP_KEYS[k]) return; if (typeof v[k] === 'string') v[k] = shiftText(v[k], n); else walk(v[k]); });
+    })(out);
+    return out;
+  }
+  // 한국어 월·일 표기('9월 29일')와 '09.29' 요약은 호출자가 shiftDay 결과로 만든다.
+  return { base: base, today: today, offsetDays: offsetDays, shiftDay: shiftDay, shiftText: shiftText, shiftValue: shiftValue, addDays: addDays, dayDiff: dayDiff, SKIP_KEYS: Object.keys(SKIP_KEYS) };
+});
+
+;
+
 /* pensionCustomerView.js */
 /* Local customer facts only. Never consumes briefing/API response content. */
 (function (root, factory) {
@@ -530,6 +628,9 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
 (function (window) {
   'use strict';
   var fixtures = window.PensionBriefingFixtures;
+  // 화면 표시용 날짜 평행이동(pensionDisplayDate.js): 그리는 복사본에만 적용한다. Agent 요청(getCustomerForRequest)·store 원본은 자료 기준일 그대로.
+  var DD = window.PensionDisplayDate;
+  var display = function (v) { return DD ? DD.shiftValue(v) : v; }, displayDay = function (d) { return DD ? DD.shiftDay(d) : d; };
   var CustomerView = window.PensionCustomerView, BriefingView = window.PensionBriefingView;
   if (!fixtures || !CustomerView || !BriefingView || !window.PensionBriefingStore) return;
   var revision = 0;
@@ -562,7 +663,7 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
     base.briefingTilesClass = record ? 'pad-tiles--structured' : '';
     base.hasBriefingState = false;
     if (!record) return base;
-    Object.assign(base, CustomerView.build(record));
+    Object.assign(base, CustomerView.build(display(record)));
     base.panelOpen = false; base.panelClosed = false; base.showLegacyTip = false;
     if (QUEUE_EXCLUDED[id]) {
       // Not in the main list: 다음 고객 walks the structured cases instead of the queue order.
@@ -580,9 +681,9 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
     base.briefingStateText = entry.phase === 'loading'
       ? '브리핑을 불러오는 중입니다.' + (entry.content ? ' 이전 브리핑을 표시합니다.' : '')
       : '브리핑을 불러오지 못했습니다.' + (entry.content ? ' 이전 브리핑을 유지합니다.' : ' 다시 요청해 주세요.');
-    base.briefingAnalysisLabel = record.briefingMeta.asOfDate.replace(/-/g, '.') + ' 기준 · 브리핑 초안';
+    base.briefingAnalysisLabel = displayDay(record.briefingMeta.asOfDate).replace(/-/g, '.') + ' 기준 · 브리핑 초안';
     base.bfName = record.customer.name;
-    if (entry.content) Object.assign(base, BriefingView.build(entry.content, component, policyFor(id, entry)));
+    if (entry.content) Object.assign(base, BriefingView.build(display(entry.content), component, policyFor(id, entry)));
     return base;
   }
   // 고객별 표시 정책. C01-07(오세훈): 상품 메타정보만, Hot Tip 강조 카드, 근거 자료 제목 행(분석 근거 패널 연결), reviewNotes 숨김.
@@ -610,12 +711,13 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
     };
     Component.prototype.profileOf = function (c) {
       var record = c && store.customer(c.id);
-      return record ? CustomerView.profile(record) : originalProfile.call(this, c);
+      // 구조화 고객만 표시용 복사본(가입일·최근 개설일이 오늘 기준으로). 레거시 행의 임의 목업 날짜는 그대로 둔다.
+      return record ? CustomerView.profile(display(record)) : originalProfile.call(this, c);
     };
     // Main-list rows: legacy demo rows first in their own order, then the case customers.
     // The queue renderer sorts by 관리 필요도 across both sets.
     Object.defineProperty(Component.prototype, 'DATA', { configurable: true, get: function () {
-      if (!this._queueRows) this._queueRows = originalData.call(this).filter(function (c) { return !LEGACY_HIDDEN[c.id]; }).concat(queued.map(CustomerView.row));
+      if (!this._queueRows) this._queueRows = originalData.call(this).filter(function (c) { return !LEGACY_HIDDEN[c.id]; }).concat(queued.map(function (r) { return CustomerView.row(display(r)); }));
       return this._queueRows;
     } });
     // The legacy directory already contains DATA; add only the cases kept out of the list.
@@ -623,7 +725,8 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
       if (!this._caseDirectory) this._caseDirectory = originalDir.call(this).filter(function (c) { return !LEGACY_HIDDEN[c.id]; }).concat(records.filter(function (r) { return QUEUE_EXCLUDED[r.briefingMeta.caseId]; }).map(CustomerView.stub));
       return this._caseDirectory;
     } });
-    Component.prototype.asOfDate = asOfDate;
+    // 대시보드 기준일: 자료 기준일을 오늘로 옮긴 값(렌더 시점마다 계산).
+    Object.defineProperty(Component.prototype, 'asOfDate', { configurable: true, get: function () { return displayDay(asOfDate); } });
     Component.prototype.renderVals = function () { return view(this, originalRender.call(this)); };
   }
   window.PensionBriefingAdapter = {
@@ -1335,6 +1438,8 @@ window.PensionBranchSearchStyles = "/* Branch AI styles. Every rule is scoped by
     return out;
   }
   function compose(events) {
+    // 표시용: 답변·출처·후속 문구의 날짜를 화면 기준일(오늘)로 옮긴다. 실제 시각(trace timeline at 등)은 그대로.
+    if (window.PensionDisplayDate) events = window.PensionDisplayDate.shiftValue(events);
     var answer = events.filter(function (e) { return e.type === 'answer'; })[0];
     if (!answer) return null;
     var links = (Array.isArray(answer.links) ? answer.links : []).filter(function (l) {
@@ -2848,13 +2953,15 @@ function createRemote(input,options){
    const answer=final.data;
    // Check every ID against the actual original rows before committing any part of the turn.
    if(options.prepareAnswer)options.prepareAnswer(answer,manifest);
-   observe('validated',answer);
+   // 표시용 복사본: 답변·범위 문구·조건 라벨·execution_trace 요약의 자료 날짜를 오늘로 옮긴다(실제 시각 키는 유지). next_state·actions·ui는 원본을 쓴다.
+   const shown=root.PensionDisplayDate?root.PensionDisplayDate.shiftValue(answer):answer;
+   observe('validated',shown);
    state=C.copy(answer.next_state);revision=answer.revision;
-   if(answer.ui.list_action==='replace')view={active:true,rowIds:answer.ui.row_ids.slice(),sort:C.copy(answer.ui.sort),contextLabel:answer.context_label};
-   else if(answer.ui.list_action==='reset')view={active:false,rowIds:[],sort:null,contextLabel:answer.context_label};
-   else view.contextLabel=answer.context_label;
-   busy=false;controller=null;reply.pending=false;reply.text=answer.text;delete reply.retryText;delete reply.retryAction;
-   reply.result={answer:answer.text,scopeNote:answer.scope_note,contextLabel:answer.context_label,actions:C.copy(answer.actions),ui:answer.ui};
+   if(answer.ui.list_action==='replace')view={active:true,rowIds:answer.ui.row_ids.slice(),sort:C.copy(answer.ui.sort),contextLabel:shown.context_label};
+   else if(answer.ui.list_action==='reset')view={active:false,rowIds:[],sort:null,contextLabel:shown.context_label};
+   else view.contextLabel=shown.context_label;
+   busy=false;controller=null;reply.pending=false;reply.text=shown.text;delete reply.retryText;delete reply.retryAction;
+   reply.result={answer:shown.text,scopeNote:shown.scope_note,contextLabel:shown.context_label,actions:C.copy(answer.actions),ui:answer.ui};
    emit(answer.ui.list_action==='keep'?'answer':'apply',{result:C.copy(reply.result),trace});return C.copy(answer);
   }catch(e){
    if(disposed||token!==ticket){if(trace&&typeof trace.cancelled==='function'){try{trace.cancelled();}catch(_){}}return null;}
@@ -3520,7 +3627,9 @@ function mount(component,params){
  destroy();params=params||{};if(params.branchSearch===false)return;
  const app=document.getElementById('pensionAgentDemo');if(!app)return;
  const render=component.renderVals,initial=fullView(component,render);
- const source=root.PensionBranchCurrentData.fromCurrentRows(initial.queue,root.PensionBriefingFixtures,component.DATA,c=>component.profileOf(c));
+ const projected=root.PensionBranchCurrentData.fromCurrentRows(initial.queue,root.PensionBriefingFixtures,component.DATA,c=>component.profileOf(c));
+ // 화면 기준일(오늘)로 옮긴 복사본. 로컬 엔진·엑셀 기준일·답변 문구가 이것을 쓴다. 원격 Agent는 자기 데이터·manifest(자료 기준일)로 계산한다.
+ const source=root.PensionDisplayDate?root.PensionDisplayDate.shiftValue(projected):projected;
  if(!source.records.length){console.error('[Branch AI] Current main list empty. No fallback cohort used.');return;}
  // Local calculation is opt-in for regression/demo use; remote failures never fall back to it.
  const local=params.branchAgentMode==='local';
@@ -3691,11 +3800,13 @@ root.PensionBranchSearchAdapter={mount,beforeRender,afterRender,destroy,get:()=>
  * 모든 기록은 origin:'frontend_fixture', isSimulated:true 를 가진다. 렌더러는 pensionExecutionTracePanel.js.
  */
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory();
-  else root.PensionExecutionTraceData = factory();
-})(typeof window === 'undefined' ? globalThis : window, function () {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./pensionDisplayDate'));
+  else root.PensionExecutionTraceData = factory(root.PensionDisplayDate);
+})(typeof window === 'undefined' ? globalThis : window, function (DD) {
   'use strict';
-  var AS_OF = '2026-09-29', PREV = '2026-09-28', SEED = 20260929, COUNT = 1392, BRANCH = '여의도종합금융센터';
+  // 목업을 작성한 기준일 D0. 실제 기준일 AS_OF는 화면 표시 기준일(오늘, pensionDisplayDate.js)이며, 작성된 날짜는 전부 그 차이(OFFSET)만큼 옮긴다.
+  // 시드는 날짜와 무관하게 고정이라 고객·금액·세그먼트 결과는 매일 같고 날짜만 당일 기준으로 움직인다.
+  var D0 = '2026-09-29', AS_OF = D0, PREV = '2026-09-28', OFFSET = 0, SEED = 20260929, COUNT = 1392, BRANCH = '여의도종합금융센터';
   var TIMEZONE = 'Asia/Seoul';
   var MODEL = { display: 'Gemma 4', model: 'gemma-4-31b-it', deployment: 'gemma-4-31b-nvidia-fp4-h100' };
   // 기존 화면과 같은 값: 부점 잔액 526.8억(▲1.3억), 적립금 1억 이상 고객이 전체 적립금의 45.3%.
@@ -3720,6 +3831,15 @@ root.PensionBranchSearchAdapter={mount,beforeRender,afterRender,destroy,get:()=>
   var fromDays = function (d) { var t = new Date(d * DAY); return t.getUTCFullYear() + '-' + pad(t.getUTCMonth() + 1, 2) + '-' + pad(t.getUTCDate(), 2); };
   var addDays = function (s, n) { return fromDays(toDays(s) + n); };
   var daysBetween = function (from, to) { return toDays(to) - toDays(from); };
+  var rel = function (authored) { return addDays(authored, OFFSET); }; // 작성 당시 날짜 → 현재 기준일 세계의 같은 날짜
+  var md = function (day) { return (+day.slice(5, 7)) + '/' + (+day.slice(8, 10)); };
+  var anchored = false;
+  function anchor() {
+    var day = DD && DD.today ? DD.today() : D0;
+    if (anchored && day === AS_OF) return;
+    anchored = true; AS_OF = day; PREV = addDays(AS_OF, -1); OFFSET = daysBetween(D0, AS_OF); cached = null;
+    SEGMENTS.forEach(function (s) { if (s.key === 'salary_deposit') s.rule = '스냅샷 직전 달력일의 일반계좌 급여입금 거래 존재 (전일 스냅샷 ' + md(addDays(PREV, -1)) + ', 금일 스냅샷 ' + md(PREV) + ')'; });
+  }
   var copy = function (x) { return JSON.parse(JSON.stringify(x)); };
   // 기준 시각은 프론트가 처음 렌더링된 실제 시각(setBase)이다. 화면이 뜨자마자 브리핑을 요청하고, 그 요청 안에서
   // 생성(20초)이 수행된 뒤 응답이 돌아온 것처럼 모든 시각을 이 기준의 ms offset으로 계산한다.
@@ -3746,22 +3866,22 @@ root.PensionBranchSearchAdapter={mount,beforeRender,afterRender,destroy,get:()=>
   function shuffled(r, n) { var a = []; for (var i = 0; i < n; i++) a.push(i); for (var j = n - 1; j > 0; j--) { var k = Math.floor(r() * (j + 1)); var t = a[j]; a[j] = a[k]; a[k] = t; } return a; }
 
   function baseCustomer(r, i) {
-    var age = between(r, 27, 64), opened = dateBetween(r, '2012-01-01', '2026-06-30');
+    var age = between(r, 27, 64), opened = dateBetween(r, rel('2012-01-01'), rel('2026-06-30'));
     var contributed = pick(r, [0, 1200000, 2400000, 3600000, 4800000, 6000000, 7200000, 9000000], [0.18, 0.12, 0.14, 0.14, 0.14, 0.1, 0.08, 0.1]);
     var history = [];
-    if (r() < 0.32) { var n = between(r, 1, 3); for (var k = 0; k < n; k++) history.push({ date: dateBetween(r, '2024-01-10', '2025-12-20'), amountKrw: man(r, 50, 300) }); history.sort(function (a, b) { return a.date < b.date ? -1 : 1; }); }
+    if (r() < 0.32) { var n = between(r, 1, 3); for (var k = 0; k < n; k++) history.push({ date: dateBetween(r, rel('2024-01-10'), rel('2025-12-20')), amountKrw: man(r, 50, 300) }); history.sort(function (a, b) { return a.date < b.date ? -1 : 1; }); }
     return {
       // 화면과 같은 고객식별자 표기(5자리-5자리, 10자리). i마다 유일하며 실제 개인정보가 아니다.
       customerId: pad(10000 + ((i * 7919) % 90000), 5) + '-' + pad(10000 + ((i * 104729 + 12345) % 90000), 5),
       profile: { age: age, grade: pick(r, GRADES, GRADE_W), investmentProfile: pick(r, PROFILES, PROFILE_W), irpOpenedAt: opened },
       account: { valuationAmountKrw: 0, oneYearReturnPct: 0, cashAmountKrw: 0, cashPct: 0 },
-      operation: { lastInstructionDate: dateBetween(r, '2026-08-30', '2026-09-27'), depositPurchaseConfigured: r() < 0.65, defaultOptionRegistered: true },
+      operation: { lastInstructionDate: dateBetween(r, rel('2026-08-30'), rel('2026-09-27')), depositPurchaseConfigured: r() < 0.65, defaultOptionRegistered: true },
       maturities: [],
       contribution: { annualContributionKrw: contributed, taxDeductionRemainingKrw: 9000000 - contributed, pastExtraContributions: history, pendingContributionKrw: 0 },
       payout: { pensionEligible: false, pensionStarted: false },
       signals: { churnRisk: false, churnReasons: [], transfer: null, contributionStopped: contributed === 0 && r() < 0.5 },
       transactions: [],
-      counseling: { lastCounselingDate: r() < 0.55 ? dateBetween(r, '2026-03-01', '2026-09-20') : null, summary: null }
+      counseling: { lastCounselingDate: r() < 0.55 ? dateBetween(r, rel('2026-03-01'), rel('2026-09-20')) : null, summary: null }
     };
   }
   function setValuation(c, amount, pct) {
@@ -3807,9 +3927,9 @@ root.PensionBranchSearchAdapter={mount,beforeRender,afterRender,destroy,get:()=>
     customers.forEach(function (c, idx) {
       if (scripted[idx] || dateOnlySet[idx]) return;
       if (inSet.td30[idx]) c.maturities.push({ kind: '정기예금', id: 'TD-' + pad(++mat, 4), maturityDate: dateBetween(r, AS_OF, addDays(PREV, 30)), amountKrw: man(r, 500, 6000) });
-      else if (r() < 0.24) c.maturities.push({ kind: '정기예금', id: 'TD-' + pad(++mat, 4), maturityDate: dateBetween(r, addDays(AS_OF, 31), '2027-09-20'), amountKrw: man(r, 500, 6000) });
+      else if (r() < 0.24) c.maturities.push({ kind: '정기예금', id: 'TD-' + pad(++mat, 4), maturityDate: dateBetween(r, addDays(AS_OF, 31), rel('2027-09-20')), amountKrw: man(r, 500, 6000) });
       if (inSet.isa30[idx]) c.maturities.push({ kind: 'ISA', id: 'ISA-' + pad(++mat, 4), maturityDate: dateBetween(r, AS_OF, addDays(PREV, 30)), amountKrw: man(r, 1000, 8000) });
-      else if (r() < 0.16) c.maturities.push({ kind: 'ISA', id: 'ISA-' + pad(++mat, 4), maturityDate: dateBetween(r, addDays(AS_OF, 31), '2027-12-20'), amountKrw: man(r, 1000, 8000) });
+      else if (r() < 0.16) c.maturities.push({ kind: 'ISA', id: 'ISA-' + pad(++mat, 4), maturityDate: dateBetween(r, addDays(AS_OF, 31), rel('2027-12-20')), amountKrw: man(r, 1000, 8000) });
     });
     dateOnly.tdEnter.forEach(function (idx) { customers[idx].maturities.push({ kind: '정기예금', id: 'TD-' + pad(++mat, 4), maturityDate: addDays(AS_OF, 30), amountKrw: man(r, 1000, 5000) }); });
     dateOnly.isaEnter.forEach(function (idx) { customers[idx].maturities.push({ kind: 'ISA', id: 'ISA-' + pad(++mat, 4), maturityDate: addDays(AS_OF, 30), amountKrw: man(r, 2000, 6000) }); });
@@ -3820,15 +3940,15 @@ root.PensionBranchSearchAdapter={mount,beforeRender,afterRender,destroy,get:()=>
       var pct = inSet.cashWait[idx] && !role && !dOnly ? between(r, 30, 60) : (r() < 0.7 ? between(r, 0, 24) : between(r, 30, 60));
       setValuation(c, big ? man(r, 10000, 48000) : man(r, 300, 9800), pct);
       c.account.oneYearReturnPct = inSet.lowReturn[idx] && !role && !dOnly ? between(r, -75, 9) / 10 : between(r, 15, 115) / 10;
-      if (inSet.cashWait[idx] && !role && !dOnly) c.operation.lastInstructionDate = dateBetween(r, '2025-08-01', addDays(PREV, -100));
+      if (inSet.cashWait[idx] && !role && !dOnly) c.operation.lastInstructionDate = dateBetween(r, rel('2025-08-01'), addDays(PREV, -100));
       else if (c.account.cashPct >= 30) c.operation.lastInstructionDate = dateBetween(r, addDays(PREV, -80), addDays(PREV, -1));
       if (inSet.pending[idx] && !role && !dOnly) { c.contribution.pendingContributionKrw = man(r, 100, 600); c.operation.depositPurchaseConfigured = false; }
       if (inSet.doUnregistered[idx] && !role && !dOnly) c.operation.defaultOptionRegistered = false;
       if (inSet.churn[idx] && !role && !dOnly) { c.signals.churnRisk = true; c.signals.churnReasons = [pick(r, ['수익률 부진 후 잔액 감소', '타행 IRP 이전 문의', '계약이전 절차 문의', '납입 중단 후 상담 요청'])]; }
-      if (inSet.transfer[idx] && !role && !dOnly) c.signals.transfer = { applied: true, status: pick(r, ['처리대기', '진행중']), appliedAt: dateBetween(r, '2026-08-20', '2026-09-24') };
+      if (inSet.transfer[idx] && !role && !dOnly) c.signals.transfer = { applied: true, status: pick(r, ['처리대기', '진행중']), appliedAt: dateBetween(r, rel('2026-08-20'), rel('2026-09-24')) };
       if (inSet.pensionStarted[idx] && !role && !dOnly) { c.profile.age = Math.max(c.profile.age, 58); c.payout.pensionStarted = true; }
-      if (inSet.pensionEligible[idx] && !role && !dOnly && !c.payout.pensionStarted) { c.profile.age = Math.max(c.profile.age, 55); c.profile.irpOpenedAt = dateBetween(r, '2012-01-01', '2021-06-30'); }
-      else if (role || dOnly !== 'pension') { if (c.profile.age >= 55 && !c.payout.pensionStarted && daysBetween(c.profile.irpOpenedAt, AS_OF) >= 365 * 5) c.profile.irpOpenedAt = dateBetween(r, '2022-01-01', '2026-06-30'); }
+      if (inSet.pensionEligible[idx] && !role && !dOnly && !c.payout.pensionStarted) { c.profile.age = Math.max(c.profile.age, 55); c.profile.irpOpenedAt = dateBetween(r, rel('2012-01-01'), rel('2021-06-30')); }
+      else if (role || dOnly !== 'pension') { if (c.profile.age >= 55 && !c.payout.pensionStarted && daysBetween(c.profile.irpOpenedAt, AS_OF) >= 365 * 5) c.profile.irpOpenedAt = dateBetween(r, rel('2022-01-01'), rel('2026-06-30')); }
       if (role) c.profile.age = Math.min(c.profile.age, 52);
     });
     // 날짜 경과만으로 진입하는 고객.
@@ -3841,17 +3961,17 @@ root.PensionBranchSearchAdapter={mount,beforeRender,afterRender,destroy,get:()=>
       if (j < 3) { c.contribution.annualContributionKrw = 9000000; c.contribution.taxDeductionRemainingKrw = 0; }
       else { var paid = pick(r, [1200000, 2400000, 3600000, 4800000]); c.contribution.annualContributionKrw = paid; c.contribution.taxDeductionRemainingKrw = 9000000 - paid; }
       if (j >= 3 && j < 6) c.contribution.pastExtraContributions = [];
-      if (j >= 6 && !c.contribution.pastExtraContributions.length) c.contribution.pastExtraContributions = [{ date: dateBetween(r, '2024-02-01', '2025-11-30'), amountKrw: man(r, 100, 300) }];
+      if (j >= 6 && !c.contribution.pastExtraContributions.length) c.contribution.pastExtraContributions = [{ date: dateBetween(r, rel('2024-02-01'), rel('2025-11-30')), amountKrw: man(r, 100, 300) }];
     });
     roles.returnUp.forEach(function (idx) { var c = customers[idx]; setValuation(c, man(r, 3000, 8000), between(r, 3, 20)); c.account.oneYearReturnPct = between(r, 6, 9) / 10; });
-    var bx = role('balanceCross', 0); setValuation(bx, 42000000, 9); bx.operation.lastInstructionDate = '2026-09-10';
-    var rd = role('retirementDeposit', 0); setValuation(rd, 183000000, 12); rd.operation.lastInstructionDate = '2026-09-15';
+    var bx = role('balanceCross', 0); setValuation(bx, 42000000, 9); bx.operation.lastInstructionDate = rel('2026-09-10');
+    var rd = role('retirementDeposit', 0); setValuation(rd, 183000000, 12); rd.operation.lastInstructionDate = rel('2026-09-15');
     roles.routine.forEach(function (idx) { var c = customers[idx]; setValuation(c, man(r, 2000, 8000), between(r, 3, 24)); c.account.oneYearReturnPct = between(r, 18, 96) / 10; });
-    var ct = role('churnTransfer', 0); setValuation(ct, 56000000, 8); ct.counseling = { lastCounselingDate: '2026-09-11', summary: '계약이전 절차 문의' };
+    var ct = role('churnTransfer', 0); setValuation(ct, 56000000, 8); ct.counseling = { lastCounselingDate: rel('2026-09-11'), summary: '계약이전 절차 문의' };
     var co = role('churnOnly', 0); setValuation(co, 84000000, 14); co.account.oneYearReturnPct = 1.6;
     var dr = role('doRegistered', 0); setValuation(dr, 31000000, 11); dr.operation.defaultOptionRegistered = false;
     var pp = role('pendingPlain', 0); setValuation(pp, 60000000, 10); pp.operation.depositPurchaseConfigured = false; pp.contribution.annualContributionKrw = 2400000; pp.contribution.taxDeductionRemainingKrw = 6600000;
-    var cf = role('cashFact', 0); setValuation(cf, 30000000, 22); cf.operation.depositPurchaseConfigured = false; cf.operation.lastInstructionDate = '2026-04-20'; cf.contribution.annualContributionKrw = 1200000; cf.contribution.taxDeductionRemainingKrw = 7800000;
+    var cf = role('cashFact', 0); setValuation(cf, 30000000, 22); cf.operation.depositPurchaseConfigured = false; cf.operation.lastInstructionDate = rel('2026-04-20'); cf.contribution.annualContributionKrw = 1200000; cf.contribution.taxDeductionRemainingKrw = 7800000;
     // 부점 잔액을 기존 화면 값에 맞춘다(pool 고객만 조정, 스크립트 고객 금액은 유지).
     // 금일 1억 이상 합계 = 전체의 45.3% = pool 118명 + 퇴직급여 입금 고객(2.13억) + 1억 진입 고객(1.07억).
     var bigPoolTarget = Math.round(BIG_SHARE_CURR * TOTAL_CURR) - 213000000 - 107000000;
@@ -3907,7 +4027,7 @@ root.PensionBranchSearchAdapter={mount,beforeRender,afterRender,destroy,get:()=>
     { key: 'managed', label: '관리 고객', sourceLabels: [], rule: '스냅샷의 전체 개인형 IRP 고객', basis: 'count', test: function () { return true; } },
     { key: 'churn_risk', label: '이탈위험', sourceLabels: ['이탈징후'], rule: "관리신호 churnRisk = true (등록 라벨 '이탈징후'를 이 표시 그룹에 연결)", test: function (c) { return c.signals.churnRisk === true; } },
     { key: 'transfer_pending', label: '계약이전 신청·처리대기', sourceLabels: ['계약이전 신청'], rule: "transfer.applied = true 이고 상태가 신청·처리대기·진행중", test: function (c) { return !!c.signals.transfer && c.signals.transfer.applied && ['신청', '처리대기', '진행중'].indexOf(c.signals.transfer.status) >= 0; } },
-    { key: 'salary_deposit', label: '전일 급여 입금', sourceLabels: [], rule: '스냅샷 직전 달력일의 일반계좌 급여입금 거래 존재 (전일 스냅샷 9/27, 금일 스냅샷 9/28)', test: function (c, s) { return c.transactions.some(function (t) { return t.type === '급여입금' && t.date === s.transactionDate; }); } },
+    { key: 'salary_deposit', label: '전일 급여 입금', sourceLabels: [], rule: '', /* anchor()가 기준일로 채운다 */ test: function (c, s) { return c.transactions.some(function (t) { return t.type === '급여입금' && t.date === s.transactionDate; }); } },
     { key: 'do_unregistered', label: 'DO 미등록', sourceLabels: ['DO 미등록'], rule: 'defaultOptionRegistered = false', test: function (c) { return c.operation.defaultOptionRegistered === false; } },
     { key: 'cash_long_wait', label: '현금성 장기대기', sourceLabels: ['현금성 장기대기'], rule: '현금성자산 비중 30% 이상이고 최근 운용지시일이 기준일로부터 90일 이상 경과', test: function (c, s) { return c.account.cashPct >= 30 && daysBetween(c.operation.lastInstructionDate, s.asOfDate) >= 90; } },
     { key: 'pending_contribution', label: '납입금 미운용', sourceLabels: ['납입금 미운용'], rule: '미운용 개인부담금 납입액 > 0', test: function (c) { return c.contribution.pendingContributionKrw > 0; } },
@@ -3978,7 +4098,7 @@ root.PensionBranchSearchAdapter={mount,beforeRender,afterRender,destroy,get:()=>
     var reason = function (ids, text, ref) { return ids.map(function (id) { return { customerId: id, reason: text, evidenceRefs: [ref(byId[id])] }; }); };
     return {
       stages: [
-        { key: 'salary', title: '전일(9/28) 급여 입금 고객', inputCount: curr.customers.length, selected: salary, excludedCount: curr.customers.length - salary.length, excluded: [], rule: "거래일 " + curr.transactionDate + " 일반계좌 '급여입금' 거래 존재", field: 'transactions[].type = 급여입금' },
+        { key: 'salary', title: '전일(' + md(curr.transactionDate) + ') 급여 입금 고객', inputCount: curr.customers.length, selected: salary, excludedCount: curr.customers.length - salary.length, excluded: [], rule: "거래일 " + curr.transactionDate + " 일반계좌 '급여입금' 거래 존재", field: 'transactions[].type = 급여입금' },
         { key: 'remaining', title: '세액공제 잔여한도 양수', inputCount: salary.length, selected: remaining, excludedCount: noRemaining.length, excluded: reason(noRemaining, '세액공제 잔여한도 0원 (올해 개인부담금 900만원 납입 완료)', function (c) { return ref(curr, c, 'contribution.taxDeductionRemainingKrw'); }), rule: 'contribution.taxDeductionRemainingKrw > 0', field: 'contribution.taxDeductionRemainingKrw' },
         { key: 'history', title: '과거 추가납입 거래 이력 존재', inputCount: remaining.length, selected: history, excludedCount: noHistory.length, excluded: reason(noHistory, '과거 추가납입 거래 이력 없음', function (c) { return ref(curr, c, 'contribution.pastExtraContributions'); }), rule: 'contribution.pastExtraContributions.length > 0', field: 'contribution.pastExtraContributions' }
       ],
@@ -4147,11 +4267,13 @@ root.PensionBranchSearchAdapter={mount,beforeRender,afterRender,destroy,get:()=>
   }
 
   var cached = null;
+  anchor();
   return {
-    build: function () { return cached || (cached = build()); },
+    build: function () { anchor(); return cached || (cached = build()); },
     reset: function () { cached = null; },
     stamp: stamp, setBase: setBase, clockOf: clockOf, diffPaths: diffPaths, daysBetween: daysBetween, won: won,
-    ACTOR_LABEL: ACTOR_LABEL, SEGMENTS: SEGMENTS, BRIEFING_TEXT: BRIEFING_TEXT, MODEL: MODEL, AS_OF: AS_OF, PREV: PREV, COUNT: COUNT
+    ACTOR_LABEL: ACTOR_LABEL, SEGMENTS: SEGMENTS, BRIEFING_TEXT: BRIEFING_TEXT, MODEL: MODEL, COUNT: COUNT, D0: D0,
+    get AS_OF() { anchor(); return AS_OF; }, get PREV() { anchor(); return PREV; }
   };
 });
 
@@ -5064,7 +5186,9 @@ root.PensionBranchSearchAdapter={mount,beforeRender,afterRender,destroy,get:()=>
   /* ---------- 패널 ---------- */
   function renderKey(trace, turns) { return (trace ? trace.ended_at + '|' + (trace.front ? trace.front.responded_at : '') : '-') + '|' + turns.length + '|' + (turns.length ? turns[turns.length - 1].front.finishedAt : ''); }
   function render(trace, turns) {
-    var c = current;
+    var c = current, DD = root.PensionDisplayDate;
+    // 표시용 복사본: 스냅샷 값·사실·지식 원문의 자료 날짜는 오늘 기준으로, 처리 시각(*_at·timeline.at)은 실제 시계 그대로.
+    if (DD) { trace = trace ? DD.shiftValue(trace) : trace; turns = DD.shiftValue(turns); }
     // afterRender()가 같은 근거를 다시 그리지 않도록 렌더 키를 여기서 기록한다(열린 단계가 첫 재렌더에서 접히는 문제 방지).
     c.renderedAt = renderKey(trace, turns);
     c.body.replaceChildren();
@@ -6780,7 +6904,7 @@ class Component {
       legacyBrief: true, showLegacyTip: true, hasExecItems: !!(BF && BF.s5.exec.length),
       hasWhy: !!(BF && BF.s2.why), hasChecks: !!(BF && BF.s2.checks.length), hasOptions: !!(BF && BF.s3.tiles.length),
       hasS4: !!BF, hasOpening: !!(BF && BF.s4.opening), hasReactions: !!(BF && BF.s4.reacts.length), hasS5: !!BF,
-      profileAnalysisLabel: '오전 7:30 분석', briefingAnalysisLabel: '2026.09.04 기준 분석', holdingReturnLabel: '1년 수익률',
+      profileAnalysisLabel: '오전 7:30 분석', briefingAnalysisLabel: asOf.replace(/-/g, '.') + ' 기준 분석', holdingReturnLabel: '1년 수익률',
       hasAiBrief: !!BF, noAiBrief: !!c && !BF, bfName: c ? c.name : '',
       bfBadges: BF ? BF.badges : [],
       bfS1Lines: BF ? [BF.s1.main].concat(BF.s1.sub.split(/(?<=\.) /)).map((t, i) => ({ no: i + 1, t: this.bold(t), fw: i === 0 ? 800 : 400, fg: i === 0 ? '#26282C' : '#4E545C' })) : [],
@@ -6875,13 +6999,18 @@ class Component {
   // The build reads the same default queue and profiles used by the main screen.
   if (typeof window.__PensionBuildExtract === 'function') {
     window.__PensionBuildExtract(function extractCurrentRows() {
-      const page = new Component({});
-      const modelRows = page.DATA;
-      return {
-        mainRows: page.renderVals().queue,
-        modelRows,
-        profiles: Object.fromEntries(modelRows.map(row => [row.id, page.profileOf(row)]))
-      };
+      // 반입 데이터 추출은 화면의 날짜 이동(pensionDisplayDate.js)과 무관해야 한다: 추출하는 동안 표시 기준일을 자료 기준일에 고정한다.
+      const DD = window.PensionDisplayDate, pinned = Object.prototype.hasOwnProperty.call(window, '__PENSION_DISPLAY_DATE'), saved = window.__PENSION_DISPLAY_DATE;
+      if (DD) window.__PENSION_DISPLAY_DATE = DD.base();
+      try {
+        const page = new Component({});
+        const modelRows = page.DATA;
+        return {
+          mainRows: page.renderVals().queue,
+          modelRows,
+          profiles: Object.fromEntries(modelRows.map(row => [row.id, page.profileOf(row)]))
+        };
+      } finally { if (DD) { if (pinned) window.__PENSION_DISPLAY_DATE = saved; else delete window.__PENSION_DISPLAY_DATE; } }
     });
   }
 

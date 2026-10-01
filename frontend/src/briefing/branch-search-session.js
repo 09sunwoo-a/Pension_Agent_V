@@ -144,13 +144,15 @@ function createRemote(input,options){
    const answer=final.data;
    // Check every ID against the actual original rows before committing any part of the turn.
    if(options.prepareAnswer)options.prepareAnswer(answer,manifest);
-   observe('validated',answer);
+   // 표시용 복사본: 답변·범위 문구·조건 라벨·execution_trace 요약의 자료 날짜를 오늘로 옮긴다(실제 시각 키는 유지). next_state·actions·ui는 원본을 쓴다.
+   const shown=root.PensionDisplayDate?root.PensionDisplayDate.shiftValue(answer):answer;
+   observe('validated',shown);
    state=C.copy(answer.next_state);revision=answer.revision;
-   if(answer.ui.list_action==='replace')view={active:true,rowIds:answer.ui.row_ids.slice(),sort:C.copy(answer.ui.sort),contextLabel:answer.context_label};
-   else if(answer.ui.list_action==='reset')view={active:false,rowIds:[],sort:null,contextLabel:answer.context_label};
-   else view.contextLabel=answer.context_label;
-   busy=false;controller=null;reply.pending=false;reply.text=answer.text;delete reply.retryText;delete reply.retryAction;
-   reply.result={answer:answer.text,scopeNote:answer.scope_note,contextLabel:answer.context_label,actions:C.copy(answer.actions),ui:answer.ui};
+   if(answer.ui.list_action==='replace')view={active:true,rowIds:answer.ui.row_ids.slice(),sort:C.copy(answer.ui.sort),contextLabel:shown.context_label};
+   else if(answer.ui.list_action==='reset')view={active:false,rowIds:[],sort:null,contextLabel:shown.context_label};
+   else view.contextLabel=shown.context_label;
+   busy=false;controller=null;reply.pending=false;reply.text=shown.text;delete reply.retryText;delete reply.retryAction;
+   reply.result={answer:shown.text,scopeNote:shown.scope_note,contextLabel:shown.context_label,actions:C.copy(answer.actions),ui:answer.ui};
    emit(answer.ui.list_action==='keep'?'answer':'apply',{result:C.copy(reply.result),trace});return C.copy(answer);
   }catch(e){
    if(disposed||token!==ticket){if(trace&&typeof trace.cancelled==='function'){try{trace.cancelled();}catch(_){}}return null;}

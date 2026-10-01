@@ -11,6 +11,9 @@ const transport = require('../../frontend/src/briefing/fabrix-transport');
 const chatTransport = require('../../frontend/src/briefing/fabrix-chat-transport');
 const { create } = require('../../frontend/src/briefing/pensionBriefingStore');
 const copy = x => JSON.parse(JSON.stringify(x));
+// 화면은 모든 자료 날짜를 오늘로 평행이동한다(pensionDisplayDate.js). 검사는 자료 기준일에 고정해 기존 값으로 확인하고, 이동 자체는 displayDateCheck()에서 본다.
+const DATA_AS_OF = '2026-09-29';
+globalThis.__PENSION_DISPLAY_DATE = DATA_AS_OF;
 const { customers, briefings, noBriefing } = inputs();
 assert.equal(customers.length, 42, 'Expected 30 case customers + 12 conversational-agent demo customers. Update intentionally when adding cases.');
 assert.equal(briefings.filter(Boolean).length, 42, 'Expected 42 stored briefings (30 B cases + 12 C01 customers)');
@@ -49,7 +52,7 @@ function traceFor(req, briefing) {
     groups: evidence.presentation.groups, snapshot: [], facts: evidence.facts.map(f => ({ id: f.id, label: f.label, role: f.role, values: f.data_refs.map(ref => ({ ref, value: wire.pointer(req.customer_data, ref) })) })),
     judgments: evidence.judgments, knowledge_cards: evidence.knowledge_cards, bindings: evidence.bindings.map(b => Object.assign({ text: wire.pointer(briefing, b.target) }, b)), workflow: evidence.workflow };
 }
-const ctx = { window: {}, document: {}, console, setTimeout, clearTimeout, setInterval, clearInterval, URL, AbortController, TextDecoder };
+const ctx = { window: { __PENSION_DISPLAY_DATE: DATA_AS_OF }, document: {}, console, setTimeout, clearTimeout, setInterval, clearInterval, URL, AbortController, TextDecoder };
 vm.runInNewContext(js.replace('  // Starroot adapter', '  window.TestComponent = Component;\n  // Starroot adapter'), ctx);
 assert.equal(typeof ctx.window['PG_' + code].onParam, 'function');
 assert.equal(typeof ctx.window.PensionFabrix.configure, 'function');
@@ -89,7 +92,7 @@ assert.equal(dash.showDashboard, true);
 assert.equal(dash.queue.length, LEGACY_ROWS + queued.length, 'Main list = legacy rows + case customers');
 assert.equal(dash.queueTotal, LEGACY_ROWS + queued.length);
 assert.equal(dash.kNewN + dash.kOnN + dash.doneCount, dash.queueTotal, 'Every row is 신규 선정, 지속 관리 or 처리완료');
-assert.deepEqual([dash.dashDateLabel, dash.dashAsOfLabel], ['9월 29일 화요일', '09.29'], 'Dashboard date follows the case 기준일');
+assert.deepEqual([dash.dashDateLabel, dash.dashAsOfLabel], ['9월 29일 화요일', '09.29'], 'Dashboard date follows the case 기준일 (display date pinned to it in this check)');
 assert.ok(customers.every(c => c.briefingMeta.asOfDate === '2026-09-29'), 'Every customer shares the 2026-09-29 기준일');
 for (const hidden of ['ksy', 'lsm', 'pjh']) assert.ok(!Array.from(dash.queue).some(r => r.id === hidden), hidden + ' legacy row replaced');
 assert.deepEqual([dash.hasCaseLibrary, dash.caseChoices, dash.caseLibraryLabel], [undefined, undefined, undefined], 'Test-only 고객별 브리핑 pickers removed');
@@ -783,11 +786,79 @@ async function traceLogCheck() {
   console.log('PASS: 처리 이력(부점 AI 검색·엑셀 추출) — send/receive/validate observed on the real transport hooks, Agent execution_trace merged in sequence, trace-less answer shows observed steps only, error/timeout/late response recorded without touching the list, export snapshot·wait vs build timing·file facts·empty/fail/cancel. (Fake SSE; no real Agent/Gemma.)');
 }
 
+// 화면 표시 기준일 = 오늘: 자료 기준일(2026-09-29)과의 차이만큼 화면의 모든 날짜가 움직이고, Agent 요청·manifest·실제 처리 시각은 그대로다.
+// 검사는 +2일(2026-10-01, 목요일)로 고정한 두 번째 반입 JS 컨텍스트로 확인한다.
+async function displayDateCheck() {
+  const DDm = require('../../frontend/src/briefing/pensionDisplayDate');
+  delete globalThis.__PENSION_DISPLAY_DATE;
+  assert.match(DDm.today(), /^\d{4}-\d{2}-\d{2}$/, 'today() is a calendar day (Asia/Seoul)');
+  globalThis.__PENSION_DISPLAY_DATE = '2026-10-01';
+  assert.deepEqual([DDm.base(), DDm.today(), DDm.offsetDays()], [DATA_AS_OF, '2026-10-01', 2], 'Base = data 기준일, offset = today − base');
+  assert.equal(DDm.shiftText('기준일 2026-09-29 · 2026.09.16 자료 기준 · 2026년 9월 30일 · 9월 30일 만기 · 2026-09-29T07:00:00+09:00 · D-10 · 경과 109일 · 12개월 10일 · 매월 25일 · 2026.09 자료 · 193482-6012375 · 10274-38562 · 2027-02-28'),
+    '기준일 2026-10-01 · 2026.09.18 자료 기준 · 2026년 10월 2일 · 10월 2일 만기 · 2026-10-01T07:00:00+09:00 · D-10 · 경과 109일 · 12개월 10일 · 매월 25일 · 2026.09 자료 · 193482-6012375 · 10274-38562 · 2027-03-02',
+    'Every date notation moves by the offset; D-n, elapsed days, month-only basis and identifiers stay');
+  assert.deepEqual(DDm.shiftValue({ openedAt: '2026-09-29', started_at: '2026-09-29T01:00:00.000Z', front: { requestedAt: '2026-09-29T01:00:00.000Z' }, timeline: [{ at: '2026-09-29T01:00:00.000Z', text: '2026-09-29', n: 3 }] }),
+    { openedAt: '2026-10-01', started_at: '2026-09-29T01:00:00.000Z', front: { requestedAt: '2026-09-29T01:00:00.000Z' }, timeline: [{ at: '2026-09-29T01:00:00.000Z', text: '2026-10-01', n: 3 }] }, 'Real clock keys are copied untouched; data dates move');
+  globalThis.__PENSION_DISPLAY_DATE = DATA_AS_OF;
+  assert.deepEqual([DDm.offsetDays(), DDm.shiftText('2026-09-29 그대로'), DDm.shiftDay('2026-09-29')], [0, '2026-09-29 그대로', '2026-09-29'], 'Offset 0 = identity');
+  // 반입 JS 전체를 2026-10-01로 고정한 컨텍스트.
+  let hooked = null;
+  const w = { window: { __PENSION_DISPLAY_DATE: '2026-10-01', __PensionBuildExtract: extract => { hooked = copy(extract()); } }, document: {}, console, setTimeout, clearTimeout, setInterval, clearInterval, URL, AbortController, TextDecoder };
+  vm.runInNewContext(js.replace('  // Starroot adapter', '  window.TestComponent = Component;\n  // Starroot adapter'), w);
+  const page = new w.window.TestComponent({});
+  page.setState = patch => Object.assign(page.state, typeof patch === 'function' ? patch(page.state) : patch);
+  page.state.sel = null; page.state.filter = 'all'; page.state.extA = null;
+  const dash2 = page.renderVals();
+  assert.deepEqual([dash2.dashDateLabel, dash2.dashAsOfLabel], ['10월 1일 목요일', '10.01'], 'Dashboard date = display date (today)');
+  assert.deepEqual(Array.from(dash2.queue, r => r.id), Array.from(dash.queue, r => r.id), 'Same rows and order as the pinned check');
+  assert.deepEqual(Array.from(dash2.queue, r => Array.from(r.tags, t => t.t)), Array.from(dash.queue, r => Array.from(r.tags, t => t.t)), 'D-n badges are relative and do not change');
+  const osh = customers.find(c => c.briefingMeta.caseId === EVIDENCE_CASE), b2 = w.window.PensionBriefingAdapter;
+  page.select(EVIDENCE_CASE, true);
+  let v2 = page.renderVals();
+  assert.deepEqual([v2.profileAnalysisLabel, v2.briefingAnalysisLabel], ['2026.10.01 기준', '2026.10.01 기준 · 브리핑 초안'], 'Header 기준일 labels follow today');
+  assert.equal(page.profileOf({ id: EVIDENCE_CASE }).acct, '2018.02.21', 'Customer dates move with the same offset (irpOpenedAt 2018-02-19 + 2)');
+  assert.deepEqual(hooked, require('./branch-data').extractCurrentRows(customers), 'Build extraction hook (branch data) is independent of the display date');
+  assert.equal(w.window.__PENSION_DISPLAY_DATE, '2026-10-01', 'Extraction restores the display date');
+  const req2 = b2.getCustomerForRequest(EVIDENCE_CASE), wire2 = w.window.PensionFabrixContract.request(req2, 'r', 'E');
+  assert.deepEqual([req2.briefingMeta.asOfDate, req2.customer.irpOpenedAt, req2.signals[1].date, wire2.as_of_date, wire2.customer_data.briefingMeta.asOfDate], [DATA_AS_OF, '2018-02-19', '2026-10-09', DATA_AS_OF, DATA_AS_OF], 'Agent request keeps the authored snapshot and 기준일');
+  assert.deepEqual(JSON.stringify(wire2.customer_data), JSON.stringify(osh), 'Request snapshot is byte-identical to the fixture');
+  assert.equal(b2.receive(b2.begin(EVIDENCE_CASE), evidenceBriefing, traceFor(wire2, evidenceBriefing)).ok, true, 'Stored briefing (authored dates) is still accepted');
+  v2 = page.renderVals();
+  assert.equal(v2.bfHotTips[0].date, '2025.03.01', 'Briefing content dates (Hot Tip 2025-02-27) move with the offset');
+  { const stored = b2.analysisTrace(EVIDENCE_CASE), shown = w.window.PensionDisplayDate.shiftValue(stored);
+    assert.deepEqual([stored.as_of_date, shown.as_of_date, shown.started_at, shown.steps[0].ended_at], [DATA_AS_OF, '2026-10-01', stored.started_at, stored.steps[0].ended_at], 'Stored trace keeps authored values; the panel draws a shifted copy with real clocks intact'); }
+  { const T2 = w.window.PensionExecutionTraceData, d2 = T2.build(), d1 = require('../../frontend/src/briefing/pensionExecutionTraceData').build();
+    assert.deepEqual([T2.AS_OF, T2.PREV, d2.asOfDate, d2.snapshots.prev.asOfDate, d2.snapshots.curr.transactionDate, d2.funnel.stages[0].title], ['2026-10-01', '2026-09-30', '2026-10-01', '2026-09-30', '2026-09-30', '전일(9/30) 급여 입금 고객'], 'Mock 처리 이력 is anchored to today');
+    assert.ok(d2.segments.find(s => s.key === 'salary_deposit').rule.includes('전일 스냅샷 9/29, 금일 스냅샷 9/30'), 'Rule text names the shifted snapshot days');
+    assert.deepEqual(copy([d2.funnel.selected, d2.segments.map(s => [s.before, s.after])]), [d1.funnel.selected, d1.segments.map(s => [s.before, s.after])], 'Same customers and counts every day; only dates move');
+    assert.ok(d2.funnel.selected.every(id => d2.snapshots.curr.customers.find(c => c.customerId === id).transactions.some(t => t.type === '급여입금' && t.date === '2026-09-30')), 'Salary deposits land on yesterday');
+    assert.ok(/^\d{4}-\d{2}-\d{2}T/.test(d2.traces.retrieval.requestedAt) && Date.now() - Date.parse(d2.traces.retrieval.requestedAt) < 120000, 'Timestamps stay on the runtime clock'); }
+  { const out = w.window.PensionChat.compose([{ type: 'answer', text: '정기예금 만기 2026-10-09(D-8)이며 9월 30일 상담 예정입니다.', intent: 'situation' }, { type: 'trace', timeline: [{ at: '2026-09-29T01:00:00.000Z', stage: 'turn' }] }]);
+    assert.ok(JSON.stringify(out).includes('2026-10-11(D-8)이며 10월 2일 상담') && !JSON.stringify(out).includes('2026-10-09'), 'Consultation answers render with today-based dates'); }
+  // 원격 부점 AI 답변: 화면 문구만 옮기고 next_state·actions·반환 answer는 원본.
+  { if (!globalThis.crypto) globalThis.crypto = require('node:crypto').webcrypto;
+    const S = require('../../frontend/src/briefing/branch-search-session');
+    const fixture = JSON.parse(fs.readFileSync(path.join(ROOT, 'branch-agent/validation/contract.examples.json'), 'utf8')), example = fixture.examples.find(x => x.id === 'search');
+    const frame = event => 'data: ' + JSON.stringify({ event_status: 'CHUNK', status: 'SUCCESS', content: JSON.stringify(event) }) + '\r\n\r\n';
+    const fakeFetch = async (url, opts) => { const req = JSON.parse(JSON.parse(opts.body).contents[0]); const events = copy(example.events); events.forEach(e => { for (const k of ['request_id', 'conversation_id', 'base_revision']) e.data[k] = req[k]; if (e.event === 'answer') { e.data.revision = req.base_revision + 1; e.data.text = '2026-09-29 기준 현금성 장기대기 고객은 4명입니다.'; e.data.scope_note = '현재 시연 자료 기준 · 2026-09-29'; } });
+      const bytes = new TextEncoder().encode(events.map(frame).join('')); let pos = 0; return new Response(new ReadableStream({ pull(c) { if (pos >= bytes.length) c.close(); else c.enqueue(bytes.slice(pos, pos += 64)); } }), { status: 200, headers: { 'content-type': 'text/event-stream' } }); };
+    globalThis.PensionDisplayDate = DDm; globalThis.__PENSION_DISPLAY_DATE = '2026-10-01';
+    try {
+      const session = S.create({ metadata: { recordCount: 57 } }, { config: { endpointUrl: 'http://127.0.0.1:8765/bridge', agentId: 'branch-asset', openapiToken: 'TEST_ONLY', generativeAiClient: 'TEST_ONLY', xClientUser: 'TEST_EMPLOYEE' }, manifest: fixture.manifest, timeoutMs: 400, fetch: fakeFetch });
+      const returned = await session.send('현금성 장기대기 고객 보여줘'), snap = session.get(), reply = snap.messages.find(m => m.role === 'assistant');
+      assert.deepEqual([reply.text, reply.result.scopeNote, returned.text, returned.scope_note], ['2026-10-01 기준 현금성 장기대기 고객은 4명입니다.', '현재 시연 자료 기준 · 2026-10-01', '2026-09-29 기준 현금성 장기대기 고객은 4명입니다.', '현재 시연 자료 기준 · 2026-09-29'], 'Remote answer prose is shown with today; the validated answer is returned unchanged');
+      assert.deepEqual([snap.state, reply.result.actions], [returned.next_state, returned.actions], 'State and actions sent back to the Agent are the originals');
+      session.destroy();
+    } finally { delete globalThis.PensionDisplayDate; globalThis.__PENSION_DISPLAY_DATE = DATA_AS_OF; }
+  }
+  console.log('PASS: 화면 표시 기준일 = 오늘 — dashboard/header 기준일, customer·briefing·trace·mock 처리 이력·상담 답변·부점 AI 답변의 자료 날짜가 (오늘 − 2026-09-29)만큼 이동, D-n 뱃지·실제 처리 시각·Agent 요청 스냅샷·manifest·state는 그대로.');
+}
+
 autoRequestCheck().then(
   () => console.log('PASS: injected FabriX config (onParam params / window global), auto request on case select, one request per loaded case, SSE answer rendered, invalid or missing config never calls.'))
   .then(chatPanelCheck).then(
   () => console.log('PASS: chat panel with injected chat config: question -> replayed real SSE turns -> answer/list/quote/sources/followups rendered, log_events asked, trace kept per turn + summarized (TRACE button only on traced answers), session per customer, error note, empty config never calls.'))
-  .then(branchSearchCheck).then(traceCheck).then(traceLogCheck).catch(
+  .then(branchSearchCheck).then(traceCheck).then(traceLogCheck).then(displayDateCheck).catch(
   error => { console.error(error); process.exitCode = 1; });
 
 if (process.argv[2] === '--agent') {

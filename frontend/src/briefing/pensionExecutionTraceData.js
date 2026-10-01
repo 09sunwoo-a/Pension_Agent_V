@@ -5,11 +5,13 @@
  * 모든 기록은 origin:'frontend_fixture', isSimulated:true 를 가진다. 렌더러는 pensionExecutionTracePanel.js.
  */
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory();
-  else root.PensionExecutionTraceData = factory();
-})(typeof window === 'undefined' ? globalThis : window, function () {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./pensionDisplayDate'));
+  else root.PensionExecutionTraceData = factory(root.PensionDisplayDate);
+})(typeof window === 'undefined' ? globalThis : window, function (DD) {
   'use strict';
-  var AS_OF = '2026-09-29', PREV = '2026-09-28', SEED = 20260929, COUNT = 1392, BRANCH = '여의도종합금융센터';
+  // 목업을 작성한 기준일 D0. 실제 기준일 AS_OF는 화면 표시 기준일(오늘, pensionDisplayDate.js)이며, 작성된 날짜는 전부 그 차이(OFFSET)만큼 옮긴다.
+  // 시드는 날짜와 무관하게 고정이라 고객·금액·세그먼트 결과는 매일 같고 날짜만 당일 기준으로 움직인다.
+  var D0 = '2026-09-29', AS_OF = D0, PREV = '2026-09-28', OFFSET = 0, SEED = 20260929, COUNT = 1392, BRANCH = '여의도종합금융센터';
   var TIMEZONE = 'Asia/Seoul';
   var MODEL = { display: 'Gemma 4', model: 'gemma-4-31b-it', deployment: 'gemma-4-31b-nvidia-fp4-h100' };
   // 기존 화면과 같은 값: 부점 잔액 526.8억(▲1.3억), 적립금 1억 이상 고객이 전체 적립금의 45.3%.
@@ -34,6 +36,15 @@
   var fromDays = function (d) { var t = new Date(d * DAY); return t.getUTCFullYear() + '-' + pad(t.getUTCMonth() + 1, 2) + '-' + pad(t.getUTCDate(), 2); };
   var addDays = function (s, n) { return fromDays(toDays(s) + n); };
   var daysBetween = function (from, to) { return toDays(to) - toDays(from); };
+  var rel = function (authored) { return addDays(authored, OFFSET); }; // 작성 당시 날짜 → 현재 기준일 세계의 같은 날짜
+  var md = function (day) { return (+day.slice(5, 7)) + '/' + (+day.slice(8, 10)); };
+  var anchored = false;
+  function anchor() {
+    var day = DD && DD.today ? DD.today() : D0;
+    if (anchored && day === AS_OF) return;
+    anchored = true; AS_OF = day; PREV = addDays(AS_OF, -1); OFFSET = daysBetween(D0, AS_OF); cached = null;
+    SEGMENTS.forEach(function (s) { if (s.key === 'salary_deposit') s.rule = '스냅샷 직전 달력일의 일반계좌 급여입금 거래 존재 (전일 스냅샷 ' + md(addDays(PREV, -1)) + ', 금일 스냅샷 ' + md(PREV) + ')'; });
+  }
   var copy = function (x) { return JSON.parse(JSON.stringify(x)); };
   // 기준 시각은 프론트가 처음 렌더링된 실제 시각(setBase)이다. 화면이 뜨자마자 브리핑을 요청하고, 그 요청 안에서
   // 생성(20초)이 수행된 뒤 응답이 돌아온 것처럼 모든 시각을 이 기준의 ms offset으로 계산한다.
@@ -60,22 +71,22 @@
   function shuffled(r, n) { var a = []; for (var i = 0; i < n; i++) a.push(i); for (var j = n - 1; j > 0; j--) { var k = Math.floor(r() * (j + 1)); var t = a[j]; a[j] = a[k]; a[k] = t; } return a; }
 
   function baseCustomer(r, i) {
-    var age = between(r, 27, 64), opened = dateBetween(r, '2012-01-01', '2026-06-30');
+    var age = between(r, 27, 64), opened = dateBetween(r, rel('2012-01-01'), rel('2026-06-30'));
     var contributed = pick(r, [0, 1200000, 2400000, 3600000, 4800000, 6000000, 7200000, 9000000], [0.18, 0.12, 0.14, 0.14, 0.14, 0.1, 0.08, 0.1]);
     var history = [];
-    if (r() < 0.32) { var n = between(r, 1, 3); for (var k = 0; k < n; k++) history.push({ date: dateBetween(r, '2024-01-10', '2025-12-20'), amountKrw: man(r, 50, 300) }); history.sort(function (a, b) { return a.date < b.date ? -1 : 1; }); }
+    if (r() < 0.32) { var n = between(r, 1, 3); for (var k = 0; k < n; k++) history.push({ date: dateBetween(r, rel('2024-01-10'), rel('2025-12-20')), amountKrw: man(r, 50, 300) }); history.sort(function (a, b) { return a.date < b.date ? -1 : 1; }); }
     return {
       // 화면과 같은 고객식별자 표기(5자리-5자리, 10자리). i마다 유일하며 실제 개인정보가 아니다.
       customerId: pad(10000 + ((i * 7919) % 90000), 5) + '-' + pad(10000 + ((i * 104729 + 12345) % 90000), 5),
       profile: { age: age, grade: pick(r, GRADES, GRADE_W), investmentProfile: pick(r, PROFILES, PROFILE_W), irpOpenedAt: opened },
       account: { valuationAmountKrw: 0, oneYearReturnPct: 0, cashAmountKrw: 0, cashPct: 0 },
-      operation: { lastInstructionDate: dateBetween(r, '2026-08-30', '2026-09-27'), depositPurchaseConfigured: r() < 0.65, defaultOptionRegistered: true },
+      operation: { lastInstructionDate: dateBetween(r, rel('2026-08-30'), rel('2026-09-27')), depositPurchaseConfigured: r() < 0.65, defaultOptionRegistered: true },
       maturities: [],
       contribution: { annualContributionKrw: contributed, taxDeductionRemainingKrw: 9000000 - contributed, pastExtraContributions: history, pendingContributionKrw: 0 },
       payout: { pensionEligible: false, pensionStarted: false },
       signals: { churnRisk: false, churnReasons: [], transfer: null, contributionStopped: contributed === 0 && r() < 0.5 },
       transactions: [],
-      counseling: { lastCounselingDate: r() < 0.55 ? dateBetween(r, '2026-03-01', '2026-09-20') : null, summary: null }
+      counseling: { lastCounselingDate: r() < 0.55 ? dateBetween(r, rel('2026-03-01'), rel('2026-09-20')) : null, summary: null }
     };
   }
   function setValuation(c, amount, pct) {
@@ -121,9 +132,9 @@
     customers.forEach(function (c, idx) {
       if (scripted[idx] || dateOnlySet[idx]) return;
       if (inSet.td30[idx]) c.maturities.push({ kind: '정기예금', id: 'TD-' + pad(++mat, 4), maturityDate: dateBetween(r, AS_OF, addDays(PREV, 30)), amountKrw: man(r, 500, 6000) });
-      else if (r() < 0.24) c.maturities.push({ kind: '정기예금', id: 'TD-' + pad(++mat, 4), maturityDate: dateBetween(r, addDays(AS_OF, 31), '2027-09-20'), amountKrw: man(r, 500, 6000) });
+      else if (r() < 0.24) c.maturities.push({ kind: '정기예금', id: 'TD-' + pad(++mat, 4), maturityDate: dateBetween(r, addDays(AS_OF, 31), rel('2027-09-20')), amountKrw: man(r, 500, 6000) });
       if (inSet.isa30[idx]) c.maturities.push({ kind: 'ISA', id: 'ISA-' + pad(++mat, 4), maturityDate: dateBetween(r, AS_OF, addDays(PREV, 30)), amountKrw: man(r, 1000, 8000) });
-      else if (r() < 0.16) c.maturities.push({ kind: 'ISA', id: 'ISA-' + pad(++mat, 4), maturityDate: dateBetween(r, addDays(AS_OF, 31), '2027-12-20'), amountKrw: man(r, 1000, 8000) });
+      else if (r() < 0.16) c.maturities.push({ kind: 'ISA', id: 'ISA-' + pad(++mat, 4), maturityDate: dateBetween(r, addDays(AS_OF, 31), rel('2027-12-20')), amountKrw: man(r, 1000, 8000) });
     });
     dateOnly.tdEnter.forEach(function (idx) { customers[idx].maturities.push({ kind: '정기예금', id: 'TD-' + pad(++mat, 4), maturityDate: addDays(AS_OF, 30), amountKrw: man(r, 1000, 5000) }); });
     dateOnly.isaEnter.forEach(function (idx) { customers[idx].maturities.push({ kind: 'ISA', id: 'ISA-' + pad(++mat, 4), maturityDate: addDays(AS_OF, 30), amountKrw: man(r, 2000, 6000) }); });
@@ -134,15 +145,15 @@
       var pct = inSet.cashWait[idx] && !role && !dOnly ? between(r, 30, 60) : (r() < 0.7 ? between(r, 0, 24) : between(r, 30, 60));
       setValuation(c, big ? man(r, 10000, 48000) : man(r, 300, 9800), pct);
       c.account.oneYearReturnPct = inSet.lowReturn[idx] && !role && !dOnly ? between(r, -75, 9) / 10 : between(r, 15, 115) / 10;
-      if (inSet.cashWait[idx] && !role && !dOnly) c.operation.lastInstructionDate = dateBetween(r, '2025-08-01', addDays(PREV, -100));
+      if (inSet.cashWait[idx] && !role && !dOnly) c.operation.lastInstructionDate = dateBetween(r, rel('2025-08-01'), addDays(PREV, -100));
       else if (c.account.cashPct >= 30) c.operation.lastInstructionDate = dateBetween(r, addDays(PREV, -80), addDays(PREV, -1));
       if (inSet.pending[idx] && !role && !dOnly) { c.contribution.pendingContributionKrw = man(r, 100, 600); c.operation.depositPurchaseConfigured = false; }
       if (inSet.doUnregistered[idx] && !role && !dOnly) c.operation.defaultOptionRegistered = false;
       if (inSet.churn[idx] && !role && !dOnly) { c.signals.churnRisk = true; c.signals.churnReasons = [pick(r, ['수익률 부진 후 잔액 감소', '타행 IRP 이전 문의', '계약이전 절차 문의', '납입 중단 후 상담 요청'])]; }
-      if (inSet.transfer[idx] && !role && !dOnly) c.signals.transfer = { applied: true, status: pick(r, ['처리대기', '진행중']), appliedAt: dateBetween(r, '2026-08-20', '2026-09-24') };
+      if (inSet.transfer[idx] && !role && !dOnly) c.signals.transfer = { applied: true, status: pick(r, ['처리대기', '진행중']), appliedAt: dateBetween(r, rel('2026-08-20'), rel('2026-09-24')) };
       if (inSet.pensionStarted[idx] && !role && !dOnly) { c.profile.age = Math.max(c.profile.age, 58); c.payout.pensionStarted = true; }
-      if (inSet.pensionEligible[idx] && !role && !dOnly && !c.payout.pensionStarted) { c.profile.age = Math.max(c.profile.age, 55); c.profile.irpOpenedAt = dateBetween(r, '2012-01-01', '2021-06-30'); }
-      else if (role || dOnly !== 'pension') { if (c.profile.age >= 55 && !c.payout.pensionStarted && daysBetween(c.profile.irpOpenedAt, AS_OF) >= 365 * 5) c.profile.irpOpenedAt = dateBetween(r, '2022-01-01', '2026-06-30'); }
+      if (inSet.pensionEligible[idx] && !role && !dOnly && !c.payout.pensionStarted) { c.profile.age = Math.max(c.profile.age, 55); c.profile.irpOpenedAt = dateBetween(r, rel('2012-01-01'), rel('2021-06-30')); }
+      else if (role || dOnly !== 'pension') { if (c.profile.age >= 55 && !c.payout.pensionStarted && daysBetween(c.profile.irpOpenedAt, AS_OF) >= 365 * 5) c.profile.irpOpenedAt = dateBetween(r, rel('2022-01-01'), rel('2026-06-30')); }
       if (role) c.profile.age = Math.min(c.profile.age, 52);
     });
     // 날짜 경과만으로 진입하는 고객.
@@ -155,17 +166,17 @@
       if (j < 3) { c.contribution.annualContributionKrw = 9000000; c.contribution.taxDeductionRemainingKrw = 0; }
       else { var paid = pick(r, [1200000, 2400000, 3600000, 4800000]); c.contribution.annualContributionKrw = paid; c.contribution.taxDeductionRemainingKrw = 9000000 - paid; }
       if (j >= 3 && j < 6) c.contribution.pastExtraContributions = [];
-      if (j >= 6 && !c.contribution.pastExtraContributions.length) c.contribution.pastExtraContributions = [{ date: dateBetween(r, '2024-02-01', '2025-11-30'), amountKrw: man(r, 100, 300) }];
+      if (j >= 6 && !c.contribution.pastExtraContributions.length) c.contribution.pastExtraContributions = [{ date: dateBetween(r, rel('2024-02-01'), rel('2025-11-30')), amountKrw: man(r, 100, 300) }];
     });
     roles.returnUp.forEach(function (idx) { var c = customers[idx]; setValuation(c, man(r, 3000, 8000), between(r, 3, 20)); c.account.oneYearReturnPct = between(r, 6, 9) / 10; });
-    var bx = role('balanceCross', 0); setValuation(bx, 42000000, 9); bx.operation.lastInstructionDate = '2026-09-10';
-    var rd = role('retirementDeposit', 0); setValuation(rd, 183000000, 12); rd.operation.lastInstructionDate = '2026-09-15';
+    var bx = role('balanceCross', 0); setValuation(bx, 42000000, 9); bx.operation.lastInstructionDate = rel('2026-09-10');
+    var rd = role('retirementDeposit', 0); setValuation(rd, 183000000, 12); rd.operation.lastInstructionDate = rel('2026-09-15');
     roles.routine.forEach(function (idx) { var c = customers[idx]; setValuation(c, man(r, 2000, 8000), between(r, 3, 24)); c.account.oneYearReturnPct = between(r, 18, 96) / 10; });
-    var ct = role('churnTransfer', 0); setValuation(ct, 56000000, 8); ct.counseling = { lastCounselingDate: '2026-09-11', summary: '계약이전 절차 문의' };
+    var ct = role('churnTransfer', 0); setValuation(ct, 56000000, 8); ct.counseling = { lastCounselingDate: rel('2026-09-11'), summary: '계약이전 절차 문의' };
     var co = role('churnOnly', 0); setValuation(co, 84000000, 14); co.account.oneYearReturnPct = 1.6;
     var dr = role('doRegistered', 0); setValuation(dr, 31000000, 11); dr.operation.defaultOptionRegistered = false;
     var pp = role('pendingPlain', 0); setValuation(pp, 60000000, 10); pp.operation.depositPurchaseConfigured = false; pp.contribution.annualContributionKrw = 2400000; pp.contribution.taxDeductionRemainingKrw = 6600000;
-    var cf = role('cashFact', 0); setValuation(cf, 30000000, 22); cf.operation.depositPurchaseConfigured = false; cf.operation.lastInstructionDate = '2026-04-20'; cf.contribution.annualContributionKrw = 1200000; cf.contribution.taxDeductionRemainingKrw = 7800000;
+    var cf = role('cashFact', 0); setValuation(cf, 30000000, 22); cf.operation.depositPurchaseConfigured = false; cf.operation.lastInstructionDate = rel('2026-04-20'); cf.contribution.annualContributionKrw = 1200000; cf.contribution.taxDeductionRemainingKrw = 7800000;
     // 부점 잔액을 기존 화면 값에 맞춘다(pool 고객만 조정, 스크립트 고객 금액은 유지).
     // 금일 1억 이상 합계 = 전체의 45.3% = pool 118명 + 퇴직급여 입금 고객(2.13억) + 1억 진입 고객(1.07억).
     var bigPoolTarget = Math.round(BIG_SHARE_CURR * TOTAL_CURR) - 213000000 - 107000000;
@@ -221,7 +232,7 @@
     { key: 'managed', label: '관리 고객', sourceLabels: [], rule: '스냅샷의 전체 개인형 IRP 고객', basis: 'count', test: function () { return true; } },
     { key: 'churn_risk', label: '이탈위험', sourceLabels: ['이탈징후'], rule: "관리신호 churnRisk = true (등록 라벨 '이탈징후'를 이 표시 그룹에 연결)", test: function (c) { return c.signals.churnRisk === true; } },
     { key: 'transfer_pending', label: '계약이전 신청·처리대기', sourceLabels: ['계약이전 신청'], rule: "transfer.applied = true 이고 상태가 신청·처리대기·진행중", test: function (c) { return !!c.signals.transfer && c.signals.transfer.applied && ['신청', '처리대기', '진행중'].indexOf(c.signals.transfer.status) >= 0; } },
-    { key: 'salary_deposit', label: '전일 급여 입금', sourceLabels: [], rule: '스냅샷 직전 달력일의 일반계좌 급여입금 거래 존재 (전일 스냅샷 9/27, 금일 스냅샷 9/28)', test: function (c, s) { return c.transactions.some(function (t) { return t.type === '급여입금' && t.date === s.transactionDate; }); } },
+    { key: 'salary_deposit', label: '전일 급여 입금', sourceLabels: [], rule: '', /* anchor()가 기준일로 채운다 */ test: function (c, s) { return c.transactions.some(function (t) { return t.type === '급여입금' && t.date === s.transactionDate; }); } },
     { key: 'do_unregistered', label: 'DO 미등록', sourceLabels: ['DO 미등록'], rule: 'defaultOptionRegistered = false', test: function (c) { return c.operation.defaultOptionRegistered === false; } },
     { key: 'cash_long_wait', label: '현금성 장기대기', sourceLabels: ['현금성 장기대기'], rule: '현금성자산 비중 30% 이상이고 최근 운용지시일이 기준일로부터 90일 이상 경과', test: function (c, s) { return c.account.cashPct >= 30 && daysBetween(c.operation.lastInstructionDate, s.asOfDate) >= 90; } },
     { key: 'pending_contribution', label: '납입금 미운용', sourceLabels: ['납입금 미운용'], rule: '미운용 개인부담금 납입액 > 0', test: function (c) { return c.contribution.pendingContributionKrw > 0; } },
@@ -292,7 +303,7 @@
     var reason = function (ids, text, ref) { return ids.map(function (id) { return { customerId: id, reason: text, evidenceRefs: [ref(byId[id])] }; }); };
     return {
       stages: [
-        { key: 'salary', title: '전일(9/28) 급여 입금 고객', inputCount: curr.customers.length, selected: salary, excludedCount: curr.customers.length - salary.length, excluded: [], rule: "거래일 " + curr.transactionDate + " 일반계좌 '급여입금' 거래 존재", field: 'transactions[].type = 급여입금' },
+        { key: 'salary', title: '전일(' + md(curr.transactionDate) + ') 급여 입금 고객', inputCount: curr.customers.length, selected: salary, excludedCount: curr.customers.length - salary.length, excluded: [], rule: "거래일 " + curr.transactionDate + " 일반계좌 '급여입금' 거래 존재", field: 'transactions[].type = 급여입금' },
         { key: 'remaining', title: '세액공제 잔여한도 양수', inputCount: salary.length, selected: remaining, excludedCount: noRemaining.length, excluded: reason(noRemaining, '세액공제 잔여한도 0원 (올해 개인부담금 900만원 납입 완료)', function (c) { return ref(curr, c, 'contribution.taxDeductionRemainingKrw'); }), rule: 'contribution.taxDeductionRemainingKrw > 0', field: 'contribution.taxDeductionRemainingKrw' },
         { key: 'history', title: '과거 추가납입 거래 이력 존재', inputCount: remaining.length, selected: history, excludedCount: noHistory.length, excluded: reason(noHistory, '과거 추가납입 거래 이력 없음', function (c) { return ref(curr, c, 'contribution.pastExtraContributions'); }), rule: 'contribution.pastExtraContributions.length > 0', field: 'contribution.pastExtraContributions' }
       ],
@@ -461,10 +472,12 @@
   }
 
   var cached = null;
+  anchor();
   return {
-    build: function () { return cached || (cached = build()); },
+    build: function () { anchor(); return cached || (cached = build()); },
     reset: function () { cached = null; },
     stamp: stamp, setBase: setBase, clockOf: clockOf, diffPaths: diffPaths, daysBetween: daysBetween, won: won,
-    ACTOR_LABEL: ACTOR_LABEL, SEGMENTS: SEGMENTS, BRIEFING_TEXT: BRIEFING_TEXT, MODEL: MODEL, AS_OF: AS_OF, PREV: PREV, COUNT: COUNT
+    ACTOR_LABEL: ACTOR_LABEL, SEGMENTS: SEGMENTS, BRIEFING_TEXT: BRIEFING_TEXT, MODEL: MODEL, COUNT: COUNT, D0: D0,
+    get AS_OF() { anchor(); return AS_OF; }, get PREV() { anchor(); return PREV; }
   };
 });

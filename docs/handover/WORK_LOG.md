@@ -2,6 +2,13 @@
 
 현재 상태는 README, 부점 AI 목표는 [구현 기획](BRANCH_AI_SEARCH_DESIGN.md), 코드 현황은 [AS-IS](BRANCH_AI_FRONTEND_AS_IS.md). 이전 UI 수치·폐기안·전체 실행 로그는 기본 컨텍스트에서 제외한다.
 
+## 2026-10-01 — 화면의 모든 날짜를 당일 기준으로 표시(자료 기준일 2026-09-29는 유지)
+
+- 요청: 화면에 뿌려지는 정보가 전부 9/29 기준으로 보이니 당일 날짜로 맞출 것. 자료·Agent 계약은 손대지 않고 **표시 단계에서만 평행이동**하는 방식으로 구현. 새 모듈 `frontend/src/briefing/pensionDisplayDate.js`: 오늘(Asia/Seoul) − 자료 기준일(반입 스냅샷 `briefingMeta.asOfDate` 다수값, 기본 2026-09-29)을 offset으로 두고 `shiftDay`(YYYY-MM-DD)·`shiftText`(`2026-09-29`·`2026.09.29`·`2026년 9월 29일`·`9월 29일`, ISO 시각의 날짜 부분)·`shiftValue`(깊은 복사+문자열 이동, 실제 시계 키 `*_at`/`*At`/timeline `at`/`front`는 그대로)를 제공. D-n 뱃지·경과일수·`2026.09` 같은 월 표기·고객번호는 바뀌지 않는다. `window.__PENSION_DISPLAY_DATE = 'YYYY-MM-DD'`로 고정 가능(검사·시연용).
+- 적용 지점: `pensionBriefingAdapter.js`(고객 헤더·보유상품·브리핑 S1–S5 표시 복사본, 대시보드 `asOfDate` getter, `N.N 기준 · 브리핑 초안`; Agent 요청용 `getCustomerForRequest`·store 원본은 그대로), `pensionAgentDemo.js`(레거시 행 `기준 분석` 문구도 대시보드 기준일, 빌드 추출 hook은 추출 동안 표시 기준일을 자료 기준일로 고정해 `branch_data` 해시가 날짜와 무관), `pensionChat.js`(상담 답변 compose 시 이동, 턴 trace는 패널에서), `pensionBriefingEvidencePanel.js`(분석 근거·상담 trace 표시 복사본), `branch-search-adapter.js`(현재 목록 투영을 옮긴 복사본 → 로컬 엔진·엑셀 기준일·답변 문구), `branch-search-session.js`(원격 답변 text·scope_note·context_label·execution_trace 표시 복사본, `next_state`·actions·ui는 원본), `pensionExecutionTraceData.js`(목업 기준일 AS_OF=오늘·PREV=전일, 작성 날짜는 `rel()`로 같은 간격 이동, 시드 고정이라 고객·금액·세그먼트 수는 매일 동일).
+- 바꾸지 않은 것: display-data·briefing-json·`agent/briefing_data.json`·`branch_data.json`·manifest(data_version 81f4311c… 동일), Python Agent 두 개. 원격 부점 Agent는 여전히 2026-09-29로 계산하므로 ISA D-n 등 상대값은 그대로 맞고 문장 속 절대 날짜만 화면에서 옮겨진다. 레거시 15행의 임의 목업 가입일·최근 개설일은 옮기지 않는다(부점 투영 이중 이동 방지).
+- 검사: `check.js`는 `__PENSION_DISPLAY_DATE`를 2026-09-29로 고정해 기존 9항목을 그대로 보고, 신규 `displayDateCheck`(+2일 고정 컨텍스트: 대시보드 `10월 1일 목요일`·`10.01`, 헤더 기준일, 가입일 +2, 뱃지 불변, Agent 요청 스냅샷 바이트 동일, Hot Tip 게시일 이동, 저장 trace 원본 유지, 목업 처리 이력 기준일/급여입금일/규칙 문구, 상담 compose, 원격 세션 표시·반환 분리, 빌드 추출 hook 불변) 포함 10 PASS. `branch-agent/validation` check_data/check_contract/check_frontend PASS, 빌드 2회 해시 동일. 브라우저(미리보기 8765, Chromium)에서 대시보드·오세훈 헤더·처리 이력·부점 AI 로컬 답변의 날짜가 당일로 보이는 것 확인. 반입 JS 880,491 → 890,677 B.
+
 ## 2026-09-28 — 실시간 상담 턴을 고객 TRACE 패널에 표시(대화 Agent `trace` 이벤트)
 
 - 동료 repo(`Pension_agent`) `e411672`: 요청 `log_events:true`면 턴 끝 `done` 앞에 `trace`(timeline·rounds·evidence·sources·sentences) 1건. 프론트는 `pensionChat.js`가 매 요청에 `log_events`를 보내고, `trace`를 그 답변과 함께 메모리에만 보관(`turns(caseId)`), `log`는 콘솔에만.

@@ -300,7 +300,9 @@
   /* ---------- 패널 ---------- */
   function renderKey(trace, turns) { return (trace ? trace.ended_at + '|' + (trace.front ? trace.front.responded_at : '') : '-') + '|' + turns.length + '|' + (turns.length ? turns[turns.length - 1].front.finishedAt : ''); }
   function render(trace, turns) {
-    var c = current;
+    var c = current, DD = root.PensionDisplayDate;
+    // 표시용 복사본: 스냅샷 값·사실·지식 원문의 자료 날짜는 오늘 기준으로, 처리 시각(*_at·timeline.at)은 실제 시계 그대로.
+    if (DD) { trace = trace ? DD.shiftValue(trace) : trace; turns = DD.shiftValue(turns); }
     // afterRender()가 같은 근거를 다시 그리지 않도록 렌더 키를 여기서 기록한다(열린 단계가 첫 재렌더에서 접히는 문제 방지).
     c.renderedAt = renderKey(trace, turns);
     c.body.replaceChildren();

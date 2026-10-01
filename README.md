@@ -28,7 +28,7 @@
 
 ## 수정 원칙
 
-- 고객 입력: `agent-workbench/case-design/active/display-data/Bxx-xx.json`(브리핑 있음)·`Cxx-xx.json`(대화 Agent 시연 고객, 브리핑 없음) 직접 수정. 기준일은 전부 2026-09-29. `materials/reference-cases/DEMO-01_*.json`은 더 이상 빌드에 들어가지 않는 참고본입니다.
+- 고객 입력: `agent-workbench/case-design/active/display-data/Bxx-xx.json`(브리핑 있음)·`Cxx-xx.json`(대화 Agent 시연 고객, 브리핑 없음) 직접 수정. 기준일은 전부 2026-09-29(자료·Agent 요청·부점 manifest 기준). **화면은 모든 날짜를 당일 기준으로 평행이동해 표시**합니다(`frontend/src/briefing/pensionDisplayDate.js`, 오늘 − 2026-09-29만큼; D-n·경과일수는 상대값이라 그대로, 실제 처리 시각은 그대로). 날짜를 고정해 보려면 화면 진입 전에 `window.__PENSION_DISPLAY_DATE = 'YYYY-MM-DD'`. `materials/reference-cases/DEMO-01_*.json`은 더 이상 빌드에 들어가지 않는 참고본입니다.
 - 브리핑: `active/briefing-json/<caseId>.json` 직접 수정. S1–S5와 출처/검토 메모만 저장합니다.
 - 위 경로의 `active/`, `materials/`는 모두 `agent-workbench/case-design/` 아래입니다.
 - Golden/브리핑 Markdown은 고객 맥락·출처 확인용입니다. JSON을 덮어쓰는 생성기/override는 제거했으므로 MD를 고쳐도 화면 JSON이 자동으로 바뀌지 않습니다.

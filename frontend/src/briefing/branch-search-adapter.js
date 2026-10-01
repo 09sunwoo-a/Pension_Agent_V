@@ -17,7 +17,9 @@ function mount(component,params){
  destroy();params=params||{};if(params.branchSearch===false)return;
  const app=document.getElementById('pensionAgentDemo');if(!app)return;
  const render=component.renderVals,initial=fullView(component,render);
- const source=root.PensionBranchCurrentData.fromCurrentRows(initial.queue,root.PensionBriefingFixtures,component.DATA,c=>component.profileOf(c));
+ const projected=root.PensionBranchCurrentData.fromCurrentRows(initial.queue,root.PensionBriefingFixtures,component.DATA,c=>component.profileOf(c));
+ // 화면 기준일(오늘)로 옮긴 복사본. 로컬 엔진·엑셀 기준일·답변 문구가 이것을 쓴다. 원격 Agent는 자기 데이터·manifest(자료 기준일)로 계산한다.
+ const source=root.PensionDisplayDate?root.PensionDisplayDate.shiftValue(projected):projected;
  if(!source.records.length){console.error('[Branch AI] Current main list empty. No fallback cohort used.');return;}
  // Local calculation is opt-in for regression/demo use; remote failures never fall back to it.
  const local=params.branchAgentMode==='local';

@@ -4,6 +4,9 @@
 (function (window) {
   'use strict';
   var fixtures = window.PensionBriefingFixtures;
+  // 화면 표시용 날짜 평행이동(pensionDisplayDate.js): 그리는 복사본에만 적용한다. Agent 요청(getCustomerForRequest)·store 원본은 자료 기준일 그대로.
+  var DD = window.PensionDisplayDate;
+  var display = function (v) { return DD ? DD.shiftValue(v) : v; }, displayDay = function (d) { return DD ? DD.shiftDay(d) : d; };
   var CustomerView = window.PensionCustomerView, BriefingView = window.PensionBriefingView;
   if (!fixtures || !CustomerView || !BriefingView || !window.PensionBriefingStore) return;
   var revision = 0;
@@ -36,7 +39,7 @@
     base.briefingTilesClass = record ? 'pad-tiles--structured' : '';
     base.hasBriefingState = false;
     if (!record) return base;
-    Object.assign(base, CustomerView.build(record));
+    Object.assign(base, CustomerView.build(display(record)));
     base.panelOpen = false; base.panelClosed = false; base.showLegacyTip = false;
     if (QUEUE_EXCLUDED[id]) {
       // Not in the main list: 다음 고객 walks the structured cases instead of the queue order.
@@ -54,9 +57,9 @@
     base.briefingStateText = entry.phase === 'loading'
       ? '브리핑을 불러오는 중입니다.' + (entry.content ? ' 이전 브리핑을 표시합니다.' : '')
       : '브리핑을 불러오지 못했습니다.' + (entry.content ? ' 이전 브리핑을 유지합니다.' : ' 다시 요청해 주세요.');
-    base.briefingAnalysisLabel = record.briefingMeta.asOfDate.replace(/-/g, '.') + ' 기준 · 브리핑 초안';
+    base.briefingAnalysisLabel = displayDay(record.briefingMeta.asOfDate).replace(/-/g, '.') + ' 기준 · 브리핑 초안';
     base.bfName = record.customer.name;
-    if (entry.content) Object.assign(base, BriefingView.build(entry.content, component, policyFor(id, entry)));
+    if (entry.content) Object.assign(base, BriefingView.build(display(entry.content), component, policyFor(id, entry)));
     return base;
   }
   // 고객별 표시 정책. C01-07(오세훈): 상품 메타정보만, Hot Tip 강조 카드, 근거 자료 제목 행(분석 근거 패널 연결), reviewNotes 숨김.
@@ -84,12 +87,13 @@
     };
     Component.prototype.profileOf = function (c) {
       var record = c && store.customer(c.id);
-      return record ? CustomerView.profile(record) : originalProfile.call(this, c);
+      // 구조화 고객만 표시용 복사본(가입일·최근 개설일이 오늘 기준으로). 레거시 행의 임의 목업 날짜는 그대로 둔다.
+      return record ? CustomerView.profile(display(record)) : originalProfile.call(this, c);
     };
     // Main-list rows: legacy demo rows first in their own order, then the case customers.
     // The queue renderer sorts by 관리 필요도 across both sets.
     Object.defineProperty(Component.prototype, 'DATA', { configurable: true, get: function () {
-      if (!this._queueRows) this._queueRows = originalData.call(this).filter(function (c) { return !LEGACY_HIDDEN[c.id]; }).concat(queued.map(CustomerView.row));
+      if (!this._queueRows) this._queueRows = originalData.call(this).filter(function (c) { return !LEGACY_HIDDEN[c.id]; }).concat(queued.map(function (r) { return CustomerView.row(display(r)); }));
       return this._queueRows;
     } });
     // The legacy directory already contains DATA; add only the cases kept out of the list.
@@ -97,7 +101,8 @@
       if (!this._caseDirectory) this._caseDirectory = originalDir.call(this).filter(function (c) { return !LEGACY_HIDDEN[c.id]; }).concat(records.filter(function (r) { return QUEUE_EXCLUDED[r.briefingMeta.caseId]; }).map(CustomerView.stub));
       return this._caseDirectory;
     } });
-    Component.prototype.asOfDate = asOfDate;
+    // 대시보드 기준일: 자료 기준일을 오늘로 옮긴 값(렌더 시점마다 계산).
+    Object.defineProperty(Component.prototype, 'asOfDate', { configurable: true, get: function () { return displayDay(asOfDate); } });
     Component.prototype.renderVals = function () { return view(this, originalRender.call(this)); };
   }
   window.PensionBriefingAdapter = {

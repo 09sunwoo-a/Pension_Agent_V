@@ -40,10 +40,10 @@
 | 파일 | 크기 | 비고 |
 |---|---|---|
 | `mnPensionAgentDemo.html` | 43,846 B | TRACE 버튼(상단·카드·근거 자료 행·상담 답변), S3 메타정보 표, S5 Hot Tip·후속 안내, 근거 자료 행. 실시간 상담 헤더의 고객 변경 버튼 없음 |
-| `pensionAgentDemo.js` | 880,491 B | **683 KB → 880 KB**(+197 KB). 신규 모듈 5개(처리 이력 패널·기록·목업 데이터, TRACE 패널, 부점 표시 설정) + 실시간 상담 턴 trace(§2-1) |
+| `pensionAgentDemo.js` | 890,677 B | **683 KB → 891 KB**(+208 KB). 신규 모듈 6개(처리 이력 패널·기록·목업 데이터, TRACE 패널, 부점 표시 설정, **표시 기준일=당일 평행이동 `pensionDisplayDate.js`**) + 실시간 상담 턴 trace(§2-1) |
 | `pensionAgentDemo.css` | 83,388 B | 패널·표·Hot Tip·근거 행 스타일. 상단 도넛 132→148px(금액 문구 넘침 수정)도 포함 |
 
-배치 경로·파일코드·캐시 확인은 [체크리스트 §2](COMPANY_DEPLOY_CHECKLIST.md). 반입 후 Network에서 JS 응답 크기가 **880,491**인지 보면 옛 파일 캐시를 바로 구분할 수 있다.
+배치 경로·파일코드·캐시 확인은 [체크리스트 §2](COMPANY_DEPLOY_CHECKLIST.md). 반입 후 Network에서 JS 응답 크기가 **890,677**인지 보면 옛 파일 캐시를 바로 구분할 수 있다.
 
 ### 2-1. 2026-09-28 추가 — 프론트 3파일만 다시 생성(Agent 묶음 B·C 변경 없음)
 
@@ -102,7 +102,7 @@
 1. 이 폴더에서 다시 한 번 `node tools/briefing/build.js` → `node tools/briefing/check.js` → `check.js --agent`(사내 Python) 실행. 산출물 해시가 §2·§3 크기와 같은지 확인.
 2. **묶음 B**(고정 Agent 6파일) → 사내 repo commit·tag push → Portal 배포 → `/health` 200.
 3. **묶음 C**(부점 Agent 11파일) → 동일 절차 → `/health` 200, `data_version 81f4311c…`, `model gemma-4-31b-it`.
-4. **묶음 A**(프론트 3파일) → WAS 교체, 캐시 비우기, JS 880,491 B 로드 확인, `PG_1288272.onParam` 호출 확인.
+4. **묶음 A**(프론트 3파일) → WAS 교체, 캐시 비우기, JS 890,677 B 로드 확인, `PG_1288272.onParam` 호출 확인.
 5. 연동 확인(§7). 문제 시 롤백은 §8.
 
 ## 7. 사내에서만 확인 가능한 항목 (로컬 미검증)

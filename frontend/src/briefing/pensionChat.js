@@ -205,6 +205,8 @@
     return out;
   }
   function compose(events) {
+    // 표시용: 답변·출처·후속 문구의 날짜를 화면 기준일(오늘)로 옮긴다. 실제 시각(trace timeline at 등)은 그대로.
+    if (window.PensionDisplayDate) events = window.PensionDisplayDate.shiftValue(events);
     var answer = events.filter(function (e) { return e.type === 'answer'; })[0];
     if (!answer) return null;
     var links = (Array.isArray(answer.links) ? answer.links : []).filter(function (l) {
